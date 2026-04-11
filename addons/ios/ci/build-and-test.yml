@@ -3,7 +3,7 @@
     if: needs.changes.outputs.code == 'true'
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Detect scheme
         id: scheme
         run: echo "name=$(xcodebuild -list -json | jq -r '.project.schemes[0]')" >> "$GITHUB_OUTPUT"

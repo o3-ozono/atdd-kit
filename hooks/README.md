@@ -30,7 +30,7 @@ Enforces the rule that skill changes require eval before push:
 
 1. Intercepts all Bash tool calls
 2. If the command contains `git push`, checks for SKILL.md changes vs origin/main
-3. If changes exist, checks for eval evidence marker (`/tmp/atdd-kit-eval-ran-<branch>`)
+3. If changes exist, checks for eval evidence marker (`$XDG_CACHE_HOME/atdd-kit/eval-ran-<branch>`)
 4. Blocks push with guidance to run `/atdd-kit:auto-eval` if no evidence found
 
 The marker is created by `/atdd-kit:auto-eval` after eval completes.

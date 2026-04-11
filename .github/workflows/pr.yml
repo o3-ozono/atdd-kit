@@ -66,8 +66,15 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install BATS
         run: |
+          EXPECTED_SHA="b640ec3cf2c7c9cfc9e6351479261186f76eeec8"
           git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git /tmp/bats
-          sudo /tmp/bats/install.sh /usr/local
+          cd /tmp/bats
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::BATS integrity check failed: expected $EXPECTED_SHA, got $ACTUAL_SHA"
+            exit 1
+          fi
+          sudo ./install.sh /usr/local
       - name: Run BATS tests
         run: bats tests/ addons/ios/tests/
 
