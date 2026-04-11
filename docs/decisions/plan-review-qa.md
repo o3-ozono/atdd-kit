@@ -1,126 +1,103 @@
 # Plan Review: QA
 
-Issue #2: feat: session-start で Agent Teams 環境変数を自動設定する
+Issue #7: feat: autopilot 完了時に Agent Team を削除する
 
 ## Review Summary
 
-**Verdict: PASS**
+**Verdict: PASS with 2 recommendations**
 
-統合 Plan は AC との整合性が取れており、テスト戦略も妥当。変更は全て additive で既存動作を壊すリスクが低い。以下に詳細フィードバックを記載する。
+テスト戦略は既存パターンに適合しており、AC カバレッジも十分。2 点の追加テストケースを推奨する。
 
 ## 1. テスト層の妥当性
 
 **判定: 適切**
 
-全テストを BATS 構造テスト（grep ベース）で行う方針はこのリポジトリのテストパターンに完全に合致している。
+| AC | 提案層 | QA 評価 |
+|----|--------|---------|
+| AC1: Phase 0.9 ToolSearch に TeamDelete | Unit (BATS grep) | 適切 — ドキュメント構造の検証 |
+| AC2: Phase 5 で TeamDelete 実行 | Unit (BATS grep) | 適切 — ワークフロー定義にステップが存在するか検証 |
+| AC3: Phase 5 ステップ順序 | Unit (BATS grep) | 適切 — 行番号比較による順序検証は既存パターン (`test_worktree_isolation.bats`) と一貫 |
+| AC4: 既存テスト整合性 | Unit (BATS) | 適切 — 全 BATS スイート実行で回帰確認 |
 
-- このリポジトリのテストは全て「マークダウン指示書の内容を grep で検証する」パターン
-- ランタイム統合テスト（実際に settings.local.json を操作する）は存在しない
-- スキルの「正しい指示が書かれているか」を検証することがテストの目的
-
-Developer の実装戦略で提案されたテストケースと QA のテスト戦略で提案されたテストケースの間にアプローチの差異がある。統合 Plan ではこの差異を解決する必要がある:
-
-| 観点 | Developer 版テスト | QA 版テスト |
-|------|-------------------|-------------|
-| AC1 Phase 配置 | `awk` で Phase 1 内の `### G.` セクションを特定 | `sed -n '/Phase 1/,/Phase 2/'` で Phase 1 セクション内を検証 |
-| AC2 deep-merge | `grep -q 'deep-merge\|merge'` | `grep -qi 'preserv\|既に\|exist\|設定済み\|skip'` |
-| AC4 error message | `grep -A 5 'not found'` でエラーメッセージ近傍を検証 | `sed -n '/Prerequisites Check/,/^##/'` でセクション全体を検証 |
-
-**推奨:** Developer 版のテストケースの方が具体的かつ精度が高い（特に AC1 の `### G.` ヘッダ検出と AC4 のエラーメッセージ近傍 grep）。実装時には Developer 版をベースに、QA 版の regression テスト（6件）を追加する形で統合するのが望ましい。
+全テスト層が `test_autopilot_agent_teams_setup.bats` および `test_worktree_isolation.bats` の既存パターンと一致している。変更対象がマークダウンのワークフロー定義のみであるため、E2E / Integration テストは不要（TeamDelete の実行自体は Claude Code ハーネスの責務）。
 
 ## 2. カバレッジ戦略の網羅性
 
-**判定: 十分（1点補足あり）**
-
 ### カバーされている範囲
 
-| AC | テストで検証する内容 | カバレッジ |
-|----|-------------------|-----------|
-| AC1 | SKILL.md に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` + `settings.local.json` + Phase 1-G の記述あり | 十分 |
-| AC2 | SKILL.md に deep-merge / preserve の指示あり | 十分 |
-| AC3 | SKILL.md に非存在時の作成手順あり | 十分 |
-| AC4 | autopilot.md のエラーメッセージに env var + settings.local.json の案内あり | 十分 |
-| AC5 | workflow-detail.md + autopilot.md Prerequisites に記載あり | 十分 |
+- Phase 0.9 の ToolSearch に TeamDelete が含まれること
+- Phase 5 に TeamDelete ステップが存在すること
+- ステップ順序: ExitWorktree -> TeamDelete -> git checkout main
+- 既存テスト全パス
 
-### 補足: Developer 版テストに含まれていないが QA 版に含まれるもの
+### 推奨 R1: Phase 5 の Tools annotation 更新テスト
 
-QA テスト戦略の regression テスト 6 件は Plan のテスト数（17件）に含まれている。Developer の実装戦略テスト案には regression テストが含まれていないため、実装時に追加が必要。
+Phase 5 は現在 `**Tools:** Bash (gh), ExitWorktree` と宣言している。TeamDelete 追加後は Tools annotation にも反映が必要。既存テストスイートには全 Phase の Tools annotation を検証するテスト群（AC-5 シリーズ、L175-217）が存在するため、整合性のためにこのテストを追加すべき:
 
-| テスト | 目的 |
-|--------|------|
-| Phase 0 存在チェック | SKILL.md の構造が壊れていないことを確認 |
-| Phase 1 存在チェック | 同上 |
-| Phase 2 存在チェック | 同上 |
-| Phase 3 存在チェック | 同上 |
-| check-plugin-version 参照チェック | 既存機能の維持確認 |
-| autopilot Phase 0.9 存在チェック | autopilot.md の構造が壊れていないことを確認 |
+```bash
+@test "#7-AC2: Phase 5 Tools annotation includes TeamDelete" {
+  grep -A 3 "## Phase 5" "$AUTOPILOT" | grep -q "TeamDelete"
+}
+```
 
-これらは変更量が少ない（additive な挿入のみ）ため必須ではないが、安全網として有用。
+**根拠:** 既存の AC-5 テスト群が全 Phase の Tools annotation を網羅的に検証しており、TeamDelete が Tools に含まれないと AC-5 テストのパターンと不整合が生じる。
 
-### 構造テストでカバーできない範囲
+### 推奨 R2: TeamDelete のスコープ限定テスト
 
-テスト戦略に記載した手動検証手順（3パターン）は Plan に含まれていない。実装完了後の手動確認として Developer/QA が実施すべき:
+TeamDelete が Phase 0.9（ToolSearch）と Phase 5（実行）以外に誤って追加されていないことを検証する否定テスト:
 
-1. settings.local.json が存在しない状態で session-start を実行
-2. settings.local.json に env キーがない状態で session-start を実行
-3. settings.local.json に既に設定済みの状態で session-start を実行
+```bash
+@test "#7: TeamDelete only referenced in Phase 0.9 and Phase 5" {
+  count=$(grep -c "TeamDelete" "$AUTOPILOT")
+  # Phase 0.9 ToolSearch (1) + Phase 5 Tools annotation (1) + Phase 5 step (1) = 3
+  [ "$count" -ge 2 ] && [ "$count" -le 4 ]
+}
+```
 
-## 3. 既存テストとのリグレッションリスク
+**根拠:** TeamDelete は破壊的操作であり、Phase 5 以外で誤って呼ばれるとセッション中のチームが消える。スコープ限定テストで安全網を張る。
+
+## 3. 境界条件とエッジケース
+
+### TeamDelete 失敗時の扱い
+
+Plan に TeamDelete 失敗時のハンドリングが含まれていない。以下の理由で **追加不要** と判断:
+
+1. Phase 5 の TeamDelete 時点でマージ完了（Step 4）、ラベル削除済み（Step 5）、worktree 削除済み（Step 6）
+2. TeamDelete 失敗の影響は「不要なチームリソースが残る」のみ — コード・リポジトリ状態への影響なし
+3. Phase 0.9 の「失敗時 STOP」パターンはセットアップ（前提条件）向け。Phase 5 のクリーンアップは best-effort が適切
+4. TeamDelete にエラーハンドリングを追加するとワークフロー定義が複雑化し、可読性が低下する
+
+### チームが既に存在しない場合
+
+外部クリーンアップやタイムアウトでチームが消えている場合、TeamDelete は冪等であるべき。これは Claude Code ハーネスの責務であり、autopilot ワークフロー側のテストは不要。
+
+### リベース後の Phase 5 再実行
+
+マージコンフリクト（Step 3）でリベース → Phase 4 → Phase 5 再実行のパスでもチームは存在し続ける。提案された配置（ExitWorktree 後、git checkout main 前）はこのパスでも正しく動作する。追加テスト不要。
+
+## 4. 既存テストとのリグレッションリスク
 
 **判定: リスク低**
 
-テスト戦略での分析結果を再確認し、Plan の変更ファイルリストと突合した。
+| 既存テスト | 影響箇所 | リスク |
+|-----------|---------|--------|
+| `test_autopilot_agent_teams_setup.bats` AC-5 Phase 5 Tools annotation (L211-213) | Phase 5 の `**Tools:**` 行を変更 | **注意** — `grep -A 3 "## Phase 5" | grep '\*\*Tools:\*\*'` は Tools 行の存在のみ検証するため、内容を変更しても既存テストは壊れない |
+| `test_worktree_isolation.bats` AC3 Phase 5 ExitWorktree (L53-58) | Phase 5 の ExitWorktree 行 | なし — ExitWorktree 行は移動・削除しない |
+| その他全テスト | Phase 0.9 ToolSearch 行の変更 | なし — 既存テストは ToolSearch 行の内容（TeamCreate, SendMessage）を個別 grep しており、TeamDelete 追加で壊れない |
 
-| 変更ファイル | 影響を受ける可能性のある既存テスト | リスク |
-|-------------|-------------------------------|--------|
-| `skills/session-start/SKILL.md` | `test_session_start_version.bats`, `test_session_start_auto_sync.bats`, `test_session_start_adapters.bats`, `test_session_start_recent_activity.bats`, `test_session_start_task_recommendation.bats` | なし -- 既存テストは各自の固有文字列を grep しており、Phase 1 末尾へのセクション追加では壊れない |
-| `commands/autopilot.md` | `test_autopilot_agent_teams_setup.bats` | なし -- 既存テストは `## Prerequisites` 直下 10 行を grep。env var 行を追加しても既存行を削除しなければ影響なし |
-| `docs/workflow-detail.md` | `test_doc_agent_teams_sync.bats` | なし -- 既存テストは `auto-implement`/`auto-review` の除去と Agent Teams 参照を検証。line 69 の更新は影響しない |
+**唯一の注意点:** Phase 5 のステップ番号が変わる（ExitWorktree が Step 6 → TeamDelete 挿入で番号がずれる可能性）。既存テストはステップ番号ではなくキーワード grep なので影響なし。
 
-**唯一の注意点:** `test_autopilot_agent_teams_setup.bats` L215-217 の Session Initialization テスト:
+## 5. AC との整合性
 
-```bash
-@test "AC-5: Tools annotation in Session Initialization" {
-  grep -A 3 "### Prerequisites Check" "$AUTOPILOT" | grep -q '\*\*Tools:\*\*'
-}
-```
+| AC | Plan の変更内容 | テストカバレッジ | 整合性 |
+|----|----------------|----------------|--------|
+| AC1 | Phase 0.9 ToolSearch に TeamDelete 追加 | grep テスト | OK |
+| AC2 | Phase 5 に TeamDelete ステップ追加 | grep テスト + Tools annotation テスト (R1) | OK |
+| AC3 | ステップ順序 ExitWorktree → TeamDelete → git checkout main | 行番号比較テスト | OK |
+| AC4 | 既存テスト全パス + 新テストケース追加 | BATS スイート全実行 | OK |
 
-このテストは `### Prerequisites Check` 直下 3 行に `**Tools:**` が存在することを検証する。Prerequisites Check セクションの冒頭を変更しなければ影響なし。Plan では Prerequisites Check のステップ 3 のエラーメッセージを変更するだけなので問題ない。
+**スコープ逸脱チェック:** 変更ファイルは `commands/autopilot.md` + `tests/test_autopilot_agent_teams_setup.bats` + ハウスキーピング（CHANGELOG, version bump）のみ。AC 範囲に収まっており逸脱なし。
 
-## 4. AC との整合性
+## 6. 結論
 
-**判定: 完全にカバー**
-
-| AC | Plan の変更ファイル | テストでカバー | 整合性 |
-|----|-------------------|---------------|--------|
-| AC1 | `skills/session-start/SKILL.md` Phase 1-G | AC1 テスト x4 | OK |
-| AC2 | `skills/session-start/SKILL.md` Phase 1-G (deep-merge 指示) | AC2 テスト x1 | OK |
-| AC3 | `skills/session-start/SKILL.md` Phase 1-G (非存在時) | AC3 テスト x1 | OK |
-| AC4 | `commands/autopilot.md` Prerequisites Check エラーメッセージ | AC4 テスト x3 | OK |
-| AC5 | `commands/autopilot.md` Prerequisites + `docs/workflow-detail.md` | AC5 テスト x2 | OK |
-
-**スコープ逸脱チェック:**
-- Plan の変更ファイル 7 個のうち、AC に直接対応するのは #1-#4。#5-#7 はハウスキーピング（CHANGELOG, version bump, tests README）で妥当。
-- README.md / README.ja.md の変更が Plan に含まれていないが、Developer の AC レビューで言及されていた。AC5 は `docs/workflow-detail.md` と `commands/autopilot.md` を対象としており、README は AC 範囲外。スコープ逸脱を避けるため、Plan の現状（README 変更なし）が正しい。
-
-## 5. 追加の指摘事項
-
-### 5a. Developer テストと QA テストの統合方針
-
-Plan では「17テスト」としているが、Developer 版テスト案（12件）と QA 版テスト案（17件）のどちらをベースにするかが明示されていない。
-
-**推奨:** Developer 版テスト案（AC ごとのテスト 12 件）をベースに、QA 版の regression テスト 6 件を追加し、重複を除いた最終セットを確定する。重複する AC1-AC5 テストは Developer 版の方が assertion の精度が高い。
-
-### 5b. 不正 JSON の扱い
-
-Developer の AC レビューで提案された「不正 JSON の場合は warn して skip」が実装戦略に含まれている。テストで「不正 JSON を warn する」指示の存在を grep で検証するテストケースを追加することを推奨する:
-
-```bash
-@test "AC1: session-start handles invalid JSON gracefully" {
-  grep -qi 'invalid JSON\|invalid json\|不正.*JSON' skills/session-start/SKILL.md
-}
-```
-
-### 5c. 実装順序の妥当性
-
-Step 1 (SKILL.md) -> Step 2 (autopilot.md, workflow-detail.md) -> Step 3 (tests) -> Step 4 (housekeeping) の順序は、依存関係の流れに合致しており妥当。テストを Step 3 に配置することで、Step 1-2 の実装内容を即座に検証できる。
+テスト戦略は健全で、既存パターンとの一貫性がある。推奨 R1（Tools annotation テスト）と R2（スコープ限定テスト）を追加することでカバレッジが強化される。R1 は特に重要（既存 AC-5 テスト群との整合性維持）。TeamDelete 失敗時のハンドリングは不要と判断。

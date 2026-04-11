@@ -83,11 +83,11 @@ After resolving the target Issue, determine which phase to start from based on t
 
 ## Phase 0.9: Agent Teams Setup
 
-**Tools:** ToolSearch, TeamCreate, EnterWorktree
+**Tools:** ToolSearch, TeamCreate, TeamDelete, EnterWorktree
 
 Bootstrap the Agent Teams infrastructure before any phase execution. This phase must succeed — solo execution fallback is prohibited.
 
-1. Use ToolSearch to fetch full schemas for `TeamCreate`, `SendMessage`, and `EnterWorktree` (deferred tools require explicit schema resolution before use)
+1. Use ToolSearch to fetch full schemas for `TeamCreate`, `TeamDelete`, `SendMessage`, and `EnterWorktree` (deferred tools require explicit schema resolution before use)
 2. Use TeamCreate to create team `autopilot-{issue_number}` — record the returned team_name for all subsequent Agent tool calls
 3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/` (po.md, developer.md, qa.md). The system_prompt is the markdown body; the `tools` and `skills` fields in frontmatter control agent capabilities.
 4. Use EnterWorktree with name `autopilot-{issue_number}` to enter an isolated worktree — all subsequent phases (1–5) execute inside this worktree
@@ -197,7 +197,7 @@ QA が PR をレビューする。QA agent continues via SendMessage.
 
 ## Phase 5: PO Cross-Cutting Checks and Merge Decision
 
-**Tools:** Bash (gh), ExitWorktree
+**Tools:** Bash (gh), ExitWorktree, TeamDelete
 
 PO が横断チェックを実施し、マージを判断する。
 
@@ -223,7 +223,8 @@ PO が横断チェックを実施し、マージを判断する。
 4. Merge with squash: `gh pr merge <PR> --squash`
 5. Remove `in-progress` label from Issue
 6. Exit worktree: use ExitWorktree with action: "remove" to delete the worktree and return to the repository root
-7. Cleanup: `git checkout main && git pull origin main`
+7. Delete team: use TeamDelete to remove the `autopilot-{issue_number}` team and its task list
+8. Cleanup: `git checkout main && git pull origin main`
 
 ## Utility Mode
 
