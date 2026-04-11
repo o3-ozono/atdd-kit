@@ -6,7 +6,7 @@
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 
 # Exclude patterns for repo-wide grep (worktrees are separate checkouts)
-EXCLUDE_DIRS="--exclude-dir=.git --exclude-dir=.tmp --exclude-dir=node_modules --exclude-dir=worktrees"
+EXCLUDE_DIRS="--exclude-dir=.git --exclude-dir=.tmp --exclude-dir=node_modules --exclude-dir=worktrees --exclude-dir=decisions"
 
 # --- AC1: Dedicated notification files must not exist ---
 
