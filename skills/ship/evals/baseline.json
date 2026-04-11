@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-04-12T12:00:00Z",
+  "skill_name": "atdd-kit:ship",
+  "pass_rate": 1.0,
+  "results": [
+    {"eval_name": "state-gate-pass", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "state-gate-reject", "pass_rate": 1.0, "passed": 3, "total": 3}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-04-12T12:00:00Z",
+  "skill_name": "atdd-kit:session-start",
+  "pass_rate": 1.0,
+  "results": [
+    {"eval_name": "report-format", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "plugin-version-check", "pass_rate": 1.0, "passed": 2, "total": 2}
+  ]
+}
