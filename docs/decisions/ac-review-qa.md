@@ -1,148 +1,186 @@
 # AC Review: QA Perspective
 
-Issue #2: feat: session-start で Agent Teams 環境変数を自動設定する
+Issue #1: bug: sim-pool-guard.sh が build_sim / build_run_sim / test_sim を CLONE_REQUIRED_TOOLS から除外している
 
 ## Overall Testability Assessment
 
-既存の BATS テストパターン（マークダウンファイルの構造を grep で検証する方式）で AC1-AC5 のうち大部分は検証可能。ただし、AC1 と AC3 は **ランタイム動作**（settings.json の読み書き）を要求しており、純粋な構造テストでは不十分。session-start は SKILL.md（マークダウン指示書）であるため、「指示が正しく記述されているか」を構造テストで検証し、「実際に正しく動作するか」は手動検証またはスクリプトベースの統合テストで補完する必要がある。
+**高い。** 既存の BATS テストパターン（`test_sim_failclosed_guard.bats`、`test_sim_auto_inject.bats`、`test_sim_ephemeral_clone.bats`）が十分に成熟しており、AC1-AC5 のすべてが同じパターンで検証可能。変更対象は `CLONE_REQUIRED_TOOLS` 配列への 3 エントリ追加のみであり、テストの複雑度も低い。
+
+既存テストでは以下のパターンが確立されている:
+- `run_guard` ヘルパーで JSON 入力を生成し、guard スクリプトにパイプ
+- mock `xcrun` で `simctl` の応答をスタブ
+- `jq -e` で出力 JSON の `permissionDecision` を検証
+- `sed -n` + `grep` で配列メンバーシップを静的検証
+
+**全 AC がこれらの確立済みパターンで記述でき、新しいテスト基盤は不要。**
 
 ## Per-AC Feedback
 
-### AC1: 毎セッション自動設定
+### AC1: build_sim の ALLOW (regression test)
 
-**テスト可能性:** 中
-- SKILL.md に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` の設定手順が記述されていることは grep で検証可能
-- SKILL.md に `settings.json` への書き込み指示があることは grep で検証可能
-- 実際の JSON 操作の正確性（既存キーの保持、正しいネスト）はランタイムでしか検証できない
+**テスト可能性:** 高
+- `test_sim_auto_inject.bats` の AC5.1-AC5.2 と同じパターンで検証可能
+- 初回呼び出し時の DENY（setup_flag 未作成）と、`session_set_defaults` 後の ALLOW の 2 段階テストが必要
+
+**フィードバック:**
+- Then 節「クローン確保後に ALLOW される」は不正確。`handle_xcodebuildmcp` のロジック（L332-339）では、初回呼び出し時に `setup_flag` が存在しない場合は DENY + `session_set_defaults` 案内が返される。`session_set_defaults` 呼び出し後の 2 回目以降が ALLOW になる
+- **推奨:** Then 節を以下に修正:
+  > `CLONE_REQUIRED_TOOLS` に含まれ、`mcp__XcodeBuildMCP__*` パターンで `handle_xcodebuildmcp` にルーティングされる。`session_set_defaults` 実行後に ALLOW される（初回は DENY + 設定案内）
 
 **境界条件:**
-- `settings.json` に `env` キーが存在するが空オブジェクト `{}` の場合
-- `env` に他のエントリ（例: `GH_TOKEN`）が既に存在する場合 -> AC2 でカバーされるが、AC1 の Then 節にも「他の既存設定を破壊しない」を明示すべき
+- `build_sim` に渡される `tool_input` のバリエーション（空 `{}`、パラメータ付き）-> 現在のロジックでは `tool_input` は ALLOW/DENY 判定に影響しないが、テストでは空と非空の両方を検証すべき
 
-**提案:** AC1 の Then 節を以下に修正:
-> `.claude/settings.json` の `env` オブジェクトに `"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"` が追加され、既存の `env` 以外のキー（hooks, attribution 等）が保持される
-
-### AC2: 既存設定の保持
-
-**テスト可能性:** 中
-- 構造テスト: SKILL.md に「既存設定を変更しない」旨の指示が記述されていることを grep で検証可能
-- ランタイム: 値が `"1"` 以外（例: `"true"`, `"0"`）の場合の挙動が未定義
-
-**境界条件の不足:**
-1. 値が `"1"` 以外の場合（例: `"true"`, `"0"`, `""`）-> 上書きするか保持するかを明示すべき
-2. `env` に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 以外のキーがある場合 -> 現在の記述「他の `env` エントリも保持される」でカバー済み
-
-**提案:** Given を以下に拡充:
-> `.claude/settings.json` に既に `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` が任意の値で設定済み
-
-### AC3: settings.json 非存在時の新規作成
-
-**テスト可能性:** 中
-- 構造テスト: SKILL.md に「settings.json が存在しない場合は作成する」旨の指示が記述されていることを grep で検証可能
-- ランタイム: 作成される JSON の構造が正しいか（最小限の有効な JSON か）は手動検証が必要
-
-**境界条件の不足:**
-1. `.claude/` ディレクトリ自体が存在しない場合 -> ディレクトリ作成まで必要か？ session-start は既に Claude Code セッション内で実行されるため `.claude/` は常に存在すると仮定してよいが、明示すべき
-2. `settings.json` が存在するが空ファイル（0バイト）の場合 -> JSON パースエラーになる。この場合の挙動を定義すべき
-3. `settings.json` が不正な JSON の場合 -> エラーハンドリングの定義が必要
-
-**提案:** 以下のエッジケースを追加 AC または AC3 の注釈として追加:
-- `.claude/` ディレクトリは Claude Code が管理するため存在を前提とする（前提条件として明記）
-- 空ファイルまたは不正 JSON の場合は、新規作成と同じ扱いにする（既存内容を上書き）か、エラー報告して STOP するかを決定する
-
-### AC4: autopilot Prerequisites Check のフォールバック案内
+### AC2: build_run_sim の ALLOW (regression test)
 
 **テスト可能性:** 高
-- 既存テスト `test_autopilot_agent_teams_setup.bats` と同じパターンで、`commands/autopilot.md` の該当セクションを grep で検証可能
-- エラーメッセージの内容、STOP 指示の存在を検証可能
+- AC1 と同一のテストパターン
 
 **フィードバック:**
-- 現在の `commands/autopilot.md` の Prerequisites Check（L249）は既に「Agent Teams tools (TeamCreate, SendMessage) not found. Cannot proceed.」というメッセージで STOP するが、`settings.json` の `env` 設定を案内する記述がない
-- AC4 はこのメッセージを拡充して設定方法を案内する変更
-- メッセージ文言がテスト可能な形で確定していることは良い
+- AC1 と同じ Then 節の問題（初回 DENY の挙動が未記述）
+- AC1 と AC2 は本質的に同一のテストロジック。テスト実装ではパラメタライズ（同一テスト関数を 3 ツールで繰り返す）が望ましい
 
-**提案:** エラーメッセージに `.claude/settings.json` のパスを含めることを AC に明記。ユーザーがどのファイルを編集すべきか一意に特定できるようにする。
-
-### AC5: Agent Teams 前提要件の明示
+### AC3: test_sim の ALLOW (regression test)
 
 **テスト可能性:** 高
-- `docs/workflow-detail.md` と `README.md`（または `README.ja.md`）に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` の記載があることを grep で検証可能
-- 既存テストパターン（`test_doc_agent_teams_sync.bats`）と同じ手法
+- AC1/AC2 と同一
 
 **フィードバック:**
-- `docs/workflow-detail.md:69` に既に `Requires: CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` の記載がある
-- 「session-start が自動設定する」旨の記述が追加されるべきか？手動設定のドキュメントだけでは不十分
-- 対象ドキュメントの範囲が未定義: `docs/workflow-detail.md` だけか、`README.md` にも記載するか
+- AC1 と同じ Then 節の問題
+- 3 つの AC を個別に記述する設計は回帰テストとしては正しい（各ツールが個別に検証される）
 
-**提案:** AC5 の Then 節を具体化:
-> `docs/workflow-detail.md` の autopilot セクションに `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` が必須要件として記載され、session-start による自動設定についても言及されている
+### AC4: 既存ツールの動作維持
+
+**テスト可能性:** 高
+- 既存テストスイート全体（`test_sim_failclosed_guard.bats`、`test_sim_auto_inject.bats`、`test_sim_persist_block.bats` 等）がそのまま回帰テストとして機能する
+- 追加で新しいテストを書く必要はなく、既存テストがすべてパスすることで AC4 を満たす
+
+**フィードバック:**
+- AC4 は独立したテストケースを新規作成するのではなく、既存テストスイートの全パスをもって検証とすべき。これにより二重メンテナンスを避けられる
+- **推奨:** AC4 の検証方法を「既存 BATS テストスイートの全テストがパスすること」と明示する
+
+**境界条件:**
+- `CLONE_REQUIRED_TOOLS` 配列への追加が配列の末尾に行われ、既存エントリのインデックスに影響しないことを確認（bash の `in_array` はインデックスに依存しないため問題ないが、将来の配列参照変更に対する防御として）
+
+### AC5: handle_xcodebuildmcp ルーティング
+
+**テスト可能性:** 高
+- `test_sim_auto_inject.bats` の AC5.1（初回 build -> DENY + instruction）と AC5.2（`session_set_defaults` 後 -> ALLOW）が既にこのルーティングを検証している
+- 新ツール 3 つに対して同じパターンを適用するだけ
+
+**フィードバック:**
+- AC5 は AC1-AC3 の Then 節に含めるべき内容であり、独立した AC としては冗長。AC1-AC3 の Then 節を正確に記述すれば AC5 は自動的にカバーされる
+- **推奨:** AC5 を AC1-AC3 に統合するか、AC5 を「実装の正確性検証」として位置づけ直す。具体的には:
+  - 静的検証: `CLONE_REQUIRED_TOOLS` 配列に 3 ツールが存在すること（`sed -n` + `grep`）
+  - 動的検証: 3 ツールが `handle_xcodebuildmcp` を経由すること（`setup_flag` の動作で間接検証）
 
 ## Missing Scenarios / Edge Cases
 
-### 1. settings.json の `env` キーが存在しない場合（AC1 の亜種）
-**Given:** `.claude/settings.json` が存在し、`env` キーがない（現在のこのリポジトリの状態）
-**When:** session-start が実行される
-**Then:** `env` オブジェクトが新規追加され、`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` が含まれる
+### 1. 配列メンバーシップの静的検証（重要度: 高）
 
-現在の AC1 は「`env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` が未設定」としか書かれておらず、`env` キー自体がない場合を含むかどうかが曖昧。この状態はこのリポジトリの settings.json の実際の状態（`env` キーなし）と一致するため、最も一般的なケースとして明示すべき。
-
--> **推奨:** AC1 の Given を「`.claude/settings.json` に `env` キーが存在しない、または `env` 内に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` が未設定」に修正
-
-### 2. session-start のどのフェーズで実行するか
-session-start の SKILL.md には Phase 0（リポジトリ更新）、Phase 1（情報収集）、Phase 2（状況評価）、Phase 3（レポート）がある。環境変数の設定をどのフェーズに組み込むかが AC に明示されていない。
-
--> **推奨:** AC1 に「Phase 0 の先頭で、リポジトリ更新の前に実行する」等のフェーズ指定を追加。環境変数設定は他のすべての操作に先行すべきであるため。
-
-### 3. settings.json のパーミッション・ロックの問題
-ファイルが読み取り専用の場合や、他のプロセスが書き込み中の場合のエラーハンドリングが未定義。
-
--> **推奨:** 低優先度。Claude Code のセッション内で settings.json のパーミッション問題が発生する可能性は極めて低い。AC に追加する必要はないが、実装時のエラーハンドリングとして考慮すべき。
-
-### 4. autopilot 以外の Agent Teams ユースケース
-AC4 は autopilot の Prerequisites Check に限定されている。将来、他のコマンドが Agent Teams を使用する場合にも同様のフォールバック案内が必要になるが、現時点では autopilot のみで十分。
-
-## Suggested Test Approach
-
-### 構造テスト（BATS）
+AC1-AC3 は動的テスト（guard を実行して結果を検証）だが、根本原因が「配列への追加漏れ」であるため、**静的検証**（スクリプトファイルの `CLONE_REQUIRED_TOOLS` セクションに文字列が存在することを直接確認）も追加すべき。
 
 ```bash
-# AC1: session-start SKILL.md に env 設定指示が存在
-@test "AC1: session-start references CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" {
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' skills/session-start/SKILL.md
-}
-
-@test "AC1: session-start references settings.json env configuration" {
-  grep -q 'settings.json' skills/session-start/SKILL.md
-  grep -q 'env' skills/session-start/SKILL.md
-}
-
-# AC2: 既存設定保持の指示が存在
-@test "AC2: session-start mentions preserving existing settings" {
-  grep -qi 'preserv\|既存\|変更しない\|keep\|retain' skills/session-start/SKILL.md
-}
-
-# AC3: 新規作成の指示が存在
-@test "AC3: session-start mentions creating settings.json if missing" {
-  grep -qi 'creat\|作成\|not exist\|missing\|存在しない' skills/session-start/SKILL.md
-}
-
-# AC4: autopilot にフォールバック案内が存在
-@test "AC4: autopilot Prerequisites Check mentions env setting guidance" {
-  grep -A 20 "### Prerequisites Check" commands/autopilot.md \
-    | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
-
-@test "AC4: autopilot Prerequisites Check mentions settings.json" {
-  grep -A 20 "### Prerequisites Check" commands/autopilot.md \
-    | grep -q 'settings.json'
-}
-
-# AC5: ドキュメントに前提要件が記載
-@test "AC5: workflow-detail.md mentions CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" {
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' docs/workflow-detail.md
+@test "CLONE_REQUIRED_TOOLS contains build_sim" {
+  grep -q '"mcp__XcodeBuildMCP__build_sim"' <(
+    sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD"
+  )
 }
 ```
 
-### 注意点
-- 既存テストファイル `test_autopilot_agent_teams_setup.bats` の Session Initialization テスト（L215-217）が AC4 と重複する可能性あり。既存テストとの整合性を確認し、重複を避ける
-- AC1-AC3 はスキルのマークダウン指示書に対する構造テストが主軸。ランタイム検証は手動で行うか、将来の eval フレームワークで対応する
+これは `test_sim_failclosed_guard.bats` の AC3.12-AC3.13 と同じパターンで、既に確立されている。このテストがあれば、仮に `main()` のルーティングロジックに将来変更があっても、配列自体の正しさが保証される。
+
+**推奨:** AC1-AC3 それぞれに静的検証アサーションを追加、または専用の AC6 として切り出す。
+
+### 2. READONLY_TOOLS に誤って追加されていないことの確認（重要度: 高）
+
+3 ツールが `READONLY_TOOLS` に含まれていないことを検証する否定テストが必要。`READONLY_TOOLS` に含まれると、クローン確保なしで ALLOW されてしまい、シミュレータの分離が崩壊する。
+
+```bash
+@test "build_sim is NOT in READONLY_TOOLS" {
+  ! grep -q '"mcp__XcodeBuildMCP__build_sim"' <(
+    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
+  )
+}
+```
+
+これは `test_sim_failclosed_guard.bats` の AC3.12 と同じパターン。
+
+### 3. 初回呼び出し時の DENY + session_set_defaults 案内（重要度: 中）
+
+AC1-AC3 の Then 節は「ALLOW される」と記述しているが、`handle_xcodebuildmcp` のロジック上、**初回呼び出しは DENY** になる。この挙動を明示的にテストすべき:
+
+```bash
+@test "first build_sim call is DENY with session_set_defaults instruction" {
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}')
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+  context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
+  [[ "$context" == *"session_set_defaults"* ]]
+}
+```
+
+### 4. クローン UDID がツール入力に影響しないことの確認（重要度: 低）
+
+`build_sim`、`build_run_sim`、`test_sim` は `mcp__XcodeBuildMCP__*` パターンなので `handle_xcodebuildmcp` で処理される。このハンドラは `emit_allow` を返すだけで `updatedInput` を付与しない（`handle_ios_simulator` とは異なる）。この挙動が正しいことを確認するテストがあると安心だが、優先度は低い。
+
+### 5. fail-closed DENY から CLONE_REQUIRED ALLOW への遷移（重要度: 中）
+
+修正前の状態では `build_sim` が `CLONE_REQUIRED_TOOLS` にないため fail-closed DENY される。修正後は CLONE_REQUIRED 経由で処理される。この状態遷移を明示的にテストする「修正前 -> 修正後」の回帰テストがあると、バグの再発防止に有効。ただし、修正後のスクリプトで「修正前の状態」を再現するのは困難なため、静的検証（Missing Scenario #1）で代替する。
+
+## Suggested Test Approach
+
+### 新規テストファイル
+
+`addons/ios/tests/test_sim_clone_required_variants.bats` を新規作成し、3 つのバリアントツールのテストを集約する。
+
+### テスト構成
+
+```bash
+# 静的検証: 配列メンバーシップ
+@test "CLONE_REQUIRED_TOOLS contains build_sim"
+@test "CLONE_REQUIRED_TOOLS contains build_run_sim"
+@test "CLONE_REQUIRED_TOOLS contains test_sim"
+@test "build_sim is NOT in READONLY_TOOLS"
+@test "build_run_sim is NOT in READONLY_TOOLS"
+@test "test_sim is NOT in READONLY_TOOLS"
+
+# 動的検証: 初回 DENY + session_set_defaults 案内
+@test "first build_sim call is DENY with session_set_defaults instruction"
+@test "first build_run_sim call is DENY with session_set_defaults instruction"
+@test "first test_sim call is DENY with session_set_defaults instruction"
+
+# 動的検証: session_set_defaults 後の ALLOW
+@test "build_sim is ALLOW after session_set_defaults"
+@test "build_run_sim is ALLOW after session_set_defaults"
+@test "test_sim is ALLOW after session_set_defaults"
+
+# 回帰: 既存ツールは影響なし（既存テストスイートで担保）
+```
+
+### setup/teardown
+
+`test_sim_auto_inject.bats` の setup/teardown をそのまま流用可能。mock `xcrun` パターン、環境変数設定、ゴールデンマーカー事前作成の 3 点セット。
+
+### BATS パターン
+
+| 検証タイプ | パターン | 参考テスト |
+|-----------|---------|-----------|
+| 静的: 配列含有 | `grep -q` + `sed -n` | `test_sim_failclosed_guard.bats` AC3.12-AC3.13 |
+| 静的: 配列非含有 | `! grep -q` + `sed -n` | `test_sim_failclosed_guard.bats` AC3.12 |
+| 動的: DENY 検証 | `jq -e '.hookSpecificOutput.permissionDecision == "deny"'` | `test_sim_auto_inject.bats` AC5.1 |
+| 動的: ALLOW 検証 | `jq -e '.hookSpecificOutput.permissionDecision == "allow"'` | `test_sim_auto_inject.bats` AC5.2 |
+| 動的: コンテキスト検証 | `jq -r '.hookSpecificOutput.additionalContext'` + `[[ *contains* ]]` | `test_sim_auto_inject.bats` AC5.5 |
+
+## Summary
+
+| AC | テスト可能性 | 指摘事項 |
+|----|------------|---------|
+| AC1 | 高 | Then 節が初回 DENY 挙動を反映していない。静的検証を追加すべき |
+| AC2 | 高 | AC1 と同じ指摘。テスト実装では AC1 と統合可能 |
+| AC3 | 高 | AC1 と同じ指摘 |
+| AC4 | 高 | 既存テストスイートの全パスで検証可能。新規テスト不要 |
+| AC5 | 高 | AC1-AC3 に統合可能。独立 AC としては冗長 |
+
+**追加すべきシナリオ:**
+1. 静的検証: `CLONE_REQUIRED_TOOLS` 配列メンバーシップ（必須）
+2. 否定テスト: `READONLY_TOOLS` に含まれていないこと（必須）
+3. 初回 DENY + `session_set_defaults` 案内の動的検証（推奨）
