@@ -451,3 +451,12 @@ AUTOPILOT="commands/autopilot.md"
   checkout_line=$(grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -n '^[0-9].*git checkout main' | head -1 | cut -d: -f1)
   [ -n "$delete_line" ] && [ -n "$checkout_line" ] && [ "$delete_line" -lt "$checkout_line" ]
 }
+
+# ---------------------------------------------------------------------------
+# #7: Negative test — TeamDelete scoped to Phase 0.9 and Phase 5 only
+# ---------------------------------------------------------------------------
+
+@test "#7: TeamDelete not referenced in Phases 1-4" {
+  # TeamDelete is a destructive operation — must only appear in Phase 0.9 (ToolSearch) and Phase 5 (execution)
+  ! sed -n '/## Phase 1:/,/## Phase 5:/p' "$AUTOPILOT" | grep -q 'TeamDelete'
+}
