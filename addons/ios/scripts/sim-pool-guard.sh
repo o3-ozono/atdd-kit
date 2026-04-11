@@ -50,7 +50,10 @@ READONLY_TOOLS=(
 # Clone-required tools — ALLOW only with an active clone
 CLONE_REQUIRED_TOOLS=(
   "mcp__XcodeBuildMCP__build"
+  "mcp__XcodeBuildMCP__build_sim"
+  "mcp__XcodeBuildMCP__build_run_sim"
   "mcp__XcodeBuildMCP__test"
+  "mcp__XcodeBuildMCP__test_sim"
   "mcp__XcodeBuildMCP__run"
   "mcp__XcodeBuildMCP__session_set_defaults"
   "mcp__XcodeBuildMCP__session_use_defaults_profile"
