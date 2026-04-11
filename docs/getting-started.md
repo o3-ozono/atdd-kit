@@ -21,7 +21,7 @@ claude plugins install atdd-kit --scope project
 
 ## Initial Setup
 
-Setup happens automatically on the first session. The `session-start` skill auto-detects your platform (iOS, Web, Other) by scanning for project markers (e.g., `*.xcodeproj` for iOS) and creates `.claude/workflow-config.yml`.
+Setup happens automatically on the first session. The `session-start` skill auto-detects your platform (iOS, Web, Other), shows what will be installed, and asks for confirmation before proceeding.
 
 You can also run setup commands manually:
 
@@ -31,6 +31,26 @@ You can also run setup commands manually:
 | `/atdd-kit:setup-ci` | Generate CI workflow from base + addon fragments |
 | `/atdd-kit:setup-ios` | Set up iOS addon (MCP servers, hooks, scripts) |
 | `/atdd-kit:setup-web` | Set up Web addon (placeholder) |
+
+### What Each Addon Installs
+
+When a platform addon is activated, the following components are added to your project. The full manifest is in `addons/<platform>/addon.yml`.
+
+#### iOS Addon
+
+| Category | Component | Description |
+|----------|-----------|-------------|
+| **MCP Server** | XcodeBuildMCP | Xcode build/test automation |
+| **MCP Server** | ios-simulator | iOS simulator control |
+| **MCP Server** | apple-docs | Apple documentation access |
+| **MCP Server** | xcode | Xcode MCP bridge |
+| **Hook** | sim-pool-guard (XcodeBuildMCP) | PreToolUse guard for simulator exclusive access |
+| **Hook** | sim-pool-guard (ios-simulator) | PreToolUse guard for simulator exclusive access |
+| **Deploy** | `.claude/hooks/sim-pool-guard.sh` | Simulator pool guard script |
+| **Deploy** | `scripts/lint-xcstrings.sh` | Japanese translation coverage linter |
+| **Skill** | sim-pool | Simulator pool management (ephemeral clones, golden image isolation) |
+| **Skill** | ui-test-debugging | CI UI test failure diagnosis |
+| **CI** | `addons/ios/ci/build-and-test.yml` | xcodebuild job fragment for GitHub Actions |
 
 ## Your First Feature — End-to-End Walkthrough
 

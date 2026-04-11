@@ -1,6 +1,4 @@
 # atdd-kit workflow configuration
 
-project:
-  name: "atdd-kit"
-  platform:
-    - other
+platform:
+  - other

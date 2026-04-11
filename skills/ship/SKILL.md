@@ -100,7 +100,6 @@ Use `gh api` to post PR review comments:
 
 - Run: `git diff origin/main --name-only | grep '__Snapshots__/.*\.png'`
 - If snapshot diffs exist: this is a UI change PR
-- Run screenshot comparison script if configured in `workflow-config.yml` (`screenshot_script` key)
 
 ### Step 7: Review Cycle
 

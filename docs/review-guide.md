@@ -54,7 +54,7 @@
 
 ## Framework-Specific Checks
 
-Project-specific review agents are defined in `.claude/workflow-config.yml` under `review_agents`. Concrete check items should be in the project's `docs/process/code-review-checklist.md`.
+Concrete check items should be in the project's `docs/process/code-review-checklist.md`.
 
 Expected sections per framework:
 

@@ -49,8 +49,18 @@ If `.claude/workflow-config.yml` does not exist, run first-time auto-setup:
    - `*.xcodeproj`, `*.xcworkspace`, or `Package.swift` exists → `ios`
    - `package.json` exists → `web`
    - Neither detected → show: "No platform detected. Run `/atdd-kit:setup-ios` or `/atdd-kit:setup-web` to configure manually."
-2. **Confirm** with user: "iOS project detected. Set up MCP servers and sim-pool guard? [Y/n]"
-3. **Process addon**: Read `${CLAUDE_PLUGIN_ROOT}/addons/<platform>/addon.yml` and execute:
+2. **Confirm** with user — read `${CLAUDE_PLUGIN_ROOT}/addons/<platform>/addon.yml` and show what will be installed:
+   ```
+   <Platform> project detected. The following will be set up:
+
+   MCP Servers:  <list mcp_servers keys from addon.yml>
+   Hooks:        <list matcher patterns from addon.yml hooks>
+   Deploy Files: <list dest paths from addon.yml deploy>
+   Skills:       <list skills from addon.yml>
+
+   Proceed? [Y/n]
+   ```
+3. **Process addon**: Execute the addon manifest:
    - **MCP servers**: Merge `mcp_servers` into project `.mcp.json` (create if missing, preserve existing entries)
    - **Deploy files**: Copy each `deploy` entry from `${CLAUDE_PLUGIN_ROOT}/addons/<platform>/<src>` to project `<dest>` (create directories as needed)
    - **Hooks**: Add `hooks.PreToolUse` entries to `.claude/settings.json` (create base settings if missing, preserve existing hooks)
