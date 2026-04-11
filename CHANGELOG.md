@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-04-12
+
+### Added
+- ideate skill integrated into issue → discover workflow: post-Issue mode, skip option, Context Block handoff (#8)
+- issue skill now chains to ideate instead of directly to discover (#8)
+- Workflow documentation updated with ideate step in all flow diagrams and skill chain descriptions (#8)
+
 ## [1.2.1] - 2026-04-12
 
 ### Fixed
