@@ -223,7 +223,7 @@ addons/ios/tests/
 AC3/AC4 の動的テストには `test_sim_auto_inject.bats` の setup/teardown をそのまま流用する。理由:
 
 1. mock `xcrun` が clone, boot, list devices のすべてのケースをカバー
-2. ゴールデンマーカー事前作成（`touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"`）で golden init をスキップ
+2. ゴールデンマーカー事前作成（`touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"`）で golden init をスキップ
 3. `run_guard` ヘルパーが `jq -n` を使い、JSON エスケープが正確
 
 ### setup() の内容
@@ -237,7 +237,7 @@ setup() {
 
   mkdir -p "$SIM_SESSION_DIR" "$SIM_MARKER_DIR"
   # ゴールデンマーカー事前作成 -> ensure_golden の初回ブート処理をスキップ
-  touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"
+  touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
 
   # mock xcrun: simctl の応答をスタブ
   export MOCK_BIN="${BATS_TMPDIR}/mock-bin-$$"

@@ -18,8 +18,9 @@
 set -euo pipefail
 
 # ── Constants ────────────────────────────────────────────
-SESSION_DIR="${SIM_SESSION_DIR:-/tmp/claude-sim-sessions}"
-MARKER_DIR="${SIM_MARKER_DIR:-/tmp}"
+_DEFAULT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/atdd-kit"
+SESSION_DIR="${SIM_SESSION_DIR:-${_DEFAULT_CACHE}/sim-sessions}"
+MARKER_DIR="${SIM_MARKER_DIR:-${_DEFAULT_CACHE}/sim-markers}"
 GOLDEN_NAME="${SIM_GOLDEN_NAME:-iPhone 17 Pro}"
 GOLDEN_SET="${SIM_GOLDEN_SET:-}"
 DEFAULT_SET="${SIM_DEFAULT_SET:-$HOME/Library/Developer/CoreSimulator/Devices}"
@@ -165,7 +166,8 @@ ensure_golden() {
 
   local runtime_version
   runtime_version=$(get_golden_runtime)
-  local marker="${MARKER_DIR}/atdd-kit-golden-initialized-${runtime_version}"
+  mkdir -p "$MARKER_DIR"
+  local marker="${MARKER_DIR}/golden-initialized-${runtime_version}"
 
   if [ -f "$marker" ]; then
     return 0

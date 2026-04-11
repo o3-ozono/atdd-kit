@@ -57,7 +57,7 @@ CLONE_REQUIRED_TOOLS=(
 **setup/teardown:** `test_sim_auto_inject.bats` のパターンをそのまま流用。
 - mock `xcrun` でゴールデンイメージとクローン応答をスタブ
 - 環境変数（`SIM_SESSION_DIR`, `SIM_MARKER_DIR`, `SIM_GOLDEN_NAME`）を設定
-- ゴールデンマーカー `atdd-kit-golden-initialized-iOS-18-0` を事前作成（golden init スキップ）
+- ゴールデンマーカー `golden-initialized-iOS-18-0` を事前作成（golden init スキップ）
 
 **AC3 テストの注意点:** 各テストケースは独立したセッション ID を使用する。`handle_xcodebuildmcp` は初回呼び出し時に `setup_flag` を touch するため（L334）、同一セッション ID で複数ツールをテストすると 2 番目以降が ALLOW になる。
 

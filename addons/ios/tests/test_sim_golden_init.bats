@@ -72,13 +72,13 @@ run_guard() {
 
 @test "AC2.2: marker file is created after golden initialization" {
   run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
-  [[ -f "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0" ]]
+  [[ -f "$SIM_MARKER_DIR/golden-initialized-iOS-18-0" ]]
 }
 
 # --- AC2.3: Second call skips golden boot ---
 
 @test "AC2.3: second clone request skips golden boot (marker exists)" {
-  touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"
+  touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
   : > "$XCRUN_LOG"
   run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
   ! grep -q "simctl boot GOLDEN-UUID-1234" "$XCRUN_LOG"

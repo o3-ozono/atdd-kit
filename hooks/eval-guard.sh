@@ -8,7 +8,7 @@ set -euo pipefail
 #   2. No eval evidence marker exists for this branch
 #
 # Eval evidence is created by auto-eval command:
-#   /tmp/atdd-kit-eval-ran-<branch-name>
+#   $XDG_CACHE_HOME/atdd-kit/eval-ran-<branch-name>
 
 # --- Read hook input ---
 INPUT=$(cat)
@@ -41,7 +41,8 @@ fi
 
 # --- Check for eval evidence ---
 SAFE_BRANCH=$(echo "$BRANCH" | tr '/' '-')
-MARKER="/tmp/atdd-kit-eval-ran-${SAFE_BRANCH}"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/atdd-kit"
+MARKER="${CACHE_DIR}/eval-ran-${SAFE_BRANCH}"
 
 if [ -f "$MARKER" ]; then
   # Eval was run — allow push

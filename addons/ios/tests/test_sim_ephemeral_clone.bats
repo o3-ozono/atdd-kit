@@ -14,7 +14,7 @@ setup() {
   mkdir -p "$SIM_SESSION_DIR" "$SIM_MARKER_DIR"
 
   # Pre-create golden marker to skip golden init
-  touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"
+  touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
 
   export MOCK_BIN="${BATS_TMPDIR}/mock-bin-$$"
   mkdir -p "$MOCK_BIN"

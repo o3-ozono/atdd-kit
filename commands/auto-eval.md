@@ -136,7 +136,9 @@ After eval completes (regardless of pass/fail), create an evidence marker so the
 
 ```bash
 BRANCH=$(git branch --show-current | tr '/' '-')
-touch "/tmp/atdd-kit-eval-ran-${BRANCH}"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/atdd-kit"
+mkdir -p "$CACHE_DIR"
+touch "${CACHE_DIR}/eval-ran-${BRANCH}"
 ```
 
 This marker is checked by the PreToolUse `eval-guard.sh` hook. Without it, `git push` is blocked when SKILL.md changes are detected.
