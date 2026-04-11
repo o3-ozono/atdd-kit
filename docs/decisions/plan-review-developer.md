@@ -1,87 +1,153 @@
-# Plan Review — Developer
+# Plan Review: Developer
 
-## Issue: #7 — feat: autopilot 完了時に Agent Team を削除する
+**Issue:** #1 — bug: sim-pool-guard.sh が build_sim / build_run_sim / test_sim を CLONE_REQUIRED_TOOLS から除外している
+**Reviewer:** Developer Agent
+**Date:** 2026-04-12
 
-## Review Criteria
+## Overall Verdict: PASS
 
-### R1: Target File Coverage — PASS
+Plan は承認済み AC (1-5) をすべてカバーしており、ファイル構成・実装順序・テスト設計に問題なし。変更は `CLONE_REQUIRED_TOOLS` 配列への 3 行追加が本質であり、ロジック変更がないため技術リスクは極めて低い。以下の軽微な指摘を確認の上、実装着手可能。
 
-| File | Necessity | Verdict |
-|------|-----------|---------|
-| `commands/autopilot.md` L86 (Phase 0.9 Tools annotation) | TeamDelete を Tools リストに追加 — Phase 5 で使用するため必須 | OK |
-| `commands/autopilot.md` L90 (Phase 0.9 ToolSearch) | deferred tool のスキーマ事前解決 — 必須 | OK |
-| `commands/autopilot.md` L200 (Phase 5 Tools annotation) | TeamDelete を Phase 5 Tools に追加 — 必須 | OK |
-| `commands/autopilot.md` L225-227 (Phase 5 steps) | TeamDelete ステップ挿入 — 核心変更 | OK |
-| `tests/test_autopilot_agent_teams_setup.bats` | 新テストケース追加 — AC4 に対応 | OK |
+## R1: ファイル構成の妥当性
 
-**Missing files:** None. `commands/README.md` は機能的変更なし（Team 削除は autopilot.md 内部の Phase 変更であり、コマンドの Purpose 記述を変える必要はない）。CHANGELOG.md と plugin.json のバージョンバンプは Plan の Subtask Checklist (Finishing) にあるので OK。
+### 漏れチェック
 
-### R2: Implementation Order Risk — PASS
+| Check | Result | Note |
+|-------|--------|------|
+| `sim-pool-guard.sh` の CLONE_REQUIRED_TOOLS 修正 | OK | AC1 カバー。配列に 3 行追加。 |
+| 新規テストファイル作成 | OK | AC1-4 カバー。12 テストケース。 |
+| 既存テストスイートで AC5 回帰検証 | OK | 新規テスト不要。9 テストファイルの全パスで検証。 |
+| CHANGELOG.md | OK | DEVELOPMENT.md ルール準拠。Fixed エントリ。 |
+| plugin.json version bump | OK | DEVELOPMENT.md ルール準拠。1.1.0 → 1.1.1 (patch)。 |
 
-AC 依存関係: AC1 (ToolSearch) -> AC2 (TeamDelete step) -> AC3 (step ordering) -> AC4 (tests)
+### 不要ファイルチェック
 
-この順序は正しい。AC1 は AC2 の前提条件（スキーマ解決なしに TeamDelete は呼べない）。AC3 は AC2 の実装結果を検証する制約。AC4 は全実装完了後のテスト追加。
+不要なファイルは含まれていない。4 ファイル (3 modified + 1 new) はすべて必要最小限。
 
-**Risk:** None identified. 全 AC が単一ファイル (`autopilot.md`) への変更で、並行作業による競合リスクはない。
+### Directory READMEs ルール
 
-### R3: Technical Risk — PASS (minor note)
+DEVELOPMENT.md の「Directory READMEs」ルールは「When adding, removing, or modifying files in these directories, update the corresponding README.md in the same PR」と規定している。
 
-#### TeamDelete の呼び出しタイミング
+- `addons/ios/tests/` には README.md が存在しない（`addons/ios/README.md` は存在するがテストファイルの一覧は含んでいない）
+- 新規テストファイル `test_sim_clone_required_variants.bats` を `addons/ios/tests/` に追加するが、このディレクトリは DEVELOPMENT.md が列挙する「top-level directories」（`skills/`, `commands/`, `hooks/`, `rules/`, `scripts/`, `templates/`, `tests/`）に含まれない
+- `tests/` (トップレベル) には `README.md` があるが、`addons/ios/tests/` はこれとは別ディレクトリ
 
-Plan の配置: `ExitWorktree -> TeamDelete -> git checkout main`
+**結論:** Directory READMEs ルールの適用対象外。README 更新は不要。
 
-**Verdict: OK.** ExitWorktree は worktree（ファイルシステム）を削除し、TeamDelete はチーム（論理リソース）を削除する。ファイルシステムのクリーンアップを先に行うのは正しい順序。TeamDelete は worktree の有無に依存しないため、ExitWorktree 後でも問題ない。
+## R2: 実装順序のリスク
 
-#### TeamDelete 失敗時の挙動
+### 依存関係の確認
 
-Plan には TeamDelete 失敗時の明示的なエラーハンドリングが記載されていない。ただし、Phase 5 の時点ではマージ済み・worktree 削除済みであり、TeamDelete の失敗は致命的ではない（orphan team が残るだけ）。autopilot.md は命令的ワークフロー定義であり、各ステップの実行は LLM ランタイムに委ねられるため、明示的な try-catch は不要。
+```
+Step 1: sim-pool-guard.sh  -- no dependency, standalone
+   ↓ (テスト対象のスクリプトが確定)
+Step 2: test_sim_clone_required_variants.bats  -- depends on Step 1
+   ↓ (テストファイルが存在)
+Step 3: テスト実行 + 既存テスト回帰確認  -- depends on Step 1 + 2
+   ↓ (修正とテスト両方が完了)
+Step 4: CHANGELOG.md || plugin.json  -- no code dependency
+```
 
-**Minor note:** TeamDelete 失敗時のリカバリについて AC に規定がないため、現在のスコープでは「失敗しても STOP しない（マージ済みのため）」という暗黙の挙動になる。これは妥当。
+**依存関係は正しい。** Step 2 の静的検証テスト (AC1/AC2) は Step 1 の配列修正を `grep` で検証するため、Step 1 完了後に書くべき。Step 3 は Step 1-2 の両方に依存。Step 4 は独立。
 
-#### ToolSearch の Phase 0.9 集約
+**リスクなし。** 順序は妥当。4 ステップは直線的な依存で、並列化の余地はないが、変更量が極めて少ないため問題にならない。
 
-TeamDelete は Phase 5 で初めて使用するが、Phase 0.9 で他の deferred tool と一括してスキーマ解決する設計。これは既存パターン（TeamCreate, SendMessage, EnterWorktree を Phase 0.9 で一括解決）と一貫しており、Phase 5 で別途 ToolSearch を呼ぶよりもシンプル。
+## R3: 技術リスク評価
 
-### R4: Existing Test Compatibility — PASS
+### AC Review 指摘事項の反映状況
 
-既存テスト (`test_autopilot_agent_teams_setup.bats`) を確認した。主に grep ベースで `autopilot.md` の構造を検証している。
+| AC Review 指摘 | Plan 反映 | Status |
+|---------------|----------|--------|
+| Developer M1: AC5 Then 節の明確化 | 承認済み AC で AC3 (初回 DENY) と AC4 (ALLOW) に分離済み | OK |
+| Developer M2: 配列内の配置位置 | impl-strategy で `build`/`test` 直後に配置と明記 | OK |
+| QA: 静的検証 (配列メンバーシップ) 追加 | AC1 として統合済み。テスト設計に `sed -n` + `grep` パターン含む。 | OK |
+| QA: 否定テスト (READONLY 非含有) 追加 | AC2 として統合済み。テスト設計に `! grep -q` パターン含む。 | OK |
+| QA: session_id 分離設計 | テスト戦略で 6 つの独立 session_id を定義 | OK |
+| QA: setup_flag 自動生成の仕様注記 | テスト戦略 Section 7 で記述済み | OK |
 
-変更が既存テストに影響するケース:
-- L86 の Tools annotation 変更: テスト `AC-5: Tools annotation in Phase 0.9` は `**Tools:**` の存在のみチェック → 影響なし
-- L200 の Tools annotation 変更: テスト `AC-5: Tools annotation in Phase 5` は `**Tools:**` の存在のみチェック → 影響なし
-- L225-227 のステップ番号変更（step 7 → step 8）: 既存テストはステップ番号を grep しておらず → 影響なし
+**全指摘事項が Plan に反映されている。**
 
-### R5: Step Numbering Impact — PASS
+### コード変更のリスク分析
 
-現在の Phase 5:
-- Step 6: ExitWorktree (L225)
-- Step 7: git checkout main (L226)
+| 変更箇所 | リスク | 根拠 |
+|---------|--------|------|
+| `CLONE_REQUIRED_TOOLS` に 3 行追加 | なし | `in_array` は線形探索。配列の順序・サイズに副作用なし。 |
+| 既存エントリの順序変更なし | なし | 新エントリは `build`/`test` の直後に挿入。他のエントリの相対順序は不変。 |
+| `handle_xcodebuildmcp` のロジック変更なし | なし | L320 (`session_set_defaults`), L326 (`session_use_defaults_profile`) の完全一致比較は `_sim` バリアントにマッチしない。 |
+| `main()` のフロー変更なし | なし | case 文 `mcp__XcodeBuildMCP__*` は既存パターンで `_sim` バリアントを自然にルーティングする。 |
+| `PERSIST_CHECK_TOOLS` への影響 | なし | `_sim` バリアントは persist check 対象外。これは正しい — `build_sim` 等に `persist` パラメータは存在しない。 |
 
-変更後:
-- Step 6: ExitWorktree
-- Step 7: TeamDelete (new)
-- Step 8: git checkout main (renumbered)
+**総合リスク: 極めて低い。**
 
-ステップ 7 の挿入と既存ステップ 7 → 8 への繰り下げは正しい。autopilot.md 内の他フェーズからの Phase 5 ステップ番号参照は存在しないため、繰り下げによる不整合は発生しない。
+### バージョンバンプの妥当性
 
-### R6: Test Strategy — PASS
+`1.1.0` → `1.1.1` (patch) は正しい選択。理由:
+- Breaking change なし (MAJOR 不変)
+- 新機能追加なし (MINOR 不変)
+- バグフィックス (PATCH +1) — allowlist gap の修正
 
-Plan のテスト戦略（BATS grep ベース）は既存テストパターンと一貫。テストケースとして以下が必要:
-- Phase 0.9 ToolSearch に TeamDelete が含まれる (AC1)
-- Phase 5 に TeamDelete ステップが存在する (AC2)
-- ExitWorktree → TeamDelete → git checkout main の順序 (AC3)
+## R4: テスト設計の妥当性
 
-これらは全て grep で検証可能であり、既存テストのアプローチと整合。
+### 静的 + 動的二層構造
+
+QA テスト戦略の「静的検証 + 動的検証の二層構造」は根本原因（配列への追加漏れ）に対して適切。
+
+- **静的検証 (AC1/AC2):** 配列の内容を直接確認。ルーティングロジックの変更に影響されない。
+- **動的検証 (AC3/AC4):** エンドツーエンドで guard スクリプトを実行。`main()` → `in_array` → `handle_xcodebuildmcp` の全パスを通しで検証。
+
+### session_id 分離の検証
+
+テスト戦略 Section 6 で 6 つの独立 session_id を定義している。これにより:
+- AC3 の各テストが互いの `setup_flag` に干渉しない
+- AC4 の各テストが AC3 の状態を引き継がない
+- BATS は `@test` ごとに `setup()` を実行するが、`$$` は同一プロセスで不変のため `SIM_SESSION_DIR` は共有される点が正しく考慮されている
+
+### テスト戦略 Section 7 の仕様注記
+
+`handle_xcodebuildmcp` L333-334 の `touch "$setup_flag"` が初回 DENY 時にも実行される仕様を正しく認識している。AC4 テストの Step 1 (初回 DENY) で `setup_flag` が自動生成されるため、Step 2 (`session_set_defaults`) は `setup_flag` の存在には影響しない。この仕様理解は正確。
+
+### カバレッジマトリクス
+
+テスト戦略のカバレッジマトリクス (Section 4) で、すべての主要コードパスが少なくとも 1 つの AC でカバーされていることを確認:
+
+- `CLONE_REQUIRED_TOOLS` 定義: AC1
+- `READONLY_TOOLS` 定義: AC2
+- `main()` CLONE_REQUIRED 分岐: AC3, AC4, AC5
+- `handle_xcodebuildmcp()` setup_flag なし: AC3
+- `handle_xcodebuildmcp()` setup_flag あり: AC4
+- `in_array()`: AC3, AC4, AC5
+
+**カバレッジに穴はない。**
+
+## R5: Decision Trail の整合性
+
+4 つの Decision Trail ドキュメント間の整合性を確認:
+
+| 項目 | ac-review-developer | ac-review-qa | impl-strategy-developer | test-strategy-qa |
+|------|-------------------|-------------|------------------------|-----------------|
+| 変更ファイル数 | 2 (guard + tests) | — | 4 (guard + tests + changelog + version) | 1 (tests のみ) |
+| テスト数 | 12 提案 | 12 提案 | 12 | 12 |
+| session_id 分離 | 言及 | 暗黙 | 明示 (6 ID) | 明示 (6 ID) |
+| 配置位置 | `build`/`test` 直後 | — | `build`/`test` 直後 | — |
+| バージョン | — | — | 1.1.1 (patch) | — |
+
+**不整合なし。** impl-strategy が changelog + version を含む 4 ファイルとしているのは正しい。ac-review は実装対象の 2 ファイルのみに言及しており、これは AC Review の責務として妥当（バージョニングは AC Review の範囲外）。
+
+## R6: 懸念事項
+
+### 懸念なし
+
+この Plan は極めてシンプルなバグフィックスに対する最小変更である。ロジック変更がなく、配列への追加のみで完結する。テスト設計も既存パターンの完全踏襲であり、新しい技術的判断が必要な箇所はない。
 
 ## Summary
 
-| Check | Result |
-|-------|--------|
-| R1: File coverage | PASS |
-| R2: Implementation order | PASS |
-| R3: Technical risk | PASS |
-| R4: Existing test compat | PASS |
-| R5: Step numbering | PASS |
-| R6: Test strategy | PASS |
+| # | Severity | Item | Status |
+|---|----------|------|--------|
+| — | — | ファイル構成 | OK — 4 ファイル、すべて必要最小限 |
+| — | — | 実装順序 | OK — 直線的依存、リスクなし |
+| — | — | 技術リスク | OK — 配列追加のみ、ロジック変更なし |
+| — | — | テスト設計 | OK — 静的+動的二層、session_id 分離、カバレッジ完全 |
+| — | — | AC Review 指摘の反映 | OK — 全指摘が Plan に反映済み |
+| — | — | Decision Trail 整合性 | OK — 4 ドキュメント間の不整合なし |
 
-**Overall: PASS** — 技術的な懸念なし。Plan はそのまま実装可能。
+**ブロッカーなし。実装着手可能。**

@@ -1,231 +1,259 @@
 # Implementation Strategy: Developer
 
-**Issue:** #2 — feat: session-start で Agent Teams 環境変数を自動設定する
+**Issue:** #1 — bug: sim-pool-guard.sh が build_sim / build_run_sim / test_sim を CLONE_REQUIRED_TOOLS から除外している
 **Author:** Developer Agent
-**Date:** 2026-04-11
+**Date:** 2026-04-12
 
-## 1. File Inventory and Changes
+## 1. 変更ファイル一覧と変更内容
 
-### 1.1 `skills/session-start/SKILL.md` (AC1, AC2, AC3)
+### 1-A. `addons/ios/scripts/sim-pool-guard.sh` — CLONE_REQUIRED_TOOLS 配列修正
 
-**Current state:** Phase 1 has sub-steps A through F (plus E2). Phase 1-D runs conditionally (only if `workflow-config.yml` is missing). All other Phase 1 steps run in parallel.
+**変更内容:** `CLONE_REQUIRED_TOOLS` 配列に 3 エントリを追加する。
 
-**Change:** Add new sub-step **Phase 1-G: Agent Teams Environment Check** after Phase 1-F. This step runs unconditionally every session, in parallel with A-F.
-
-**Insertion point:** After line 101 (end of Phase 1-F section), before line 103 (Phase 2 heading).
-
-**Content to add (~20 lines):**
-
-```markdown
-### G. Agent Teams Environment Check
-
-Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is configured in `.claude/settings.local.json` (per-machine, gitignored).
-
-1. **Read** `.claude/settings.local.json`
-   - If file does not exist: create `.claude/` directory if needed, then write:
-     ```json
-     {
-       "env": {
-         "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-       }
-     }
-     ```
-     Report: "Agent Teams env var configured in `.claude/settings.local.json`"
-   - If file exists but contains invalid JSON: report warning "`.claude/settings.local.json` contains invalid JSON — cannot auto-configure Agent Teams env var. Please fix the file manually." and skip this step (do not block session-start)
-   - If file exists and valid JSON:
-     - Check if `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` key exists
-     - If missing: deep-merge `{"env": {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}}` into existing content, preserving all other keys (especially other `env` entries like `GH_TOKEN`). Write back.
-     - If present: no action needed (preserve existing value regardless of what it is)
-```
-
-**Why `settings.local.json`:** This file is gitignored (`.gitignore` line 5), is per-machine, and is the established pattern for env vars (see `github-accounts.md` where `GH_TOKEN` is set in `settings.local.json`). `settings.json` is committed to git — env vars do not belong there.
-
-### 1.2 `commands/autopilot.md` (AC4, AC5)
-
-**Current state:** Lines 238-256 contain Session Initialization section. Prerequisites Check (lines 240-250) has 3 checks: workflow-config.yml, agent definitions, Agent Teams tools (ToolSearch).
-
-**Change A (AC5):** Add env var to Prerequisites list (line 11, after existing bullet points):
-
-```markdown
-## Prerequisites
-- `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
-- Agent definitions must exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (po.md, developer.md, qa.md)
-- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` must be set in `.claude/settings.local.json` `env` (auto-configured by session-start)
-```
-
-**Change B (AC4):** Improve the error message in Prerequisites Check step 3 (line 249-250). Replace:
-
-```
-If unavailable: STOP — "Agent Teams tools (TeamCreate, SendMessage) not found. Cannot proceed."
-```
-
-With:
-
-```
-If unavailable: STOP — "Agent Teams tools (TeamCreate, SendMessage) not found. Verify that `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set in `.claude/settings.local.json` `env`, then restart the session."
-```
-
-### 1.3 `docs/workflow-detail.md` (AC5)
-
-**Current state:** Line 69 already says `Requires: CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. This is sufficient but lacks the file location.
-
-**Change:** Update line 69 to:
-
-```
-Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start)
-```
-
-### 1.4 `tests/test_session_start_agent_teams_env.bats` (new file)
-
-**New BATS test file** following existing patterns (e.g., `test_session_start_version.bats`, `test_session_start_adapters.bats`).
-
-**Tests:**
-
+**現在の配列 (L51-79):**
 ```bash
-#!/usr/bin/env bats
-
-# AC1: session-start has Agent Teams env check step
-@test "AC1: session-start mentions CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" {
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' skills/session-start/SKILL.md
-}
-
-@test "AC1: session-start targets settings.local.json not settings.json for env" {
-  grep -q 'settings\.local\.json' skills/session-start/SKILL.md
-}
-
-@test "AC1: Agent Teams env check is in Phase 1 (parallel section)" {
-  # Must be under Phase 1 heading, not inside Phase 1-D conditional
-  awk '/^## Phase 1/,/^## Phase 2/' skills/session-start/SKILL.md | grep -q 'Agent Teams Environment Check'
-}
-
-@test "AC1: Agent Teams env check is not inside Phase 1-D conditional" {
-  # Phase 1-D is conditional on workflow-config.yml missing
-  # Agent Teams check must be a separate sub-step (G)
-  awk '/^### G\./,/^###|^##/' skills/session-start/SKILL.md | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
-
-# AC2: existing settings preserved (instruction present)
-@test "AC2: session-start instructs to preserve existing env entries" {
-  grep -q 'preserv' skills/session-start/SKILL.md
-}
-
-@test "AC2: session-start instructs deep-merge not overwrite" {
-  grep -q 'deep-merge\|merge' skills/session-start/SKILL.md
-}
-
-# AC3: settings.local.json non-existence handled
-@test "AC3: session-start handles missing settings.local.json" {
-  grep -q 'does not exist\|not exist' skills/session-start/SKILL.md
-}
-
-# AC4: autopilot error message includes env var guidance
-@test "AC4: autopilot Prerequisites Check mentions env var in error message" {
-  grep -A 5 'TeamCreate.*SendMessage.*not found\|not found.*TeamCreate' commands/autopilot.md | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
-
-@test "AC4: autopilot error message references settings.local.json" {
-  grep -A 5 'TeamCreate.*SendMessage.*not found\|not found.*TeamCreate' commands/autopilot.md | grep -q 'settings\.local\.json'
-}
-
-# AC5: documentation includes prerequisite
-@test "AC5: autopilot Prerequisites lists env var" {
-  grep -A 5 '## Prerequisites' commands/autopilot.md | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
-
-@test "AC5: workflow-detail.md mentions env var requirement" {
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' docs/workflow-detail.md
-}
-
-@test "AC5: workflow-detail.md references settings.local.json" {
-  grep -q 'settings\.local\.json' docs/workflow-detail.md
-}
+CLONE_REQUIRED_TOOLS=(
+  "mcp__XcodeBuildMCP__build"          # L52
+  "mcp__XcodeBuildMCP__test"           # L53
+  "mcp__XcodeBuildMCP__run"            # L54
+  "mcp__XcodeBuildMCP__session_set_defaults"   # L55
+  ...
+)
 ```
 
-### 1.5 `CHANGELOG.md`
+**修正後の配列 (L52-57 付近):**
+```bash
+CLONE_REQUIRED_TOOLS=(
+  "mcp__XcodeBuildMCP__build"
+  "mcp__XcodeBuildMCP__build_sim"           # NEW
+  "mcp__XcodeBuildMCP__build_run_sim"       # NEW
+  "mcp__XcodeBuildMCP__test"
+  "mcp__XcodeBuildMCP__test_sim"            # NEW
+  "mcp__XcodeBuildMCP__run"
+  "mcp__XcodeBuildMCP__session_set_defaults"
+  ...
+)
+```
 
-**Change:** Add entry under `[Unreleased]`:
+**配置位置の根拠:** AC Review (M2) の提案に従い、関連ツールの直後に配置して可読性を確保する。
+- `build_sim` と `build_run_sim` は `build` の直後
+- `test_sim` は `test` の直後
+
+**ロジック変更: なし。** `in_array` 関数は線形探索のため、配列内の位置に依存しない。`handle_xcodebuildmcp` と `main()` のフロー、case 文のパターンマッチングに変更不要。
+
+### 1-B. `addons/ios/tests/test_sim_clone_required_variants.bats` — 新規テストファイル
+
+**変更内容:** QA レビューで提案されたテスト構成に基づき、新規テストファイルを作成。12 テストケース。
+
+**テスト構成:**
+
+| AC | テスト名 | 検証タイプ |
+|----|---------|-----------|
+| AC1 | AC1.1-1.3: CLONE_REQUIRED_TOOLS contains build_sim / build_run_sim / test_sim | 静的: `grep -q` + `sed -n` |
+| AC2 | AC2.1-2.3: build_sim / build_run_sim / test_sim NOT in READONLY_TOOLS | 静的: `! grep -q` + `sed -n` |
+| AC3 | AC3.1-3.3: first call is DENY with session_set_defaults instruction | 動的: `jq -e` + additionalContext 検証 |
+| AC4 | AC4.1-4.3: ALLOW after session_set_defaults | 動的: `jq -e` permissionDecision == "allow" |
+
+**setup/teardown:** `test_sim_auto_inject.bats` のパターンをそのまま流用。
+- mock `xcrun` でゴールデンイメージとクローン応答をスタブ
+- 環境変数（`SIM_SESSION_DIR`, `SIM_MARKER_DIR`, `SIM_GOLDEN_NAME`）を設定
+- ゴールデンマーカー `atdd-kit-golden-initialized-iOS-18-0` を事前作成（golden init スキップ）
+
+**AC3 テストの注意点:** 各テストケースは独立したセッション ID を使用する。`handle_xcodebuildmcp` は初回呼び出し時に `setup_flag` を touch するため（L334）、同一セッション ID で複数ツールをテストすると 2 番目以降が ALLOW になる。
+
+**AC4 テストの手順:** `test_sim_auto_inject.bats` AC5.2 のパターンに従う:
+1. `build` 等で初回呼び出し（クローン作成 + setup_flag 作成）
+2. `session_set_defaults` を呼び出し（setup_flag セット）
+3. `_sim` バリアントを呼び出し → ALLOW を確認
+
+### 1-C. `CHANGELOG.md` — バグフィックスエントリ追加
+
+**変更内容:** `[Unreleased]` セクションに `Fixed` エントリを追加。
 
 ```markdown
-### Added
-- session-start Phase 1-G: auto-configure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` every session (#2)
-- autopilot Prerequisites Check: actionable error message when Agent Teams tools are unavailable (#2)
+## [Unreleased]
+
+### Fixed
+- sim-pool-guard.sh: add `build_sim`, `build_run_sim`, `test_sim` to `CLONE_REQUIRED_TOOLS` — previously denied by fail-closed guard (#1)
 ```
 
-### 1.6 `.claude-plugin/plugin.json`
+### 1-D. `.claude-plugin/plugin.json` — バージョンバンプ
 
-**Change:** Bump version `1.0.0` -> `1.1.0` (new feature, backward-compatible).
+**変更内容:** `1.1.0` → `1.1.1` (patch bump — バグフィックス)
 
-### 1.7 `tests/README.md`
+```json
+"version": "1.1.1"
+```
 
-**Change:** Add entry for new test file `test_session_start_agent_teams_env.bats`.
+**根拠:** SemVer patch increment。機能追加なし、既存 API の breaking change なし。fail-closed guard の allowlist gap を修正するバグフィックス。
 
-## 2. Implementation Order
+## 2. 実装順序
 
-Dependencies flow downward. Steps at the same level can be done in parallel.
+依存関係を考慮した実装順序:
 
 ```
-Step 1: skills/session-start/SKILL.md (AC1, AC2, AC3)
-   |     -- This is the core change. All other files reference it.
+Step 1: addons/ios/scripts/sim-pool-guard.sh
+   |     -- 本体修正。テストの前提。
    |
-Step 2: commands/autopilot.md (AC4, AC5)  ||  docs/workflow-detail.md (AC5)
-   |     -- These are independent of each other, depend on Step 1 design
+Step 2: addons/ios/tests/test_sim_clone_required_variants.bats
+   |     -- 修正後のスクリプトに対するテスト。Step 1 に依存。
    |
-Step 3: tests/test_session_start_agent_teams_env.bats (all ACs)
-   |     -- Tests verify steps 1 and 2
+Step 3: テスト実行・既存テストの回帰確認
+   |     -- Step 1-2 に依存。AC5 の検証。
    |
-Step 4: CHANGELOG.md  ||  .claude-plugin/plugin.json  ||  tests/README.md
-         -- Housekeeping, no code dependency
+Step 4: CHANGELOG.md  ||  .claude-plugin/plugin.json
+         -- Housekeeping。Step 1-3 完了後。同一 PR に含める。
 ```
 
 **Per-AC mapping:**
 
 | AC | Primary file | Step |
 |----|-------------|------|
-| AC1 | `skills/session-start/SKILL.md` (Phase 1-G) | 1 |
-| AC2 | `skills/session-start/SKILL.md` (deep-merge instruction) | 1 |
-| AC3 | `skills/session-start/SKILL.md` (non-existence handling) | 1 |
-| AC4 | `commands/autopilot.md` (error message) | 2 |
-| AC5 | `commands/autopilot.md` (Prerequisites) + `docs/workflow-detail.md` | 2 |
+| AC1 | `sim-pool-guard.sh` (CLONE_REQUIRED_TOOLS) | 1 |
+| AC2 | `sim-pool-guard.sh` (READONLY_TOOLS に追加しないことの検証) | 2 (テスト) |
+| AC3 | `sim-pool-guard.sh` (handle_xcodebuildmcp ルーティング) | 1 (暗黙) + 2 (テスト) |
+| AC4 | `sim-pool-guard.sh` (handle_xcodebuildmcp + setup_flag) | 1 (暗黙) + 2 (テスト) |
+| AC5 | 既存テストスイート | 3 (回帰テスト) |
 
-## 3. Technical Risks and Mitigations
+## 3. 配置位置の詳細
 
-### Risk 1: JSON merge reliability (Low)
+`sim-pool-guard.sh` L51-79 の `CLONE_REQUIRED_TOOLS` 配列を以下の順序に変更:
 
-**Risk:** LLM performing JSON deep-merge on `settings.local.json` could accidentally drop existing keys.
+```bash
+CLONE_REQUIRED_TOOLS=(
+  "mcp__XcodeBuildMCP__build"
+  "mcp__XcodeBuildMCP__build_sim"              # NEW — build の直後
+  "mcp__XcodeBuildMCP__build_run_sim"          # NEW — build_sim の直後
+  "mcp__XcodeBuildMCP__test"
+  "mcp__XcodeBuildMCP__test_sim"               # NEW — test の直後
+  "mcp__XcodeBuildMCP__run"
+  "mcp__XcodeBuildMCP__session_set_defaults"
+  "mcp__XcodeBuildMCP__session_use_defaults_profile"
+  "mcp__ios-simulator__launch_app"
+  "mcp__ios-simulator__terminate_app"
+  "mcp__ios-simulator__tap"
+  "mcp__ios-simulator__swipe"
+  "mcp__ios-simulator__long_press"
+  "mcp__ios-simulator__type_text"
+  "mcp__ios-simulator__press_button"
+  "mcp__ios-simulator__open_url"
+  "mcp__ios-simulator__take_screenshot"
+  "mcp__ios-simulator__list_apps"
+  "mcp__ios-simulator__get_ui_hierarchy"
+  "mcp__ios-simulator__start_recording"
+  "mcp__ios-simulator__add_media"
+  "mcp__ios-simulator__set_location"
+  "mcp__ios-simulator__clear_keychain"
+  "mcp__ios-simulator__get_app_container"
+  "mcp__ios-simulator__push_notification"
+  "mcp__ios-simulator__set_permission"
+  "mcp__ios-simulator__uninstall_app"
+  "mcp__ios-simulator__boot_simulator"
+  "mcp__ios-simulator__shutdown_simulator"
+  "mcp__ios-simulator__erase_simulator"
+)
+```
 
-**Mitigation:** The instruction explicitly says "deep-merge, preserving all other keys (especially other `env` entries like `GH_TOKEN`)." The JSON structure is flat (only `env` with string values), so merging is trivial. The instruction also covers the invalid JSON edge case (warn and skip).
+XcodeBuildMCP ツールのグループ順序: `build` → `build_sim` → `build_run_sim` → `test` → `test_sim` → `run` → `session_*`
 
-**Residual risk:** Acceptable. This is the same pattern as Phase 1-D which already merges hooks into `settings.json`. The LLM has proven capable of this.
+## 4. テストファイル構成の詳細
 
-### Risk 2: settings.local.json vs settings.json confusion (Medium)
+### ファイル: `addons/ios/tests/test_sim_clone_required_variants.bats`
 
-**Risk:** Future contributors might add env vars to `settings.json` instead of `settings.local.json`.
+setup/teardown は `test_sim_auto_inject.bats` と同一パターン。mock `xcrun`、環境変数設定、ゴールデンマーカー事前作成の 3 点セット。
 
-**Mitigation:** The Phase 1-G instruction clearly specifies the target file. BATS tests explicitly verify `settings.local.json` is mentioned (not `settings.json` for env purposes). Documentation in Prerequisites and workflow-detail.md reinforces this.
+#### 静的検証テスト (AC1, AC2)
 
-### Risk 3: Circular dependency with session-start (None)
+| テスト | パターン | 参考テスト |
+|--------|---------|-----------|
+| AC1.1-1.3: 配列含有 | `grep -q '"mcp__XcodeBuildMCP__build_sim"' <(sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD")` | `test_sim_failclosed_guard.bats` AC3.12-AC3.13 |
+| AC2.1-2.3: 配列非含有 | `! grep -q '"mcp__XcodeBuildMCP__build_sim"' <(sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD")` | `test_sim_failclosed_guard.bats` AC3.12 |
 
-**Risk:** Could setting the env var in session-start cause issues if Agent Teams tools aren't available yet?
+#### 動的検証テスト (AC3, AC4)
 
-**Mitigation:** No risk. The env var is written to a file, not applied to the current process. It takes effect on the **next** session start when Claude Code reads `settings.local.json` at launch. This is by design — the first session won't have Agent Teams, but every session after that will.
+| テスト | パターン | 参考テスト |
+|--------|---------|-----------|
+| AC3.1-3.3: 初回 DENY | `jq -e '.hookSpecificOutput.permissionDecision == "deny"'` + additionalContext に `session_set_defaults` 含有 | `test_sim_auto_inject.bats` AC5.1 |
+| AC4.1-4.3: ALLOW | `jq -e '.hookSpecificOutput.permissionDecision == "allow"'` | `test_sim_auto_inject.bats` AC5.2 |
 
-### Risk 4: `.claude/` directory not existing (Low)
+#### AC3 のセッション ID 分離
 
-**Risk:** Fresh clone without any Claude Code setup might not have `.claude/` directory.
+各 AC3 テストは独立したセッション ID を使用:
+- AC3.1: `session-ac3-1`
+- AC3.2: `session-ac3-2`
+- AC3.3: `session-ac3-3`
 
-**Mitigation:** The instruction says "create `.claude/` directory if needed" (mkdir -p). In practice, Claude Code creates `.claude/` on first use, so this is extremely rare but handled.
+これにより、`handle_xcodebuildmcp` L334 の `touch "$setup_flag"` が他テストに影響しない。
 
-## 4. Specific Change Locations
+#### AC4 の 3 ステップ手順
 
-| File | Line(s) | Action |
-|------|---------|--------|
-| `skills/session-start/SKILL.md` | After line 101 (end of Phase 1-F), before line 103 (Phase 2) | Insert Phase 1-G section (~20 lines) |
-| `commands/autopilot.md` | Line 11 (Prerequisites list) | Add env var bullet point |
-| `commands/autopilot.md` | Line 250 (error message) | Replace with actionable message mentioning env var |
-| `docs/workflow-detail.md` | Line 69 | Update to include file location |
-| `tests/` | New file | Create `test_session_start_agent_teams_env.bats` |
-| `CHANGELOG.md` | Line 8 (under `[Unreleased]`) | Add entries |
-| `.claude-plugin/plugin.json` | Line 4 (version) | Bump to 1.1.0 |
-| `tests/README.md` | Appropriate position | Add test file entry |
+```bash
+# Step 1: 初回呼び出しでクローン作成 + setup_flag 作成
+run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-1" > /dev/null 2>&1 || true
 
-**Total: 7 files (5 modified, 1 new test file, 1 version bump). All changes are additive. No deletions or refactoring.**
+# Step 2: session_set_defaults でセットアップ完了
+run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
+  '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-1"
+
+# Step 3: _sim バリアントが ALLOW されることを確認
+result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac4-1")
+echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
+```
+
+### AC5 (既存ツール動作維持) のテスト方針
+
+AC5 は新規テストを作成しない。以下の既存テストスイート全パスで検証:
+- `test_sim_failclosed_guard.bats` (17 テスト)
+- `test_sim_auto_inject.bats` (6 テスト)
+- `test_sim_ephemeral_clone.bats` (7 テスト)
+- `test_sim_persist_block.bats`
+- その他の `addons/ios/tests/test_sim_*.bats`
+
+## 5. リスク評価
+
+### 壊れる可能性があるもの
+
+| リスク | 可能性 | 影響 | 軽減策 |
+|--------|--------|------|--------|
+| 既存テストの回帰 | 極低 | 高 | 既存テストスイート全パスを確認 |
+| タイポによる配列エントリ不一致 | 低 | 中 | 静的検証テスト (AC1) で防止 |
+| 配列順序変更による副作用 | なし | - | `in_array` は線形探索で順序非依存 |
+| `handle_xcodebuildmcp` の予期しない分岐 | なし | - | L320, L326 の条件は完全一致比較で `_sim` バリアントにマッチしない |
+| `PERSIST_CHECK_TOOLS` への影響 | なし | - | `_sim` バリアントは persist check 対象外（正しい挙動） |
+
+**総合リスク: 極めて低い。** 変更は配列への 3 要素追加のみで、ロジック変更なし。
+
+## 6. CHANGELOG / バージョン更新
+
+### CHANGELOG.md
+
+```markdown
+## [Unreleased]
+
+### Fixed
+- sim-pool-guard.sh: add `build_sim`, `build_run_sim`, `test_sim` to `CLONE_REQUIRED_TOOLS` — previously denied by fail-closed guard (#1)
+```
+
+### .claude-plugin/plugin.json
+
+```json
+"version": "1.1.1"
+```
+
+**バージョン選択の根拠:**
+- MAJOR: 変更なし（breaking change なし）
+- MINOR: 変更なし（新機能追加なし）
+- PATCH: +1（バグフィックス — allowlist gap の修正）
+
+DEVELOPMENT.md のルール「Every feature PR merged to main must update the version and changelog」に従い、同一 PR に含める。
+
+## Summary
+
+| # | File | Action | Lines changed |
+|---|------|--------|---------------|
+| 1 | `addons/ios/scripts/sim-pool-guard.sh` | 配列に 3 行追加 | +3 |
+| 2 | `addons/ios/tests/test_sim_clone_required_variants.bats` | 新規作成 (12 テスト) | +~120 |
+| 3 | `CHANGELOG.md` | Fixed エントリ追加 | +3 |
+| 4 | `.claude-plugin/plugin.json` | version bump 1.1.0 → 1.1.1 | +1 -1 |
+
+**Total: 4 ファイル (3 modified, 1 new)。全変更は additive。削除やリファクタリングなし。**

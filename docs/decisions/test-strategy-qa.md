@@ -1,226 +1,323 @@
 # Test Strategy: QA
 
-Issue #2: feat: session-start で Agent Teams 環境変数を自動設定する
+Issue #1: bug: sim-pool-guard.sh が build_sim / build_run_sim / test_sim を CLONE_REQUIRED_TOOLS から除外している
 
 ## 1. AC ごとのテスト層選定
 
 | AC | テスト層 | 理由 |
 |----|---------|------|
-| AC1: 毎セッション自動設定 | 構造テスト (BATS/grep) | session-start SKILL.md に Phase 1-G の手順が正しく記述されているかを検証。ランタイム動作は LLM が SKILL.md の指示に従って実行するため、指示の正確性を検証することが最も重要。 |
-| AC2: 既存設定の保持 | 構造テスト (BATS/grep) | SKILL.md に「既に設定済みなら変更しない」旨の条件分岐が記述されているかを検証。 |
-| AC3: settings.local.json 非存在時 | 構造テスト (BATS/grep) | SKILL.md に非存在時の新規作成手順が記述されているかを検証。 |
-| AC4: autopilot Prerequisites Check | 構造テスト (BATS/grep) | commands/autopilot.md の Prerequisites Check セクションにフォールバック案内が記述されているかを検証。既存テストパターン（test_autopilot_agent_teams_setup.bats）と同じ手法。 |
-| AC5: ドキュメント | 構造テスト (BATS/grep) | docs/workflow-detail.md と commands/autopilot.md に前提要件が記載されているかを検証。 |
+| AC1: 静的検証 — CLONE_REQUIRED_TOOLS に 3 ツール含有 | 構造テスト (BATS/sed+grep) | スクリプトファイルの配列内容を直接検証。`test_sim_failclosed_guard.bats` AC3.12-AC3.13 と同じ確立済みパターン。 |
+| AC2: 否定テスト — READONLY_TOOLS に含まれていない | 構造テスト (BATS/sed+grep) | READONLY に誤配置されるとクローン確保なしで ALLOW されるため、否定検証が必須。AC3.12 と同じパターン。 |
+| AC3: 初回呼び出し — DENY + session_set_defaults 案内 | 動的テスト (BATS/run_guard+jq) | guard スクリプトを実際に実行し、DENY レスポンスと additionalContext の内容を検証。`test_sim_auto_inject.bats` AC5.1 と同じパターン。 |
+| AC4: 2 回目以降 — ALLOW | 動的テスト (BATS/run_guard+jq) | session_set_defaults 実行後の ALLOW を検証。`test_sim_auto_inject.bats` AC5.2 と同じパターン。 |
+| AC5: 既存ツールの動作維持 | 既存テストスイート全パス | 新規テスト不要。既存の 9 テストファイルが全てパスすることで回帰がないことを保証。 |
 
-**設計判断:** このリポジトリのテストは全て BATS による構造テスト（マークダウン指示書の内容を grep で検証）であり、ランタイムの統合テストは存在しない。この方針を踏襲する。LLM が実行するスキルの「正しい指示が書かれているか」を検証することがこのリポジトリにおけるテストの目的である。
+**設計判断:** このバグの根本原因は「配列への追加漏れ」である。静的検証（AC1/AC2）で根本原因を直接テストし、動的検証（AC3/AC4）でルーティングの正しさを検証する二層構造とする。AC5 は既存テストスイートに完全に委譲し、新規テストでの二重メンテナンスを避ける。
 
-## 2. 具体的なテストケース
-
-### テストファイル: `tests/test_session_start_agent_teams_env.bats`
-
-新規テストファイルとして作成する。session-start の Agent Teams 環境変数自動設定に特化した構造テスト。
-
-```bash
-#!/usr/bin/env bats
-
-# Issue #2: session-start Agent Teams env auto-configuration tests
-
-SKILL="skills/session-start/SKILL.md"
-AUTOPILOT="commands/autopilot.md"
-WORKFLOW_DETAIL="docs/workflow-detail.md"
-
-# ===========================================================================
-# AC1: 毎セッション自動設定 — Phase 1-G の手順が SKILL.md に存在
-# ===========================================================================
-
-@test "AC1: session-start has Phase 1-G Agent Teams env setup step" {
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' "$SKILL"
-}
-
-@test "AC1: session-start references settings.local.json for env config" {
-  grep -q 'settings.local.json' "$SKILL"
-}
-
-@test "AC1: session-start sets env value to 1" {
-  grep -q '"1"' "$SKILL"
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' "$SKILL"
-}
-
-@test "AC1: Phase 1-G step exists in session-start" {
-  # Phase 1 の情報収集セクション内に G ステップがある
-  sed -n '/## Phase 1/,/## Phase 2/p' "$SKILL" | grep -qi 'Agent Teams\|CLAUDE_CODE_EXPERIMENTAL'
-}
-
-# ===========================================================================
-# AC2: 既存設定の保持 — 設定済みなら変更しない指示が存在
-# ===========================================================================
-
-@test "AC2: session-start has skip condition for existing setting" {
-  # 既に設定されている場合はスキップする条件分岐の記述
-  grep -qi 'already\|既に\|exist\|設定済み\|skip\|スキップ' "$SKILL" || \
-  sed -n '/CLAUDE_CODE_EXPERIMENTAL/,/^### /p' "$SKILL" | grep -qi 'already\|exist\|設定済み\|skip'
-}
-
-# ===========================================================================
-# AC3: settings.local.json 非存在時の新規作成
-# ===========================================================================
-
-@test "AC3: session-start handles missing settings.local.json" {
-  # ファイルが存在しない場合の処理が記述されている
-  sed -n '/CLAUDE_CODE_EXPERIMENTAL\|Agent Teams.*env\|Phase 1.*G/,/^### \|^## /p' "$SKILL" \
-    | grep -qi 'not exist\|missing\|存在しない\|creat\|作成'
-}
-
-# ===========================================================================
-# AC4: autopilot Prerequisites Check のフォールバック案内
-# ===========================================================================
-
-@test "AC4: autopilot Prerequisites Check mentions CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" {
-  sed -n '/### Prerequisites Check/,/^## \|^### [^P]/p' "$AUTOPILOT" \
-    | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
-
-@test "AC4: autopilot Prerequisites Check mentions settings.local.json" {
-  sed -n '/### Prerequisites Check/,/^## \|^### [^P]/p' "$AUTOPILOT" \
-    | grep -q 'settings.local.json'
-}
-
-@test "AC4: autopilot Prerequisites Check has STOP on Agent Teams failure" {
-  sed -n '/### Prerequisites Check/,/^## \|^### [^P]/p' "$AUTOPILOT" \
-    | grep -q 'STOP'
-}
-
-# ===========================================================================
-# AC5: ドキュメントに前提要件が記載
-# ===========================================================================
-
-@test "AC5: workflow-detail.md mentions CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" {
-  grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS' "$WORKFLOW_DETAIL"
-}
-
-@test "AC5: autopilot Prerequisites section mentions env requirement" {
-  grep -A 10 '## Prerequisites' "$AUTOPILOT" | grep -qi 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS\|Agent Teams.*env\|env.*Agent Teams'
-}
-
-# ===========================================================================
-# Regression: 既存の session-start 構造を破壊しない
-# ===========================================================================
-
-@test "regression: session-start still has Phase 0 update step" {
-  grep -q '## Phase 0' "$SKILL"
-}
-
-@test "regression: session-start still has Phase 1 info gathering" {
-  grep -q '## Phase 1' "$SKILL"
-}
-
-@test "regression: session-start still has Phase 2 status assessment" {
-  grep -q '## Phase 2' "$SKILL"
-}
-
-@test "regression: session-start still has Phase 3 summary report" {
-  grep -q '## Phase 3' "$SKILL"
-}
-
-@test "regression: session-start still references check-plugin-version.sh" {
-  grep -q 'check-plugin-version' "$SKILL"
-}
-
-@test "regression: autopilot still has Phase 0.9 Agent Teams Setup" {
-  grep -q '## Phase 0.9: Agent Teams Setup' "$AUTOPILOT"
-}
-```
-
-## 3. カバレッジ戦略
-
-### 構造テスト（BATS/grep）でカバーする範囲
-
-| 検証対象 | カバレッジ |
-|---------|-----------|
-| SKILL.md に Phase 1-G が存在する | AC1 の核心 |
-| SKILL.md に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` が記述されている | AC1 |
-| SKILL.md に `settings.local.json` の参照がある | AC1 |
-| SKILL.md に既存設定のスキップ条件がある | AC2 |
-| SKILL.md にファイル非存在時の作成手順がある | AC3 |
-| autopilot.md の Prerequisites Check に env var 案内がある | AC4 |
-| autopilot.md の Prerequisites Check に STOP がある | AC4 |
-| workflow-detail.md に前提要件の記載がある | AC5 |
-| autopilot.md の Prerequisites に env 要件がある | AC5 |
-
-### 構造テストでカバーできない範囲（手動検証）
-
-| 検証対象 | 理由 |
-|---------|------|
-| JSON の正しいマージ（既存キー保持） | LLM のランタイム動作であり、grep では検証不可 |
-| env キー自体が存在しない場合の処理 | 条件分岐のロジックはランタイムでのみ確認可能 |
-| 空ファイル・不正 JSON の場合の挙動 | エッジケースはランタイムでのみ確認可能 |
-
-**手動検証手順:** 実装完了後、以下の手順で確認する:
-1. `.claude/settings.local.json` を削除した状態で session-start を実行 -> ファイルが作成されることを確認
-2. `.claude/settings.local.json` に `env` なしの状態で session-start を実行 -> `env` が追加されることを確認
-3. `.claude/settings.local.json` に既に `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` がある状態で session-start を実行 -> 変更されないことを確認
-
-## 4. リグレッションリスク分析
-
-### 既存テストとの重複チェック
-
-| 既存テストファイル | 重複状況 | 対応 |
-|------------------|---------|------|
-| `test_autopilot_agent_teams_setup.bats` | AC-7 の Prerequisites テスト（L12-26）が AC4/AC5 と部分的に重複。ただし既存は `workflow-config.yml` と `agents/` の存在チェックのみで、env var の案内テストはない。 | 重複なし。新規テストは env var 案内に特化するため棲み分け可能。 |
-| `test_agent_teams.bats` | AC2 の「autopilot.md references Agent Teams」が AC5 と概念的に重複。ただし既存は Agent Teams アーキテクチャ全体のテストであり、env var の記載テストではない。 | 重複なし。 |
-| `test_session_start_version.bats` | session-start の Phase 1 に関するテスト。Phase 1-G の追加により Phase 1 の構造が変わるが、既存テストは `check-plugin-version.sh` 関連のみなので影響なし。 | リグレッションテストに Phase 1 存在チェックを追加済み。 |
-| `test_session_start_auto_sync.bats` | session-start の auto-sync テスト。Phase 1 の別ステップなので影響なし。 | 影響なし。 |
-| `test_session_start_adapters.bats` | 「skill_adapters が session-start に存在しない」ことを検証。影響なし。 | 影響なし。 |
-| `test_session_start_task_recommendation.bats` | Task Recommendation Rules のテスト。Phase 3 に関するテストで、Phase 1-G とは無関係。 | 影響なし。 |
-| `test_doc_agent_teams_sync.bats` | ドキュメントの Agent Teams 関連記述テスト。AC5 の workflow-detail.md テストと概念的に近いが、既存は auto-implement/auto-review の除去を検証するものであり、env var 記載のテストではない。 | 重複なし。 |
-
-### リグレッションリスク
-
-| リスク | 重大度 | 対策 |
-|--------|--------|------|
-| SKILL.md の Phase 1 セクション構造変更により、既存の Phase 1 grep テストが壊れる | 低 | 既存テスト（test_session_start_version.bats 等）は `check-plugin-version` 等の固有文字列を grep しており、Phase 1 のサブセクション追加では壊れない。 |
-| autopilot.md の Prerequisites Check 変更により、既存テスト（test_autopilot_agent_teams_setup.bats L12-26）が壊れる | 低 | 既存テストは `## Prerequisites` ヘッダと `workflow-config.yml`, `agents/` の存在を検証。env var 案内を追加しても既存テキストを削除しなければ影響なし。 |
-| settings.local.json の操作が settings.json の既存設定に影響 | なし | AC は settings.local.json を対象としており、settings.json には触れない。完全に分離されている。 |
-
-## 5. テストファイル構成
+## 2. テストファイル構成
 
 ### 新規作成
 
 | ファイル | 目的 |
 |---------|------|
-| `tests/test_session_start_agent_teams_env.bats` | AC1-AC5 の全テストケースと regression テストを格納 |
+| `addons/ios/tests/test_sim_clone_required_variants.bats` | AC1-AC4 の全テストケースを格納 |
 
 ### 命名規則
 
-既存の session-start テストファイルの命名パターンに従う:
-- `test_session_start_version.bats` — バージョンチェック
-- `test_session_start_auto_sync.bats` — 自動同期
-- `test_session_start_recent_activity.bats` — 最近のアクティビティ
-- `test_session_start_task_recommendation.bats` — タスク推奨
-- **`test_session_start_agent_teams_env.bats`** — Agent Teams 環境変数 (new)
+既存の sim 関連テストファイルの命名パターンに従う:
+- `test_sim_failclosed_guard.bats` — fail-closed ガード
+- `test_sim_ephemeral_clone.bats` — エフェメラルクローン
+- `test_sim_auto_inject.bats` — 自動インジェクション
+- `test_sim_persist_block.bats` — persist ブロック
+- **`test_sim_clone_required_variants.bats`** — CLONE_REQUIRED バリアントツール (new)
 
 ### 既存テストとの関係
 
 ```
-tests/
-  test_session_start_agent_teams_env.bats  # [NEW] AC1-AC5 + regression
-  test_session_start_version.bats          # [既存] 影響なし
-  test_session_start_auto_sync.bats        # [既存] 影響なし
-  test_session_start_adapters.bats         # [既存] 影響なし
-  test_session_start_recent_activity.bats  # [既存] 影響なし
-  test_session_start_task_recommendation.bats  # [既存] 影響なし
-  test_autopilot_agent_teams_setup.bats    # [既存] 影響なし（env var テストなし）
-  test_agent_teams.bats                    # [既存] 影響なし
+addons/ios/tests/
+  test_sim_clone_required_variants.bats  # [NEW] AC1-AC4
+  test_sim_failclosed_guard.bats         # [既存] AC5 で利用（回帰検証）
+  test_sim_ephemeral_clone.bats          # [既存] AC5 で利用（回帰検証）
+  test_sim_auto_inject.bats              # [既存] AC5 で利用（回帰検証）
+  test_sim_persist_block.bats            # [既存] AC5 で利用（回帰検証）
+  test_sim_golden_init.bats              # [既存] AC5 で利用（回帰検証）
+  test_sim_golden_set_fallback.bats      # [既存] AC5 で利用（回帰検証）
+  test_sim_init_guidance.bats            # [既存] AC5 で利用（回帰検証）
+  test_sim_orphan_cleanup.bats           # [既存] AC5 で利用（回帰検証）
+  test_sim_pool_docs.bats               # [既存] AC5 で利用（回帰検証）
+```
+
+## 3. テストケース一覧
+
+### テストファイル: `addons/ios/tests/test_sim_clone_required_variants.bats`
+
+全テストケースの詳細設計:
+
+```
+# =================================================================
+# AC1: 静的検証 — CLONE_REQUIRED_TOOLS に 3 ツールが含まれる
+# =================================================================
+# パターン: sed -n + grep（test_sim_failclosed_guard.bats AC3.12 と同一）
+
+@test "AC1.1: CLONE_REQUIRED_TOOLS contains build_sim"
+  入力: なし（スクリプトファイルの静的解析）
+  手法: sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD" | grep -q
+  期待: "mcp__XcodeBuildMCP__build_sim" が見つかる
+
+@test "AC1.2: CLONE_REQUIRED_TOOLS contains build_run_sim"
+  入力: なし
+  手法: 同上
+  期待: "mcp__XcodeBuildMCP__build_run_sim" が見つかる
+
+@test "AC1.3: CLONE_REQUIRED_TOOLS contains test_sim"
+  入力: なし
+  手法: 同上
+  期待: "mcp__XcodeBuildMCP__test_sim" が見つかる
+
+# =================================================================
+# AC2: 否定テスト — READONLY_TOOLS に含まれていない
+# =================================================================
+# パターン: ! grep -q（test_sim_failclosed_guard.bats AC3.12 と同一）
+
+@test "AC2.1: build_sim is NOT in READONLY_TOOLS"
+  入力: なし
+  手法: sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD" | ! grep -q
+  期待: "mcp__XcodeBuildMCP__build_sim" が見つからない
+
+@test "AC2.2: build_run_sim is NOT in READONLY_TOOLS"
+  入力: なし
+  手法: 同上
+  期待: "mcp__XcodeBuildMCP__build_run_sim" が見つからない
+
+@test "AC2.3: test_sim is NOT in READONLY_TOOLS"
+  入力: なし
+  手法: 同上
+  期待: "mcp__XcodeBuildMCP__test_sim" が見つからない
+
+# =================================================================
+# AC3: 初回呼び出し — DENY + session_set_defaults 案内
+# =================================================================
+# パターン: run_guard + jq（test_sim_auto_inject.bats AC5.1 と同一）
+
+@test "AC3.1: first build_sim call is DENY with session_set_defaults instruction"
+  入力: tool_name="mcp__XcodeBuildMCP__build_sim", tool_input={}, session_id="test-session-variants"
+  手法: run_guard -> jq で permissionDecision と additionalContext を検証
+  期待: permissionDecision == "deny"
+         additionalContext に "session_set_defaults" を含む
+         additionalContext に clone 名（"atdd-kit-" プレフィクス）を含む
+
+@test "AC3.2: first build_run_sim call is DENY with session_set_defaults instruction"
+  入力: tool_name="mcp__XcodeBuildMCP__build_run_sim", tool_input={}, session_id="test-session-variants-brs"
+  手法: 同上（セッション ID を分離して独立テスト）
+  期待: 同上
+
+@test "AC3.3: first test_sim call is DENY with session_set_defaults instruction"
+  入力: tool_name="mcp__XcodeBuildMCP__test_sim", tool_input={}, session_id="test-session-variants-ts"
+  手法: 同上（セッション ID を分離して独立テスト）
+  期待: 同上
+
+# =================================================================
+# AC4: 2 回目以降 — ALLOW（session_set_defaults 実行後）
+# =================================================================
+# パターン: run_guard 連続呼び出し + jq（test_sim_auto_inject.bats AC5.2 と同一）
+
+@test "AC4.1: build_sim is ALLOW after session_set_defaults"
+  入力:
+    Step 1: run_guard "mcp__XcodeBuildMCP__build_sim" (初回 DENY、setup_flag 生成)
+    Step 2: run_guard "mcp__XcodeBuildMCP__session_set_defaults" (ALLOW、setup_flag touch)
+    Step 3: run_guard "mcp__XcodeBuildMCP__build_sim" (2 回目)
+  手法: Step 3 の結果を jq で検証
+  期待: permissionDecision == "allow"
+
+@test "AC4.2: build_run_sim is ALLOW after session_set_defaults"
+  入力: 同パターン（tool_name を build_run_sim に変更、セッション ID 分離）
+  期待: permissionDecision == "allow"
+
+@test "AC4.3: test_sim is ALLOW after session_set_defaults"
+  入力: 同パターン（tool_name を test_sim に変更、セッション ID 分離）
+  期待: permissionDecision == "allow"
 ```
 
 ### テスト数サマリー
 
 | カテゴリ | テスト数 |
 |---------|---------|
-| AC1: 毎セッション自動設定 | 4 |
-| AC2: 既存設定の保持 | 1 |
-| AC3: 非存在時の新規作成 | 1 |
-| AC4: autopilot フォールバック案内 | 3 |
-| AC5: ドキュメント記載 | 2 |
-| Regression | 6 |
-| **合計** | **17** |
+| AC1: 静的検証 CLONE_REQUIRED 含有 | 3 |
+| AC2: 否定テスト READONLY 非含有 | 3 |
+| AC3: 初回 DENY + 案内 | 3 |
+| AC4: session_set_defaults 後 ALLOW | 3 |
+| AC5: 既存テストスイート全パス | 0（新規テスト不要） |
+| **合計** | **12** |
+
+## 4. カバレッジ戦略
+
+### 静的検証 + 動的検証の二層構造
+
+```
+レイヤー 1: 静的検証（AC1 + AC2）
+  目的: 根本原因の直接検証 — 配列に正しいエントリがあること
+  手法: sed + grep でスクリプトファイルを解析
+  利点: ルーティングロジック変更に強い、実行環境不要
+  限界: 実行時のルーティング動作は検証できない
+
+レイヤー 2: 動的検証（AC3 + AC4）
+  目的: エンドツーエンドの動作検証 — ツール呼び出しが正しく処理されること
+  手法: mock xcrun 環境で guard スクリプトを実行
+  利点: main() のルーティング、handle_xcodebuildmcp のロジックを通しで検証
+  限界: mock 環境のため、実際の simctl 動作は検証できない
+
+レイヤー 3: 回帰検証（AC5）
+  目的: 既存機能の非破壊保証
+  手法: 既存テストスイート（9 ファイル）の全パス
+  利点: 新規テストのメンテナンスコストゼロ
+  限界: 新ツール追加による副作用のうち、既存テストがカバーしていないパスは検出できない
+```
+
+### カバレッジマトリクス
+
+| コードパス | AC1 | AC2 | AC3 | AC4 | AC5 |
+|-----------|-----|-----|-----|-----|-----|
+| `CLONE_REQUIRED_TOOLS` 配列定義 (L51-79) | x | | | | |
+| `READONLY_TOOLS` 配列定義 (L33-48) | | x | | | |
+| `main()` READONLY 分岐 (L383-386) | | | | | x |
+| `main()` CLONE_REQUIRED 分岐 (L394-404) | | | x | x | x |
+| `main()` fail-closed DENY (L407-408) | | | | | x |
+| `handle_xcodebuildmcp()` setup_flag なし (L333-339) | | | x | | |
+| `handle_xcodebuildmcp()` setup_flag あり (L341) | | | | x | |
+| `handle_xcodebuildmcp()` session_set_defaults (L320-324) | | | | x | x |
+| `in_array()` (L97-105) | | | x | x | x |
+
+## 5. リグレッションリスク分析
+
+### CLONE_REQUIRED_TOOLS 追加の影響範囲
+
+変更は `CLONE_REQUIRED_TOOLS` 配列への 3 行追加のみ。以下の既存コードパスに影響する:
+
+| コードパス | 影響 | リスク |
+|-----------|------|--------|
+| `in_array()` (L97-105) | 配列サイズが 26 -> 29 に増加。線形探索のため微小なパフォーマンス影響のみ。 | なし |
+| `main()` CLONE_REQUIRED 分岐 (L394) | 新ツール名が `in_array` にマッチするようになる。既存ツール名のマッチには影響なし。 | なし |
+| `main()` fail-closed DENY (L407) | 新ツール名が CLONE_REQUIRED で処理されるため、fail-closed に到達しなくなる。これが修正の本質。 | なし（意図通り） |
+| `handle_xcodebuildmcp()` (L303-342) | `mcp__XcodeBuildMCP__build_sim` 等が `case mcp__XcodeBuildMCP__*` にマッチし、このハンドラに入る。既存ツール（build, test, run）の処理には影響なし。 | なし |
+
+### 既存テストスイートへの影響
+
+| テストファイル | 影響の有無 | 理由 |
+|--------------|----------|------|
+| `test_sim_failclosed_guard.bats` | なし | READONLY テスト（AC3.4-AC3.8）は既存ツール名を使用。fail-closed テスト（AC3.9-AC3.11）は `unknown_new_tool` を使用。配列メンバーシップテスト（AC3.12-AC3.15）は `session_set_defaults` と `session_use_defaults_profile` を検証。いずれも新ツール追加の影響なし。 |
+| `test_sim_auto_inject.bats` | なし | `mcp__XcodeBuildMCP__build` と `mcp__ios-simulator__tap` を使用。新ツール名に言及していない。 |
+| `test_sim_ephemeral_clone.bats` | なし | `mcp__ios-simulator__tap` と `mcp__ios-simulator__take_screenshot` を使用。 |
+| `test_sim_persist_block.bats` | なし | `session_set_defaults` と `session_use_defaults_profile` を使用。 |
+| `test_sim_golden_init.bats` | なし | ゴールデンイメージの初期化をテスト。CLONE_REQUIRED_TOOLS とは無関係。 |
+| `test_sim_golden_set_fallback.bats` | なし | Device Set のフォールバックをテスト。 |
+| `test_sim_init_guidance.bats` | なし | addon.yml のガイダンスをテスト。 |
+| `test_sim_orphan_cleanup.bats` | なし | 孤児クローンのクリーンアップをテスト。 |
+| `test_sim_pool_docs.bats` | なし | ドキュメントの構造をテスト。 |
+
+**結論:** 既存テストスイートへの影響はゼロ。全テストが修正前後で同一の結果を返す。
+
+## 6. テストの setup/teardown
+
+### 流用元: `test_sim_auto_inject.bats`
+
+AC3/AC4 の動的テストには `test_sim_auto_inject.bats` の setup/teardown をそのまま流用する。理由:
+
+1. mock `xcrun` が clone, boot, list devices のすべてのケースをカバー
+2. ゴールデンマーカー事前作成（`touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"`）で golden init をスキップ
+3. `run_guard` ヘルパーが `jq -n` を使い、JSON エスケープが正確
+
+### setup() の内容
+
+```bash
+setup() {
+  export SIM_SESSION_DIR="${BATS_TMPDIR}/sim-sessions-$$"
+  export SIM_MARKER_DIR="${BATS_TMPDIR}/sim-markers-$$"
+  export SIM_GOLDEN_NAME="iPhone 17 Pro"
+  GUARD="addons/ios/scripts/sim-pool-guard.sh"
+
+  mkdir -p "$SIM_SESSION_DIR" "$SIM_MARKER_DIR"
+  # ゴールデンマーカー事前作成 -> ensure_golden の初回ブート処理をスキップ
+  touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"
+
+  # mock xcrun: simctl の応答をスタブ
+  export MOCK_BIN="${BATS_TMPDIR}/mock-bin-$$"
+  mkdir -p "$MOCK_BIN"
+  cat > "$MOCK_BIN/xcrun" <<'MOCK'
+#!/bin/bash
+case "$*" in
+  "simctl list devices available -j")
+    echo '{"devices":{"com.apple.CoreSimulator.SimRuntime.iOS-18-0":[{"name":"iPhone 17 Pro","udid":"GOLDEN-UUID-1234","state":"Shutdown","isAvailable":true,"runtime":"com.apple.CoreSimulator.SimRuntime.iOS-18-0"}]}}'
+    ;;
+  simctl\ clone\ *) echo "CLONE-UUID-5678" ;;
+  simctl\ boot\ *|simctl\ shutdown\ *|simctl\ bootstatus\ *) ;;
+  "simctl list devices -j") echo '{"devices":{}}' ;;
+  simctl\ delete\ *) ;;
+  *) ;;
+esac
+MOCK
+  chmod +x "$MOCK_BIN/xcrun"
+  export PATH="$MOCK_BIN:$PATH"
+}
+```
+
+**ポイント:**
+- `SIM_SESSION_DIR` と `SIM_MARKER_DIR` を `BATS_TMPDIR` + `$$`（PID）でテストごとに分離
+- mock `xcrun` は `MOCK_BIN` ディレクトリに配置し、`PATH` の先頭に追加
+- `simctl list devices -j`（孤児クリーンアップ用）は空のデバイスリストを返す -> stale clone 処理をスキップ
+
+### teardown() の内容
+
+```bash
+teardown() {
+  rm -rf "$SIM_SESSION_DIR" "$SIM_MARKER_DIR" "$MOCK_BIN"
+}
+```
+
+### run_guard ヘルパー
+
+```bash
+run_guard() {
+  local tool_name="$1"
+  local tool_input="${2:-\{\}}"
+  local session_id="${3:-test-session-variants}"
+  local json
+  json=$(jq -n --arg tn "$tool_name" --argjson ti "$tool_input" --arg sid "$session_id" \
+    '{tool_name: $tn, tool_input: $ti, session_id: $sid}')
+  echo "$json" | bash "$GUARD"
+}
+```
+
+**ポイント:**
+- `jq -n` を使用し JSON エスケープを保証（`test_sim_auto_inject.bats` と同じ）
+- デフォルト session_id は `"test-session-variants"` とし、既存テストの session_id と衝突しない
+- AC3 の 3 テストは各ツールで異なる session_id を使用し、setup_flag の状態が干渉しないようにする
+
+### AC3/AC4 の session_id 分離設計
+
+AC3 と AC4 は setup_flag の状態に依存するため、テスト間の独立性が重要:
+
+| テスト | session_id | 理由 |
+|--------|-----------|------|
+| AC3.1 (build_sim) | `test-session-variants-bs` | 独立した setup_flag を持つ |
+| AC3.2 (build_run_sim) | `test-session-variants-brs` | 独立した setup_flag を持つ |
+| AC3.3 (test_sim) | `test-session-variants-ts` | 独立した setup_flag を持つ |
+| AC4.1 (build_sim) | `test-session-variants-bs4` | AC3.1 とは別のセッション |
+| AC4.2 (build_run_sim) | `test-session-variants-brs4` | AC3.2 とは別のセッション |
+| AC4.3 (test_sim) | `test-session-variants-ts4` | AC3.3 とは別のセッション |
+
+**注意:** BATS は各 `@test` の前に `setup()` を実行するため、`SIM_SESSION_DIR` はテストごとに再作成される。ただし `$$` は同一 BATS プロセス内で不変なので、同一ディレクトリが再利用される。安全のため、各テストで異なる session_id を使用する。
+
+### AC1/AC2 の静的テスト
+
+AC1/AC2 は setup/teardown に依存しない。`$GUARD` 変数のみを使用し、スクリプトファイルを直接 sed+grep で解析する。ただし setup() で `GUARD` 変数が設定されるため、setup() は必要。
+
+## 7. 注意すべき仕様: setup_flag の自動生成
+
+`handle_xcodebuildmcp()` の L333-334 で、初回 DENY 時にも `touch "$setup_flag"` が実行される。これにより:
+
+- 初回: DENY + session_set_defaults 案内 (setup_flag が生成される)
+- 2 回目: ALLOW (setup_flag が存在するため)
+
+つまり、`session_set_defaults` を呼ばなくても 2 回目以降は ALLOW される。AC4 のテストでは `session_set_defaults` を明示的に呼ぶ手順を踏むが、この自動 setup_flag 生成の仕様も認識しておく必要がある。
+
+**テストへの影響:** AC4 のテストでは Step 1（初回 DENY）で setup_flag が生成されるため、Step 2（session_set_defaults）は setup_flag の存在には影響しない（既に存在する）。テストの意図は「session_set_defaults を経由する正しいフローで ALLOW になること」の検証であり、setup_flag の自動生成とは独立している。session_id を分離することで、AC3 と AC4 が互いの setup_flag 状態に影響しないことを保証する。

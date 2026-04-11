@@ -1,110 +1,108 @@
 # AC Review: Developer Perspective
 
-**Issue:** #2 — feat: session-start で Agent Teams 環境変数を自動設定する
+**Issue:** #1 — bug: sim-pool-guard.sh が build_sim / build_run_sim / test_sim を CLONE_REQUIRED_TOOLS から除外している
 **Reviewer:** Developer Agent
-**Date:** 2026-04-11
+**Date:** 2026-04-12
 
 ## Overall Assessment
 
-Draft AC set is technically sound and well-scoped. The core approach — adding a check step to session-start that runs every session — is correct. However, there are architectural concerns about the target file (`settings.json` vs `settings.local.json`), JSON manipulation reliability, and a missing edge case for malformed JSON.
+Draft AC set は技術的に正確で、修正範囲も最小限に抑えられている。`CLONE_REQUIRED_TOOLS` 配列に 3 エントリを追加するだけで完結する変更であり、fail-closed 設計を維持したまま allowlist gap を塞ぐ正しいアプローチである。
 
-**Verdict: Conditionally PASS** — recommend modifications below before finalizing.
+`handle_xcodebuildmcp` のルーティングパスを精査した結果、`_sim` バリアント 3 ツールは既存の `build` / `test` / `run` と全く同じ制御フローを辿ることを確認した。特別な分岐や追加ロジックは不要。
+
+**Verdict: PASS** — 軽微な改善提案あり（下記参照）。
 
 ## Per-AC Feedback
 
-### AC1: Every-session auto-configuration — PASS with modification
+### AC1: build_sim の ALLOW — PASS
 
-**Feasibility:** High. Adding a new Phase 1 sub-step (e.g., Phase 1-G) to session-start SKILL.md is straightforward. The existing Phase 1 structure already has A-F parallel steps, and a new parallel step fits cleanly.
+**実現性:** 高い。`CLONE_REQUIRED_TOOLS` 配列に `"mcp__XcodeBuildMCP__build_sim"` を 1 行追加するのみ。
 
-**Concern — target file:** The draft says `.claude/settings.json`, but this repo's `.claude/settings.json` is **committed to git** (not in `.gitignore`). The `env` block with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is a **runtime environment variable** — it should go in `.claude/settings.local.json`, which is gitignored (confirmed: `.gitignore` line 5). This matches the existing pattern where `GH_TOKEN` is set in `settings.local.json` per the user's `github-accounts.md` rule.
+**ルーティング確認:** `main()` の case 文（396行目）で `mcp__XcodeBuildMCP__*` にマッチし、`handle_xcodebuildmcp` にルーティングされる。`handle_xcodebuildmcp` 内では:
+- 320行目の `session_set_defaults` チェックにはマッチしない（正常）
+- 326行目の `session_use_defaults_profile` チェックにはマッチしない（正常）
+- 332-338行目の `setup_flag` チェックが適用される（`build` と同じ挙動）
+- `setup_flag` 存在時は 341行目で ALLOW される
 
-**Why this matters:**
-1. `settings.json` is shared across all clones via git — injecting env vars there pollutes the shared config
-2. `settings.local.json` is per-machine, gitignored, and already the established pattern for env vars
-3. Phase 1-D (First-Time Setup) already writes hooks to `settings.json`, but hooks are structural (shared). Env vars are per-machine (local).
+**エッジケースなし。** 既存の `build` と全く同じパスを辿る。
 
-**Recommendation:** Change target from `.claude/settings.json` to `.claude/settings.local.json`. This is a semantic correction, not a scope change.
+### AC2: build_run_sim の ALLOW — PASS
 
-### AC2: Preserve existing settings — PASS
+**実現性:** AC1 と同一のメカニズム。配列に 1 行追加。
 
-**Feasibility:** High. JSON merge logic (read, parse, deep-merge `env` key, write back) is a standard LLM operation. The `jq` tool or Claude's native JSON understanding can handle this.
+**補足:** `build_run_sim` は `build` + `run` の複合ツールだが、guard の観点では単一のツール名として扱われる。`handle_xcodebuildmcp` は個別の `build` や `run` とは独立して `build_run_sim` を処理する。ルーティングは正常。
 
-**Edge case to add:** If `env` key exists but contains other entries (e.g., `GH_TOKEN`, `DISCORD_BOT_TOKEN`), those must be preserved. The AC says "other env entries preserved" which covers this, but the implementation instruction should be explicit about deep merge vs overwrite.
+### AC3: test_sim の ALLOW — PASS
 
-### AC3: settings.json non-existence — PASS with modification
+**実現性:** AC1 と同一のメカニズム。配列に 1 行追加。
 
-**Feasibility:** High. Creating a new JSON file with minimal content is trivial.
+**ルーティング確認:** `test` と `test_sim` は異なるツール名だが、両方とも `mcp__XcodeBuildMCP__*` パターンに一致し、同じ `handle_xcodebuildmcp` ハンドラで処理される。問題なし。
 
-**Modification needed:** If we switch to `settings.local.json` (per AC1 recommendation), this AC should say `settings.local.json`. The created file should contain only the `env` block — do not create a full `settings.json` structure (no `hooks`, `attribution`, etc.) in the local file.
+### AC4: 既存ツールの動作維持 — PASS
 
-**Edge case:** `.claude/` directory itself might not exist (fresh clone without any Claude Code setup). The step should ensure `mkdir -p .claude` before writing.
+**実現性:** 高い。`CLONE_REQUIRED_TOOLS` への追加は配列末尾への append であり、既存エントリの順序や内容に影響しない。`in_array` 関数は線形探索なので、要素追加で既存マッチに影響なし。
 
-### AC4: autopilot Prerequisites Check fallback — PASS with minor edit
+**テスト方針:** 既存テスト（`test_sim_failclosed_guard.bats`、`test_sim_ephemeral_clone.bats` 等）がリグレッションガードとして機能する。新規テストに加え、既存テストの全パスを確認すれば十分。
 
-**Feasibility:** High. The Prerequisites Check section already exists in `commands/autopilot.md` (lines 241-252). Adding a specific error message for missing Agent Teams env var is a simple text addition.
+### AC5: handle_xcodebuildmcp ルーティング — PASS（AC1-3 と統合可能）
 
-**Current state:** The existing check at line 249-250 says "Agent Teams tools (TeamCreate, SendMessage) not found. Cannot proceed." This is good but doesn't tell the user **why** the tools are missing or **how to fix it**. AC4's proposed message is better — it gives actionable guidance.
+**実現性:** 高い。前述の通り、`_sim` バリアントは `mcp__XcodeBuildMCP__*` パターンにマッチし、`handle_xcodebuildmcp` に正しくルーティングされる。
 
-**Concern — ToolSearch timing:** The existing check uses ToolSearch to verify `TeamCreate`/`SendMessage` are resolvable. If the env var is unset, these tools simply won't appear in the deferred tool list. The check is already correct in mechanism; AC4 just improves the error message. No new check logic needed.
+**懸念点なし。** ただし、この AC は AC1-3 の Then 節で暗黙的にカバーされている（「クローン確保後に ALLOW」されるには `handle_xcodebuildmcp` を経由する必要がある）。独立した AC として持つことは、`session_set_defaults` 事前チェックの適用を明示的に検証する点で価値がある。
 
-**Minor edit:** The error message should reference `settings.local.json` (not `settings.json`) if AC1's recommendation is accepted.
-
-### AC5: Documentation of prerequisite — PASS
-
-**Feasibility:** Trivial. Adding a line to docs is minimal effort.
-
-**Current state:** `docs/workflow-detail.md:69` already says "Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`" — so this is partially done. The AC should verify this existing mention is sufficient or if additional locations need updating (e.g., README, DEVELOPMENT.md).
-
-**Suggestion:** Check if `commands/autopilot.md` Prerequisites section also needs this documented (it currently lists `workflow-config.yml` and agent definitions, but not the env var).
+**テスト実装の補足:** AC5 のテストでは、`setup_flag` が存在しない状態で `_sim` ツールを呼んだ際に `session_set_defaults` を促す DENY メッセージが返ることを検証すべき。これにより `handle_xcodebuildmcp` のルーティングと事前チェックの両方が確認できる。
 
 ## Suggested Modifications
 
-### M1: Target `settings.local.json` instead of `settings.json`
+### M1: AC5 のテスト条件を明確化
 
-All ACs referencing `settings.json` should use `settings.local.json`. Rationale: env vars are per-machine configuration, not shared project configuration. This aligns with existing `GH_TOKEN` pattern.
+AC5 の Then 節は「session_set_defaults 事前チェックが適用される」と記述しているが、テスト可能な条件に変換すると以下の 2 つになる:
 
-### M2: Add AC for malformed JSON handling
+1. **setup_flag なし:** `_sim` ツール呼び出し → DENY with context（「session_set_defaults を先に実行」メッセージ）
+2. **setup_flag あり:** `_sim` ツール呼び出し → ALLOW
 
-**Missing edge case:** If `settings.local.json` exists but contains invalid JSON (e.g., user hand-edited and introduced syntax error), the merge will fail. Add an AC:
+この 2 条件を AC5 の Then 節に明記することを推奨。
 
-> **AC6: Malformed settings.local.json recovery**
-> - Given: `.claude/settings.local.json` exists but contains invalid JSON
-> - When: session-start executes the Agent Teams env check
-> - Then: Report warning "settings.local.json contains invalid JSON — cannot auto-configure Agent Teams env var. Please fix the file manually." and continue session-start (do not block other phases)
+### M2: CLONE_REQUIRED_TOOLS 内の配置位置
 
-### M3: Clarify Phase placement in session-start
+機能的に影響はないが、可読性のため `build_sim` / `build_run_sim` / `test_sim` は既存の `build` / `test` / `run` の直後に配置することを推奨。関連ツールが近接していると保守性が向上する。
 
-The draft says "Phase 1-D2 or similar" but this should be a new parallel step **Phase 1-G** (since A-F are taken). It must NOT be inside Phase 1-D (First-Time Setup) because D only runs when `workflow-config.yml` is missing. The new step must run unconditionally every session.
+```bash
+CLONE_REQUIRED_TOOLS=(
+  "mcp__XcodeBuildMCP__build"
+  "mcp__XcodeBuildMCP__build_sim"        # NEW
+  "mcp__XcodeBuildMCP__build_run_sim"    # NEW
+  "mcp__XcodeBuildMCP__test"
+  "mcp__XcodeBuildMCP__test_sim"         # NEW
+  "mcp__XcodeBuildMCP__run"
+  ...
+)
+```
 
-### M4: Add `commands/autopilot.md` Prerequisites update to AC5
-
-The Prerequisites section in `autopilot.md` should list the env var alongside the existing prerequisites (`workflow-config.yml`, agent definitions).
+現在の配列（51-79行目）では `build` → `test` → `run` の順で並んでいるため、各ツールの直後にバリアントを挿入するのが自然。
 
 ## Implementation Complexity Estimate
 
-### Files to change
+### 変更ファイル
 
 | File | Change | Complexity |
 |------|--------|------------|
-| `skills/session-start/SKILL.md` | Add Phase 1-G (Agent Teams env check) | Low — add ~15 lines to Phase 1 section |
-| `commands/autopilot.md` | Update Prerequisites Check error message + add env var to Prerequisites list | Low — modify ~5 lines |
-| `docs/workflow-detail.md` | Verify existing mention is sufficient (line 69) | Minimal — possibly no change needed |
-| `README.md` / `README.ja.md` | Add env var to prerequisites if not mentioned | Low |
-| `tests/` | Add new BATS test file | Low — pattern is well-established |
+| `addons/ios/scripts/sim-pool-guard.sh` | `CLONE_REQUIRED_TOOLS` に 3 エントリ追加 | Minimal — 3 行追加 |
+| `addons/ios/tests/` | 新規テストファイルまたは既存テストに追加 | Low — 既存パターン踏襲 |
 
-**Total: 4-5 files, all low complexity.**
+**Total: 2 ファイル、最小限の変更。**
 
-### Test approach
+### テストアプローチ
 
-New BATS test file `tests/test_session_start_agent_teams_env.bats` following existing patterns (e.g., `test_session_start_version.bats`):
+既存の `test_sim_failclosed_guard.bats` のパターンを踏襲:
 
-1. Verify session-start SKILL.md mentions `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
-2. Verify the step is in Phase 1 (not inside Phase 1-D conditional)
-3. Verify `settings.local.json` is the target (not `settings.json`)
-4. Verify autopilot.md Prerequisites mentions the env var
-5. Verify autopilot.md error message includes actionable guidance
-6. Verify docs/workflow-detail.md mentions the requirement
+1. **AC1-3 テスト:** `run_guard "mcp__XcodeBuildMCP__build_sim"` 等を呼び出し、`setup_flag` 存在下で ALLOW が返ることを確認
+2. **AC4 テスト:** 既存テストスイートの全パスで回帰がないことを確認（追加テスト不要、既存テストがカバー）
+3. **AC5 テスト:** `setup_flag` なし状態で `_sim` ツールを呼び出し、DENY with context（`session_set_defaults` 促進メッセージ）が返ることを確認
+4. **fail-closed テスト:** 追加後も `mcp__XcodeBuildMCP__unknown_tool` が DENY されることを確認（AC3.9 既存テストがカバー）
 
-### Risk assessment
+テストの mock 設定は `test_sim_ephemeral_clone.bats` の `setup()` をそのまま流用可能。
 
-**Low risk.** Changes are additive (new step in session-start, improved error message in autopilot). No existing behavior is modified. The session-start skill already handles JSON manipulation in Phase 1-D (hooks in settings.json), so the pattern is established.
+### リスク評価
+
+**極めて低い。** 変更は配列への 3 要素追加のみ。既存のロジック（`in_array`、`handle_xcodebuildmcp`、`main()` のフロー）に一切手を加えない。fail-closed 設計は維持され、新ツールは既存ツールと完全に同じ制御パスを辿る。
