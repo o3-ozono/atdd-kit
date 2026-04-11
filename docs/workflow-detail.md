@@ -212,6 +212,7 @@ Quality Score = 100 - (20 x critical) - (10 x warning) - (3 x suggestion)
 All work follows this flow. No exceptions.
 
 1. **Create Issue** -- From user request or bug report
+1.5. **Design exploration (optional)** -- `ideate` brainstorms approaches before requirements (skippable)
 2. **Issue Ready flow** -- Execute the flow for the task type, get approval (see `docs/issue-ready-flow.md`)
 3. **Branch from main -> Create Draft PR immediately**
    - Branch naming: `<prefix>/<issue-number>-<slug>`

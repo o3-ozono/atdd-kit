@@ -40,7 +40,7 @@ See [Getting Started](docs/getting-started.md) for a full end-to-end walkthrough
 ```mermaid
 flowchart LR
   bug["bug (auto)"] --> discover
-  issue["issue (auto)"] --> discover
+  issue["issue (auto)"] --> ideate["ideate (optional)"] --> discover
   discover --> plan --> approval["[approval]"] --> atdd --> verify --> ship
 ```
 
@@ -62,7 +62,7 @@ flowchart LR
 |-------|-------------|
 | **issue** | Auto-detects task requests and starts Issue creation |
 | **bug** | Auto-detects bug reports and starts the triage pipeline |
-| **ideate** | Auto-detects exploratory design discussions |
+| **ideate** | Design exploration -- auto-triggers on exploratory requests, also chains from issue before discover |
 | **debugging** | Auto-detects error reports and starts root cause investigation |
 | **skill-gate** | Ensures relevant skills are invoked before direct work |
 

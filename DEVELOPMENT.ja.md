@@ -44,9 +44,10 @@ atdd-kit は**外部依存ゼロ**を設計方針としている。npm パッケ
 ### スキルチェーン
 
 ```
-bug/issue (auto) → discover → plan → [承認ゲート] → atdd → verify → ship
+bug/issue (auto) → ideate (optional) → discover → plan → [承認ゲート] → atdd → verify → ship
 ```
 
+- `issue` は `ideate` にチェーンし、`ideate` は `discover` にチェーンする（ideate はスキップ可能）
 - スキルは前方にチェーンする（discover → plan、atdd → verify → ship）
 - コマンドはチェーンのエントリポイントのみを呼ぶ（autopilot (Dev) → atdd）
 - 7つのコアスキルすべてに session-start ガード
@@ -177,9 +178,10 @@ description: "Explore requirements through dialogue and derive ACs (Given/When/T
 ### スキルチェーン
 
 ```
-bug/issue (auto) → discover → plan → [承認ゲート] → atdd → verify → ship
+bug/issue (auto) → ideate (optional) → discover → plan → [承認ゲート] → atdd → verify → ship
 ```
 
+- `issue` は `ideate` にチェーンし、`ideate` は `discover` にチェーンする（ideate はスキップ可能）
 - 各スキルは完了時に次のスキルにチェーンする（discover → plan、atdd → verify → ship）
 - plan と atdd の間の承認ゲートは人間の承認（または autopilot の AC Review Round）が必要
 - すべてのコアスキルには Session Start Check があり、未実行なら `session-start` を先に実行する

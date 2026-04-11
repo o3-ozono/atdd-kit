@@ -44,9 +44,10 @@ Each top-level directory (`skills/`, `commands/`, `hooks/`, `rules/`, `scripts/`
 ### Skill Chain
 
 ```
-bug/issue (auto) → discover → plan → [approval gate] → atdd → verify → ship
+bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
 ```
 
+- `issue` chains to `ideate`, which chains to `discover` (ideate is skippable)
 - Skills chain forward (discover → plan, atdd → verify → ship)
 - Commands call the chain entry point only (autopilot (Dev) → atdd, not verify)
 - Session-start guard on all 7 core skills
@@ -177,9 +178,10 @@ The `description` field controls auto-trigger behavior. It must contain **trigge
 ### Skill Chain
 
 ```
-bug/issue (auto) → discover → plan → [approval gate] → atdd → verify → ship
+bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
 ```
 
+- `issue` chains to `ideate`, which chains to `discover` (ideate is skippable)
 - Each skill chains to the next upon completion (discover → plan, atdd → verify → ship)
 - The approval gate between plan and atdd requires human sign-off (or autopilot AC Review Round)
 - All core skills include a Session Start Check that runs `session-start` if it hasn't run yet

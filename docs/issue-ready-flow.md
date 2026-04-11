@@ -13,7 +13,8 @@ After creating an Issue, execute the following steps in order before approval (`
 
 | Step | Action | Skill/Command | Output |
 |------|--------|---------------|--------|
-| 1 | **Create Issue** | -- | Issue (no `in-progress` label yet) |
+| 1 | **Create Issue** | `issue` | Issue (no `in-progress` label yet) |
+| 1.5 | **Design exploration (optional)** | `ideate` (post-Issue mode) | Approach comparison, design decision -> Issue comment (Context Block). Skippable. |
 | 2 | **Brainstorming** | `discover` (brainstorming mode) | Acquires `in-progress` lock. Requirements, approach, impact analysis -> Issue comment |
 | 3 | **User story and AC** | `discover` (AC mode) | ATDD-based ACs -> Issue comment |
 | 4 | **Test strategy and implementation strategy** | `plan` | Test strategy (AC→test layer mapping) + implementation strategy -> Issue comment |
@@ -25,6 +26,7 @@ After creating an Issue, execute the following steps in order before approval (`
 |------|--------|---------------|--------|
 | 1 | **Intake and Issue creation** | `/bug` Phase 1-2 | Issue (no `in-progress` label yet) |
 | 2 | **Root cause investigation** | `/bug` Phase 3-5 | Reproduction, evidence, root cause -> Issue comment |
+| 2.5 | **Design exploration (optional)** | `ideate` (post-Issue mode) | Approach comparison for fix strategy. Skippable. |
 | 3 | **Brainstorming** | `discover` (bug mode) | Fix approach, impact, design decisions -> Issue comment |
 | 4 | **User story and AC** | `discover` (AC mode) | ATDD-based ACs -> Issue comment |
 | 5 | **Test strategy and implementation strategy** | `plan` | Test strategy + implementation strategy -> Issue comment |
