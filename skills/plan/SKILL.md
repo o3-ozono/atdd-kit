@@ -1,0 +1,326 @@
+---
+name: plan
+description: "Create test strategy and implementation strategy from discover's ACs. Second step of the Issue Ready flow."
+---
+
+## Session Start Check (required)
+
+If `session-start` has not run in this session, run `/atdd-kit:session-start` first.
+
+# plan Skill -- Test Strategy & Implementation Strategy
+
+<HARD-GATE>
+Do NOT invoke atdd or write any code until the plan has been REVIEWED and APPROVED (via the QA process or user approval). This skill produces strategy only -- no code, no tests, no file edits. Never suggest skipping plan review or PR review regardless of task complexity or autonomy level -- every plan must go through the QA process.
+</HARD-GATE>
+
+<AUTOPILOT-GUARD>
+If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
+- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
+- **Do not block execution.** Proceed normally after showing the warning.
+If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
+</AUTOPILOT-GUARD>
+
+## State Gate (required -- skip only in Inline Mode)
+
+Before executing plan, verify the Issue meets these preconditions:
+
+1. **Check `in-progress` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("in-progress")'`
+   - If missing: STOP. Report: "Issue #N does not have `in-progress` label. Run `discover` first to start the workflow."
+2. **Check discover deliverables comment:** `gh issue view <number> --json comments --jq '[.comments[].body | select(startswith("## discover Deliverables"))] | length'`
+   - If 0: STOP. Report: "Issue #N has no discover deliverables. Run `discover` first."
+3. Both checks pass: proceed to Core Flow.
+
+> **Inline Mode exception:** When plan is called inline from discover, skip this gate (discover deliverables are being created in the same flow).
+
+The second step of the Issue Ready flow. Takes approved ACs / completion criteria from discover and produces a test strategy (AC-to-test-layer mapping) and implementation strategy.
+
+> **Code is NOT written here.** plan decides *how* to test and implement. `atdd` writes the actual code.
+
+---
+
+## Core Principles
+
+Follow these **always**. No exceptions.
+
+| # | Principle | Detail |
+|---|-----------|--------|
+| P1 | **Double-Loop awareness** | Outer loop = Story Test (E2E/Integration) for the User Story. Inner loop = Unit/Integration tests for each AC. |
+| P2 | **No code** | Do not write test code or implementation code. Strategy and mapping only. |
+| P3 | **YAGNI** | Only plan what the ACs require. Nothing more. |
+| P4 | **Exact paths** | "somewhere in src/" is banned. Always use exact file paths. |
+| P5 | **No file edits** | This skill edits no code and no files (Issue comments only). |
+| P6 | **Post deliverables as Issue comments** | No repository file commits. Use `gh issue comment`. |
+
+### Default Recommendation Pattern
+
+At every decision point in plan, present a recommended default. The user can accept with "ok" or provide an alternative.
+
+Format: `Recommended: [X] �� reply 'ok' to accept, or provide alternative`
+
+This applies to: execution mode selection, test layer choices, and other decision points.
+
+---
+
+## Inline Mode (called from discover)
+
+When plan is invoked inline by discover (AC9 gate integration):
+- **Skip Step 1** (discover deliverables are already in context)
+- Execute Steps 2-5 (Codebase Analysis, Test Strategy, Implementation Strategy, Readiness Check)
+- Return the plan output to discover for combined comment posting
+- Skip Steps 7-10 (approval label and execution mode are handled by discover)
+
+---
+
+## Core Flow
+
+Execute these steps **in order**. Do not skip any.
+
+### Step 1: Read discover Deliverables
+
+1. Read Issue comments to find the approved deliverables from discover:
+   - Development/bug/refactoring: User Story + ACs (Given/When/Then)
+   - Documentation/investigation: completion criteria
+2. If deliverables are not found, notify the user that discover is incomplete and suggest running `atdd-kit:discover`
+
+### Step 2: Codebase Analysis
+
+1. Identify files/modules related to the ACs
+2. Understand existing test patterns (framework, naming, directory structure)
+3. Understand existing implementation patterns (architecture, dependencies, naming)
+4. Check `docs/` for design constraints
+
+### Step 3: Test Strategy -- Map ACs to Test Layers
+
+Following the Double-Loop TDD model (`docs/atdd-guide.md`):
+
+#### Outer Loop (Story Test)
+
+Decide the test layer for the User Story as a whole:
+
+| Candidate | When to choose |
+|-----------|---------------|
+| **E2E** | Full user flow involving UI interaction |
+| **Integration** | Cross-module flow without UI, or when E2E is impractical |
+
+#### Inner Loop (AC Tests)
+
+For each AC, decide which test layer covers it:
+
+| Test Layer | Covers | Example |
+|-----------|--------|---------|
+| **Unit** | Logic, calculations, transformations | Validation, formatting |
+| **Integration** | Cross-module interaction | ViewModel + Repository |
+| **Snapshot** | Appearance, layout | View snapshots |
+| **E2E** | Full user flows, complex interaction | Screen navigation, multi-step scenarios |
+
+Decision criteria:
+- AC says "is displayed" / "is visible" -> Snapshot or E2E
+- AC says "is calculated" / "is converted" -> Unit
+- AC says "is saved" / "is sent" -> Integration
+- AC says "navigate to screen..." -> E2E
+
+Present the mapping as a table:
+
+```
+### Test Strategy
+
+#### Outer Loop (Story Test)
+- **User Story:** [copy from discover]
+- **Test layer:** E2E / Integration
+- **Rationale:** [why this layer]
+
+#### Inner Loop (AC Tests)
+
+| AC | Test Layer | Rationale |
+|----|-----------|-----------|
+| AC1: [name] | Unit / Integration / Snapshot / E2E | [why this layer] |
+| AC2: [name] | Unit / Integration / Snapshot / E2E | [why this layer] |
+| ... | ... | ... |
+```
+
+### Step 4: Implementation Strategy
+
+Describe *how* the implementation will be structured:
+
+1. **Target files** -- List all files to create or modify, with one-line descriptions
+2. **Architecture decisions** -- Design choices and rationale (e.g., "use existing Repository pattern", "add new ViewModel")
+3. **Dependencies** -- Ordering constraints between ACs (e.g., "AC2 depends on AC1's data model")
+4. **Risks** -- Anticipated risks and mitigations
+
+Present as:
+
+```
+### Implementation Strategy
+
+#### Target Files
+
+| File | Role | Action |
+|------|------|--------|
+| path/to/file | description | Create / Modify |
+
+#### Architecture Decisions
+- [Decision]: [rationale]
+
+#### AC Dependencies
+- [ordering constraints, if any]
+
+#### Risks
+- [risk]: [mitigation]
+```
+
+### Step 5: Readiness Check
+
+**Before** presenting the plan, verify all of these pass. Fix the plan if any fail.
+
+| Check | Bad | Good |
+|-------|-----|------|
+| All ACs mapped to test layers | AC without mapping | Every AC has a test layer |
+| Test layer choices justified | "Unit" with no reason | "Unit -- pure calculation, no dependencies" |
+| Target files identified | "improve CI" | "change ci.yml line 100" |
+| Design decisions resolved | "choose A or B" | "A chosen (reason: ...)" |
+| Outer loop test defined | No story test | Story test layer and rationale specified |
+
+Include check results at the end of the plan:
+
+```
+### Readiness Check
+
+| Check | Result |
+|-------|--------|
+| All ACs mapped to test layers | OK |
+| Test layer choices justified | OK |
+| Target files identified | OK |
+| Design decisions resolved | OK |
+| Outer loop test defined | OK |
+```
+
+### Step 6: Post to Issue Comment
+
+Post the plan with `gh issue comment`.
+
+Format:
+
+```markdown
+## Implementation Plan
+
+### Test Strategy
+
+#### Outer Loop (Story Test)
+- **User Story:** [from discover]
+- **Test layer:** E2E / Integration
+- **Rationale:** [reason]
+
+#### Inner Loop (AC Tests)
+
+| AC | Test Layer | Rationale |
+|----|-----------|-----------|
+| AC1: [name] | [layer] | [reason] |
+| AC2: [name] | [layer] | [reason] |
+
+### Implementation Strategy
+
+#### Target Files
+
+| File | Role | Action |
+|------|------|--------|
+| path/to/file | description | Create / Modify |
+
+#### Architecture Decisions
+- [decision]: [rationale]
+
+#### AC Dependencies
+- [constraints]
+
+#### Risks
+- [risk]: [mitigation]
+
+### Readiness Check
+
+| Check | Result |
+|-------|--------|
+| All ACs mapped to test layers | OK / NG: [reason] |
+| Test layer choices justified | OK / NG: [reason] |
+| Target files identified | OK / NG: [reason] |
+| Design decisions resolved | OK / NG: [reason] |
+| Outer loop test defined | OK / NG: [reason] |
+```
+
+### Step 7: Risk-based Approval Classification
+
+Before requesting approval, classify each item in the plan by risk level to reduce approval burden:
+
+| Indicator | Classification | Criteria | User Action |
+|-----------|---------------|----------|-------------|
+| 🔴 | Decision required | Design policy change, new architectural pattern, safety tradeoff | Must review and explicitly approve |
+| 🟡 | Confirmation | Direction decided but details may need adjustment | Quick scan, approve unless concerns |
+| 🟢 | Auto-approve | Previously approved items, technical details, mechanical changes | No action needed |
+
+Present the approval request in this format:
+
+```markdown
+## Approval Request
+
+### 🔴 Decision Required
+| Item | Detail | Decision Point |
+|------|--------|---------------|
+| [AC/decision] | [what it does] | [what needs deciding] |
+
+### �� Confirmation
+| Item | Detail |
+|------|--------|
+| [AC/decision] | [what it does] |
+
+### 🟢 Auto-approved
+| Item | Reason |
+|------|--------|
+| [AC/decision] | [why it's pre-approved] |
+```
+
+### Step 8: Request Approval and Label
+
+After posting, add the `ready-for-plan-review` label and STOP:
+
+```
+gh issue edit <number> --add-label "ready-for-plan-review"
+```
+
+```
+Implementation plan posted and `ready-for-plan-review` label added.
+
+1. `/atdd-kit:autopilot` — Launch Agent Teams now (review + implement + merge)
+2. Leave label and move to next task
+```
+
+STOP here. Do not proceed further.
+
+---
+
+## Handling Large Plans
+
+If 7 or more ACs are mapped, suggest splitting the Issue:
+
+```
+The plan covers [N] ACs (7 or more -- consider splitting).
+Consider splitting the Issue:
+
+- Issue A: [scope] -- [N1] ACs
+- Issue B: [scope] -- [N2] ACs
+
+Split? [Split / Continue as-is (document reason)]
+```
+
+---
+
+## Mandatory Checklist
+
+Do not skip any item.
+
+- [ ] Not editing code or files (Issue comments only)
+- [ ] Not writing test code or implementation code
+- [ ] All ACs have test layer mappings
+- [ ] Test layer choices have rationale
+- [ ] File paths are exact ("somewhere" / "appropriate location" is banned)
+- [ ] Outer loop story test is defined
+- [ ] Readiness Check was executed
+- [ ] `ready-for-plan-review` label added after posting
+- [ ] Deliverables posted as Issue comment

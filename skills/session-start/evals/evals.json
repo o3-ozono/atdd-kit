@@ -1,0 +1,27 @@
+{
+  "skill_name": "atdd-kit:session-start",
+  "evals": [
+    {
+      "id": 0,
+      "name": "report-format",
+      "prompt": "/atdd-kit:session-start を実行して。",
+      "expected_output": "Session-start produces a structured report with git status, PR/CI info, Issue list, and recommendations.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "構造化されたレポート形式で出力している", "type": "structural"},
+        {"id": "A2", "text": "git status / PR / Issue 情報を含んでいる", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "plugin-version-check",
+      "prompt": "セッションを開始して。プラグインの更新があるか確認したい。",
+      "expected_output": "Session-start checks plugin version and reports update status.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "プラグインバージョンのチェックを実行している", "type": "structural"},
+        {"id": "B2", "text": "更新の有無を報告している", "type": "structural"}
+      ]
+    }
+  ]
+}

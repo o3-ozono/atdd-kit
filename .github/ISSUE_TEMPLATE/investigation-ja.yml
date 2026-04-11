@@ -1,0 +1,44 @@
+name: 調査タスク
+description: 技術調査・スパイク・検証
+labels: ["type:investigation"]
+body:
+  - type: checkboxes
+    id: skills
+    attributes:
+      label: 適用スキルチェックリスト
+      options:
+        - label: "atdd-kit:discover — 調査の方向性・スコープ設計"
+        - label: "atdd-kit:verify — 調査結果の裏取り・検証"
+  - type: textarea
+    id: summary
+    attributes:
+      label: 調査目的
+      description: 何を明らかにしたいか
+    validations:
+      required: true
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: サブタスクチェックリスト
+      description: |
+        完了に必要な全サブタスクをチェックボックス形式で列挙する。
+      placeholder: |
+        - [ ] ...
+        - [ ] 調査結果のまとめ
+    validations:
+      required: true
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: 完了条件
+      description: この Issue が「完了」と判断できる検証可能な条件を列挙する
+      placeholder: |
+        - [ ] 調査結果が docs/research/ に記載されている
+        - [ ] 結論と根拠が明記されている
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: 成果物
+      description: 調査結果の出力先（docs/research/ 等）

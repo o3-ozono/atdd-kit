@@ -1,0 +1,28 @@
+name: Refactoring
+description: Structural code improvement (no behavior change)
+labels: ["type:development", "refactoring"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why this refactoring is needed
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Target files and components
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Conditions to meet after refactoring
+      placeholder: |
+        - [ ] All existing tests GREEN
+        - [ ] No behavior change
+    validations:
+      required: true

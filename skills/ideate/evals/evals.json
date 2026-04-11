@@ -1,0 +1,27 @@
+{
+  "skill_name": "atdd-kit:ideate",
+  "evals": [
+    {
+      "id": 0,
+      "name": "approach-comparison",
+      "prompt": "ユーザー認証をどう設計すべきか考えたい。Firebase Auth と自前実装のどちらがいいだろう？",
+      "expected_output": "Ideate skill activates, explores approaches with comparison before Issue creation.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "複数のアプローチ（Firebase Auth vs 自前実装）を比較している", "type": "structural"},
+        {"id": "A2", "text": "Issue 作成前の設計探索フェーズであることを認識している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "guides-to-issue-creation",
+      "prompt": "プッシュ通知を追加したい。APNs と FCM どっちがいいか考えよう。",
+      "expected_output": "Ideate explores approaches and guides toward Issue creation when ready.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "アプローチ比較を実施している", "type": "structural"},
+        {"id": "B2", "text": "検討後に Issue 作成への誘導を行っている", "type": "structural"}
+      ]
+    }
+  ]
+}

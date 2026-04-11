@@ -1,0 +1,13 @@
+  build-and-test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect scheme
+        id: scheme
+        run: echo "name=$(xcodebuild -list -json | jq -r '.project.schemes[0]')" >> "$GITHUB_OUTPUT"
+      - name: Build
+        run: xcodebuild -scheme "${{ steps.scheme.outputs.name }}" -destination 'generic/platform=iOS Simulator' build
+      - name: Test
+        run: xcodebuild -scheme "${{ steps.scheme.outputs.name }}" -destination 'platform=iOS Simulator,name=iPhone 16' test

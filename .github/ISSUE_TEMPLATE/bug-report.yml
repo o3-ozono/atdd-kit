@@ -1,0 +1,42 @@
+name: Bug Report
+description: Report a bug or defect
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is happening (expected behavior vs. actual behavior)
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Steps to reproduce the bug
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, device, version, etc.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, logs, videos, etc.
+  - type: textarea
+    id: triage
+    attributes:
+      label: Triage Result
+      description: |
+        Root cause classification and fix approach (fill in after running /atdd-kit:bug)
+      placeholder: |
+        **Classification:** A / B / C
+        **Root cause:**
+        **Fix approach:**

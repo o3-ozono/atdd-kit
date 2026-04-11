@@ -1,0 +1,82 @@
+name: Development Task
+description: Code implementation, infrastructure/CI, build config, bug fixes, etc.
+labels: ["type:development"]
+body:
+  - type: checkboxes
+    id: skills
+    attributes:
+      label: Skill Checklist
+      options:
+        - label: "atdd-kit:discover — Derive requirements, approach, and AC"
+        - label: "Confirm test requirements with user"
+        - label: "atdd-kit:atdd — ATDD double-loop TDD"
+        - label: "atdd-kit:verify — Local + CI verification"
+        - label: "atdd-kit:ship — PR creation, review, merge"
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      description: |
+        Describe what the user wants to achieve, from their perspective.
+        If a user story doesn't apply (e.g., infra or investigation tasks), explain why.
+      placeholder: |
+        **As a** [persona],
+        **I want to** [goal],
+        **so that** [reason].
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What to implement. For bug fixes, describe the symptom, cause, and affected areas.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: |
+        Conditions that must be met for the story to be considered done.
+        Use Given/When/Then format. Aim for 3+ criteria.
+      placeholder: |
+        ### AC1: (name)
+        - **Given:** (precondition)
+        - **When:** (action)
+        - **Then:** (expected result)
+    validations:
+      required: true
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: Subtask Checklist
+      description: |
+        List all subtasks needed for completion, grouped by category.
+      placeholder: |
+        ### Implementation
+        - [ ] ...
+
+        ### Testing
+        - [ ] ...
+
+        ### Finishing
+        - [ ] Documentation consistency check
+    validations:
+      required: true
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: Completion Criteria
+      description: |
+        All ACs must be GREEN, plus any technical completion criteria.
+      placeholder: |
+        - [ ] AC1-ACN all GREEN
+        - [ ] Build passes with zero warnings
+        - [ ] Existing tests (unit / snapshot / UI) all GREEN
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related design documents or Issues

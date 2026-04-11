@@ -1,0 +1,19 @@
+{
+  "name": "atdd-kit",
+  "description": "Acceptance Test Driven Development toolkit for Claude Code: discover → plan → ATDD → verify → ship",
+  "version": "1.0.0",
+  "author": {
+    "name": "o3-ozono"
+  },
+  "homepage": "https://github.com/o3-ozono/atdd-kit",
+  "repository": "https://github.com/o3-ozono/atdd-kit",
+  "license": "MIT",
+  "keywords": [
+    "atdd",
+    "tdd",
+    "workflow",
+    "issue-driven",
+    "acceptance-testing",
+    "process"
+  ]
+}

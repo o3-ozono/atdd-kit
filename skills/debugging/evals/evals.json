@@ -1,0 +1,27 @@
+{
+  "skill_name": "atdd-kit:debugging",
+  "evals": [
+    {
+      "id": 0,
+      "name": "diagnosis-before-fix",
+      "prompt": "TypeError: Cannot read properties of undefined (reading 'map') が出ている。src/components/UserList.tsx の 42 行目。直して。",
+      "expected_output": "Debugging skill activates, enforces diagnosis before code changes.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "コード修正の前に診断ステップを実行している", "type": "structural"},
+        {"id": "A2", "text": "根本原因の特定を試みている（エラーの文脈を調査）", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "no-code-edit-before-diagnosis",
+      "prompt": "ビルドエラーが出ている。Package.swift の依存関係を修正して。",
+      "expected_output": "Debugging skill prevents immediate code edit, requires diagnosis first.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "即座のコード編集を行っていない", "type": "structural"},
+        {"id": "B2", "text": "エラーの診断を優先している（ビルドログの確認等）", "type": "structural"}
+      ]
+    }
+  ]
+}

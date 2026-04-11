@@ -1,0 +1,88 @@
+name: バグ報告
+description: テスターからのバグ報告をトリアージする
+labels: ["type:bug"]
+body:
+  - type: checkboxes
+    id: skills
+    attributes:
+      label: 適用スキルチェックリスト
+      options:
+        - label: "atdd-kit:discover — 要件・方針整理・AC 導出"
+        - label: "テスト要否をユーザーに確認"
+        - label: "atdd-kit:atdd — ATDD ダブルループ TDD"
+        - label: "atdd-kit:verify — ローカル検証 + CI 検証"
+        - label: "atdd-kit:ship — PR 作成・レビュー・マージ"
+  - type: textarea
+    id: reporter-raw
+    attributes:
+      label: テスター報告原文
+      description: テスターからの報告をそのまま貼り付ける（テキスト・スクショ・動画URL）
+    validations:
+      required: true
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: 再現手順
+      description: ヒアリング後に記入する。番号付きステップ形式
+      placeholder: |
+        1. ○○画面を開く
+        2. △△ボタンをタップ
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待動作
+      description: 本来どうなるべきか
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の動作
+      description: 実際に何が起きたか
+    validations:
+      required: true
+  - type: textarea
+    id: impact-scope
+    attributes:
+      label: 影響範囲
+      description: どの画面・機能に影響するか
+  - type: textarea
+    id: triage-section
+    attributes:
+      label: トリアージ結果（再現確認後に /atdd-kit:bug が更新）
+      description: |
+        以下のセクションは /atdd-kit:bug の再現確認・対策提案フェーズで自動更新される。
+        Issue 作成時は空欄でよい。
+      placeholder: |
+        ### E2E カバレッジ
+        （カバー済 / 未カバー）
+
+        ### 原因分類
+        （A: ストーリー・AC の漏れ / B: テストが不十分 / C: ロジックエラー）
+
+        ### エビデンス
+        （スクショ・動画・ログを添付）
+
+        ### ユーザーインパクト
+        （高/中/低 + 理由）
+
+        ### 対策方針
+        （修正箇所・工数感・優先度）
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: 完了条件
+      description: この Issue が「完了」と判断できる検証可能な条件を列挙する
+      placeholder: |
+        - [ ] バグが再現しなくなっている
+        - [ ] 回帰テストが追加されている
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: 参照ドキュメント
+      description: 関連する設計ドキュメント・Issue

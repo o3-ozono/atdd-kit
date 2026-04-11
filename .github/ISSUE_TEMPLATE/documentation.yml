@@ -1,0 +1,27 @@
+name: Documentation
+description: Create or update documentation
+labels: ["type:documentation"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What to document
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Target scope
+    validations:
+      required: true
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: Completion Criteria
+      description: Verifiable completion criteria
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true

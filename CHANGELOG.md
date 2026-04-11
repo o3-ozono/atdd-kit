@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [1.0.0] - 2026-04-10
+
+### Added
+- `addons/` directory with declarative addon manifest system (`addon.yml`) (#192)
+- `addons/ios/` — self-contained iOS addon (scripts, CI fragment, tests, manifest) (#192)
+- `agents/` directory with role definitions (po.md, developer.md, qa.md, researcher.md) (#192)
+- `templates/ci/base.yml` — platform-agnostic base CI workflow (#192)
+- `commands/setup-github.md` — GitHub templates and labels setup command (#192)
+- `commands/setup-ci.md` — CI workflow composition command (#192)
+- First-time auto-setup in session-start (auto-detects platform from project structure) (#192)
+
+### Changed
+- **BREAKING:** Plugin architecture redesigned — init skill abolished, template expansion abolished (#192)
+- **BREAKING:** `workflow-config.yml` simplified to `platform` field only (removed: language, build, paths, autonomous_processes, skill_adapters, environment, design) (#192)
+- **BREAKING:** LLM-facing files are English only — all SKILL.ja.md and docs/*.ja.md removed (#192)
+- `scripts/ios/` moved to `addons/ios/scripts/` (#192)
+- `tests/test_sim_*.bats` moved to `addons/ios/tests/` (#192)
+- `commands/autopilot.md` — reads agent definitions from `agents/` instead of `autonomous_processes` in workflow-config.yml (#192)
+- `skills/session-start/SKILL.md` — addon-aware file sync replaces hardcoded sync table (#192)
+- `rules/atdd-kit.md` — language resolution section replaced with addons section (#192)
+
+### Removed
+- `skills/init/` — init skill abolished; replaced by session-start auto-setup (#192)
+- `templates/*.tmpl` — pseudo-Handlebars template expansion abolished (#192)
+- `docs/language-resolution.md`, `docs/i18n-strategy.md` — i18n simplified (#192)
+- All `SKILL.ja.md` files (12 files) — English only for LLM-facing content (#192)
+- All `docs/*.ja.md` files (7 files) — English only for LLM-facing docs (#192)
+- `autonomous_processes` and `skill_adapters` from workflow-config.yml — moved to agents/ (#192)
+

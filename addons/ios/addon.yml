@@ -1,0 +1,58 @@
+name: ios
+display_name: iOS
+
+skills:
+  - sim-pool
+  - ui-test-debugging
+
+mcp_servers:
+  XcodeBuildMCP:
+    command: npx
+    args: [-y, xcodebuildmcp@latest, mcp]
+  ios-simulator:
+    command: npx
+    args: [-y, ios-simulator-mcp]
+  apple-docs:
+    command: npx
+    args: [-y, "@kimsungwhee/apple-docs-mcp@latest"]
+  xcode:
+    command: xcrun
+    args: [mcpbridge]
+
+hooks:
+  PreToolUse:
+    - matcher: "mcp__XcodeBuildMCP__.*"
+      command: .claude/hooks/sim-pool-guard.sh
+      timeout: 90
+    - matcher: "mcp__ios-simulator__.*"
+      command: .claude/hooks/sim-pool-guard.sh
+      timeout: 90
+
+deploy:
+  - src: scripts/sim-pool-guard.sh
+    dest: .claude/hooks/sim-pool-guard.sh
+  - src: scripts/lint-xcstrings.sh
+    dest: scripts/lint-xcstrings.sh
+
+ci_job: ci/build-and-test.yml
+
+detect:
+  patterns:
+    - "*.xcodeproj"
+    - "*.xcworkspace"
+    - "Package.swift"
+
+guidance: |
+  Golden Image Device Set Isolation (recommended):
+
+  Set SIM_GOLDEN_SET to enable isolation:
+    export SIM_GOLDEN_SET=~/Library/Developer/CoreSimulator/GoldenDevices
+
+  The guard will:
+  1. Auto-create the Device Set directory
+  2. Search for the golden image only in that Device Set
+  3. Clone from the golden Device Set to the default Device Set (cross-set clone)
+
+  Related environment variables:
+    SIM_GOLDEN_SET   -- Device Set path for golden image (default: empty = default Device Set)
+    SIM_DEFAULT_SET  -- Device Set path for clones (default: ~/Library/Developer/CoreSimulator/Devices)

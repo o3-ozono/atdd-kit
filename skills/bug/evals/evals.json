@@ -1,0 +1,27 @@
+{
+  "skill_name": "atdd-kit:bug",
+  "evals": [
+    {
+      "id": 0,
+      "name": "bug-report-classification",
+      "prompt": "ログイン画面でメールアドレスを入力して送信ボタンを押すと、画面が真っ白になる。エラーメッセージも出ない。iOS 17.5、iPhone 15 Pro。",
+      "expected_output": "Bug skill activates, gathers reproduction details, proceeds to root cause classification (A/B/C).",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "バグスキルが起動している（症状・再現手順・環境の収集）", "type": "structural"},
+        {"id": "A2", "text": "session-start チェックを実行している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "bug-chains-to-discover",
+      "prompt": "アプリがクラッシュするバグがある。Issue #200 で報告済み。修正を進めたい。",
+      "expected_output": "Bug skill chains to discover for AC derivation, does not edit code directly.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "コードを直接編集していない", "type": "structural"},
+        {"id": "B2", "text": "discover スキルへのチェーン（要件探索→AC導出）を案内している", "type": "structural"}
+      ]
+    }
+  ]
+}

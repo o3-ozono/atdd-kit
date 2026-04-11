@@ -1,0 +1,27 @@
+{
+  "skill_name": "atdd-kit:sim-pool",
+  "evals": [
+    {
+      "id": 0,
+      "name": "simulator-access-management",
+      "prompt": "iOS シミュレータでビルドしたい。sim-pool を実行して。プラットフォームは iOS。",
+      "expected_output": "Sim-pool manages exclusive simulator access for the session.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "シミュレータの排他アクセス管理フローに入っている", "type": "structural"},
+        {"id": "A2", "text": "エフェメラルクローンの作成または既存クローンの使用を試みている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "non-ios-skip",
+      "prompt": "Web プロジェクトで作業中。sim-pool は必要？",
+      "expected_output": "Sim-pool recognizes non-iOS project and skips or reports not applicable.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "非 iOS プロジェクトであることを認識している", "type": "structural"},
+        {"id": "B2", "text": "シミュレータ管理をスキップしている", "type": "structural"}
+      ]
+    }
+  ]
+}

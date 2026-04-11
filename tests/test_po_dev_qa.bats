@@ -1,0 +1,126 @@
+#!/usr/bin/env bats
+
+# Issue #138: PO/Developer/QA 3-role Agent Teams architecture tests
+# Agent definitions now live in agents/*.md instead of workflow-config template
+
+# --- AC1: Role definitions in agents/ directory ---
+
+@test "AC1: agents/po.md exists" {
+  [[ -f "agents/po.md" ]]
+}
+
+@test "AC1: agents/developer.md exists" {
+  [[ -f "agents/developer.md" ]]
+}
+
+@test "AC1: agents/qa.md exists" {
+  [[ -f "agents/qa.md" ]]
+}
+
+@test "AC1: agents/researcher.md exists" {
+  [[ -f "agents/researcher.md" ]]
+}
+
+@test "AC1: no old role names (implementer/reviewer) in agents/" {
+  local result
+  result=$(grep -rl 'implementer\|[Rr]eviewer' agents/ 2>/dev/null || true)
+  [[ -z "$result" ]]
+}
+
+@test "AC1: no old role names in commands/ (except auto-sweep)" {
+  local result
+  result=$(grep -rl 'implementer\|reviewer' commands/ 2>/dev/null || true)
+  [[ -z "$result" ]]
+}
+
+@test "AC1: no old role names in skills/" {
+  local result
+  result=$(grep -rl 'implementer\|[Rr]eviewer' skills/ 2>/dev/null | grep -v 'node_modules' || true)
+  [[ -z "$result" ]]
+}
+
+@test "AC1: workflow-config template no longer exists" {
+  [[ ! -f "templates/workflow-config.yml.tmpl" ]]
+}
+
+# --- AC2: autopilot end-to-end flow ---
+
+@test "AC2: autopilot.md has Phase 1 discover" {
+  grep -qi 'Phase.*1.*discover\|Phase.*discover' commands/autopilot.md
+}
+
+@test "AC2: autopilot.md has AC Review Round" {
+  grep -q '## AC Review Round\|AC.*Review.*Round\|AC.*レビュー' commands/autopilot.md
+}
+
+@test "AC2: autopilot.md has Phase for plan" {
+  grep -qi 'Phase.*plan\|Plan.*作成\|Plan.*策定' commands/autopilot.md
+}
+
+@test "AC2: autopilot.md references Developer agent" {
+  grep -qi 'Developer.*agent\|Developer' commands/autopilot.md
+}
+
+@test "AC2: autopilot.md references QA agent" {
+  grep -qi 'QA.*agent\|QA' commands/autopilot.md
+}
+
+@test "AC2: autopilot.md has merge decision phase" {
+  grep -qi 'merge\|マージ判断' commands/autopilot.md
+}
+
+# --- AC3: AC Review Round ---
+
+@test "AC3: autopilot.md AC Review Round has PO perspective" {
+  grep -qi 'PO.*要件\|PO.*網羅\|PO.*ビジネス' commands/autopilot.md
+}
+
+@test "AC3: autopilot.md AC Review Round has Dev perspective" {
+  grep -qi 'Dev.*アーキテクチャ\|Dev.*技術\|Dev.*エッジケース' commands/autopilot.md
+}
+
+@test "AC3: autopilot.md AC Review Round has QA perspective" {
+  grep -qi 'QA.*テスト\|QA.*境界\|QA.*カバレッジ' commands/autopilot.md
+}
+
+# --- AC4: Plan Review Round ---
+
+@test "AC4: autopilot.md has Plan Review Round" {
+  grep -q '## Plan Review Round\|Plan.*Review.*Round\|Plan.*レビュー' commands/autopilot.md
+}
+
+@test "AC4: autopilot.md Plan Review Round has Dev perspective" {
+  grep -qi 'Dev.*ファイル構成\|Dev.*実装順序\|Dev.*技術リスク' commands/autopilot.md
+}
+
+@test "AC4: autopilot.md Plan Review Round has QA perspective" {
+  grep -qi 'QA.*テスト層\|QA.*カバレッジ戦略' commands/autopilot.md
+}
+
+# --- AC5: PO Cross-Cutting Check ---
+
+@test "AC5: autopilot.md checks mergeable" {
+  grep -q 'mergeable' commands/autopilot.md
+}
+
+@test "AC5: autopilot.md mentions CONFLICTING" {
+  grep -q 'CONFLICTING' commands/autopilot.md
+}
+
+@test "AC5: autopilot.md mentions rebase" {
+  grep -qi 'rebase' commands/autopilot.md
+}
+
+# --- AC6: auto-* commands ---
+
+@test "AC6: auto-implement.md does not exist" {
+  [[ ! -f commands/auto-implement.md ]]
+}
+
+@test "AC6: auto-review.md does not exist" {
+  [[ ! -f commands/auto-review.md ]]
+}
+
+@test "AC6: auto-sweep.md still exists" {
+  [[ -f commands/auto-sweep.md ]]
+}

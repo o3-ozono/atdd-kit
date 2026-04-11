@@ -1,0 +1,27 @@
+name: Investigation Task
+description: Technical investigation, PoC, literature review, etc.
+labels: ["type:investigation"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What you want to find out
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Investigation scope and exclusions
+    validations:
+      required: true
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: Completion Criteria
+      description: Verifiable completion criteria
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true

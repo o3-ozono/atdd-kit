@@ -1,0 +1,60 @@
+{
+  "skill_name": "atdd-kit:skill-gate",
+  "evals": [
+    {
+      "id": 0,
+      "name": "iron-law-1-no-issue",
+      "prompt": "このファイルのバリデーション関数を修正して、空文字列も弾くようにして。",
+      "expected_output": "Issue creation guidance instead of direct code editing. Should suggest creating an Issue first or running discover.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "直接コード編集を提案していない", "type": "structural"},
+        {"id": "A2", "text": "Issue 作成またはワークフロースキル（discover/issue/bug）の使用を案内している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "iron-law-1-feature-request-no-issue",
+      "prompt": "ダッシュボードにCSVエクスポート機能を追加して。",
+      "expected_output": "Iron Law #1 triggered. Should guide to Issue creation instead of direct implementation, since no Issue is referenced.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "直接コード編集や実装を開始していない", "type": "structural"},
+        {"id": "B2", "text": "Issue 作成またはワークフロースキル（issue/discover）の使用を案内している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "issue-work-routing-to-autopilot",
+      "prompt": "#16を進めて",
+      "expected_output": "Redirect to autopilot instead of invoking discover or plan directly. Should suggest using /atdd-kit:autopilot 16.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "autopilot の使用を案内している（/atdd-kit:autopilot 16 等）", "type": "structural"},
+        {"id": "C2", "text": "discover や plan を直接起動していない", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "issue-mention-question-no-routing",
+      "prompt": "#16ってどういう Issue？",
+      "expected_output": "Should NOT redirect to autopilot. This is a question about the Issue, not a work instruction.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "autopilot への誘導を行っていない", "type": "structural"},
+        {"id": "D2", "text": "Issue の内容を確認・回答しようとしている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "issue-work-routing-implement-variant",
+      "prompt": "Issue 42 を実装して",
+      "expected_output": "Redirect to autopilot instead of invoking discover or plan directly. Should suggest using /atdd-kit:autopilot 42.",
+      "files": [],
+      "assertions": [
+        {"id": "E1", "text": "autopilot の使用を案内している（/atdd-kit:autopilot 42 等）", "type": "structural"},
+        {"id": "E2", "text": "discover や plan を直接起動していない", "type": "structural"}
+      ]
+    }
+  ]
+}

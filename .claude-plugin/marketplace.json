@@ -1,0 +1,17 @@
+{
+  "name": "atdd-kit",
+  "description": "Acceptance Test Driven Development toolkit",
+  "owner": {
+    "name": "o3-ozono"
+  },
+  "plugins": [
+    {
+      "name": "atdd-kit",
+      "description": "Acceptance Test Driven Development toolkit for Claude Code: discover → plan → ATDD → verify → ship",
+      "source": "./",
+      "author": {
+        "name": "o3-ozono"
+      }
+    }
+  ]
+}

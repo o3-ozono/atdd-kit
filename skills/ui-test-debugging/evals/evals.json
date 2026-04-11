@@ -1,0 +1,82 @@
+{
+  "skill_name": "atdd-kit:ui-test-debugging",
+  "evals": [
+    {
+      "id": 0,
+      "name": "ci-failure-log-retrieval",
+      "prompt": "PR #42 の CI が失敗した。UI Test の原因を調べて。",
+      "expected_output": "Skill retrieves CI logs via gh run view and checks for Allure JSON.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "gh run view でログ取得を試みている", "type": "structural"},
+        {"id": "A2", "text": "Allure JSON（summary.json）の存在を確認している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "allure-absent-fallback",
+      "prompt": "CI が失敗したが Allure レポートは生成されていない。ビルドが途中で落ちたようだ。",
+      "expected_output": "Skill continues diagnosis with CI logs only when Allure is absent.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "Allure レポートなしと明示している", "type": "structural"},
+        {"id": "B2", "text": "CI ログのみで診断を続行している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ci-specific-error-retry",
+      "prompt": "CI で Failed to boot simulator エラーが出てテストが落ちた。",
+      "expected_output": "Skill classifies as CI-specific error and proposes retry.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "CI 特有エラー（シミュレータ起動失敗）と分類している", "type": "structural"},
+        {"id": "C2", "text": "gh run rerun --failed でリトライを提案している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "unclassified-error-local-repro",
+      "prompt": "未知のエラーで CI の UI Test が失敗した。パターンに該当しないエラーメッセージだ。",
+      "expected_output": "Skill defaults to local reproduction for unclassified errors.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "未分類エラーとしてローカル再現に進んでいる", "type": "structural"},
+        {"id": "D2", "text": "安全側に倒す判断をしている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "sim-pool-not-configured",
+      "prompt": "Web プロジェクトだが CI の UI Test が失敗した。sim-pool は設定していない。",
+      "expected_output": "Skill skips local reproduction and diagnoses from CI logs only.",
+      "files": [],
+      "assertions": [
+        {"id": "E1", "text": "ローカル再現をスキップしている", "type": "structural"},
+        {"id": "E2", "text": "CI ログベースの分析のみで診断を完了している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "flaky-detection",
+      "prompt": "ローカルで失敗テストを 3 回実行したが全部 pass だった。CI では落ちていたのに。",
+      "expected_output": "Skill classifies as flaky and proposes CI retry.",
+      "files": [],
+      "assertions": [
+        {"id": "F1", "text": "フレーキーと判定している", "type": "structural"},
+        {"id": "F2", "text": "CI リトライを提案している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "evidence-collection-xcresulttool",
+      "prompt": "ローカルで UI Test が再現した。xcresult からエビデンスを集めて根本原因を分析して。",
+      "expected_output": "Skill extracts evidence via xcresulttool and performs multimodal analysis.",
+      "files": [],
+      "assertions": [
+        {"id": "G1", "text": "xcresulttool でエビデンス抽出を試みている", "type": "structural"},
+        {"id": "G2", "text": "スクリーンショットの Read ツールによるマルチモーダル分析を行っている", "type": "structural"}
+      ]
+    }
+  ]
+}

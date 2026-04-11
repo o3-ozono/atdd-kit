@@ -1,0 +1,39 @@
+{
+  "skill_name": "atdd-kit:plan",
+  "evals": [
+    {
+      "id": 0,
+      "name": "state-gate-pass",
+      "prompt": "Issue #200 の plan を実行して。Issue には in-progress ラベルが付いていて、discover deliverables コメントがある。",
+      "expected_output": "State Gate passes. Plan execution proceeds with test strategy and implementation strategy.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "State Gate チェックを実行している（in-progress ラベルと discover deliverables の確認）", "type": "structural"},
+        {"id": "A2", "text": "plan の本体フロー（Test Strategy / Implementation Strategy）に進んでいる", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "state-gate-reject-no-label",
+      "prompt": "Issue #201 の plan を作りたい。Issue にはまだラベルが何も付いていない。discover もまだ実行していない。",
+      "expected_output": "State Gate rejects. Guides user to run discover first.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "plan の実行を拒否している", "type": "structural"},
+        {"id": "B2", "text": "正しいフロー（discover の実行）を案内している", "type": "structural"},
+        {"id": "B3", "text": "コード編集や Test Strategy 作成に進んでいない", "type": "structural"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "autopilot-guard-direct-invocation-warning",
+      "prompt": "/atdd-kit:plan を直接実行。Issue #400 の Implementation Plan を作りたい。autopilot は経由していない。",
+      "expected_output": "Shows warning recommending autopilot, but proceeds with execution since it is a soft warning.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "autopilot 経由での実行を推奨する警告メッセージを表示している", "type": "structural"},
+        {"id": "C2", "text": "スキルの実行自体はブロックせず続行している", "type": "structural"}
+      ]
+    }
+  ]
+}

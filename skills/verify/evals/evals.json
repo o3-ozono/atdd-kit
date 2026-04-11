@@ -1,0 +1,28 @@
+{
+  "skill_name": "atdd-kit:verify",
+  "evals": [
+    {
+      "id": 0,
+      "name": "state-gate-pass",
+      "prompt": "Issue #400 の verify を実行して。in-progress ラベルが付いていて、feat/400-dashboard ブランチ上で全AC実装済み。",
+      "expected_output": "State Gate passes. Proceeds to verification flow with fresh evidence collection.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "State Gate チェックを実行している（in-progress ラベルの確認）", "type": "structural"},
+        {"id": "A2", "text": "検証フロー（Verification Flow）に進んでいる", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "state-gate-reject",
+      "prompt": "Issue #401 の作業が終わったか確認したい。verify を実行して。ただしラベルは ready-to-implement のままで、まだ atdd は実行していない。",
+      "expected_output": "State Gate rejects. Guides user to run atdd first.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "verify の実行を拒否している", "type": "structural"},
+        {"id": "B2", "text": "正しいフロー（atdd の実行）を案内している", "type": "structural"},
+        {"id": "B3", "text": "検証結果の提示に進んでいない", "type": "structural"}
+      ]
+    }
+  ]
+}

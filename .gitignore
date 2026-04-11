@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+*.swp
+*.swo
+.claude/settings.local.json
+.claude/worktrees/
+.tmp/
+.env*
+*.pem
+*.key
+*.p12
+credentials.json
+Thumbs.db
+*.p8
+*.log

@@ -1,0 +1,62 @@
+{
+  "skill_name": "atdd-kit:issue",
+  "evals": [
+    {
+      "id": 0,
+      "name": "task-to-issue-creation",
+      "prompt": "ダークモード対応を追加したい。Issue を作って。",
+      "expected_output": "Issue skill creates a new Issue and chains to discover for AC derivation.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "Issue テンプレートを選択している（type:development）", "type": "structural"},
+        {"id": "A2", "text": "Issue 作成後に discover スキルへチェーンしている", "type": "structural"},
+        {"id": "A3", "text": "判定結果（タスクタイプ）が表示されている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "discover-chain",
+      "prompt": "API レスポンスのキャッシュ機能を実装したい。",
+      "expected_output": "Issue skill detects feature request, creates Issue, chains to discover.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "機能リクエストを検出して Issue を作成している", "type": "structural"},
+        {"id": "B2", "text": "直接実装に進まず、discover へチェーンしている", "type": "structural"},
+        {"id": "B3", "text": "判定結果（タスクタイプ）が表示されている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "bug-redirect",
+      "prompt": "ログイン画面でアプリがクラッシュする",
+      "expected_output": "Issue skill detects bug report and redirects to /atdd-kit:bug without confirmation.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "bug タイプと判定している", "type": "structural"},
+        {"id": "C2", "text": "/atdd-kit:bug にリダイレクトしている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "documentation-auto-detect",
+      "prompt": "README のインストール手順を更新したい",
+      "expected_output": "Issue skill auto-detects documentation type and proceeds to Step 2 without confirmation.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "documentation タイプと判定している", "type": "structural"},
+        {"id": "D2", "text": "確認質問なしに詳細ヒアリング（Step 2）に直行している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "type-display-transparency",
+      "prompt": "パフォーマンス改善のリファクタリングをしたい",
+      "expected_output": "Issue skill auto-detects development (refactoring) type and displays the result transparently.",
+      "files": [],
+      "assertions": [
+        {"id": "E1", "text": "development (refactoring) タイプと判定している", "type": "structural"},
+        {"id": "E2", "text": "判定結果が表示されている", "type": "structural"}
+      ]
+    }
+  ]
+}

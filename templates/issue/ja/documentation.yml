@@ -1,0 +1,44 @@
+name: ドキュメントタスク
+description: docs/ 配下の追加・更新
+labels: ["type:documentation"]
+body:
+  - type: checkboxes
+    id: skills
+    attributes:
+      label: 適用スキルチェックリスト
+      options:
+        - label: "atdd-kit:discover — 構成・内容の設計"
+        - label: "atdd-kit:verify — リンク切れ・整合性検証"
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何を更新するか
+    validations:
+      required: true
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: サブタスクチェックリスト
+      description: |
+        完了に必要な全サブタスクをチェックボックス形式で列挙する。
+      placeholder: |
+        - [ ] ...
+        - [ ] ドキュメント整合性チェック
+    validations:
+      required: true
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: 完了条件
+      description: この Issue が「完了」と判断できる検証可能な条件を列挙する
+      placeholder: |
+        - [ ] 対象ドキュメントが更新されている
+        - [ ] リンク切れがない
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: 対象ファイル
+      description: 更新対象の docs/ パス

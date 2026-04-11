@@ -1,0 +1,88 @@
+name: 開発タスク
+description: コード実装・インフラ/CI・ビルド設定・バグ修正など
+labels: ["type:development"]
+body:
+  - type: checkboxes
+    id: skills
+    attributes:
+      label: 適用スキルチェックリスト
+      options:
+        - label: "atdd-kit:discover — 要件・方針整理・AC 導出"
+        - label: "テスト要否をユーザーに確認"
+        - label: "atdd-kit:atdd — ATDD ダブルループ TDD"
+        - label: "atdd-kit:verify — ローカル検証 + CI 検証"
+        - label: "atdd-kit:ship — PR 作成・レビュー・マージ"
+  - type: textarea
+    id: user-story
+    attributes:
+      label: ユーザーストーリー
+      description: |
+        ユーザーが達成したいことをユーザーの視点で記述する。
+        インフラ作業・調査タスク等でストーリーが書けない場合は、その理由を記載する。
+      placeholder: |
+        **〜として、** 〜したい。
+        **なぜなら、** 〜だから。
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何を実装するか。バグ修正の場合は現象・原因・影響箇所を記載する
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: |
+        ストーリーが「完了」と言えるために満たすべき条件を Given/When/Then 形式で記述する。
+        3 個以上を目安とし、UX 観点の漏れを防ぐこと。
+      placeholder: |
+        ### AC1: （AC名）
+        - **Given:** （前提条件）
+        - **When:** （操作）
+        - **Then:** （期待結果）
+
+        ### AC2: （AC名）
+        - **Given:** （前提条件）
+        - **When:** （操作）
+        - **Then:** （期待結果）
+    validations:
+      required: true
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: サブタスクチェックリスト
+      description: |
+        完了に必要な全サブタスクをチェックボックス形式で列挙する。
+        カテゴリ別（実装、Unit テスト、E2E テスト、スナップショットテスト、仕上げ等）にグルーピングする。
+      placeholder: |
+        ### 実装
+        - [ ] ...
+
+        ### テスト
+        - [ ] ...
+
+        ### 仕上げ
+        - [ ] ドキュメント整合性チェック
+    validations:
+      required: true
+  - type: textarea
+    id: completion-criteria
+    attributes:
+      label: 完了条件
+      description: |
+        AC が全て GREEN であること + 技術的な完了条件を列挙する。
+        「機能する」「表示される」等の曖昧な表現は避け、検証可能な条件にする。
+      placeholder: |
+        - [ ] AC1〜ACN が全て GREEN
+        - [ ] ビルドが warning ゼロで通る
+        - [ ] 既存テスト（unit / snapshot / ui）が GREEN
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: 参照ドキュメント
+      description: 関連する設計ドキュメント・Issue

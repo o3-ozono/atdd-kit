@@ -1,0 +1,51 @@
+{
+  "skill_name": "atdd-kit:atdd",
+  "evals": [
+    {
+      "id": 0,
+      "name": "state-gate-pass",
+      "prompt": "Issue #300 を実装して。ready-to-implement ラベルが付いている。ACs と plan も承認済み。",
+      "expected_output": "State Gate passes. Removes ready-to-implement, adds in-progress, proceeds to Double-Loop TDD.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "State Gate チェックを実行している（ready-to-implement ラベルの確認）", "type": "structural"},
+        {"id": "A2", "text": "ラベル遷移を行っている（ready-to-implement 除去、in-progress 設定）", "type": "structural"},
+        {"id": "A3", "text": "Double-Loop TDD の実装フローに進んでいる", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "state-gate-reject",
+      "prompt": "Issue #301 を実装したい。まだ discover も plan もやっていない。ラベルは type:development だけ。",
+      "expected_output": "State Gate rejects. Guides user to complete discover and plan first.",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "atdd の実行を拒否している", "type": "structural"},
+        {"id": "B2", "text": "正しいフロー（discover → plan → approval）を案内している", "type": "structural"},
+        {"id": "B3", "text": "コード実装に進んでいない", "type": "structural"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "continuation-path",
+      "prompt": "Issue #302 の実装を再開したい。前セッションがクラッシュして in-progress のまま残っている。ブランチ feat/302-some-feature 上にいる。AC1-2 は実装済み。",
+      "expected_output": "Continuation path: recognizes existing branch matches Issue, allows resumption from AC3 without blocking.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "ブロックせず継続を許可している", "type": "structural"},
+        {"id": "C2", "text": "既存の進捗（AC1-2 完了）を認識して AC3 以降から再開している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "autopilot-guard-direct-invocation-warning",
+      "prompt": "/atdd-kit:atdd を直接実行。Issue #400 を実装したい。autopilot は経由していない。",
+      "expected_output": "Shows warning recommending autopilot, but proceeds with execution since it is a soft warning.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "autopilot 経由での実行を推奨する警告メッセージを表示している", "type": "structural"},
+        {"id": "D2", "text": "スキルの実行自体はブロックせず続行している", "type": "structural"}
+      ]
+    }
+  ]
+}
