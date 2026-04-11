@@ -108,3 +108,33 @@ run_guard() {
   context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
   [[ "$context" == *"session_set_defaults"* ]]
 }
+
+# --- AC4: session_set_defaults 後 — ALLOW ---
+# Each test: trigger clone via initial call, then session_set_defaults, then verify ALLOW
+
+@test "AC4.1: build_sim is ALLOW after session_set_defaults" {
+  # Step 1: initial call creates clone + setup_flag
+  run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-1" > /dev/null 2>&1 || true
+  # Step 2: session_set_defaults sets up the session
+  run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
+    '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-1"
+  # Step 3: build_sim should be ALLOW
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac4-1")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
+}
+
+@test "AC4.2: build_run_sim is ALLOW after session_set_defaults" {
+  run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-2" > /dev/null 2>&1 || true
+  run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
+    '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-2"
+  result=$(run_guard "mcp__XcodeBuildMCP__build_run_sim" '{}' "session-ac4-2")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
+}
+
+@test "AC4.3: test_sim is ALLOW after session_set_defaults" {
+  run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-3" > /dev/null 2>&1 || true
+  run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
+    '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-3"
+  result=$(run_guard "mcp__XcodeBuildMCP__test_sim" '{}' "session-ac4-3")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
+}
