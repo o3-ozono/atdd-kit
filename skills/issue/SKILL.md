@@ -1,6 +1,6 @@
 ---
 name: issue
-description: "Auto-triggers when users request new features, improvements, or tasks. Fires on phrases like 'I want...', 'add...', 'implement...', 'create an Issue', etc. Selects template -> creates Issue -> chains to discover."
+description: "Auto-triggers when users request new features, improvements, or tasks. Fires on phrases like 'I want...', 'add...', 'implement...', 'create an Issue', etc. Selects template -> creates Issue -> chains to ideate."
 ---
 
 ## Session Start Check (required)
