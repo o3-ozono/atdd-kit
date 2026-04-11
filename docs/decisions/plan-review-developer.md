@@ -1,106 +1,87 @@
-# Plan Review: Developer
+# Plan Review — Developer
 
-**Issue:** #2 — feat: session-start で Agent Teams 環境変数を自動設定する
-**Reviewer:** Developer Agent
-**Date:** 2026-04-11
+## Issue: #7 — feat: autopilot 完了時に Agent Team を削除する
 
-## Overall Verdict: PASS
+## Review Criteria
 
-Plan は AC をすべてカバーしており、実装順序とファイル構成に大きな問題はない。以下の指摘事項を反映すれば実装開始可能。
+### R1: Target File Coverage — PASS
 
-## 1. ファイル構成の妥当性
+| File | Necessity | Verdict |
+|------|-----------|---------|
+| `commands/autopilot.md` L86 (Phase 0.9 Tools annotation) | TeamDelete を Tools リストに追加 — Phase 5 で使用するため必須 | OK |
+| `commands/autopilot.md` L90 (Phase 0.9 ToolSearch) | deferred tool のスキーマ事前解決 — 必須 | OK |
+| `commands/autopilot.md` L200 (Phase 5 Tools annotation) | TeamDelete を Phase 5 Tools に追加 — 必須 | OK |
+| `commands/autopilot.md` L225-227 (Phase 5 steps) | TeamDelete ステップ挿入 — 核心変更 | OK |
+| `tests/test_autopilot_agent_teams_setup.bats` | 新テストケース追加 — AC4 に対応 | OK |
 
-### 漏れチェック
+**Missing files:** None. `commands/README.md` は機能的変更なし（Team 削除は autopilot.md 内部の Phase 変更であり、コマンドの Purpose 記述を変える必要はない）。CHANGELOG.md と plugin.json のバージョンバンプは Plan の Subtask Checklist (Finishing) にあるので OK。
 
-| Check | Result | Note |
-|-------|--------|------|
-| session-start SKILL.md に Phase 1-G 追加 | OK | AC1-3 カバー |
-| autopilot.md Prerequisites + エラーメッセージ | OK | AC4-5 カバー |
-| workflow-detail.md 更新 | OK | AC5 カバー |
-| テストファイル新規作成 | OK | 全 AC カバー |
-| CHANGELOG.md | OK | 必須 (DEVELOPMENT.md ルール) |
-| plugin.json version bump | OK | 必須 (DEVELOPMENT.md ルール) |
-| tests/README.md | OK | 必須 (DEVELOPMENT.md Directory READMEs ルール) |
+### R2: Implementation Order Risk — PASS
 
-### 不要ファイルチェック
+AC 依存関係: AC1 (ToolSearch) -> AC2 (TeamDelete step) -> AC3 (step ordering) -> AC4 (tests)
 
-不要なファイルは含まれていない。7 ファイルはすべて必要。
+この順序は正しい。AC1 は AC2 の前提条件（スキーマ解決なしに TeamDelete は呼べない）。AC3 は AC2 の実装結果を検証する制約。AC4 は全実装完了後のテスト追加。
 
-### 漏れ指摘: Phase 3 レポートテンプレート
+**Risk:** None identified. 全 AC が単一ファイル (`autopilot.md`) への変更で、並行作業による競合リスクはない。
 
-**中程度の問題。** `skills/session-start/SKILL.md` の Phase 3 Summary Report テンプレート (line 112-151) には、Phase 1-G の結果を表示するセクションがない。Phase 1-G で `settings.local.json` を新規作成または更新した場合、ユーザーに報告すべき。
+### R3: Technical Risk — PASS (minor note)
 
-**推奨:** Phase 3 レポートテンプレートに以下を追加:
+#### TeamDelete の呼び出しタイミング
 
-```
-**Agent Teams:** Configured  <-- only if settings.local.json was created or updated
-```
+Plan の配置: `ExitWorktree -> TeamDelete -> git checkout main`
 
-これは `**Plugin Version:**` 行の直後が適切。既に設定済みで変更なしの場合は表示しない（ノイズ削減）。
+**Verdict: OK.** ExitWorktree は worktree（ファイルシステム）を削除し、TeamDelete はチーム（論理リソース）を削除する。ファイルシステムのクリーンアップを先に行うのは正しい順序。TeamDelete は worktree の有無に依存しないため、ExitWorktree 後でも問題ない。
 
-Plan のファイル一覧に `skills/session-start/SKILL.md` の Phase 3 変更を追記すべき。ただしこれは同一ファイル内の追記であり、ファイル数は変わらない。
+#### TeamDelete 失敗時の挙動
 
-## 2. 実装順序のリスク
+Plan には TeamDelete 失敗時の明示的なエラーハンドリングが記載されていない。ただし、Phase 5 の時点ではマージ済み・worktree 削除済みであり、TeamDelete の失敗は致命的ではない（orphan team が残るだけ）。autopilot.md は命令的ワークフロー定義であり、各ステップの実行は LLM ランタイムに委ねられるため、明示的な try-catch は不要。
 
-### 依存関係の確認
+**Minor note:** TeamDelete 失敗時のリカバリについて AC に規定がないため、現在のスコープでは「失敗しても STOP しない（マージ済みのため）」という暗黙の挙動になる。これは妥当。
 
-```
-Step 1: session-start SKILL.md  -- no dependency, standalone
-Step 2: autopilot.md || workflow-detail.md  -- no dependency on Step 1 content
-Step 3: tests  -- depends on Step 1 + Step 2 (tests grep for strings in those files)
-Step 4: CHANGELOG || plugin.json || tests/README  -- no dependency
-```
+#### ToolSearch の Phase 0.9 集約
 
-**依存関係は正しい。** Step 3 (テスト) は Step 1-2 の完了後に書くべき。テストは grep ベースなので、Step 1-2 で追加される文字列が確定してからでないとテストが正確に書けない。
+TeamDelete は Phase 5 で初めて使用するが、Phase 0.9 で他の deferred tool と一括してスキーマ解決する設計。これは既存パターン（TeamCreate, SendMessage, EnterWorktree を Phase 0.9 で一括解決）と一貫しており、Phase 5 で別途 ToolSearch を呼ぶよりもシンプル。
 
-**リスクなし。** 順序は妥当。
+### R4: Existing Test Compatibility — PASS
 
-## 3. 技術リスク評価
+既存テスト (`test_autopilot_agent_teams_setup.bats`) を確認した。主に grep ベースで `autopilot.md` の構造を検証している。
 
-### AC Review 指摘事項の反映状況
+変更が既存テストに影響するケース:
+- L86 の Tools annotation 変更: テスト `AC-5: Tools annotation in Phase 0.9` は `**Tools:**` の存在のみチェック → 影響なし
+- L200 の Tools annotation 変更: テスト `AC-5: Tools annotation in Phase 5` は `**Tools:**` の存在のみチェック → 影響なし
+- L225-227 のステップ番号変更（step 7 → step 8）: 既存テストはステップ番号を grep しておらず → 影響なし
 
-| AC Review 指摘 | Plan 反映 | Status |
-|---------------|----------|--------|
-| M1: `settings.local.json` をターゲットにする | Plan 全体で `settings.local.json` を使用 | OK |
-| M2: malformed JSON の処理 | Plan の session-start セクション未記載 | **要追記** |
-| M3: Phase 1-G として配置 (1-D 内に入れない) | Plan で Phase 1-G として配置 | OK |
-| M4: autopilot.md Prerequisites にも env var 記載 | Plan に含まれている | OK |
+### R5: Step Numbering Impact — PASS
 
-### M2 (malformed JSON) の扱い
+現在の Phase 5:
+- Step 6: ExitWorktree (L225)
+- Step 7: git checkout main (L226)
 
-**軽微な問題。** Plan のファイル一覧テーブルでは `settings.local.json の read → check → deep-merge/create` と書かれているが、invalid JSON の場合の挙動が明示されていない。impl-strategy-developer.md では「warn and skip」と記載済み。
+変更後:
+- Step 6: ExitWorktree
+- Step 7: TeamDelete (new)
+- Step 8: git checkout main (renumbered)
 
-**推奨:** Plan テーブルの Change 列を `read → validate → check → deep-merge/create (invalid JSON: warn & skip)` に更新するか、impl-strategy の記述に委ねる旨を明記。実装時に impl-strategy を参照すれば問題ないため、ブロッカーではない。
+ステップ 7 の挿入と既存ステップ 7 → 8 への繰り下げは正しい。autopilot.md 内の他フェーズからの Phase 5 ステップ番号参照は存在しないため、繰り下げによる不整合は発生しない。
 
-### JSON deep-merge の信頼性
+### R6: Test Strategy — PASS
 
-`settings.local.json` の構造はフラットで、`env` オブジェクトの中は文字列キー-値ペアのみ。ネストが浅いため、LLM による JSON マージの信頼性は高い。Phase 1-D が既に `settings.json` に対して hooks のマージを行っている前例がある。
+Plan のテスト戦略（BATS grep ベース）は既存テストパターンと一貫。テストケースとして以下が必要:
+- Phase 0.9 ToolSearch に TeamDelete が含まれる (AC1)
+- Phase 5 に TeamDelete ステップが存在する (AC2)
+- ExitWorktree → TeamDelete → git checkout main の順序 (AC3)
 
-**リスク: 低。**
+これらは全て grep で検証可能であり、既存テストのアプローチと整合。
 
-### 初回セッションの挙動
+## Summary
 
-Phase 1-G が `settings.local.json` に env var を書き込んでも、現在のプロセスには即時適用されない。**次回セッションから有効**になる。これは意図通りであり、AC4 の autopilot Prerequisites Check が初回セッションのフォールバックとして機能する。
+| Check | Result |
+|-------|--------|
+| R1: File coverage | PASS |
+| R2: Implementation order | PASS |
+| R3: Technical risk | PASS |
+| R4: Existing test compat | PASS |
+| R5: Step numbering | PASS |
+| R6: Test strategy | PASS |
 
-**リスク: なし。** 設計として正しい。
-
-## 4. AC との整合性
-
-| AC | Plan Coverage | Verdict |
-|----|--------------|---------|
-| AC1: 毎セッション自動設定 | File #1 (session-start Phase 1-G) | OK |
-| AC2: 既存設定の保持 | File #1 (deep-merge instruction) | OK |
-| AC3: settings.local.json 非存在時 | File #1 (create instruction) | OK |
-| AC4: autopilot Prerequisites Check フォールバック | File #2 (error message改善) | OK |
-| AC5: ドキュメント記載 | File #2 (Prerequisites) + File #3 (workflow-detail) | OK |
-
-**全 AC がカバーされている。**
-
-## Summary of Recommendations
-
-| # | Severity | Item | Action |
-|---|----------|------|--------|
-| 1 | Medium | Phase 3 レポートに Agent Teams 設定結果を含める | session-start SKILL.md の Phase 3 テンプレートに 1 行追加 |
-| 2 | Low | malformed JSON 処理を Plan レベルで明示 | Plan テーブル更新 or impl-strategy 参照を明記 |
-
-いずれもブロッカーではない。実装着手可能。
+**Overall: PASS** — 技術的な懸念なし。Plan はそのまま実装可能。

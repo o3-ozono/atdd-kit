@@ -403,3 +403,60 @@ AUTOPILOT="commands/autopilot.md"
 @test "#180-AC2: No old plan-review-dev.md filename in autopilot.md" {
   ! grep -q 'plan-review-dev\.md' "$AUTOPILOT"
 }
+
+# ===========================================================================
+# Issue #7: TeamDelete on autopilot completion
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# #7-AC1: Phase 0.9 ToolSearch includes TeamDelete
+# ---------------------------------------------------------------------------
+
+@test "#7-AC1: Phase 0.9 Tools annotation includes TeamDelete" {
+  grep -A 3 "## Phase 0.9" "$AUTOPILOT" | grep -q 'TeamDelete'
+}
+
+@test "#7-AC1: Phase 0.9 ToolSearch fetches TeamDelete schema" {
+  grep -A 10 "## Phase 0.9" "$AUTOPILOT" | grep 'ToolSearch' | grep -q 'TeamDelete'
+}
+
+# ---------------------------------------------------------------------------
+# #7-AC2: Phase 5 TeamDelete step exists
+# ---------------------------------------------------------------------------
+
+@test "#7-AC2: Phase 5 contains TeamDelete step" {
+  grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -q 'TeamDelete'
+}
+
+@test "#7-AC2: Phase 5 TeamDelete removes autopilot-{issue_number} team" {
+  grep -A 40 "## Phase 5" "$AUTOPILOT" | grep 'TeamDelete' | grep -q 'autopilot-{issue_number}'
+}
+
+@test "#7-AC2: Phase 5 Tools annotation includes TeamDelete" {
+  grep -A 3 "## Phase 5" "$AUTOPILOT" | grep '\*\*Tools:\*\*' | grep -q 'TeamDelete'
+}
+
+# ---------------------------------------------------------------------------
+# #7-AC3: Phase 5 step ordering (merge -> label -> ExitWorktree -> TeamDelete -> git checkout)
+# ---------------------------------------------------------------------------
+
+@test "#7-AC3: ExitWorktree appears before TeamDelete in Phase 5 steps" {
+  exit_line=$(grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -n '^[0-9].*ExitWorktree' | head -1 | cut -d: -f1)
+  delete_line=$(grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -n '^[0-9].*TeamDelete' | head -1 | cut -d: -f1)
+  [ -n "$exit_line" ] && [ -n "$delete_line" ] && [ "$exit_line" -lt "$delete_line" ]
+}
+
+@test "#7-AC3: TeamDelete appears before git checkout main in Phase 5 steps" {
+  delete_line=$(grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -n '^[0-9].*TeamDelete' | head -1 | cut -d: -f1)
+  checkout_line=$(grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -n '^[0-9].*git checkout main' | head -1 | cut -d: -f1)
+  [ -n "$delete_line" ] && [ -n "$checkout_line" ] && [ "$delete_line" -lt "$checkout_line" ]
+}
+
+# ---------------------------------------------------------------------------
+# #7: Negative test — TeamDelete scoped to Phase 0.9 and Phase 5 only
+# ---------------------------------------------------------------------------
+
+@test "#7: TeamDelete not referenced in Phases 1-4" {
+  # TeamDelete is a destructive operation — must only appear in Phase 0.9 (ToolSearch) and Phase 5 (execution)
+  ! sed -n '/## Phase 1:/,/## Phase 5:/p' "$AUTOPILOT" | grep -q 'TeamDelete'
+}

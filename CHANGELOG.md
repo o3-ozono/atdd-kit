@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-12
+
+### Added
+- autopilot Phase 5: TeamDelete step to remove `autopilot-{issue_number}` team on task completion (#7)
+- autopilot Phase 0.9: pre-resolve `TeamDelete` schema via ToolSearch (#7)
+
 ## [1.1.0] - 2026-04-11
 
 ### Added
