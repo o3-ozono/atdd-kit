@@ -66,7 +66,7 @@ Implementer + Reviewer launch as Agent Teams teammates in the user's session. Th
 
 **Mid-phase Resume:** When a session restarts at a mid-phase (Phase 2-4), Phase 0.9 re-spawns the required agents (Developer and/or QA depending on the phase) with prior Decision Trail files as context, then continues via SendMessage.
 
-Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start)
 
 Launch with `/atdd-kit:autopilot`:
 

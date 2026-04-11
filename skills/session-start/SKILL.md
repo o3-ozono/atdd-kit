@@ -100,6 +100,27 @@ Fetch recently merged PRs and closed Issues (past 24 hours) in parallel:
 
 If both results are empty, skip the Recent Activity section entirely in the report.
 
+### G. Agent Teams Environment Check
+
+Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is configured in `.claude/settings.local.json` (per-machine, gitignored).
+
+1. **Read** `.claude/settings.local.json`
+   - If file does not exist: create `.claude/` directory if needed (`mkdir -p .claude`), then write:
+     ```json
+     {
+       "env": {
+         "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+       }
+     }
+     ```
+     Report: "Agent Teams env var configured in `.claude/settings.local.json`"
+   - If file exists but contains invalid JSON: report warning "`.claude/settings.local.json` contains invalid JSON — cannot auto-configure Agent Teams env var. Please fix the file manually." Skip this step (do not block session-start).
+   - If file exists and valid JSON:
+     - Check if `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` key exists
+     - If missing: deep-merge `{"env": {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}}` into existing content, preserving all other keys and all existing `env` entries (e.g., `GH_TOKEN`). Write back.
+       Report: "Agent Teams env var added to `.claude/settings.local.json`"
+     - If already present: no action needed (preserve existing value regardless of what it is)
+
 ## Phase 2: Status Assessment
 
 | Status | Condition |
@@ -115,6 +136,7 @@ If both results are empty, skip the Recent Activity section entirely in the repo
 ## Session Start Report
 
 **Plugin Version:** atdd-kit vX.Y.Z  <-- from check-plugin-version.sh
+**Agent Teams:** Configured           <-- only if settings.local.json was created or updated in Phase 1-G
 **Updated: v0.1.0 → v0.2.0**         <-- only if UPDATED
 > (CHANGELOG diff here)              <-- only if UPDATED
 

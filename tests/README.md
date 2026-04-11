@@ -38,6 +38,7 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_po_dev_qa.bats | Agent role definitions (agents/*.md) |
 | test_public_repo_prep.bats | Public repository preparation checks |
 | test_session_start_adapters.bats | Session start adapter removal verification |
+| test_session_start_agent_teams_env.bats | Session start Agent Teams env auto-configuration |
 | test_session_start_auto_sync.bats | Addon-based file sync |
 | test_session_start_recent_activity.bats | Session start recent activity detection |
 | test_session_start_task_recommendation.bats | Session start task recommendation |

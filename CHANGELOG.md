@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-11
+
+### Added
+- session-start Phase 1-G: auto-configure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` every session (#2)
+- autopilot Prerequisites Check: actionable error message when Agent Teams tools are unavailable (#2)
+
 ## [1.0.0] - 2026-04-10
 
 ### Added
