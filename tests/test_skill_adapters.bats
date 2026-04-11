@@ -107,8 +107,39 @@
   grep -qi 'no code\|no file\|禁止\|prohibition' skills/ideate/SKILL.md
 }
 
-@test "ideate chains to issue skill" {
+@test "ideate chains to issue skill in pre-Issue mode" {
   grep -q 'atdd-kit:issue' skills/ideate/SKILL.md
+}
+
+# AC2: ideate post-Issue mode
+
+@test "ideate documents post-Issue mode" {
+  grep -qi 'post-Issue' skills/ideate/SKILL.md
+}
+
+@test "ideate chains to discover in post-Issue mode" {
+  grep -q 'atdd-kit:discover' skills/ideate/SKILL.md
+}
+
+@test "ideate detects mode by Issue number argument" {
+  grep -qi 'issue.*number\|issue.*argument\|Issue.*exist' skills/ideate/SKILL.md
+}
+
+# AC3: ideate skip functionality
+
+@test "ideate documents skip option in post-Issue mode" {
+  grep -qi 'skip.*discover\|skip.*brainstorm\|Skip to discover' skills/ideate/SKILL.md
+}
+
+# AC5: pre-Issue mode preserved
+
+@test "ideate preserves pre-Issue mode with issue chain" {
+  # pre-Issue mode still chains to issue
+  grep -q 'atdd-kit:issue' skills/ideate/SKILL.md
+}
+
+@test "ideate documents pre-Issue mode" {
+  grep -qi 'pre-Issue' skills/ideate/SKILL.md
 }
 
 # AC1: issue chains to ideate (not directly to discover)
