@@ -10,7 +10,7 @@ setup() {
   GUARD="addons/ios/scripts/sim-pool-guard.sh"
 
   mkdir -p "$SIM_SESSION_DIR" "$SIM_MARKER_DIR"
-  touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"
+  touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
 
   export MOCK_BIN="${BATS_TMPDIR}/mock-bin-$$"
   mkdir -p "$MOCK_BIN"

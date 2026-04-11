@@ -34,7 +34,7 @@ MOCK
   export PATH="$MOCK_BIN:$PATH"
 
   # Pre-create golden marker so golden init is skipped
-  touch "$SIM_MARKER_DIR/atdd-kit-golden-initialized-iOS-18-0"
+  touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
 }
 
 teardown() {
