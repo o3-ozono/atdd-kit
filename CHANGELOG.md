@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-04-12
+
+### Changed
+- `workflow-config.yml` simplified to flat `platform` field only — removed `project.name` wrapper (#17)
+- session-start confirmation prompt now shows full addon inventory (MCP servers, hooks, deploy files, skills) before asking for confirmation (#17)
+
+### Fixed
+- Removed stale `screenshot_script` reference in ship skill (#17)
+- Removed stale `review_agents` reference in review-guide (#17)
+
+### Added
+- Addon installation inventory section in getting-started.md listing all components each addon installs (#17)
+
 ## [1.3.0] - 2026-04-12
 
 ### Added

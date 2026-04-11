@@ -31,7 +31,7 @@ claude plugins marketplace add https://github.com/o3-ozono/atdd-kit.git
 claude plugins install atdd-kit --scope project
 ```
 
-セットアップは初回セッション時に自動で行われます。`session-start` スキルがプラットフォーム（iOS, Web, Other）を自動検出し、`.claude/workflow-config.yml` を作成します。手動でセットアップコマンド（`/atdd-kit:setup-github`、`/atdd-kit:setup-ios` 等）を実行することもできます。
+セットアップは初回セッション時に自動で行われます。`session-start` スキルがプラットフォーム（iOS, Web, Other）を自動検出し、インストールされる内容を表示して確認を求めます。手動でセットアップコマンド（`/atdd-kit:setup-github`、`/atdd-kit:setup-ios` 等）を実行することもできます。各 addon のインストール内容は [Getting Started — What Each Addon Installs](docs/getting-started.md#what-each-addon-installs) を参照してください。
 
 あとは作りたいものを伝えるだけ — atdd-kit が残りを処理します。
 
