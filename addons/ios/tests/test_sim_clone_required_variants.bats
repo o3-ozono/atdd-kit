@@ -64,3 +64,23 @@ run_guard() {
     sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD"
   )
 }
+
+# --- AC2: 否定テスト — READONLY_TOOLS に含まれていない ---
+
+@test "AC2.1: build_sim is NOT in READONLY_TOOLS" {
+  ! grep -q '"mcp__XcodeBuildMCP__build_sim"' <(
+    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
+  )
+}
+
+@test "AC2.2: build_run_sim is NOT in READONLY_TOOLS" {
+  ! grep -q '"mcp__XcodeBuildMCP__build_run_sim"' <(
+    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
+  )
+}
+
+@test "AC2.3: test_sim is NOT in READONLY_TOOLS" {
+  ! grep -q '"mcp__XcodeBuildMCP__test_sim"' <(
+    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
+  )
+}
