@@ -1,6 +1,6 @@
 ---
 name: issue
-description: "Auto-triggers when users request new features, improvements, or tasks. Fires on phrases like 'I want...', 'add...', 'implement...', 'create an Issue', etc. Selects template -> creates Issue -> chains to discover."
+description: "Auto-triggers when users request new features, improvements, or tasks. Fires on phrases like 'I want...', 'add...', 'implement...', 'create an Issue', etc. Selects template -> creates Issue -> chains to ideate."
 ---
 
 ## Session Start Check (required)
@@ -77,7 +77,7 @@ After creating the Issue, post a Context Block as an Issue comment to pass colle
 
 This enables discover to skip redundant questions already answered during Issue creation.
 
-## Step 4: Chain to discover
+## Step 4: Chain to ideate
 
-"Issue #XX created. Running `atdd-kit:discover` to explore requirements."
--> Invoke the discover skill
+"Issue #XX created. Running `atdd-kit:ideate` for design exploration before requirements."
+-> Invoke the ideate skill, passing the Issue number so ideate runs in post-Issue mode

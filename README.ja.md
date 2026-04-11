@@ -42,7 +42,7 @@ claude plugins install atdd-kit --scope project
 ```mermaid
 flowchart LR
   bug["bug (auto)"] --> discover
-  issue["issue (auto)"] --> discover
+  issue["issue (auto)"] --> ideate["ideate (optional)"] --> discover
   discover --> plan --> approval["[承認]"] --> atdd --> verify --> ship
 ```
 
@@ -64,7 +64,7 @@ flowchart LR
 |--------|------|
 | **issue** | タスク依頼を自動検知し、Issue 作成を開始 |
 | **bug** | バグ報告を自動検知し、トリアージパイプラインを開始 |
-| **ideate** | 探索的な設計議論を自動検知 |
+| **ideate** | 設計探索 -- 探索的リクエストで自動トリガー、issue から discover の間にもチェーン |
 | **debugging** | エラー報告を自動検知し、根本原因調査を開始 |
 | **skill-gate** | 関連スキルが直接作業の前に呼び出されることを保証 |
 

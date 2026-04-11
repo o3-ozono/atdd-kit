@@ -22,6 +22,29 @@
         {"id": "B1", "text": "アプローチ比較を実施している", "type": "structural"},
         {"id": "B2", "text": "検討後に Issue 作成への誘導を行っている", "type": "structural"}
       ]
+    },
+    {
+      "id": 2,
+      "name": "post-issue-mode",
+      "prompt": "Issue #42 が作成された。認証方式について壁打ちしたい。OAuth と API Key どちらがいいか。",
+      "expected_output": "Ideate runs in post-Issue mode, skips Issue creation, brainstorms approaches, then chains to discover.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "Issue が既に存在することを認識し、post-Issue モードで動作している", "type": "structural"},
+        {"id": "C2", "text": "アプローチ比較を実施している（OAuth vs API Key）", "type": "structural"},
+        {"id": "C3", "text": "Issue 作成ではなく discover へのチェーンを提示している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "post-issue-skip",
+      "prompt": "Issue #42 が作成された。要件は明確なので壁打ちはスキップして discover に進みたい。",
+      "expected_output": "Ideate recognizes the skip request and chains directly to discover without brainstorming.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "スキップの意図を認識している", "type": "structural"},
+        {"id": "D2", "text": "壁打ちを省略して discover に直接チェーンしている", "type": "structural"}
+      ]
     }
   ]
 }

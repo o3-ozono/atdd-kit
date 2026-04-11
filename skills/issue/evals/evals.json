@@ -5,11 +5,11 @@
       "id": 0,
       "name": "task-to-issue-creation",
       "prompt": "ダークモード対応を追加したい。Issue を作って。",
-      "expected_output": "Issue skill creates a new Issue and chains to discover for AC derivation.",
+      "expected_output": "Issue skill creates a new Issue and chains to ideate for design exploration.",
       "files": [],
       "assertions": [
         {"id": "A1", "text": "Issue テンプレートを選択している（type:development）", "type": "structural"},
-        {"id": "A2", "text": "Issue 作成後に discover スキルへチェーンしている", "type": "structural"},
+        {"id": "A2", "text": "Issue 作成後に ideate スキルへチェーンしている", "type": "structural"},
         {"id": "A3", "text": "判定結果（タスクタイプ）が表示されている", "type": "structural"}
       ]
     },
@@ -17,11 +17,11 @@
       "id": 1,
       "name": "discover-chain",
       "prompt": "API レスポンスのキャッシュ機能を実装したい。",
-      "expected_output": "Issue skill detects feature request, creates Issue, chains to discover.",
+      "expected_output": "Issue skill detects feature request, creates Issue, chains to ideate.",
       "files": [],
       "assertions": [
         {"id": "B1", "text": "機能リクエストを検出して Issue を作成している", "type": "structural"},
-        {"id": "B2", "text": "直接実装に進まず、discover へチェーンしている", "type": "structural"},
+        {"id": "B2", "text": "直接実装に進まず、ideate へチェーンしている", "type": "structural"},
         {"id": "B3", "text": "判定結果（タスクタイプ）が表示されている", "type": "structural"}
       ]
     },

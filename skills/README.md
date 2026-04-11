@@ -7,7 +7,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 ## Workflow Chain
 
 ```
-bug/issue (auto) → discover → plan → [approval gate] → atdd → verify → ship
+bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
 ```
 
 ## State Gate
@@ -31,8 +31,8 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 | [bug](bug/) | Auto-triggers on bug/error keywords | Entry point → chains to discover |
 | [debugging](debugging/) | Auto-triggers on bug reports, errors, crashes | Pre-fix root cause investigation |
 | [discover](discover/) | First step of Issue Ready flow | Core chain: requirements → ACs |
-| [ideate](ideate/) | Auto-triggers on exploratory design requests | Pre-Issue design exploration |
-| [issue](issue/) | Auto-triggers on feature/task requests | Entry point → chains to discover |
+| [ideate](ideate/) | Auto-triggers on exploratory design requests; also chained from issue | Between issue and discover (optional, skippable) |
+| [issue](issue/) | Auto-triggers on feature/task requests | Entry point → chains to ideate |
 | [plan](plan/) | Second step of Issue Ready flow | Core chain: test & implementation strategy |
 | [session-start](session-start/) | Auto-invoked by other skills | Session initialization |
 | [ship](ship/) | Manually invoked after verify passes | Core chain: PR finalization → merge |
