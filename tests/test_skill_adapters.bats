@@ -111,6 +111,19 @@
   grep -q 'atdd-kit:issue' skills/ideate/SKILL.md
 }
 
+# AC1: issue chains to ideate (not directly to discover)
+
+@test "issue Step 4 chains to ideate skill" {
+  grep -q 'atdd-kit:ideate' skills/issue/SKILL.md
+}
+
+@test "issue Step 4 does not chain directly to discover" {
+  # issue should chain to ideate, not discover directly
+  # The Step 4 section should reference ideate, not discover as the chain target
+  run grep -A5 '## Step 4' skills/issue/SKILL.md
+  [[ "$output" == *"ideate"* ]]
+}
+
 # debugging skill
 
 @test "debugging SKILL.md exists" {

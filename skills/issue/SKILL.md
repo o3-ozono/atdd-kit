@@ -77,7 +77,7 @@ After creating the Issue, post a Context Block as an Issue comment to pass colle
 
 This enables discover to skip redundant questions already answered during Issue creation.
 
-## Step 4: Chain to discover
+## Step 4: Chain to ideate
 
-"Issue #XX created. Running `atdd-kit:discover` to explore requirements."
--> Invoke the discover skill
+"Issue #XX created. Running `atdd-kit:ideate` for design exploration before requirements."
+-> Invoke the ideate skill, passing the Issue number so ideate runs in post-Issue mode
