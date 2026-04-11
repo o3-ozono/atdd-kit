@@ -84,3 +84,27 @@ run_guard() {
     sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
   )
 }
+
+# --- AC3: 初回呼び出し — DENY + session_set_defaults 案内 ---
+# Each test uses a unique session_id to avoid setup_flag interference
+
+@test "AC3.1: first build_sim call is DENY with session_set_defaults instruction" {
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac3-1")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+  context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
+  [[ "$context" == *"session_set_defaults"* ]]
+}
+
+@test "AC3.2: first build_run_sim call is DENY with session_set_defaults instruction" {
+  result=$(run_guard "mcp__XcodeBuildMCP__build_run_sim" '{}' "session-ac3-2")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+  context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
+  [[ "$context" == *"session_set_defaults"* ]]
+}
+
+@test "AC3.3: first test_sim call is DENY with session_set_defaults instruction" {
+  result=$(run_guard "mcp__XcodeBuildMCP__test_sim" '{}' "session-ac3-3")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+  context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
+  [[ "$context" == *"session_set_defaults"* ]]
+}
