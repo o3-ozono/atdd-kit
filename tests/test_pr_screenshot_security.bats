@@ -169,3 +169,39 @@ old
 @test "AC2: SC2086 disable comment is removed from pr-screenshot-table.sh" {
   ! grep -q 'shellcheck disable=SC2086' "$SCRIPT"
 }
+
+# ---------------------------------------------------------------------------
+# AC4: .gitignore pattern hardening
+# ---------------------------------------------------------------------------
+
+setup_git_repo() {
+  local repo_dir="${BATS_TEST_TMPDIR}/gitrepo"
+  mkdir -p "$repo_dir"
+  git -C "$repo_dir" init --quiet
+  cp .gitignore "$repo_dir/.gitignore"
+  echo "$repo_dir"
+}
+
+@test "AC4: .gitignore matches *.local.* files" {
+  repo_dir="$(setup_git_repo)"
+  run git -C "$repo_dir" check-ignore "settings.local.json"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "AC4: .gitignore matches *.secret files" {
+  repo_dir="$(setup_git_repo)"
+  run git -C "$repo_dir" check-ignore "database.secret"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "AC4: .gitignore matches *.secrets files" {
+  repo_dir="$(setup_git_repo)"
+  run git -C "$repo_dir" check-ignore "api.secrets"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "AC4: .gitignore contains all three patterns" {
+  grep -q '^\*\.local\.\*$' .gitignore
+  grep -q '^\*\.secret$' .gitignore
+  grep -q '^\*\.secrets$' .gitignore
+}
