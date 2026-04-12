@@ -117,3 +117,55 @@ old
   # Must NOT use the old unsafe shell expansion pattern
   ! grep -q "getline line < \"'\"" "$SCRIPT"
 }
+
+# ---------------------------------------------------------------------------
+# AC2: Safe image_paths expansion
+# ---------------------------------------------------------------------------
+
+@test "AC2: bash array preserves paths with spaces as individual arguments" {
+  # Simulate the array-based approach
+  run bash -c '
+    set -euo pipefail
+    image_paths=()
+    image_paths+=("/tmp/path with spaces/img1.png")
+    image_paths+=("/tmp/normal/img2.png")
+
+    # Count arguments — each path should be one argument
+    count=0
+    for arg in "${image_paths[@]}"; do
+      count=$((count + 1))
+    done
+    echo "$count"
+  '
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "2" ]]
+}
+
+@test "AC2: single image path is correctly passed as one argument" {
+  run bash -c '
+    set -euo pipefail
+    image_paths=()
+    image_paths+=("/tmp/single image.png")
+
+    count=0
+    for arg in "${image_paths[@]}"; do
+      count=$((count + 1))
+    done
+    echo "$count"
+  '
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "1" ]]
+}
+
+@test "AC2: pr-screenshot-table.sh uses array for image_paths (not string concatenation)" {
+  # Must use array declaration
+  grep -q 'image_paths=()' "$SCRIPT"
+  # Must use array append
+  grep -q 'image_paths+=(' "$SCRIPT"
+  # Must use array expansion
+  grep -q '"${image_paths\[@\]}"' "$SCRIPT"
+}
+
+@test "AC2: SC2086 disable comment is removed from pr-screenshot-table.sh" {
+  ! grep -q 'shellcheck disable=SC2086' "$SCRIPT"
+}

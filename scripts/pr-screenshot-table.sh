@@ -176,15 +176,14 @@ PR_URL="https://github.com/${REPO}/pull/${PR_NUMBER}"
 UPLOAD_RESULT="${TMPDIR_BASE}/upload_result.txt"
 
 # 画像パスだけを抽出してアップロードスクリプトに渡す
-image_paths=""
+image_paths=()
 while IFS='=' read -r key path; do
-  image_paths="${image_paths} ${path}"
+  image_paths+=("$path")
 done < "$UPLOAD_LIST"
 
 echo ""
 echo "画像をアップロード中..."
-# shellcheck disable=SC2086
-node "${SCRIPT_DIR}/upload-image-to-github.mjs" "$PR_URL" $image_paths > "$UPLOAD_RESULT" 2>/dev/null || true
+node "${SCRIPT_DIR}/upload-image-to-github.mjs" "$PR_URL" "${image_paths[@]}" > "$UPLOAD_RESULT" 2>/dev/null || true
 
 # 結果をキーにマッピング
 UPLOAD_MAP="${TMPDIR_BASE}/upload_map.txt"
