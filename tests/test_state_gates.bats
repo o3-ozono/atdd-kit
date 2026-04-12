@@ -60,16 +60,16 @@ SHIP_SKILL="skills/ship/SKILL.md"
   grep -q 'State Gate' "$ATDD_SKILL"
 }
 
-@test "AC3: atdd State Gate checks ready-to-implement label" {
-  sed -n '/State Gate/,/^## /p' "$ATDD_SKILL" | grep -q 'ready-to-implement'
+@test "AC3: atdd State Gate checks ready-to-go label" {
+  sed -n '/State Gate/,/^## /p' "$ATDD_SKILL" | grep -q 'ready-to-go'
 }
 
-@test "AC3: atdd State Gate removes ready-to-implement and adds in-progress" {
-  sed -n '/State Gate/,/^## /p' "$ATDD_SKILL" | grep -qi 'remove.*ready-to-implement'
+@test "AC3: atdd State Gate removes ready-to-go and adds in-progress" {
+  sed -n '/State Gate/,/^## /p' "$ATDD_SKILL" | grep -qi 'remove.*ready-to-go'
   sed -n '/State Gate/,/^## /p' "$ATDD_SKILL" | grep -qi 'in-progress'
 }
 
-@test "AC3: atdd State Gate refuses without ready-to-implement" {
+@test "AC3: atdd State Gate refuses without ready-to-go" {
   sed -n '/State Gate/,/^## /p' "$ATDD_SKILL" | grep -qi 'stop\|not ready'
 }
 

@@ -8,9 +8,9 @@
 [Issue]
   (no label) --(work started)--> in-progress
   in-progress --(plan complete)--> ready-for-plan-review
-  ready-for-plan-review --(Reviewer PASS)--> ready-to-implement
+  ready-for-plan-review --(Reviewer PASS)--> ready-to-go
   ready-for-plan-review --(Reviewer: revision needed)--> needs-plan-revision --(fix complete)--> ready-for-plan-review  (loop)
-  ready-to-implement --(Implementer picks up)--> in-progress
+  ready-to-go --(Implementer picks up)--> in-progress
 
 [PR]
   ready-for-PR-review --> needs-pr-revision --(fix complete)--> ready-for-PR-review  (loop)
@@ -24,8 +24,8 @@
 | `in-progress` | Work in progress (exclusive lock) | Someone is actively working on this Issue. Other processes must skip it. |
 | `ready-for-plan-review` | Plan complete, awaiting review | Reviewer reviews the plan. |
 | `needs-plan-revision` | Plan review found issues | User fixes plan in main session (discover/plan). Implementer does not start. |
-| `ready-for-user-approval` | Plan review passed | Reviewer PASS transitions directly to `ready-to-implement`. Retained for autonomy:0 manual approval flow. |
-| `ready-to-implement` | Design complete, ready for implementation | Implementer picks it up. |
+| `ready-for-user-approval` | Plan review passed | Reviewer PASS transitions directly to `ready-to-go`. Retained for autonomy:0 manual approval flow. |
+| `ready-to-go` | Design complete, ready for implementation | Implementer picks it up. |
 | `autonomy:0` | Full Control -- all approval gates active | Default if no autonomy label is set. |
 | `autonomy:1` | Guided -- AC approval + merge approval only | Plan review auto-approval if R1-R6 PASS. |
 | `autonomy:2` | Autonomous -- merge approval only | Plan review and user approval auto-skipped. |
@@ -45,7 +45,7 @@ See `docs/autonomy-levels.md` for full details. Labels `autonomy:0` through `aut
 ### Auto-approval Path (Level 1+)
 
 When autopilot (QA) completes with R1-R6 all PASS and the Issue has `autonomy:1` or higher:
-- `ready-for-plan-review` → `ready-to-implement` (skipping `ready-for-user-approval`)
+- `ready-for-plan-review` → `ready-to-go` (skipping `ready-for-user-approval`)
 - Auto-approval comment posted; user can revert with `needs-plan-revision`
 
 ---

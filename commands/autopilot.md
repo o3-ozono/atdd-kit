@@ -73,7 +73,7 @@ After resolving the target Issue, determine which phase to start from based on t
 | `ready-for-PR-review` | Phase 4: PR Review |
 | `needs-pr-revision` | Phase 3: Implementation (revision) |
 | `implementing` | Phase 3: Implementation (continue) |
-| `ready-to-implement` | Phase 3: Implementation |
+| `ready-to-go` | Phase 3: Implementation |
 | `needs-plan-revision` | Phase 2: plan (recreate) |
 | `ready-for-plan-review` | Phase 2: Plan Review Round |
 | `in-progress` only (no phase label) | Phase 1: discover |
@@ -174,7 +174,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 2. PO collects and integrates review results from `docs/decisions/plan-review-developer.md` and `docs/decisions/plan-review-qa.md`
 3. PO finalizes Plan (Stakeholder approval is NOT required for Plan)
 4. Post Plan as Issue comment with `gh issue comment`
-5. `gh issue edit <number> --add-label ready-to-implement`
+5. `gh issue edit <number> --add-label ready-to-go`
 
 ## Phase 3: Implementation (Developer agent)
 

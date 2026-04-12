@@ -27,7 +27,7 @@ Platform-specific addons are in `${CLAUDE_PLUGIN_ROOT}/addons/`. Each addon has 
 Start with `Closes #<issue-number>`. Merge with `--squash`. Add matching `type:` label.
 
 ## Label Flow
-- Issue: (no label) -> `in-progress` -> `ready-for-plan-review` -> `ready-to-implement` -> `in-progress`
+- Issue: (no label) -> `in-progress` -> `ready-for-plan-review` -> `ready-to-go` -> `in-progress`
 - PR: `ready-for-PR-review` -> merge (or `needs-pr-revision` loop)
 
 ## Docs & Errors

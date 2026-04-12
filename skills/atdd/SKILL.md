@@ -1,6 +1,6 @@
 ---
 name: atdd
-description: "Use when implementing a ready-to-implement Issue with approved ACs and plan."
+description: "Use when implementing a ready-to-go Issue with approved ACs and plan."
 ---
 
 ## Session Start Check (required)
@@ -20,10 +20,10 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning si
 
 Before starting implementation, verify the Issue state:
 
-1. **Check `ready-to-implement` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("ready-to-implement")'`
-   - If present: **New implementation.** Remove `ready-to-implement`, add `in-progress`: `gh issue edit <number> --remove-label ready-to-implement --add-label in-progress`
+1. **Check `ready-to-go` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("ready-to-go")'`
+   - If present: **New implementation.** Remove `ready-to-go`, add `in-progress`: `gh issue edit <number> --remove-label ready-to-go --add-label in-progress`
    - If missing: check Continuation Path (below)
-2. **Continuation Path:** If `ready-to-implement` is absent but `in-progress` is present AND the current branch matches `<prefix>/<issue-number>-*`:
+2. **Continuation Path:** If `ready-to-go` is absent but `in-progress` is present AND the current branch matches `<prefix>/<issue-number>-*`:
    - This is a **session resumption.** Do NOT block. Proceed with implementation from where it left off.
    - Check `git log --oneline main..<branch>` to identify completed ACs from commit messages.
    - Resume from the next incomplete AC.

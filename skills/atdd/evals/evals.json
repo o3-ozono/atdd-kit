@@ -4,12 +4,12 @@
     {
       "id": 0,
       "name": "state-gate-pass",
-      "prompt": "Issue #300 を実装して。ready-to-implement ラベルが付いている。ACs と plan も承認済み。",
-      "expected_output": "State Gate passes. Removes ready-to-implement, adds in-progress, proceeds to Double-Loop TDD.",
+      "prompt": "Issue #300 を実装して。ready-to-go ラベルが付いている。ACs と plan も承認済み。",
+      "expected_output": "State Gate passes. Removes ready-to-go, adds in-progress, proceeds to Double-Loop TDD.",
       "files": [],
       "assertions": [
-        {"id": "A1", "text": "State Gate チェックを実行している（ready-to-implement ラベルの確認）", "type": "structural"},
-        {"id": "A2", "text": "ラベル遷移を行っている（ready-to-implement 除去、in-progress 設定）", "type": "structural"},
+        {"id": "A1", "text": "State Gate チェックを実行している（ready-to-go ラベルの確認）", "type": "structural"},
+        {"id": "A2", "text": "ラベル遷移を行っている（ready-to-go 除去、in-progress 設定）", "type": "structural"},
         {"id": "A3", "text": "Double-Loop TDD の実装フローに進んでいる", "type": "structural"}
       ]
     },

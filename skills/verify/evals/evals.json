@@ -15,7 +15,7 @@
     {
       "id": 1,
       "name": "state-gate-reject",
-      "prompt": "Issue #401 の作業が終わったか確認したい。verify を実行して。ただしラベルは ready-to-implement のままで、まだ atdd は実行していない。",
+      "prompt": "Issue #401 の作業が終わったか確認したい。verify を実行して。ただしラベルは ready-to-go のままで、まだ atdd は実行していない。",
       "expected_output": "State Gate rejects. Guides user to run atdd first.",
       "files": [],
       "assertions": [

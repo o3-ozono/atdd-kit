@@ -24,8 +24,8 @@
   grep -q 'autonomy:0\|autonomy:1\|autonomy:2\|autonomy:3' docs/workflow-detail.md
 }
 
-@test "autopilot.md transitions to ready-to-implement after Plan Review" {
-  grep -q 'ready-to-implement' commands/autopilot.md
+@test "autopilot.md transitions to ready-to-go after Plan Review" {
+  grep -q 'ready-to-go' commands/autopilot.md
 }
 
 @test "autopilot.md does not require user approval for Plan" {

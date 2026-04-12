@@ -2,12 +2,12 @@
 
 > **Loaded by:** discover, plan skills
 
-After creating an Issue, execute the following steps in order before approval (`ready-to-implement` label). **Do not skip any step.**
+After creating an Issue, execute the following steps in order before approval (`ready-to-go` label). **Do not skip any step.**
 
 ## Principles
 
 - **No code edits before approval.** Do not start implementation until all steps are complete and the user approves.
-- **Deliverables go in Issue comments.** Design artifacts, ACs, and implementation plans are posted as Issue comments. Repository commits happen only on the work branch after `ready-to-implement` approval.
+- **Deliverables go in Issue comments.** Design artifacts, ACs, and implementation plans are posted as Issue comments. Repository commits happen only on the work branch after `ready-to-go` approval.
 
 ## Development Tasks (`type:development`)
 
@@ -18,7 +18,7 @@ After creating an Issue, execute the following steps in order before approval (`
 | 2 | **Brainstorming** | `discover` (brainstorming mode) | Acquires `in-progress` lock. Requirements, approach, impact analysis -> Issue comment |
 | 3 | **User story and AC** | `discover` (AC mode) | ATDD-based ACs -> Issue comment |
 | 4 | **Test strategy and implementation strategy** | `plan` | Test strategy (AC→test layer mapping) + implementation strategy -> Issue comment |
-| 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-implement` |
+| 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-go` |
 
 ## Bug Reports (`type:bug`)
 
@@ -30,7 +30,7 @@ After creating an Issue, execute the following steps in order before approval (`
 | 3 | **Brainstorming** | `discover` (bug mode) | Fix approach, impact, design decisions -> Issue comment |
 | 4 | **User story and AC** | `discover` (AC mode) | ATDD-based ACs -> Issue comment |
 | 5 | **Test strategy and implementation strategy** | `plan` | Test strategy + implementation strategy -> Issue comment |
-| 6 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-implement` |
+| 6 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-go` |
 
 ## Refactoring (`type:development` + `refactoring`)
 
@@ -44,11 +44,11 @@ Same flow as development tasks.
 | 2 | **Brainstorming** | `discover` | Acquires `in-progress` lock. Scope and approach -> Issue comment |
 | 3 | **Define completion criteria** | -- | Verifiable completion criteria -> Issue comment |
 | 4 | **Work plan** | `plan` | Work plan -> Issue comment |
-| 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-implement` |
+| 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-go` |
 
 ## Readiness Check (Approval Gate)
 
-Before adding `ready-to-implement` label, verify all of the following.
+Before adding `ready-to-go` label, verify all of the following.
 
 | Check | Bad Example | Good Example |
 |-------|-------------|-------------|

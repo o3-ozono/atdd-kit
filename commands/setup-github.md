@@ -39,7 +39,7 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/pr/en/pull_request_template.md` to `.githu
 
 ```bash
 gh label create "in-progress" --color "0E8A16" --force
-gh label create "ready-to-implement" --color "1D76DB" --force
+gh label create "ready-to-go" --color "1D76DB" --force
 gh label create "ready-for-plan-review" --color "FBCA04" --force
 gh label create "ready-for-user-approval" --color "D93F0B" --force
 gh label create "ready-for-PR-review" --color "0075CA" --force

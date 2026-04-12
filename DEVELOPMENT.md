@@ -71,7 +71,7 @@ description: "ATDD implementation -- creates E2E tests, then unit tests, then im
 
 **Good** (trigger conditions only):
 ```
-description: "Use when implementing a ready-to-implement Issue."
+description: "Use when implementing a ready-to-go Issue."
 ```
 
 ### Skill Changes Require Eval Evidence
