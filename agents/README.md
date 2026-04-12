@@ -28,7 +28,7 @@ Role definitions for the autopilot multi-agent workflow. Each agent is a Markdow
 
 ### Via Autopilot
 
-`/atdd-kit:autopilot` spawns PO as the main thread, which orchestrates Developer and QA as subagents.
+`/atdd-kit:autopilot` spawns PO as the main thread, which orchestrates task-type-specific agent teams (Developer, QA, Tester, Reviewer, Researcher, Writer) based on the Issue type.
 
 ### Standalone
 
