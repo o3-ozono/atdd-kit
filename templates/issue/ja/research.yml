@@ -1,6 +1,6 @@
 name: 調査タスク
 description: 技術調査・スパイク・検証
-labels: ["type:investigation"]
+labels: ["type:research"]
 body:
   - type: checkboxes
     id: skills

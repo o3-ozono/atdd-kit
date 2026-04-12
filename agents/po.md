@@ -1,7 +1,8 @@
 ---
 name: po
 description: "Product Owner agent for autopilot orchestration. Spawned as team-lead to drive discover → plan → implement → review → merge."
-model: inherit
+model: opus
+effort: high
 tools:
   - Read
   - Grep

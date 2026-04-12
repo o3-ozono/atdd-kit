@@ -109,7 +109,7 @@ The plan includes:
 
 The plan undergoes review. In manual mode, you review and approve. In autopilot mode, the Dev and QA agents review the plan.
 
-Once approved, the Issue receives the `ready-to-implement` label — the green light for implementation.
+Once approved, the Issue receives the `ready-to-go` label — the green light for implementation.
 
 ### Step 5: atdd — Test-First Implementation
 

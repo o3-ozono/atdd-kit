@@ -17,7 +17,7 @@ Monitor Issue/PR state transitions and detect anomalies.
 | Stale Draft | Draft PR with no updates for 24+ hours | "PR #XX has been in Draft for too long" |
 | Stale review | `ready-for-PR-review` PR idle for 4+ hours | "PR #XX review is stalling" |
 | Stale revision | `needs-pr-revision` PR idle for 8+ hours | "PR #XX revision is stalling" |
-| Stale Issue | `ready-to-implement` Issue idle for 48+ hours | "Issue #XX has not been picked up" |
+| Stale Issue | `ready-to-go` Issue idle for 48+ hours | "Issue #XX has not been picked up" |
 | Stale in-progress | `in-progress` Issue idle for 24+ hours | "Issue #XX work is stalling" |
 
 ## Flow

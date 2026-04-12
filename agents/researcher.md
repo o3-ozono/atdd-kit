@@ -1,7 +1,8 @@
 ---
 name: researcher
-description: "Researcher agent for investigation tasks. Spawned by autopilot for research and analysis."
-model: inherit
+description: "Researcher agent for research tasks. Spawned by autopilot for research and analysis."
+model: sonnet
+effort: high
 tools:
   - Read
   - Grep

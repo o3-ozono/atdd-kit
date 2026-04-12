@@ -20,8 +20,8 @@
 
 # --- AC12: Auto-approval path ---
 
-@test "AC12: autopilot.md transitions to ready-to-implement after Plan Review" {
-  grep -q 'ready-to-implement' commands/autopilot.md
+@test "AC12: autopilot.md transitions to ready-to-go after Plan Review" {
+  grep -q 'ready-to-go' commands/autopilot.md
 }
 
 @test "AC12: autopilot.md does not use ready-for-user-approval in approval flow" {

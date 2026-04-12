@@ -37,10 +37,10 @@ SESSION_START="skills/session-start/SKILL.md"
 }
 
 @test "AC2: All Agent spawns include isolation parameter" {
-  # Count Agent tool lines that include team_name (spawn sites — now only AC Review Round + resume)
-  total=$(grep -c 'Agent.*tool.*team_name\|Agent tool.*team_name' "$AUTOPILOT") || total=0
-  # Count Agent tool lines that include both team_name and isolation
-  isolated=$(grep 'Agent.*tool.*team_name\|Agent tool.*team_name' "$AUTOPILOT" | grep -c 'isolation') || isolated=0
+  # Count spawn lines that include team_name (spawn sites — AC Review Round)
+  total=$(grep -c 'team_name.*autopilot-{issue_number}' "$AUTOPILOT") || total=0
+  # Count spawn lines that include both team_name and isolation
+  isolated=$(grep 'team_name.*autopilot-{issue_number}' "$AUTOPILOT" | grep -c 'isolation') || isolated=0
   # All spawn sites must have isolation, and there must be at least 1
   [ "$total" -gt 0 ]
   [ "$total" -eq "$isolated" ]

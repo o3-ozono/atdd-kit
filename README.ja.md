@@ -148,7 +148,7 @@ PO/Developer/QA を Agent Teams のチームメイトとして起動:
 ### ラベルフロー
 
 ```
-[Issue]  (ラベルなし) → in-progress → ready-for-plan-review → ready-to-implement → in-progress
+[Issue]  (ラベルなし) → in-progress → ready-for-plan-review → ready-to-go → in-progress
 [PR]     ready-for-PR-review → needs-pr-revision（ループ） → マージ
 ```
 

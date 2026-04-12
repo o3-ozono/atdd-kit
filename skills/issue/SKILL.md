@@ -27,7 +27,7 @@ Analyze the user's request and auto-detect the task type. **Do NOT ask the user 
 Available types:
 - `development` — New features, improvements, enhancements (default fallback)
 - `bug` — Bug reports, errors, crashes → **redirect immediately to `/atdd-kit:bug`** (do not proceed to Step 2)
-- `investigation` — Research, exploration, analysis
+- `research` — Research, exploration, analysis
 - `documentation` — Documentation improvements, additions
 - `development` + refactoring — Code cleanup, restructuring
 
@@ -51,7 +51,7 @@ Based on the detected type, ask about each required template field, one question
 |----------|----------|---------|
 | **P1** | Production outage, critical blocker, data loss | App crash, data corruption |
 | **P2** | Feature development, important improvements, non-critical | New screen, UX improvement |
-| **P3** | Refactoring, documentation, investigation, minor improvements | Code cleanup, tech research |
+| **P3** | Refactoring, documentation, research, minor improvements | Code cleanup, tech research |
 
 ## Step 3: Create Issue
 
@@ -69,7 +69,7 @@ After creating the Issue, post a Context Block as an Issue comment to pass colle
 
 | Field | Value |
 |-------|-------|
-| task_type | [development / investigation / documentation / refactoring] |
+| task_type | [development / research / documentation / refactoring] |
 | requirements | [user's original request, summarized] |
 | environment | [any environment details mentioned] |
 | collected_info | [any additional context gathered during intake] |

@@ -17,7 +17,7 @@ Skills in the core workflow chain (plan, atdd, verify, ship) include a **State G
 | Skill | Required Label | Gate Action on Pass |
 |-------|---------------|-------------------|
 | plan | `in-progress` + discover deliverables | Proceed to planning |
-| atdd | `ready-to-implement` | Remove label, add `in-progress` |
+| atdd | `ready-to-go` | Remove label, add `in-progress` |
 | verify | `in-progress` | Proceed to verification |
 | ship | `in-progress` | Proceed to ship flow |
 
@@ -27,7 +27,7 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 
 | Skill | Trigger | Workflow Position |
 |-------|---------|-------------------|
-| [atdd](atdd/) | Manually invoked on ready-to-implement Issues | Core chain: implementation |
+| [atdd](atdd/) | Manually invoked on ready-to-go Issues | Core chain: implementation |
 | [bug](bug/) | Auto-triggers on bug/error keywords | Entry point → chains to discover |
 | [debugging](debugging/) | Auto-triggers on bug reports, errors, crashes | Pre-fix root cause investigation |
 | [discover](discover/) | First step of Issue Ready flow | Core chain: requirements → ACs |

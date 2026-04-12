@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-12
+
+### Added
+- 7-agent architecture: tester.md, reviewer.md, writer.md agents added alongside existing po, developer, qa, researcher (#34)
+- Task-type-specific workflow branching in autopilot: development, bug, research, documentation, refactoring each have distinct agent compositions (#34)
+- Agent Composition Table mapping task types to Phase 1/Phase 2 agent sets (#34)
+- Variable-count agents (Reviewer, Researcher) with user approval flow (#34)
+- AUTOPILOT-GUARD STOP mode for discover, plan, atdd, verify, ship skills — prevents direct invocation outside autopilot (#34)
+
+### Changed
+- `ready-to-implement` label renamed to `ready-to-go` across all skills, commands, docs, and templates (#34)
+- `type:investigation` label renamed to `type:research` with corresponding template and flow updates (#34)
+- investigation.yml Issue templates renamed to research.yml (en and ja) (#34)
+- Phase 3/4 headings changed to "(task-type-specific)" reflecting multi-flow design (#34)
+
 ## [1.6.1] - 2026-04-12
 
 ### Fixed

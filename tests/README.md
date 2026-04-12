@@ -53,6 +53,11 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_weekly_maintenance_removal.bats | Weekly maintenance removal verification |
 | test_workflow_config_fields.bats | workflow-config.yml platform-only validation |
 | test_worktree_isolation.bats | Worktree isolation validation |
+| test_task_type_labels.bats | Task type label migration (investigation→research) |
+| test_ready_to_go.bats | ready-to-go label migration validation |
+| test_autopilot_guard_block.bats | Autopilot-only STOP guard enforcement |
+| test_task_type_workflow.bats | Task-type-specific workflow branching |
+| test_legacy_terms.bats | Legacy term elimination verification |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

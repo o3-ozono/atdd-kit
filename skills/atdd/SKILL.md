@@ -1,6 +1,6 @@
 ---
 name: atdd
-description: "Use when implementing a ready-to-implement Issue with approved ACs and plan."
+description: "Use when implementing a ready-to-go Issue with approved ACs and plan."
 ---
 
 ## Session Start Check (required)
@@ -11,19 +11,19 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 
 <AUTOPILOT-GUARD>
 If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
-- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
-- **Do not block execution.** Proceed normally after showing the warning.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
+- Display message: "This skill is autopilot-only. Use `/atdd-kit:autopilot <number>` instead."
+- **STOP.** Do not proceed with execution.
+If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
 ## State Gate (required)
 
 Before starting implementation, verify the Issue state:
 
-1. **Check `ready-to-implement` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("ready-to-implement")'`
-   - If present: **New implementation.** Remove `ready-to-implement`, add `in-progress`: `gh issue edit <number> --remove-label ready-to-implement --add-label in-progress`
+1. **Check `ready-to-go` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("ready-to-go")'`
+   - If present: **New implementation.** Remove `ready-to-go`, add `in-progress`: `gh issue edit <number> --remove-label ready-to-go --add-label in-progress`
    - If missing: check Continuation Path (below)
-2. **Continuation Path:** If `ready-to-implement` is absent but `in-progress` is present AND the current branch matches `<prefix>/<issue-number>-*`:
+2. **Continuation Path:** If `ready-to-go` is absent but `in-progress` is present AND the current branch matches `<prefix>/<issue-number>-*`:
    - This is a **session resumption.** Do NOT block. Proceed with implementation from where it left off.
    - Check `git log --oneline main..<branch>` to identify completed ACs from commit messages.
    - Resume from the next incomplete AC.

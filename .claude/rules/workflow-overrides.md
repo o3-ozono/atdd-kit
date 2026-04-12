@@ -4,9 +4,9 @@
 
 discover でユーザーが設計（AC セット）を承認済みのため、plan の承認は Reviewer の技術チェック（R1-R6）で十分。
 
-- Reviewer PASS → `ready-to-implement` 直行
+- Reviewer PASS → `ready-to-go` 直行
 - `ready-for-user-approval` ステップを経由しない
-- ユーザーは差し戻し権を保持（`ready-to-implement` → `needs-plan-revision` に戻せる）
+- ユーザーは差し戻し権を保持（`ready-to-go` → `needs-plan-revision` に戻せる）
 - plan スキルの Step 7 で承認依頼セクションは出さない
 
 ## 全チャネル内容同期

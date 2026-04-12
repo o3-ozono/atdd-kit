@@ -146,7 +146,7 @@ PO/Developer/QA run as Agent Teams teammates:
 ### Label Flow
 
 ```
-[Issue]  (no label) → in-progress → ready-for-plan-review → ready-to-implement → in-progress
+[Issue]  (no label) → in-progress → ready-for-plan-review → ready-to-go → in-progress
 [PR]     ready-for-PR-review → needs-pr-revision (loop) → merge
 ```
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
-# AC1: Plan Review -> ready-to-implement direct (PO-led flow)
-@test "autopilot Plan Review transitions to ready-to-implement" {
-  grep -q 'ready-to-implement' commands/autopilot.md
+# AC1: Plan Review -> ready-to-go direct (PO-led flow)
+@test "autopilot Plan Review transitions to ready-to-go" {
+  grep -q 'ready-to-go' commands/autopilot.md
 }
 
 # AC2: in-progress label flow
