@@ -10,10 +10,10 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 # atdd -- ATDD Double-Loop TDD Implementation Skill
 
 <AUTOPILOT-GUARD>
-If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
+If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
 - Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
 - **Do not block execution.** Proceed normally after showing the warning.
-If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
+If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
 </AUTOPILOT-GUARD>
 
 ## State Gate (required)
