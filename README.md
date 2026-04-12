@@ -19,6 +19,33 @@ atdd-kit solves this by enforcing an **Issue-driven, test-first workflow**:
 
 Design principles: zero dependencies, plugin architecture, pure markdown + bash.
 
+### The ATDD Double Loop
+
+atdd-kit implements the Double-Loop TDD model from Freeman & Pryce's *[Growing Object-Oriented Software, Guided by Tests](https://www.amazon.com/Growing-Object-Oriented-Software-Guided-Tests/dp/0321503627)* (2009):
+
+```
+┌─ Outer Loop: Acceptance Test ─────────────────────┐
+│                                                     │
+│  RED       Write a failing end-to-end test          │
+│                                                     │
+│    ┌─ Inner Loop: Unit Test ────────────────────┐   │
+│    │  RED       Write a failing unit test        │   │
+│    │  GREEN     Minimal implementation           │   │
+│    │  REFACTOR                    ↻ repeat       │   │
+│    └─────────────────────────────────────────────┘   │
+│                                                     │
+│  GREEN     Acceptance test passes                   │
+│  REFACTOR                                           │
+└─────────────────────────────────────────────────────┘
+```
+
+Also influenced by:
+
+- [ATDD by Example](https://www.amazon.com/dp/0321784154) (Markus Gärtner, 2012) — The practical ATDD guide that popularized the term "ATDD"
+- [obra/superpowers](https://github.com/obra/superpowers) — Process enforcement patterns (Red Flags, `<HARD-GATE>`, Iron Laws)
+- [BDD](https://cucumber.io/docs/bdd/) (Dan North) — Given/When/Then acceptance criteria format
+
+
 ## Quick Start
 
 ```bash
