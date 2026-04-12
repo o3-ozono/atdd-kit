@@ -15,20 +15,27 @@ setup() {
   # Create bare remote + working clone to simulate origin/main
   BARE="${BATS_TMPDIR}/eval-guard-bare-$$"
   WORK="${BATS_TMPDIR}/eval-guard-work-$$"
+  SEED="${BATS_TMPDIR}/eval-guard-seed-$$"
 
+  # Seed the bare repo with an initial commit before cloning
   git init --bare "$BARE" 2>/dev/null
-  git clone "$BARE" "$WORK" 2>&1 >/dev/null
-
-  cd "$WORK"
+  git clone "$BARE" "$SEED" 2>&1 >/dev/null
+  cd "$SEED"
   git config user.email "test@example.com"
   git config user.name "Test"
-
-  # Initial commit on main with a SKILL.md
   mkdir -p skills/session-start
   echo "initial" > skills/session-start/SKILL.md
   echo "readme" > README.md
   git add -A && git commit -m "initial" -q
-  git push origin main -q 2>/dev/null
+  git push origin main -q 2>&1 >/dev/null
+  cd "$BATS_TMPDIR"
+  rm -rf "$SEED"
+
+  # Clone the seeded bare repo as the working directory
+  git clone "$BARE" "$WORK" 2>&1 >/dev/null
+  cd "$WORK"
+  git config user.email "test@example.com"
+  git config user.name "Test"
 
   # Create feature branch
   git checkout -b feature-branch -q
@@ -39,7 +46,7 @@ setup() {
 }
 
 teardown() {
-  rm -rf "$BARE" "$WORK" "${XDG_CACHE_HOME}"
+  rm -rf "$BARE" "$WORK" "$SEED" "${XDG_CACHE_HOME}"
 }
 
 # Helper: run eval-guard with a given command string
