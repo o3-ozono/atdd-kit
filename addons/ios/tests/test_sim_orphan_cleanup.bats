@@ -84,7 +84,7 @@ run_guard() {
   fresh_ts=$(date_ago 30M)
   create_mock_with_stale_clones "$stale_ts" "$fresh_ts"
 
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
 
   grep -q "simctl shutdown STALE-UUID-1111" "$XCRUN_LOG"
   grep -q "simctl delete STALE-UUID-1111" "$XCRUN_LOG"
@@ -99,7 +99,7 @@ run_guard() {
   fresh_ts=$(date_ago 30M)
   create_mock_with_stale_clones "$stale_ts" "$fresh_ts"
 
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
 
   ! grep -q "simctl delete FRESH-UUID-2222" "$XCRUN_LOG"
 }
@@ -113,7 +113,7 @@ run_guard() {
   fresh_ts=$(date_ago 30M)
   create_mock_with_stale_clones "$stale_ts" "$fresh_ts"
 
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
 
   # delete of stale should appear before clone of new
   local delete_line
@@ -135,7 +135,7 @@ run_guard() {
   create_mock_with_stale_clones "$ci_stale_ts" "$fresh_ts"
   export GITHUB_ACTIONS=true
 
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
 
   grep -q "simctl delete STALE-UUID-1111" "$XCRUN_LOG"
   unset GITHUB_ACTIONS

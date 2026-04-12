@@ -58,7 +58,7 @@ run_guard() {
 
 @test "AC4.1: SIM_GOLDEN_SET unset — simctl commands have no --set flag" {
   unset SIM_GOLDEN_SET
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   # No --set should appear in any xcrun call
   ! grep -q "\-\-set" "$XCRUN_LOG"
 }
@@ -69,7 +69,7 @@ run_guard() {
   export SIM_GOLDEN_SET="${BATS_TMPDIR}/golden"
   mkdir -p "$SIM_GOLDEN_SET"
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   grep -q "\-\-set.*golden" "$XCRUN_LOG"
 }
 
@@ -77,7 +77,7 @@ run_guard() {
 
 @test "AC4.3: SIM_GOLDEN_SET empty string — falls back to default" {
   export SIM_GOLDEN_SET=""
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   ! grep -q "\-\-set" "$XCRUN_LOG"
 }
 
@@ -103,7 +103,7 @@ run_guard() {
   export SIM_GOLDEN_SET="${BATS_TMPDIR}/golden"
   mkdir -p "$SIM_GOLDEN_SET"
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  result=$(run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}')
+  result=$(run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}')
   # The clone should use the golden from the --set Device Set (GOLDEN-UUID-SET)
   udid=$(echo "$result" | jq -r '.hookSpecificOutput.updatedInput.udid')
   [[ "$udid" == "CLONE-UUID-SET" ]]
@@ -113,14 +113,14 @@ run_guard() {
   export SIM_GOLDEN_SET="${BATS_TMPDIR}/golden"
   mkdir -p "$SIM_GOLDEN_SET"
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   # The list devices call should include --set
   grep -q "simctl --set.*golden.*list devices available" "$XCRUN_LOG"
 }
 
 @test "AC2.3: SIM_GOLDEN_SET unset — golden UDID comes from default Device Set" {
   unset SIM_GOLDEN_SET
-  result=$(run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}')
+  result=$(run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}')
   udid=$(echo "$result" | jq -r '.hookSpecificOutput.updatedInput.udid')
   [[ "$udid" == "CLONE-UUID-5678" ]]
 }
@@ -132,7 +132,7 @@ run_guard() {
   export SIM_GOLDEN_SET="$golden_dir"
   # Remove marker to trigger ensure_golden init path
   rm -f "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   [[ -d "$golden_dir" ]]
   rm -rf "$golden_dir"
 }
@@ -143,7 +143,7 @@ run_guard() {
   mkdir -p "$golden_dir"
   # Remove marker to trigger golden init
   rm -f "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   grep -q "simctl --set.*ac1-golden-boot.*boot GOLDEN-UUID-SET" "$XCRUN_LOG"
   grep -q "simctl --set.*ac1-golden-boot.*shutdown GOLDEN-UUID-SET" "$XCRUN_LOG"
   rm -rf "$golden_dir"
@@ -155,7 +155,7 @@ run_guard() {
   export SIM_GOLDEN_SET="${BATS_TMPDIR}/ac1-invisible-$$"
   mkdir -p "$SIM_GOLDEN_SET"
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   # Default "simctl list devices available -j" should NOT be called
   ! grep -q "^simctl list devices available -j$" "$XCRUN_LOG"
   rm -rf "$SIM_GOLDEN_SET"
@@ -168,7 +168,7 @@ run_guard() {
   export SIM_DEFAULT_SET="${BATS_TMPDIR}/ac3-default-$$"
   mkdir -p "$SIM_GOLDEN_SET" "$SIM_DEFAULT_SET"
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}' "test-session-ac3"
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}' "test-session-ac3"
   # clone command should be: simctl --set <golden_set> clone <udid> <name> <default_set>
   grep -q "simctl --set.*ac3-golden.*clone GOLDEN-UUID-SET.*ac3-default" "$XCRUN_LOG"
   rm -rf "$SIM_GOLDEN_SET" "$SIM_DEFAULT_SET"
@@ -178,7 +178,7 @@ run_guard() {
   export SIM_GOLDEN_SET="${BATS_TMPDIR}/ac3-golden-boot-$$"
   mkdir -p "$SIM_GOLDEN_SET"
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}' "test-session-ac3b"
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}' "test-session-ac3b"
   # boot should be plain "simctl boot" without --set (clone is in default set)
   grep -q "^simctl boot CLONE-UUID-SET$" "$XCRUN_LOG"
   rm -rf "$SIM_GOLDEN_SET"
@@ -186,7 +186,7 @@ run_guard() {
 
 @test "AC3.3: SIM_GOLDEN_SET unset — clone uses plain simctl (no --set, no destination)" {
   unset SIM_GOLDEN_SET
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}' "test-session-ac3c"
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}' "test-session-ac3c"
   # clone should be plain: simctl clone <udid> <name>
   local clone_line
   clone_line=$(grep "simctl clone" "$XCRUN_LOG")

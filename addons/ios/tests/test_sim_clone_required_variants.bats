@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-# Issue #1: Verify build_sim, build_run_sim, test_sim are in CLONE_REQUIRED_TOOLS
-# and correctly routed through handle_xcodebuildmcp.
+# Issue #1 / #21: Verify build_sim, build_run_sim, test_sim are routed
+# through is_xcode_clone_required pattern match and handle_xcodebuildmcp.
 
 setup() {
   export SIM_SESSION_DIR="${BATS_TMPDIR}/sim-sessions-$$"
@@ -45,48 +45,30 @@ run_guard() {
   echo "$json" | bash "$GUARD"
 }
 
-# --- AC1: 静的検証 — CLONE_REQUIRED_TOOLS に 3 ツールが含まれる ---
+# --- AC1: is_xcode_clone_required matches _sim variants ---
 
-@test "AC1.1: CLONE_REQUIRED_TOOLS contains build_sim" {
-  grep -q '"mcp__XcodeBuildMCP__build_sim"' <(
-    sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD"
-  )
+@test "AC1.1: is_xcode_clone_required function exists in guard" {
+  grep -q 'is_xcode_clone_required()' "$GUARD"
 }
 
-@test "AC1.2: CLONE_REQUIRED_TOOLS contains build_run_sim" {
-  grep -q '"mcp__XcodeBuildMCP__build_run_sim"' <(
-    sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD"
-  )
+@test "AC1.2: build_sim routed to CLONE_REQUIRED (dynamic)" {
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac1-2")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+  context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
+  [[ "$context" == *"session_set_defaults"* ]]
 }
 
-@test "AC1.3: CLONE_REQUIRED_TOOLS contains test_sim" {
-  grep -q '"mcp__XcodeBuildMCP__test_sim"' <(
-    sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD"
-  )
+@test "AC1.3: build_run_sim routed to CLONE_REQUIRED (dynamic)" {
+  result=$(run_guard "mcp__XcodeBuildMCP__build_run_sim" '{}' "session-ac1-3")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
 }
 
-# --- AC2: 否定テスト — READONLY_TOOLS に含まれていない ---
-
-@test "AC2.1: build_sim is NOT in READONLY_TOOLS" {
-  ! grep -q '"mcp__XcodeBuildMCP__build_sim"' <(
-    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
-  )
+@test "AC1.4: test_sim routed to CLONE_REQUIRED (dynamic)" {
+  result=$(run_guard "mcp__XcodeBuildMCP__test_sim" '{}' "session-ac1-4")
+  echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
 }
 
-@test "AC2.2: build_run_sim is NOT in READONLY_TOOLS" {
-  ! grep -q '"mcp__XcodeBuildMCP__build_run_sim"' <(
-    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
-  )
-}
-
-@test "AC2.3: test_sim is NOT in READONLY_TOOLS" {
-  ! grep -q '"mcp__XcodeBuildMCP__test_sim"' <(
-    sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD"
-  )
-}
-
-# --- AC3: 初回呼び出し — DENY + session_set_defaults 案内 ---
-# Each test uses a unique session_id to avoid setup_flag interference
+# --- AC3: First call — DENY + session_set_defaults guidance ---
 
 @test "AC3.1: first build_sim call is DENY with session_set_defaults instruction" {
   result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac3-1")
@@ -109,22 +91,18 @@ run_guard() {
   [[ "$context" == *"session_set_defaults"* ]]
 }
 
-# --- AC4: session_set_defaults 後 — ALLOW ---
-# Each test: trigger clone via initial call, then session_set_defaults, then verify ALLOW
+# --- AC4: After session_set_defaults — ALLOW ---
 
 @test "AC4.1: build_sim is ALLOW after session_set_defaults" {
-  # Step 1: initial call creates clone + setup_flag
-  run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-1" > /dev/null 2>&1 || true
-  # Step 2: session_set_defaults sets up the session
+  run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac4-1" > /dev/null 2>&1 || true
   run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
     '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-1"
-  # Step 3: build_sim should be ALLOW
   result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac4-1")
   echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
 }
 
 @test "AC4.2: build_run_sim is ALLOW after session_set_defaults" {
-  run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-2" > /dev/null 2>&1 || true
+  run_guard "mcp__XcodeBuildMCP__build_run_sim" '{}' "session-ac4-2" > /dev/null 2>&1 || true
   run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
     '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-2"
   result=$(run_guard "mcp__XcodeBuildMCP__build_run_sim" '{}' "session-ac4-2")
@@ -132,7 +110,7 @@ run_guard() {
 }
 
 @test "AC4.3: test_sim is ALLOW after session_set_defaults" {
-  run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-3" > /dev/null 2>&1 || true
+  run_guard "mcp__XcodeBuildMCP__test_sim" '{}' "session-ac4-3" > /dev/null 2>&1 || true
   run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
     '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-3"
   result=$(run_guard "mcp__XcodeBuildMCP__test_sim" '{}' "session-ac4-3")
