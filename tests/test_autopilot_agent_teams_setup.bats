@@ -460,3 +460,35 @@ AUTOPILOT="commands/autopilot.md"
   # TeamDelete is a destructive operation — must only appear in Phase 0.9 (ToolSearch) and Phase 5 (execution)
   ! sed -n '/## Phase 1:/,/## Phase 5:/p' "$AUTOPILOT" | grep -q 'TeamDelete'
 }
+
+# ===========================================================================
+# Issue #11: Agent re-generation prohibition (Prompt Guard)
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# #11-AC1: Autonomy Rules — Agent re-generation prohibition (Rule 5)
+# ---------------------------------------------------------------------------
+
+@test "#11-AC1: Autonomy Rules contains agent re-generation prohibition" {
+  # Scope to Autonomy Rules section only (up to next ## heading)
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -qi 'agent.*re-\?gen\|new instances.*agents'
+}
+
+@test "#11-AC1: Rule 5 is numbered as item 5 in Autonomy Rules" {
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -q '^5\.'
+}
+
+@test "#11-AC1: Rule 5 specifies SendMessage as the correct alternative" {
+  # Rule 5 line itself must mention SendMessage (not just neighboring sections)
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep '^5\.' | grep -q 'SendMessage'
+}
+
+@test "#11-AC1: Rule 5 scopes prohibition to after AC Review Round" {
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep '^5\.' | grep -qi 'AC Review Round'
+}
+
+@test "#11-AC1: Rule 5 is covered by existing Failure Mode" {
+  count=$(grep -c '## Autonomy Rules' "$AUTOPILOT")
+  [ "$count" -eq 1 ]
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -q 'Failure mode.*STOP'
+}

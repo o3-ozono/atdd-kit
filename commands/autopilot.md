@@ -108,6 +108,7 @@ The following execution patterns are **prohibited**. If any situation would trig
 2. **Explore subagent substitution** — Do not use Explore subagents as a replacement for Developer or QA agents. Explore subagents are for codebase research only, not for implementation or review.
 3. **Self-executing skill steps** — When a skill is delegated to Developer or QA via Agent tool, PO must not execute that skill's steps directly. The skill must run inside the spawned agent.
 4. **Context-priority execution** — Do not skip spawning an agent because "the context from a prior skill is already available." Each role must run in its own agent with its own system_prompt.
+5. **Agent re-generation** — Once Developer and QA are spawned in AC Review Round, do not create new instances of these agents in Phase 2, Plan Review Round, Phase 3, or Phase 4. Communicate with existing agents exclusively via SendMessage. Exception: Phase 0.9 Mid-phase resume handles session-restart re-creation only.
 
 Failure mode: report what failed → STOP → user decides next step.
 
