@@ -1,170 +1,108 @@
-# Plan Review: Developer
+# Plan Review — Developer
 
-**Issue:** #22 — bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
-**Reviewer:** Developer Agent
+**Issue:** #3 — bug: discover の autopilot モード検出が PO 直接呼び出しを認識しない
+**Reviewer:** Developer
 **Date:** 2026-04-12
+**Reviewed artifact:** Unified Plan (PO 統合版)
 
 ## Overall Verdict: PASS
 
-Plan のファイル構成、実装順序、技術リスク評価すべて妥当。BLOCKER なし。実装着手可能。
+統合 Plan は AC セットと正確に対応しており、ファイル構成・実装順序・テスト戦略のいずれも妥当。スコープ逸脱なし。Minor 指摘 2 件は実装時に対応可能であり、Plan の承認をブロックしない。
 
-## Checklist Review
+## 1. AC との整合性
 
-### [x] ファイル構成の妥当性
+| AC | Plan の対応 | 整合性 |
+|----|------------|--------|
+| AC1: discover HARD-GATE/AUTOPILOT-GUARD/Step 7/Step 8 | discover SKILL.md 4 箇所（L15, L18-23, L230-232, L251） | OK — AC Review で指摘した HARD-GATE L15 が明示的に含まれている |
+| AC2: discover Standalone 維持 | AC1 と同一コミット。Step 7/AUTOPILOT-GUARD の Standalone 分岐記述を維持 | OK — AC1 の変更が Standalone を壊さないことの検証は同一コミット内で可能 |
+| AC3: plan AUTOPILOT-GUARD | plan SKILL.md 1 箇所（L16-21） | OK |
+| AC4: atdd AUTOPILOT-GUARD | atdd SKILL.md 1 箇所（L12-17） | OK |
+| AC5: autopilot.md 呼び出し | Phase 1（L124）+ Phase 3（L187） | OK — AC Review で指摘した Phase 3 の atdd 呼び出しが含まれている |
+| AC6: テスト更新 | 更新 4 件 + 統合 1 件 + 新規 7 件 = 最終 24 テスト | OK |
 
-**PASS。** 5ファイルの変更リスト:
+**結論:** 全 6 AC が Plan に漏れなくマッピングされている。スコープ逸脱なし。
 
-| # | File | 妥当性 |
-|---|------|--------|
-| 1 | `tests/test_eval_guard.bats` (新規) | 必要。eval-guard.sh のテストは現在存在しない。21テストケースは4つのACを十分にカバー |
-| 2 | `hooks/eval-guard.sh` | 必要。バグの原因がある2行 (L20, L34) |
-| 3 | `hooks/README.md` | 必要。DEVELOPMENT.md のルール「Directory READMEs: update in the same PR」に準拠 |
-| 4 | `CHANGELOG.md` | 必要。DEVELOPMENT.md のルール「every feature PR must update the changelog」に準拠 |
-| 5 | `.claude-plugin/plugin.json` | 必要。PATCH bump (1.5.0 → 1.5.1)。バグ修正のため PATCH が正しい |
+## 2. ファイル構成の妥当性
 
-**不足ファイルなし。** `.claude/settings.json` は hook 登録が変更なし（同じ matcher, 同じ command）のため修正不要。
+### 変更ファイル 5 件
 
-### [x] 実装順序のリスク
+| File | 変更の性質 | 妥当性 |
+|------|-----------|--------|
+| `skills/discover/SKILL.md` | 検出条件の置換（4 箇所） | OK — 最大 blast radius だが変更は機械的置換。HARD-GATE + AUTOPILOT-GUARD + Step 7 + Step 8 の 4 箇所を一つの AC（AC1）にまとめるのは、変更の原子性として妥当 |
+| `skills/plan/SKILL.md` | AUTOPILOT-GUARD 置換（1 箇所） | OK — 最小変更 |
+| `skills/atdd/SKILL.md` | AUTOPILOT-GUARD 置換（1 箇所） | OK — plan と同一パターン |
+| `commands/autopilot.md` | 呼び出し引数追記（2 箇所） | OK — 判定側と呼び出し側の整合性を確保 |
+| `tests/test_discover_autopilot_approval.bats` | テスト更新 + 新規 | OK — 変更内容を検証するテスト |
 
-**PASS。** ATDD Double Loop の正しい順序:
+### 変更しないファイルの妥当性確認
 
-```
-Phase 1 (Red): tests/test_eval_guard.bats 作成
-    ↓ AC1, AC3 テストが失敗することを確認
-Phase 2 (Green): hooks/eval-guard.sh L34, L20 修正
-    ↓ 全テスト PASS を確認
-Phase 3 (Housekeeping): README, CHANGELOG, version
-```
+| File | 理由 | 検証結果 |
+|------|------|---------|
+| Bug Flow Step 5 (discover L357) | "same as development flow Step 7" と記述。Step 7 の変更が自動波及 | OK — L357 を実ファイルで確認済み。明示的な `<teammate-message>` 参照なし |
+| Docs/Investigation Flow Step 4 (discover L425-427) | 独自の承認フロー記述。`<teammate-message>` 参照なし | OK — L425-427 を実ファイルで確認済み |
+| `.claude/rules/workflow-overrides.md` | autopilot 検出方式に言及していない | OK |
+| Agent 定義（`agents/*.md`） | autopilot 検出ロジックを含まない | OK |
 
-**リスク評価:**
-
-1. **Phase 1 → Phase 2 の順序:** テストファーストは正しい。AC2, AC4 のテストが Phase 1 時点で既に PASS することも確認すべき（既存の正しい動作の regression guard として機能する）
-2. **Phase 2 内の順序:** L34 (three-dot diff) → L20 (regex) の順序は正しい。L34 の変更は L20 に影響しない。逆順でも問題ないが、primary bug (AC1) を先に修正する方が自然
-3. **Phase 3 の位置:** housekeeping は実装完了後。正しい
-
-**唯一の注意点:** Phase 1 で BATS テストが一時 git リポジトリを `setup()` で作成する設計。`teardown()` で確実にクリーンアップすること。BATS の `BATS_TMPDIR` を使えば問題ない。
-
-### [x] テスト設計の技術的実現性
-
-**PASS。** bare remote 方式で three-dot diff の正確な再現を実機検証済み:
+## 3. 実装順序のリスク評価
 
 ```
-Two-dot diff (buggy):  skills/test-skill/SKILL.md  ← 誤検出
-Three-dot diff (fixed): (空)                        ← 正しい
+AC3 (plan) → AC4 (atdd) → AC1+AC2 (discover) → AC5 (autopilot.md) → AC6 (tests)
 ```
 
-bare remote (`git init --bare`) + `git clone` + `git fetch` で `origin/main` が正しく参照される。`git update-ref` 方式よりも実環境に近い。
+| 順序 | リスク | 評価 |
+|------|--------|------|
+| AC3 → AC4 を先行 | plan/atdd の AUTOPILOT-GUARD は独立しており、先行変更しても他に影響なし | LOW — パターン確立として合理的 |
+| AC1+AC2 を 3 番目 | discover は 4 箇所変更で最大の blast radius。AC3/AC4 のパターンを適用するので手順が確立済み | LOW — AC3/AC4 の経験が安全弁として機能 |
+| AC5 を AC1 の後 | autopilot.md は呼び出し側。判定側（SKILL.md）の変更が完了してから呼び出し側を更新するのは正しい依存順序 | LOW |
+| AC6 を最後 | テストは全変更完了後に一括更新。途中でテストを更新すると後続 AC の変更でテストが再び壊れるリスクあり | LOW — 全変更完了後の一括更新が最も効率的 |
 
-**テスト infrastructure の設計ポイント:**
+**代替案の検討:** テストファーストで AC6 を先に RED にし、AC3-AC5 で GREEN にする ATDD アプローチも可能だが、本件は全変更がマークダウンの文字列置換であり、テストも grep ベースの文字列存在チェックであるため、テストファーストのメリットが薄い。Plan の順序で問題なし。
 
-- `setup()` で bare remote + clone + branch + fetch を毎テスト実行
-- `run_guard()` ヘルパーで eval-guard.sh を当該リポジトリの context で実行
-- `teardown()` で一時ディレクトリをクリーンアップ
-- eval-guard.sh の `git branch --show-current` と `git diff` はテストリポジトリの `cd` コンテキストに依存するため、`cd "$WORK"` した状態で guard を実行する必要がある
+## 4. フラグ検出仕様の評価
 
-**AC3 テストの重要な前提条件:**
-Plan が「SKILL.md 変更ありの状態で実行」と指定しているのは正しい。AC3 は「コマンド引数中の "git push" で誤検知しない」だが、そもそも `git push` として検出されなければテストが成立する。SKILL.md 変更がある状態で "git push" が引数に含まれるコマンドを実行し、eval-guard がブロックしないことを確認する必要がある。
+| 観点 | 評価 |
+|------|------|
+| Contains チェック | LLM 向けマークダウン指示として適切。プログラム的パースは不要 |
+| 全スキル共通パターン | 一貫性あり。将来のスキル追加にも適用可能 |
+| 引数順序非依存 | `"3 --autopilot"` でも `"--autopilot 3"` でも機能 |
+| `<teammate-message>` からの移行 | 明示的フラグへの移行により、コンテキスト依存の不確実性を排除 |
 
-### [x] 技術リスク評価
+**懸念なし。**
 
-**PASS。** Plan の2つのリスクに対する追加検証結果:
+## 5. テスト戦略の評価
 
-#### R1: `\b` の BSD grep 互換性
+| 観点 | 評価 |
+|------|------|
+| カバレッジ | AC1-AC6 全てにテストがマッピングされている。Negative tests（残骸チェック）も含む |
+| テスト数推移 | 18 → 24（更新 4 件 + 統合 1 件 + 新規 7 件）。適切な増加量 |
+| テスト種別 | 全て BATS content-based assertions。既存パターンと一致 |
+| 実行可能性 | grep/sed ベースの文字列チェック。外部依存なし |
+| Negative tests | 3 スキルの AUTOPILOT-GUARD から `teammate-message` 完全除去を確認。重要な安全弁 |
 
-**実機検証済み — 問題なし。**
+## 6. Minor 指摘（ブロックしない）
 
-macOS の `grep -E` で `\b` をテスト:
+### M1: コミットメッセージの prefix
 
-| 入力 | 期待 | 結果 |
-|------|------|------|
-| `git push origin main` | MATCH | MATCH |
-| `git commit -m "remember to git push"` | NO MATCH | NO MATCH |
-| `git add . && git push origin branch` | MATCH | MATCH |
-| `git add . ; git push` | MATCH | MATCH |
-| `git add . \|\| git push` | MATCH | MATCH |
-| `git pushall` | NO MATCH | NO MATCH |
-| `echo "run git push later"` | NO MATCH | NO MATCH |
+Plan のコミット戦略では AC3-AC5 が `fix:` で AC6 が `test:`。既存コミット履歴（`git log --oneline`）を見ると `refactor:`, `feat:`, `fix:`, `docs:` が使われているが `test:` は確認できない。[Conventional Commits](https://www.conventionalcommits.org/) では `test:` は有効な prefix だが、プロジェクト慣行と合わせるべき。
 
-全ケースで正しく動作。`\b` は GNU grep と BSD grep (macOS) の両方でサポート。フォールバック (`git\s+push(\s|$)`) は不要だが、Plan に記載があるのは prudent。
+**推奨:** 実装時に `test:` が許容されるか確認し、そうでなければ `fix:` に統一する。
 
-#### R2: Three-dot diff の shallow clone 挙動
+### M2: CHANGELOG.md / plugin.json の更新コミット
 
-**PASS。** `2>/dev/null || echo ""` のエラーハンドリングが維持される。shallow clone で `git merge-base` が失敗しても、空文字列が返り CHANGED_SKILLS が空になる → push を許可（fail-open）。atdd-kit 開発者は full clone を使用するため実際にはこのパスに入らない。
+Plan のコミット戦略（5 コミット）に CHANGELOG.md と `.claude-plugin/plugin.json` の更新が含まれていない。DEVELOPMENT.md の非交渉ルール（"Every feature PR merged to main must update the version and changelog"）に従い、PR 内で更新が必要。
 
-### [x] 具体的なコード変更の正確性
-
-**PASS。**
-
-#### L34: Three-dot diff
-
-```bash
-# Before:
-CHANGED_SKILLS=$(git diff --name-only origin/main -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
-# After:
-CHANGED_SKILLS=$(git diff --name-only origin/main...HEAD -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
-```
-
-- `origin/main...HEAD` = `$(git merge-base origin/main HEAD)..HEAD` — merge-base 基点
-- path filter `'skills/*/SKILL.md'` は維持 — SKILL.md 以外のファイルは無視
-- error handling `2>/dev/null || echo ""` は維持 — fail-open
-
-#### L20: Regex 強化
-
-```bash
-# Before:
-if ! echo "$COMMAND" | grep -q 'git push'; then
-# After:
-if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push\b'; then
-```
-
-- `(^|&&|;|\|\|)` — コマンド先頭 or チェーン演算子の後
-- `\s*` — 演算子後の任意空白
-- `git\s+push` — `git` と `push` の間に1つ以上の空白（`git  push` も対応）
-- `\b` — word boundary（`git pushall` を除外）
-
-**既存コードとの整合性:** `grep -q` → `grep -qE` への変更。`-E` は extended regex を有効にする。既存の他の grep 呼び出し（L17 の `sed`）には影響しない。
-
-### [x] バージョンバンプの妥当性
-
-**PASS。** 現在のバージョンは `1.5.0`（`.claude-plugin/plugin.json` で確認済み）。バグ修正のため PATCH bump: `1.5.0 → 1.5.1`。
-
-- PATCH が正しい理由: hook の外部インターフェース（stdin JSON → stdout JSON）は変更なし。内部の検出ロジックのバグ修正のみ。
-- MINOR ではない理由: 新機能の追加なし。observable behavior の「正しい方向への修正」は breaking change ではない。
-
-## Additional Observations
-
-### O1: テストケース 21 の内訳妥当性
-
-| カテゴリ | テスト数 | 評価 |
-|----------|---------|------|
-| AC1 (merge-base diff) | 2 | 適切。primary bug のメインシナリオ |
-| AC2 (branch SKILL.md detection) | 3 | 適切。正常検出 + eval marker + メッセージ内容 |
-| AC3 (argument false positive) | 3 | 適切。commit message + echo + 他のパターン |
-| AC4 (chain commands) | 4 | 適切。`&&`, `;`, `\|\|` + 複合ケース |
-| 境界条件 | 6 | 適切。detached HEAD, main branch, no origin, empty command 等 |
-| Regression | 3 | 適切。既存の正常動作が維持されることの確認 |
-
-21 テストは 2 行変更に対してやや多いが、eval-guard.sh にはこれまでテストが存在しなかったため、この機会に包括的なテストカバレッジを確立するのは合理的。
-
-### O2: `sed` コマンド (L17) の制限
-
-```bash
-COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -1)
-```
-
-この `sed` は単純な JSON パース。複数行の JSON やエスケープされた引用符を含むコマンドでは壊れる可能性がある。ただしこれは **pre-existing issue** であり、Issue #22 のスコープ外。Plan もこれを変更対象にしていない。正しい。
+**推奨:** AC6 のコミット後に 6 番目のコミット `chore: バージョンバンプ + CHANGELOG 更新 (#3)` を追加する。
 
 ## Summary
 
-| # | Severity | Item | Status |
-|---|----------|------|--------|
-| — | — | ファイル構成 | PASS |
-| — | — | 実装順序 | PASS |
-| — | — | テスト設計 | PASS (bare remote 方式で実機検証済み) |
-| — | — | 技術リスク `\b` | PASS (macOS で実機検証済み) |
-| — | — | 技術リスク shallow clone | PASS (fail-open 維持) |
-| — | — | L34 コード変更 | PASS |
-| — | — | L20 コード変更 | PASS |
-| — | — | バージョンバンプ | PASS (1.5.0 → 1.5.1 PATCH) |
+| # | Item | Status |
+|---|------|--------|
+| 1 | AC との整合性 | PASS — 全 6 AC が漏れなくマッピング |
+| 2 | ファイル構成 | PASS — 5 ファイル 8 箇所、スコープ逸脱なし |
+| 3 | 実装順序 | PASS — 依存順序が正しく、リスクは LOW |
+| 4 | フラグ検出仕様 | PASS — contains チェックで十分 |
+| 5 | テスト戦略 | PASS — 24 テスト、Negative tests 含む |
+| M1 | コミット prefix | Minor — 実装時確認 |
+| M2 | CHANGELOG/version | Minor — 6 番目のコミット追加を推奨 |
 
 **BLOCKER: 0 件。実装着手可能。**
