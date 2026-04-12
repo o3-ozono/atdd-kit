@@ -17,9 +17,9 @@ Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVE
 
 <AUTOPILOT-GUARD>
 If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
-- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
-- **Do not block execution.** Proceed normally after showing the warning.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
+- Display message: "This skill is autopilot-only. Use `/atdd-kit:autopilot <number>` instead."
+- **STOP.** Do not proceed with execution.
+If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
 The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (ACs for dev tasks, completion criteria for docs/investigation).
