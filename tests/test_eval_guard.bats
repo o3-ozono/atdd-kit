@@ -18,9 +18,10 @@ setup() {
   SEED="${BATS_TMPDIR}/eval-guard-seed-$$"
 
   # Seed the bare repo with an initial commit before cloning
-  git init --bare "$BARE" 2>/dev/null
+  git init --bare -b main "$BARE" 2>/dev/null
   git clone "$BARE" "$SEED" 2>&1 >/dev/null
   cd "$SEED"
+  git checkout -b main -q 2>/dev/null
   git config user.email "test@example.com"
   git config user.name "Test"
   mkdir -p skills/session-start
