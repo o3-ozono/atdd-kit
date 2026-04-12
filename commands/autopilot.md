@@ -98,6 +98,7 @@ Bootstrap the Agent Teams infrastructure before any phase execution. This phase 
    - Phase 4 (PR Review): spawn QA (name: "QA", subagent_type: "qa") only. Load prior Decision Trail as context.
    - Phase 1 (discover) or AC Review Round: no re-spawn needed — agents are created in AC Review Round.
    Then proceed to the determined phase using SendMessage.
+   Note: This mid-phase resume is the sole exception to Autonomy Rule 5 (Agent re-generation prohibition). It applies only when agents do not exist in the current session due to a session restart.
 7. On failure at any step: report the error → STOP. Do NOT fall back to solo execution. See Autonomy Rules below.
 
 ## Autonomy Rules
@@ -108,6 +109,7 @@ The following execution patterns are **prohibited**. If any situation would trig
 2. **Explore subagent substitution** — Do not use Explore subagents as a replacement for Developer or QA agents. Explore subagents are for codebase research only, not for implementation or review.
 3. **Self-executing skill steps** — When a skill is delegated to Developer or QA via Agent tool, PO must not execute that skill's steps directly. The skill must run inside the spawned agent.
 4. **Context-priority execution** — Do not skip spawning an agent because "the context from a prior skill is already available." Each role must run in its own agent with its own system_prompt.
+5. **Agent re-generation** — Once Developer and QA are spawned in AC Review Round, do not create new instances of these agents in Phase 2, Plan Review Round, Phase 3, or Phase 4. Communicate with existing agents exclusively via SendMessage. Exception: Phase 0.9 Mid-phase resume handles session-restart re-creation only.
 
 Failure mode: report what failed → STOP → user decides next step.
 
@@ -147,6 +149,8 @@ PO・Developer・QA 全員で draft AC をレビューする（Three Amigos）�
 
 Developer が実装戦略、QA がテスト戦略を主導し、PO が統合する。Developer and QA agents were already spawned in AC Review Round — continue via SendMessage.
 
+> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
+
 1. Use SendMessage to: "Developer" with implementation strategy instructions. Include Issue number, approved AC set, and prior Decision Trail references as context:
    - ファイル構成、実装順序、依存関係、技術リスク
    - Agent must write results to `docs/decisions/impl-strategy-developer.md`
@@ -160,6 +164,8 @@ Developer が実装戦略、QA がテスト戦略を主導し、PO が統合す�
 **Tools:** SendMessage
 
 PO・Developer・QA 全員で Plan をレビューする。Developer and QA agents continue via SendMessage.
+
+> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
 
 1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number, approved AC set, unified Plan, and prior Decision Trail file paths as context:
    - **PO:** AC との整合性、スコープ逸脱の有無
@@ -176,6 +182,8 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 Developer が ATDD ダブルループで実装する。Developer agent continues via SendMessage.
 
+> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer agent via SendMessage only (see Autonomy Rule 5).
+
 1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and all prior Decision Trail file paths as context — Developer uses Skill tool to invoke `atdd-kit:atdd`
 2. Developer creates branch, Draft PR, and implements AC by AC
 3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs are complete
@@ -187,6 +195,8 @@ Developer が ATDD ダブルループで実装する。Developer agent continues
 **Tools:** SendMessage
 
 QA が PR をレビューする。QA agent continues via SendMessage.
+
+> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing QA agent via SendMessage only (see Autonomy Rule 5).
 
 1. Use SendMessage to: "QA" with PR review instructions. Include Issue number, approved AC set, PR number, and all prior Decision Trail file paths as context
 2. QA performs:

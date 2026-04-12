@@ -460,3 +460,74 @@ AUTOPILOT="commands/autopilot.md"
   # TeamDelete is a destructive operation — must only appear in Phase 0.9 (ToolSearch) and Phase 5 (execution)
   ! sed -n '/## Phase 1:/,/## Phase 5:/p' "$AUTOPILOT" | grep -q 'TeamDelete'
 }
+
+# ===========================================================================
+# Issue #11: Agent re-generation prohibition (Prompt Guard)
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# #11-AC1: Autonomy Rules — Agent re-generation prohibition (Rule 5)
+# ---------------------------------------------------------------------------
+
+@test "#11-AC1: Autonomy Rules contains agent re-generation prohibition" {
+  # Scope to Autonomy Rules section only (up to next ## heading)
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -qi 'agent.*re-\?gen\|new instances.*agents'
+}
+
+@test "#11-AC1: Rule 5 is numbered as item 5 in Autonomy Rules" {
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -q '^5\.'
+}
+
+@test "#11-AC1: Rule 5 specifies SendMessage as the correct alternative" {
+  # Rule 5 line itself must mention SendMessage (not just neighboring sections)
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep '^5\.' | grep -q 'SendMessage'
+}
+
+@test "#11-AC1: Rule 5 scopes prohibition to after AC Review Round" {
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep '^5\.' | grep -qi 'AC Review Round'
+}
+
+@test "#11-AC1: Rule 5 is covered by existing Failure Mode" {
+  count=$(grep -c '## Autonomy Rules' "$AUTOPILOT")
+  [ "$count" -eq 1 ]
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -q 'Failure mode.*STOP'
+}
+
+# ---------------------------------------------------------------------------
+# #11-AC2: SendMessage-only guard in Phase 2-4 and Plan Review Round
+# ---------------------------------------------------------------------------
+
+@test "#11-AC2: Phase 2 contains SendMessage-only guard" {
+  sed -n '/^## Phase 2: plan/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+@test "#11-AC2: Plan Review Round contains SendMessage-only guard" {
+  sed -n '/^## Plan Review Round/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+@test "#11-AC2: Phase 3 contains SendMessage-only guard" {
+  sed -n '/^## Phase 3: Implementation/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+@test "#11-AC2: Phase 4 contains SendMessage-only guard" {
+  sed -n '/^## Phase 4: PR Review/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+# ---------------------------------------------------------------------------
+# #11-AC3: Bidirectional cross-reference between Phase 0.9 and Rule 5
+# ---------------------------------------------------------------------------
+
+@test "#11-AC3: Phase 0.9 Mid-phase resume references Rule 5 or Autonomy Rules" {
+  # The mid-phase resume section must reference the prohibition rule
+  sed -n '/Mid-phase resume/,/^## /p' "$AUTOPILOT" | grep -qi 'Autonomy Rule 5\|Rule 5\|re-generation prohibition'
+}
+
+@test "#11-AC3: Rule 5 references Phase 0.9 Mid-phase resume as exception" {
+  # Rule 5 text must mention Phase 0.9 or Mid-phase resume as the exception
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep '^5\.' | grep -qi 'Phase 0.9\|Mid-phase resume'
+}
+
+@test "#11-AC3: Mid-phase resume is the only spawn reference outside AC Review Round" {
+  # Phase 2-4 main flow should not contain spawn references
+  ! sed -n '/## Phase 2:/,/## Phase 5:/p' "$AUTOPILOT" | grep -qi 'spawn.*Developer\|spawn.*QA'
+}

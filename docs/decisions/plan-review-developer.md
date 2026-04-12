@@ -1,208 +1,114 @@
-# Plan Review: Developer
+# Plan Review: Developer Perspective
 
-**Issue:** #21 — fix: sim-pool-guard.sh の allowlist を fail-closed → fail-open に設計転換
+**Issue:** #11 — bug: autopilot の Agent Team で Developer/QA エージェントが滞留・大量生成される
 **Reviewer:** Developer Agent
 **Date:** 2026-04-12
 
-## Overall Verdict: CONDITIONAL PASS
+## Overall Assessment
 
-Plan のアーキテクチャと実装順序は正しい。ただし以下の 3 点の修正が必要:
+統合 Plan は的確で、スコープ・変更量・リスク対策のバランスが良い。autopilot.md のみの変更で完結し、既存テストとの互換性も十分に考慮されている。
 
-1. **[BLOCKER] バージョン番号の誤り** — 現在のバージョンは 1.4.0（1.3.0 ではない）。bump は 1.4.0 → 1.5.0
-2. **[BLOCKER] QA テスト戦略の `*_sim` パターン境界テストに誤り** — `record_sim_video` と `start_sim_log_cap` は `*_sim` glob にマッチしない
-3. **[WARNING] ios-simulator 新ツール名の実在性が未検証** — `ui_tap`, `ui_swipe` 等の新名称の根拠を確認すべき
+**Verdict: PASS** — 指摘 0 件、軽微な改善提案 2 件
 
-## Checklist Review
+## 観点別レビュー
 
-### [x] ファイル変更順序に依存関係の問題がないか
+### 1. ファイル構成の妥当性
 
-**PASS。** 依存チェーン:
+**判定: 妥当**
 
-```
-Step 1 (READONLY 削除) → Step 2 (DENY_TOOLS) → Step 3 (is_xcode_clone_required) → Step 4 (CLONE_REQUIRED_IOS_SIM) → Step 5 (main() rewrite)
-```
+`commands/autopilot.md` のみの変更で十分な理由:
 
-Step 1-5 は全て `sim-pool-guard.sh` 内の変更で、この順序は論理的に正しい:
-- Step 1 で READONLY_TOOLS を消さないと Step 5 の `main()` rewrite で参照残りが発生する
-- Step 2 の DENY_TOOLS は Step 5 の `main()` で参照されるため先に定義が必要
-- Step 3 の `is_xcode_clone_required()` も同様
-- Step 4 の配列リネームは Step 5 の `main()` で参照される
+1. **バグの本質:** LLM が Phase 2〜4 で SendMessage の代わりに Agent tool を使うのは、禁止規則の欠落が原因。autopilot.md は LLM への指示書であり、Prompt Guard の追加先として正しい
+2. **po.md の tools リスト変更は不適切:** PO は AC Review Round (L132) と Phase 0.9 Mid-phase resume (L95-100) で Agent tool が必要。tools リストから Agent を除外すると正当なユースケースが壊れる
+3. **ランタイム制限は不要:** Agent Teams のツール制限はプラットフォーム側の機能であり、テキストレベルの Prompt Guard が現時点で最も現実的な対策
 
-Step 6-8（テスト）は Step 1-5 完了後に実行。テストが本体より後なので問題なし。
+他に変更が必要なファイルはないことを確認済み:
+- `agents/po.md` — 変更不要（Agent tool は正当に必要）
+- `agents/developer.md`, `agents/qa.md` — 変更なし（SendMessage を持たない設計は正しい）
+- `tests/` — 新規テストは QA 戦略に従い追加される
 
-Step 9（CHANGELOG + version）は最後。正しい。
+### 2. 実装順序のリスク
 
-### [x] `case` glob `*_sim` パターンのカバレッジ
+**判定: リスクなし**
 
-**CONDITIONAL PASS — QA テストの境界ケースに矛盾あり。**
+提案された順序: C1 → C2-C5 → C6 → テスト
 
-Implementation Strategy で定義した `case` glob `*_sim` は **末尾一致のみ**:
+この順序は依存関係に沿っている:
+- C1 (Rule 5 定義) が先行する必要がある — C2〜C5 と C6 が "Autonomy Rule 5" を参照するため
+- C2〜C5 は互いに独立 — ファイル内の上から順に実施するのは自然
+- C6 は C1 に依存するが C2〜C5 には依存しない — Step 2 と Step 3 は並列可能だが、順次実行でもリスクなし
+- テストは全変更完了後に実行 — 正しい
 
-```bash
-case "$tool" in
-  mcp__XcodeBuildMCP__*_sim) return 0 ;;
-```
+**逆順リスクの検証:**
+- C2〜C5 を C1 より先に実施すると "see Autonomy Rule 5" の参照先が存在しない状態で一時的に不整合になるが、最終的には解消される。git commit は全変更完了後なので実害なし
 
-これは以下のように動作する:
+### 3. 技術リスク評価
 
-| ツール名（接尾部分） | `*_sim` マッチ | 理由 |
-|---|---|---|
-| `build_sim` | Yes | 末尾が `_sim` |
-| `test_sim` | Yes | 末尾が `_sim` |
-| `build_run_sim` | Yes | 末尾が `_sim` |
-| `boot_sim` | Yes | 末尾が `_sim` |
-| `record_sim_video` | **No** | 末尾が `_video` |
-| `start_sim_log_cap` | **No** | 末尾が `_log_cap` |
-| `boot_simulator` | **No** | 末尾が `_simulator` |
-| `sim_config` | **No** | `_sim` を含まない |
-| `build_device` | **No** | `_sim` を含まない |
+#### Risk 1: 既存テスト `#165-AC1`/`#165-AC2` との衝突
 
-**QA テスト戦略 AC2a.5 (`record_sim_video`) と AC2a.6 (`start_sim_log_cap`) は「CLONE_REQUIRED に分類される」と期待しているが、`*_sim` glob ではマッチしない。** これらのテストは ALLOW（fail-open デフォルト）を期待値にすべき。
+**実装戦略の対策: 十分**
 
-**対応案:**
-- (A) テスト期待値を修正: `record_sim_video` と `start_sim_log_cap` → fail-open ALLOW（パターンにマッチしないため）
-- (B) パターンを `*_sim*` に変更: `_sim` を含む全ツールをキャッチ。ただし `boot_simulator` もマッチする副作用あり
-- (C) パターンを `*_sim|*_sim_*` に変更: 末尾 `_sim` と中間 `_sim_` の両方をキャッチ
+テストパターンを精密に検証した結果:
 
-**推奨: (A)。** fail-open 設計では、`record_sim_video` のようなツールが CLONE_REQUIRED に分類されなくても ALLOW になるだけで実害はない。パターンを複雑にする (B)(C) は保守性を下げる。`*_sim` の末尾一致のみというシンプルなルールを維持すべき。
+| テスト | grep パターン | Phase 2 C2 ガード文 | 結果 |
+|--------|-------------|---------------------|------|
+| L230 | `Use Agent tool.*Developer` | "New agent creation is prohibited...Developer/QA agents via SendMessage" | マッチしない (SAFE) |
+| L231 | `Use Agent tool.*Developer` | (Phase 3 C4 も同様) | マッチしない (SAFE) |
+| L253 | `Use Agent tool.*QA` | "New agent creation is prohibited...Developer/QA agents via SendMessage" | マッチしない (SAFE) |
+| L254 | `Use Agent tool.*QA` | (Phase 4 C5 も同様) | マッチしない (SAFE) |
 
-もし `record_sim_video` が実際にシミュレーターとの対話を必要とするツールであれば、AC2b の個別指定リストに追加する方が明確。
+また、肯定テスト (L235, L239, L243, L258, L262, L266) は `SendMessage.*Developer` / `SendMessage.*QA` を検索しており、ガード文内の "SendMessage" が追加マッチするが、肯定テストなので無害。
 
-### [x] CLONE_REQUIRED_IOS_SIM 11 ツールリストの完全性と新名称の正確性
+#### Risk 2: Autonomy Rules の `-A 20` 範囲
 
-**WARNING — 新ツール名の実在性が未検証。**
+**実装戦略の対策: 十分**
 
-Plan が提示する 11 ツール:
+現状の Autonomy Rules セクション:
+- L103: `## Autonomy Rules` (見出し)
+- L105: 前文
+- L107-L110: Rule 1〜4
+- L112: Failure mode
 
-| # | 新ツール名 | 推定される旧ツール名 |
-|---|---|---|
-| 1 | `ui_tap` | `tap` |
-| 2 | `ui_swipe` | `swipe` |
-| 3 | `ui_type` | `type_text` |
-| 4 | `ui_describe_all` | `get_ui_hierarchy` |
-| 5 | `ui_describe_point` | (新規?) |
-| 6 | `ui_view` | (新規?) |
-| 7 | `screenshot` | `take_screenshot` |
-| 8 | `record_video` | `start_recording` |
-| 9 | `install_app` | (旧名と同一?) |
-| 10 | `launch_app` | (旧名と同一?) |
-| 11 | `open_simulator` | `boot_simulator` |
+C1 追加後:
+- L111: Rule 5 (1 行追加)
+- セクション合計: L103〜L113 = 11 行
 
-**確認すべき点:**
+既存テスト AC-6 (L64-82) は `grep -A 20` または `-A 25` を使用。Rule 5 の "Agent re-generation" は見出しから 8 行目に位置するため、`-A 20` で十分到達する。
 
-1. これら 11 ツールは `ios-simulator-mcp` の最新バージョンで実際に存在するか？ → `npx ios-simulator-mcp --help` またはツールリスト取得で検証すべき
-2. 旧名ツール（`tap`, `swipe`, `long_press` 等）は完全に廃止されたか？ → 旧名で MCP 呼び出しが成功しないことの確認
-3. 新たに追加されたツール（`ui_describe_point`, `ui_view`）の挙動と UDID 注入の必要性
+#### Risk 3: C4/C5 のエージェント限定表現
 
-**現行コード（sim-pool-guard.sh L61-83）の ios-simulator ツール: 22 個。**
-Plan の新リスト: 11 個（`get_booted_sim_id` と `stop_recording` 除外で 9 個 + 除外 2 個 = 11 個）。
+**検証:**
+- C4 (Phase 3): "Developer agent" のみ言及 — Phase 3 は Developer 専用なので正しい
+- C5 (Phase 4): "QA agent" のみ言及 — Phase 4 は QA 専用なので正しい
+- C2 (Phase 2): "Developer/QA agents" 両方言及 — Phase 2 は両方に SendMessage するので正しい
+- C3 (Plan Review Round): "Developer/QA agents" 両方言及 — 同上
 
-22 個 → 11 個は大幅な削減。これが正しいなら、ios-simulator MCP サーバーの API が根本的にリデザインされたことになる。以下のツールが新リストから消えている:
+各フェーズの役割分担と一致しており、問題なし。
 
-- `terminate_app` — アプリ終了。UDID 注入不要になった?
-- `long_press` — `ui_tap` に統合?
-- `press_button` — 廃止?
-- `open_url` — 廃止?
-- `list_apps` — 廃止?
-- `add_media` — 廃止?
-- `set_location` — 廃止?
-- `clear_keychain` — 廃止?
-- `get_app_container` — 廃止?
-- `push_notification` — 廃止?
-- `set_permission` — 廃止?
-- `uninstall_app` — 廃止?
-- `shutdown_simulator` — `open_simulator` に統合?
-- `erase_simulator` — 廃止?
+#### Risk 4: blockquote (`>`) 記法の影響
 
-**実装着手前に、ios-simulator MCP サーバーの最新ツールリストを取得して、この 11 ツールリストを検証することを強く推奨。** 誤ったツール名で CLONE_REQUIRED_IOS_SIM を定義すると、実際のツールが fail-open ALLOW になり UDID 注入が行われない。これは silent failure になる。
+**検証:**
+既存テストで blockquote 内容に影響を受けるパターンはない。grep は行単位で検索するため、blockquote のプレフィックス `> ` は grep パターンの前にあるだけで、マッチングに影響しない（`grep -q 'SendMessage.*Developer'` は `> **Constraint:** ...SendMessage...Developer...` にもマッチするが、肯定テストなので無害）。
 
-### [x] `main()` フローの全ルーティングパス
+### 4. テスト戦略との整合
 
-**PASS。** Plan の `main()` フロー:
+QA の新規 12 テスト計画は実装戦略の 6 変更箇所すべてをカバーしている:
+- AC1 (Rule 5): Autonomy Rules セクション内の検証
+- AC2 (ガード): Phase 2〜4 + Plan Review Round の 4 セクション検証
+- AC3 (逆参照): Phase 0.9 の検証
+- AC4 (既存テスト): 86 テスト全パス
 
-```
-DENY_TOOLS → session_id → persist → xcode_clone → ios_sim → ALLOW
-```
+テスト追加先が `test_autopilot_agent_teams_setup.bats`（既存ファイル）であることも妥当。autopilot.md の構造テストが集約されている。
 
-全パスの検証:
+## 改善提案（任意）
 
-| 入力 | 経路 | 結果 |
-|------|------|------|
-| `erase_sims`, session_id="" | DENY_TOOLS hit | DENY |
-| `erase_sims`, session_id="s1" | DENY_TOOLS hit | DENY |
-| `list_schemes`, session_id="" | DENY miss → session_id empty | ALLOW |
-| `session_set_defaults`, persist:true, session_id="s1" | DENY miss → session_id ok → persist hit | DENY |
-| `session_set_defaults`, persist:false, session_id="s1" | DENY miss → session_id ok → persist pass → xcode_clone hit | handle_xcodebuildmcp → ALLOW |
-| `build_sim`, session_id="s1" | DENY miss → session_id ok → persist miss → xcode_clone hit | handle_xcodebuildmcp → DENY (guidance) or ALLOW |
-| `ui_tap`, session_id="s1" | DENY miss → session_id ok → persist miss → xcode_clone miss → ios_sim hit | handle_ios_simulator → ALLOW with UDID |
-| `list_schemes`, session_id="s1" | DENY miss → session_id ok → persist miss → xcode_clone miss → ios_sim miss | ALLOW (fail-open) |
+### P1: C2〜C5 のガード文末に改行の一貫性
 
-全パスが正しくルーティングされる。`session_set_defaults` の persist check → clone_required の二段階処理も正常。
+blockquote の後に空行を入れるか入れないかで、マークダウンのレンダリングが変わる。実装時に全 4 箇所で一貫させること（blockquote 後に空行 1 行を推奨）。
 
-### [x] バージョンバンプの妥当性
+### P2: Rule 5 の文言で "Phase 2–4" の範囲明示
 
-**BLOCKER — 現在のバージョンが異なる。**
+Rule 5 案の "in Phase 2–4" は Plan Review Round を含むか曖昧。実装時に "in Phase 2, Plan Review Round, Phase 3, and Phase 4" と列挙するか、"after AC Review Round" で包括的に表現するか統一すべき。実装戦略の C1 テキスト案は "in Phase 2–4" だが、Plan Review Round はフェーズ番号を持たないため、明示的に含めるのが安全。
 
-- Plan 記載: 1.3.0 → 1.4.0
-- 実際の `plugin.json`: **1.4.0** (既にリリース済み)
-- CHANGELOG.md: `[1.4.0] - 2026-04-12` が最新リリース
-
-**正しい bump: 1.4.0 → 1.5.0 (MINOR)**
-
-MINOR bump の理由は Plan と同じ — observable behavior change (unknown tools: DENY → ALLOW)。
-
-## Additional Technical Observations
-
-### O1: `handle_xcodebuildmcp` の `session_use_defaults_profile` 処理
-
-現行コード（L331-335）:
-
-```bash
-if [ "$tool_name" = "mcp__XcodeBuildMCP__session_use_defaults_profile" ]; then
-  rm -f "$setup_flag"
-  emit_allow
-  exit 0
-fi
-```
-
-`session_use_defaults_profile` は `setup_flag` を **削除** する。これは「プロファイル切り替え後に再度 `session_set_defaults` を要求する」ための仕様。Plan の AC2b テスト（AC2b.4）の Note "resets setup_flag" はこの仕様を正しく理解している。問題なし。
-
-### O2: `is_xcode_clone_required` と `PERSIST_CHECK_TOOLS` の交差
-
-`session_set_defaults` と `session_use_defaults_profile` は `PERSIST_CHECK_TOOLS` と `is_xcode_clone_required` の両方に含まれる。`main()` のフローで persist check が先に実行されるため:
-
-1. `persist:true` → DENY（persist check で exit）→ `is_xcode_clone_required` に到達しない
-2. `persist:false` → persist check 通過 → `is_xcode_clone_required` でマッチ → `handle_xcodebuildmcp` 実行
-
-この二段階は正常。ただし `handle_persist_check` は `exit 0` で終了する（L305）ため、persist:true の場合は確実に `is_xcode_clone_required` に到達しない。問題なし。
-
-### O3: `set -u` 安全性の確認ポイント
-
-READONLY_TOOLS 削除後に `set -u` でクラッシュする可能性がある箇所:
-
-| 箇所 | コード | 影響 |
-|------|------|------|
-| L388 | `in_array "$tool_name" "${READONLY_TOOLS[@]}"` | **削除対象** — Step 1.1 で消す |
-| L34-49 | `READONLY_TOOLS=(...)` | **削除対象** — Step 1.1 で消す |
-
-CLONE_REQUIRED_TOOLS → CLONE_REQUIRED_IOS_SIM のリネームで影響を受ける箇所:
-
-| 箇所 | コード | 影響 |
-|------|------|------|
-| L399 | `in_array "$tool_name" "${CLONE_REQUIRED_TOOLS[@]}"` | **リネーム対象** — Step 1.5 で更新 |
-
-他に READONLY_TOOLS や CLONE_REQUIRED_TOOLS を参照する箇所はない（`grep` で確認済み）。
-
-## Summary
-
-| # | Severity | Item | Status | Action |
-|---|----------|------|--------|--------|
-| B1 | **BLOCKER** | バージョン番号: 1.3.0 → 1.4.0 は誤り | FAIL | 1.4.0 → 1.5.0 に修正 |
-| B2 | **BLOCKER** | QA テスト AC2a.5, AC2a.6: `*_sim` は `record_sim_video`, `start_sim_log_cap` にマッチしない | FAIL | テスト期待値を ALLOW に修正、またはテスト削除 |
-| W1 | **WARNING** | ios-simulator 新ツール名 11 個の実在性が未検証 | 要確認 | 実装着手前に `ios-simulator-mcp` のツールリストを取得して検証 |
-| — | INFO | ファイル変更順序 | PASS | 依存関係に問題なし |
-| — | INFO | `main()` フロー | PASS | 全ルーティングパス正常 |
-| — | INFO | `case` glob `*_sim` パターン | PASS | 末尾一致でシンプル、forward-compatible |
-| — | INFO | persist + clone_required の交差 | PASS | 二段階処理が正常に動作 |
-
-**BLOCKER 2 件の修正後、実装着手可能。**
+推奨文言修正:
+> do not create new instances of these agents in Phase 2, Plan Review Round, Phase 3, or Phase 4.
