@@ -8,9 +8,9 @@
   [[ -z "$result" ]]
 }
 
-@test "AC7: no 'ready-to-implement' in source files" {
+@test "AC7: no 'ready-to-implement' (or underscore variant) in source files" {
   local result
-  result=$(grep -rn 'ready-to-implement' --include='*.md' --include='*.yml' --include='*.json' . | grep -v CHANGELOG.md | grep -v 'docs/decisions/' || true)
+  result=$(grep -rEn 'ready.to.implement' --include='*.md' --include='*.yml' --include='*.json' . | grep -v CHANGELOG.md | grep -v 'docs/decisions/' || true)
   [[ -z "$result" ]]
 }
 

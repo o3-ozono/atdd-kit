@@ -130,7 +130,7 @@ atdd-kit/
 │   ├── skill-gate/
 │   ├── ui-test-debugging/ # iOS アドオンスキル
 │   └── verify/
-├── agents/           # エージェントロール定義（PO, Developer, QA, Researcher）
+├── agents/           # エージェントロール定義（PO, Developer, QA, Tester, Reviewer, Researcher, Writer）
 ├── addons/           # プラットフォーム固有アドオンパッケージ（ios/, web/）
 │   └── ios/          # iOS アドオン（addon.yml, scripts/, ci/, tests/）
 ├── commands/         # ユーザー明示呼び出しコマンド（/atdd-kit:*）

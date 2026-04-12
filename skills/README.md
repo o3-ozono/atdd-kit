@@ -46,5 +46,5 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) — Skills vs Commands, skill description field rules, eval requirements
 - Each skill's `SKILL.md` — Full trigger conditions and instructions
-- [agents/](../agents/) — Role definitions for autopilot (PO, Developer, QA, Researcher)
+- [agents/](../agents/) — Role definitions for autopilot (PO, Developer, QA, Tester, Reviewer, Researcher, Writer)
 - [addons/](../addons/) — Platform-specific addon packages

@@ -56,9 +56,11 @@ After plan approval, work proceeds via Agent Teams:
 
 ### Agent Teams Mode
 
-Implementer + Reviewer launch as Agent Teams teammates in the user's session. They complete the full cycle (plan-review -> implement -> code-review -> merge) and disband.
+PO orchestrates task-type-specific Agent Teams in the user's session. The team completes the full cycle (plan-review -> implement -> code-review -> merge) and disbands.
 
-**Agent Lifecycle:** Developer and QA agents are spawned once in AC Review Round (with `name: "Developer"` / `name: "QA"`, `isolation: "worktree"`). All subsequent phases (Phase 2, Plan Review, Phase 3, Phase 4) communicate with the same agents via SendMessage — no new Agent generation occurs. This preserves agent context across the full workflow.
+**Seven agents are available:** PO (opus), Developer, QA, Tester, Reviewer, Researcher, Writer (all sonnet). Agent composition is determined by Issue task type — see [commands/autopilot.md](../commands/autopilot.md) for the full composition table.
+
+**Agent Lifecycle:** Task-type-specific agents are spawned once in AC Review Round with `isolation: "worktree"`. All subsequent phases communicate with the same agents via SendMessage — no new Agent generation occurs. This preserves agent context across the full workflow.
 
 **Decision Trail:** Each agent turn writes results to `docs/decisions/{phase}-{role}.md`. These files are committed to the PR, providing a persistent record of all review and strategy decisions. PO reads these files to integrate feedback and posts summaries as Issue comments.
 
@@ -100,18 +102,27 @@ When merge order matters, add `blocked-by: #N` to the Issue/PR body. The Impleme
 
 ```mermaid
 graph LR
-    subgraph "Agent Teams"
+    subgraph "Agent Teams (task-type-specific)"
         PO["PO"]
         D["Developer"]
         Q["QA"]
+        T["Tester"]
+        R["Reviewer"]
+        RS["Researcher"]
+        W["Writer"]
     end
 
     U["User"] -- "request" --> PO
     PO -- "discover/plan" --> D
-    PO -- "plan-review" --> Q
-    D -- "atdd/verify/ship" --> Q
-    Q -- "needs-pr-revision" --> D
-    Q -- "approved" --> PO
+    PO -- "plan-review" --> R
+    PO -- "bug triage" --> T
+    PO -- "research" --> RS
+    PO -- "docs" --> W
+    D -- "atdd/verify/ship" --> R
+    T -- "fix verify" --> R
+    W -- "docs review" --> R
+    R -- "needs-pr-revision" --> D
+    R -- "approved" --> PO
     PO -- "merge" --> U
 ```
 
@@ -123,9 +134,9 @@ stateDiagram-v2
     no_label --> in_progress: Work started (discover/plan/implement)
 
     in_progress --> ready_for_plan_review: Plan complete
-    ready_for_plan_review --> ready_to_implement: Reviewer PASS
+    ready_for_plan_review --> ready_to_go: Reviewer PASS
 
-    ready_to_implement --> in_progress: Implementer picks up
+    ready_to_go --> in_progress: Implementer picks up
     in_progress --> ready_for_PR_review: PR ready
 
     ready_for_PR_review --> needs_revision: Review finds critical issues

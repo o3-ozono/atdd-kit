@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Run your development process with ATDD (Acceptance Test Driven Development) — from Issue to merge.
+Run your development process with ATDD (Acceptance Test Driven Development) — from Issue to merge — like autonomous driving for your development process.
 
 A Claude Code plugin that gives you a complete workflow: create an Issue, explore requirements, derive acceptance criteria, write tests first, implement, verify, and ship.
 
@@ -18,6 +18,8 @@ atdd-kit solves this by enforcing an **Issue-driven, test-first workflow**:
 - **Evidence-based verification** — every AC is verified with test results before merge
 
 Design principles: zero dependencies, plugin architecture, pure markdown + bash.
+
+**Autopilot mode** takes the wheel. A PO agent orchestrates task-type-specific teams — Developer, QA, Tester, Reviewer, Researcher, Writer — from Issue to merge. You approve key checkpoints; agents handle the rest.
 
 ### The ATDD Double Loop
 
@@ -104,7 +106,7 @@ flowchart LR
 
 | Command | What it does |
 |---------|-------------|
-| `/atdd-kit:autopilot` | PO-led Agent Teams (PO/Developer/QA) for end-to-end Issue completion |
+| `/atdd-kit:autopilot` | PO-led Autopilot — task-type-specific Agent Teams for end-to-end Issue completion |
 | `/atdd-kit:auto-sweep` | Sweeper utility (manual, on-demand) |
 | `/atdd-kit:auto-eval` | Skill eval runner (detects regressions in skill quality) |
 | `/atdd-kit:setup-github` | Set up GitHub issue/PR templates and labels |
@@ -118,21 +120,42 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  P1["Phase 1: discover\n(PO leads)"] --> P2["Phase 2: plan\n(PO orchestrates, Developer + QA lead)"]
-  P2 --> P3["Phase 3: Implementation\n(Developer: atdd → verify → ship)"]
-  P3 --> P4["Phase 4: PR Review\n(QA reviews)"]
-  P4 --> P5["Phase 5: Cross-Cutting Checks & Merge\n(PO merges)"]
+  P1["Phase 1: discover\n(PO leads)"] --> P2["Phase 2: plan\n(PO orchestrates, task-type agents lead)"]
+  P2 --> P3{"Task type branch"}
+  P3 -->|development / bug| P3a["Developer + QA"]
+  P3 -->|research| P3b["Researcher x N"]
+  P3 -->|documentation| P3c["Writer + Reviewer x N"]
+  P3 -->|refactoring| P3d["Developer + Reviewer x N"]
+  P3a --> P4["Phase 4: PR Review\n(Reviewer x N)"]
+  P3b --> P5["Phase 5: Merge\n(PO)"]
+  P3c --> P4
+  P3d --> P4
+  P4 --> P5
 ```
 
 ### Agent Teams
 
-PO/Developer/QA run as Agent Teams teammates:
+PO orchestrates task-type-specific teams. Seven agents are available:
 
-| Agent | Role |
-|-------|------|
-| **PO** | Team lead — discover, plan orchestration, merge decision |
-| **Developer** | Implementation — ATDD double loop, fixes |
-| **QA** | Reviews — plan review and PR code review (no code changes) |
+| Agent | Role | Model |
+|-------|------|-------|
+| **PO** | Team lead — orchestrates workflow, does not edit code | opus |
+| **Developer** | ATDD implementation, cannot self-review | sonnet |
+| **QA** | Test strategy and verification, cannot edit code | sonnet |
+| **Tester** | Bug reproduction and fix verification | sonnet |
+| **Reviewer** | Code review across task types, cannot edit code | sonnet |
+| **Researcher** | Research and analysis, cannot edit code | sonnet |
+| **Writer** | Documentation creation, can edit files | sonnet |
+
+**Agent composition by task type** (see [autopilot.md](commands/autopilot.md) for details):
+
+| Task Type | Phase 1 Agents | Phase 2 Agents |
+|-----------|----------------|----------------|
+| development | PO, Developer, QA | PO, Developer, Reviewer x N |
+| bug | PO, Tester, Developer | PO, Developer, Tester, Reviewer x N |
+| research | PO | PO, Researcher x N (min 2 per theme) |
+| documentation | PO | PO, Writer, Reviewer x N |
+| refactoring | PO | PO, Developer, Reviewer x N |
 
 ```bash
 # Auto-detect in-progress Issue, launch Agent Teams

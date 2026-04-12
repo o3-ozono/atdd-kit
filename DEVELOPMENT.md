@@ -130,7 +130,7 @@ atdd-kit/
 │   ├── skill-gate/
 │   ├── ui-test-debugging/ # iOS addon skill
 │   └── verify/
-├── agents/           # Agent role definitions (PO, Developer, QA, Researcher)
+├── agents/           # Agent role definitions (PO, Developer, QA, Tester, Reviewer, Researcher, Writer)
 ├── addons/           # Platform-specific addon packages (ios/, web/)
 │   └── ios/          # iOS addon (addon.yml, scripts/, ci/, tests/)
 ├── commands/         # User-invoked slash commands (/atdd-kit:*)
