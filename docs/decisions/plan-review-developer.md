@@ -1,118 +1,170 @@
 # Plan Review: Developer
 
-**Issue:** #26 — fix: security hardening for pr-screenshot-table.sh and .gitignore
+**Issue:** #22 — bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
 **Reviewer:** Developer Agent
 **Date:** 2026-04-12
 
 ## Overall Verdict: PASS
 
-Plan is technically sound. All 4 ACs are correctly mapped to implementation targets with appropriate techniques. bash 3.2 compatibility verified. One minor observation noted for implementer awareness.
+Plan のファイル構成、実装順序、技術リスク評価すべて妥当。BLOCKER なし。実装着手可能。
 
-## R1: File structure validity — PASS
+## Checklist Review
 
-| Target File | Exists | Action | Correct |
-|---|---|---|---|
-| `scripts/pr-screenshot-table.sh` (line 24) | Yes | Modify — PR number validation | Yes, line 24 is `PR_NUMBER="$1"` |
-| `scripts/pr-screenshot-table.sh` (lines 175-183) | Yes | Modify — array conversion | Yes, lines 175-183 are the image_paths string concatenation + SC2086 disable |
-| `scripts/pr-screenshot-table.sh` (lines 293-297) | Yes | Modify — AWK `-v` fix | Yes, lines 293-297 are the AWK section replacement with shell expansion |
-| `.gitignore` (append) | Yes | Modify — add patterns | Yes, 16 lines currently |
-| `tests/test_pr_screenshot_security.bats` | No (new) | Create | Yes, follows `tests/test_*.bats` naming convention |
+### [x] ファイル構成の妥当性
 
-No missing files. `scripts/upload-image-to-github.mjs` is correctly identified as unchanged — it accepts positional arguments (`process.argv.slice(2)`), so the array expansion change is transparent.
+**PASS。** 5ファイルの変更リスト:
 
-## R2: Implementation order risks — PASS
+| # | File | 妥当性 |
+|---|------|--------|
+| 1 | `tests/test_eval_guard.bats` (新規) | 必要。eval-guard.sh のテストは現在存在しない。21テストケースは4つのACを十分にカバー |
+| 2 | `hooks/eval-guard.sh` | 必要。バグの原因がある2行 (L20, L34) |
+| 3 | `hooks/README.md` | 必要。DEVELOPMENT.md のルール「Directory READMEs: update in the same PR」に準拠 |
+| 4 | `CHANGELOG.md` | 必要。DEVELOPMENT.md のルール「every feature PR must update the changelog」に準拠 |
+| 5 | `.claude-plugin/plugin.json` | 必要。PATCH bump (1.5.0 → 1.5.1)。バグ修正のため PATCH が正しい |
 
-Plan states AC1, AC2, AC3 are independent (different locations in `pr-screenshot-table.sh`) and AC4 is fully independent (`.gitignore` only). This is correct:
+**不足ファイルなし。** `.claude/settings.json` は hook 登録が変更なし（同じ matcher, 同じ command）のため修正不要。
 
-- AC1 modifies lines 293-297 (AWK section)
-- AC2 modifies lines 175-183 (image_paths section)
-- AC3 modifies around line 24 (after `PR_NUMBER="$1"`)
-- AC4 modifies `.gitignore` (append)
+### [x] 実装順序のリスク
 
-No overlap between modification zones. Test writing order (AC3 -> AC1 -> AC2) is reasonable — AC3 is simplest (exit code check), AC2 needs mock design for array expansion.
+**PASS。** ATDD Double Loop の正しい順序:
 
-Plan specifies CHANGELOG + version bump last. Correct.
+```
+Phase 1 (Red): tests/test_eval_guard.bats 作成
+    ↓ AC1, AC3 テストが失敗することを確認
+Phase 2 (Green): hooks/eval-guard.sh L34, L20 修正
+    ↓ 全テスト PASS を確認
+Phase 3 (Housekeeping): README, CHANGELOG, version
+```
 
-## R3: Technical risk assessment — PASS
+**リスク評価:**
 
-### bash 3.2 compatibility — Verified
+1. **Phase 1 → Phase 2 の順序:** テストファーストは正しい。AC2, AC4 のテストが Phase 1 時点で既に PASS することも確認すべき（既存の正しい動作の regression guard として機能する）
+2. **Phase 2 内の順序:** L34 (three-dot diff) → L20 (regex) の順序は正しい。L34 の変更は L20 に影響しない。逆順でも問題ないが、primary bug (AC1) を先に修正する方が自然
+3. **Phase 3 の位置:** housekeeping は実装完了後。正しい
 
-All three proposed constructs tested on this machine (bash 3.2.57):
+**唯一の注意点:** Phase 1 で BATS テストが一時 git リポジトリを `setup()` で作成する設計。`teardown()` で確実にクリーンアップすること。BATS の `BATS_TMPDIR` を使えば問題ない。
 
-| Construct | bash 3.2 | Verified |
-|---|---|---|
-| `[[ "$PR_NUMBER" =~ ^[0-9]+$ ]]` | Supported | Yes — tested with valid, invalid, injection, empty inputs |
-| `image_paths+=("$path")` array append | Supported | Yes — tested with spaces in paths |
-| `"${image_paths[@]}"` expansion | Supported | Yes — correctly preserves individual arguments |
-| AWK `-v section_file="$VAR"` | AWK feature, not bash-dependent | Yes — tested with spaces in path |
+### [x] テスト設計の技術的実現性
 
-### node argument order — No risk
+**PASS。** bare remote 方式で three-dot diff の正確な再現を実機検証済み:
 
-`upload-image-to-github.mjs` uses `process.argv.slice(2)` — first arg is PR_URL, rest are image paths. Array expansion `"${image_paths[@]}"` preserves insertion order identical to the current string concatenation. No behavioral change.
+```
+Two-dot diff (buggy):  skills/test-skill/SKILL.md  ← 誤検出
+Three-dot diff (fixed): (空)                        ← 正しい
+```
 
-### AWK `-v` with special characters — Verified
+bare remote (`git init --bare`) + `git clone` + `git fetch` で `origin/main` が正しく参照される。`git update-ref` 方式よりも実環境に近い。
 
-AWK `-v section_file="$SECTION_FILE"` correctly handles paths with spaces. The `$SECTION_FILE` is constructed from `$TMPDIR_BASE` (via `mktemp -d`) which produces paths without special characters in practice. The fix still improves safety for defense-in-depth.
+**テスト infrastructure の設計ポイント:**
 
-## R4: Architecture consistency — PASS
+- `setup()` で bare remote + clone + branch + fetch を毎テスト実行
+- `run_guard()` ヘルパーで eval-guard.sh を当該リポジトリの context で実行
+- `teardown()` で一時ディレクトリをクリーンアップ
+- eval-guard.sh の `git branch --show-current` と `git diff` はテストリポジトリの `cd` コンテキストに依存するため、`cd "$WORK"` した状態で guard を実行する必要がある
 
-| Aspect | Plan | Codebase Pattern | Match |
-|---|---|---|---|
-| Test file naming | `tests/test_pr_screenshot_security.bats` | `tests/test_*.bats` | Yes |
-| Test setup pattern | `BATS_TEST_TMPDIR` + `setup()` fixtures | Same as `test_check_plugin_version.bats` | Yes |
-| Error output | `>&2` with Usage format | Matches existing line 20 pattern | Yes |
-| shellcheck compliance | Remove SC2086 disable | Eliminates a suppression — improves compliance | Yes |
-| `.gitignore` style | Append patterns at end | Current file has no section headers, flat list | Yes |
+**AC3 テストの重要な前提条件:**
+Plan が「SKILL.md 変更ありの状態で実行」と指定しているのは正しい。AC3 は「コマンド引数中の "git push" で誤検知しない」だが、そもそも `git push` として検出されなければテストが成立する。SKILL.md 変更がある状態で "git push" が引数に含まれるコマンドを実行し、eval-guard がブロックしないことを確認する必要がある。
 
-## R5: Edge cases — PASS (with observation)
+### [x] 技術リスク評価
 
-### Addressed by plan
-- AC1: Special characters in `$SECTION_FILE` path — AWK `-v` handles this
-- AC2: Spaces in image paths — array expansion handles this
-- AC3: Empty string, non-integer, special characters — `[[ =~ ^[0-9]+$ ]]` rejects all
+**PASS。** Plan の2つのリスクに対する追加検証結果:
 
-### Observation: empty array under `set -u`
+#### R1: `\b` の BSD grep 互換性
 
-On bash 3.2 with `set -euo pipefail`, expanding `"${image_paths[@]}"` on an **empty** array triggers "unbound variable" error. However, this is not a real risk because:
+**実機検証済み — 問題なし。**
 
-1. The guard at line 163 (`if [ ! -s "$UPLOAD_LIST" ]`) exits before reaching the array construction
-2. The `while` loop at line 176 reads from `$UPLOAD_LIST` which is guaranteed non-empty at that point
-3. Each UPLOAD_LIST entry has a non-empty `path` (set by `extract_image` which only writes on success)
+macOS の `grep -E` で `\b` をテスト:
 
-Therefore `image_paths` will always have at least one element when expansion occurs. No plan change needed, but the implementer should be aware that adding a length guard (`if [ ${#image_paths[@]} -gt 0 ]`) before expansion would be a defensive option if the surrounding control flow ever changes.
+| 入力 | 期待 | 結果 |
+|------|------|------|
+| `git push origin main` | MATCH | MATCH |
+| `git commit -m "remember to git push"` | NO MATCH | NO MATCH |
+| `git add . && git push origin branch` | MATCH | MATCH |
+| `git add . ; git push` | MATCH | MATCH |
+| `git add . \|\| git push` | MATCH | MATCH |
+| `git pushall` | NO MATCH | NO MATCH |
+| `echo "run git push later"` | NO MATCH | NO MATCH |
 
-### `.gitignore` pattern specificity
+全ケースで正しく動作。`\b` は GNU grep と BSD grep (macOS) の両方でサポート。フォールバック (`git\s+push(\s|$)`) は不要だが、Plan に記載があるのは prudent。
 
-`*.local.*` will match files like `settings.local.json` (intended) but also `foo.local.bar.baz` (edge case, acceptable for gitignore). `*.secret` and `*.secrets` are suffix-only patterns — no false positive risk.
+#### R2: Three-dot diff の shallow clone 挙動
 
-## R6: Test coverage — PASS
+**PASS。** `2>/dev/null || echo ""` のエラーハンドリングが維持される。shallow clone で `git merge-base` が失敗しても、空文字列が返り CHANGED_SKILLS が空になる → push を許可（fail-open）。atdd-kit 開発者は full clone を使用するため実際にはこのパスに入らない。
 
-| AC | Test Layer | Coverage | Assessment |
-|---|---|---|---|
-| AC1: AWK injection | Unit (BATS) | AWK output correctness with normal and special-character paths | Adequate — tests the actual AWK transformation |
-| AC2: image_paths array | Unit (BATS) | Array expansion preserves individual arguments including spaces | Adequate — verifies the fix purpose |
-| AC3: PR number validation | Unit (BATS) | Exit code + error message for invalid inputs | Adequate — simplest to test, good edge case coverage |
-| AC4: .gitignore patterns | Unit (BATS) | `git check-ignore` for each pattern | Adequate — `git check-ignore` is the authoritative check |
+### [x] 具体的なコード変更の正確性
 
-Test pattern follows `test_check_plugin_version.bats` conventions (`BATS_TEST_TMPDIR`, `setup()` fixtures). This is the correct approach for this repo.
+**PASS。**
 
-**Note on AC1/AC2 testability:** The plan correctly identifies that AC1 and AC2 test the transformation logic in isolation (AWK output, argument passing) rather than requiring full script execution with `gh` CLI mocking. This is appropriate for security-focused unit tests.
+#### L34: Three-dot diff
 
-## Version Bump
+```bash
+# Before:
+CHANGED_SKILLS=$(git diff --name-only origin/main -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
+# After:
+CHANGED_SKILLS=$(git diff --name-only origin/main...HEAD -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
+```
 
-Current version: **1.5.0** (verified in `.claude-plugin/plugin.json`).
+- `origin/main...HEAD` = `$(git merge-base origin/main HEAD)..HEAD` — merge-base 基点
+- path filter `'skills/*/SKILL.md'` は維持 — SKILL.md 以外のファイルは無視
+- error handling `2>/dev/null || echo ""` は維持 — fail-open
 
-Plan does not specify a version number. This is a PATCH-level fix (security hardening, no behavioral change for valid inputs). Recommended bump: **1.5.0 -> 1.5.1**.
+#### L20: Regex 強化
+
+```bash
+# Before:
+if ! echo "$COMMAND" | grep -q 'git push'; then
+# After:
+if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push\b'; then
+```
+
+- `(^|&&|;|\|\|)` — コマンド先頭 or チェーン演算子の後
+- `\s*` — 演算子後の任意空白
+- `git\s+push` — `git` と `push` の間に1つ以上の空白（`git  push` も対応）
+- `\b` — word boundary（`git pushall` を除外）
+
+**既存コードとの整合性:** `grep -q` → `grep -qE` への変更。`-E` は extended regex を有効にする。既存の他の grep 呼び出し（L17 の `sed`）には影響しない。
+
+### [x] バージョンバンプの妥当性
+
+**PASS。** 現在のバージョンは `1.5.0`（`.claude-plugin/plugin.json` で確認済み）。バグ修正のため PATCH bump: `1.5.0 → 1.5.1`。
+
+- PATCH が正しい理由: hook の外部インターフェース（stdin JSON → stdout JSON）は変更なし。内部の検出ロジックのバグ修正のみ。
+- MINOR ではない理由: 新機能の追加なし。observable behavior の「正しい方向への修正」は breaking change ではない。
+
+## Additional Observations
+
+### O1: テストケース 21 の内訳妥当性
+
+| カテゴリ | テスト数 | 評価 |
+|----------|---------|------|
+| AC1 (merge-base diff) | 2 | 適切。primary bug のメインシナリオ |
+| AC2 (branch SKILL.md detection) | 3 | 適切。正常検出 + eval marker + メッセージ内容 |
+| AC3 (argument false positive) | 3 | 適切。commit message + echo + 他のパターン |
+| AC4 (chain commands) | 4 | 適切。`&&`, `;`, `\|\|` + 複合ケース |
+| 境界条件 | 6 | 適切。detached HEAD, main branch, no origin, empty command 等 |
+| Regression | 3 | 適切。既存の正常動作が維持されることの確認 |
+
+21 テストは 2 行変更に対してやや多いが、eval-guard.sh にはこれまでテストが存在しなかったため、この機会に包括的なテストカバレッジを確立するのは合理的。
+
+### O2: `sed` コマンド (L17) の制限
+
+```bash
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -1)
+```
+
+この `sed` は単純な JSON パース。複数行の JSON やエスケープされた引用符を含むコマンドでは壊れる可能性がある。ただしこれは **pre-existing issue** であり、Issue #22 のスコープ外。Plan もこれを変更対象にしていない。正しい。
 
 ## Summary
 
-| Criterion | Verdict | Notes |
-|---|---|---|
-| R1: File structure validity | PASS | All target files verified at correct line numbers |
-| R2: Implementation order risks | PASS | All ACs independent, no dependency issues |
-| R3: Technical risk assessment | PASS | bash 3.2 compatibility verified on this machine |
-| R4: Architecture consistency | PASS | Follows existing test and code patterns |
-| R5: Edge cases | PASS | Empty array edge case is safe due to existing guard |
-| R6: Test coverage | PASS | All ACs covered with appropriate test strategies |
+| # | Severity | Item | Status |
+|---|----------|------|--------|
+| — | — | ファイル構成 | PASS |
+| — | — | 実装順序 | PASS |
+| — | — | テスト設計 | PASS (bare remote 方式で実機検証済み) |
+| — | — | 技術リスク `\b` | PASS (macOS で実機検証済み) |
+| — | — | 技術リスク shallow clone | PASS (fail-open 維持) |
+| — | — | L34 コード変更 | PASS |
+| — | — | L20 コード変更 | PASS |
+| — | — | バージョンバンプ | PASS (1.5.0 → 1.5.1 PATCH) |
 
-**Plan is ready for implementation.**
+**BLOCKER: 0 件。実装着手可能。**

@@ -29,7 +29,7 @@ These hooks are registered in `.claude/settings.json` (project-level), NOT in `h
 Enforces the rule that skill changes require eval before push:
 
 1. Intercepts all Bash tool calls
-2. If the command contains `git push`, checks for SKILL.md changes vs origin/main
+2. If the command is a `git push` (not in arguments), checks for SKILL.md changes on this branch vs merge-base with origin/main
 3. If changes exist, checks for eval evidence marker (`$XDG_CACHE_HOME/atdd-kit/eval-ran-<branch>`)
 4. Blocks push with guidance to run `/atdd-kit:auto-eval` if no evidence found
 

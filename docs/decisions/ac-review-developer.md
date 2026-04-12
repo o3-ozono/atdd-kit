@@ -1,101 +1,97 @@
-# AC Review: Developer Perspective
+# AC Review — Developer
 
-**Issue:** #11 — bug: Autonomy Rules に Agent tool 再生成禁止規則が欠落
-**Reviewer:** Developer Agent
+**Issue:** #22 — bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
+**Reviewer:** Developer
 **Date:** 2026-04-12
 
 ## Overall Assessment
 
-AC セットは的確にバグの根本原因を捉えており、修正アプローチ（Prompt Guard）は autopilot.md の既存構造と整合する。変更量は小さく、既存テストとの互換性も問題ない。
+**Verdict: PASS** — All four ACs are well-formed, technically sound, and cover the necessary scenarios. No AC changes required.
 
-**Verdict: PASS** — 軽微な提案あり（下記参照）
+The proposed approach (three-dot diff + regex strengthening) is architecturally consistent, technically correct, and achievable in ~2 line changes as claimed.
 
-## 観点別レビュー
+## 1. Architecture Consistency
 
-### アーキテクチャ整合性
+The hook design follows the existing pattern in `hooks/eval-guard.sh`:
+- Read JSON input from stdin
+- Extract command string
+- Check conditions (branch, changed files, eval marker)
+- Output JSON permit/deny
 
-autopilot.md の Tools 行は既に Phase 2〜4 で Agent を除外している:
+The proposed fix changes only the detection logic (lines 20 and 34), not the hook structure. This is the correct scope for a bug fix. The hook is registered in `.claude/settings.json` as a development-only PreToolUse hook on the `Bash` matcher.
 
-| セクション | Tools 行 | Agent 含む? |
-|-----------|----------|-------------|
-| AC Review Round (L128) | `Agent, SendMessage` | はい（唯一の正当な spawn 地点） |
-| Phase 2 (L146) | `SendMessage, Skill` | いいえ |
-| Plan Review Round (L160) | `SendMessage` | いいえ |
-| Phase 3 (L175) | `SendMessage, Skill` | いいえ |
-| Phase 4 (L187) | `SendMessage` | いいえ |
+## 2. Technical Feasibility
 
-しかし、Autonomy Rules (L103-112) には明示的な「Agent tool 再生成禁止」がない。LLM は Tools 行を参照するが、それだけでは行動制約として不十分な場合がある（特にコンテキストが長くなると Tools 行が埋もれる）。Autonomy Rules に明文化することで、二重の防御層になる。
+### Bug 1: Three-dot diff — CORRECT
 
-**結論:** AC1 は既存構造を補強するものであり、矛盾は生じない。
+**Current (buggy, line 34):** `git diff --name-only origin/main -- 'skills/*/SKILL.md'`
+- Two-point diff comparing the working tree against `origin/main` tip
+- If main advances after branch creation, all main-side changes appear in the diff
 
-### 技術的実現性
+**Proposed:** `git diff --name-only origin/main...HEAD -- 'skills/*/SKILL.md'`
+- Three-dot diff uses the merge-base as the comparison point
+- Only shows changes introduced on the branch, not changes on main since divergence
+- Standard Git idiom for "what did this branch change?" — same semantics as GitHub PR diffs
 
-**Prompt Guard で十分か:** はい。
+**Edge cases:**
+- **Detached HEAD:** Already handled at line 27 — allows push if BRANCH is empty
+- **Shallow clone:** `git merge-base` may fail in extremely shallow clones, but `2>/dev/null || echo ""` on line 34 handles errors gracefully (fail-open). Low risk since atdd-kit developers use full clones.
+- **No `origin/main` remote:** Same error handling — returns empty, allowing push. Correct fail-open behavior.
 
-理由:
-1. autopilot.md は LLM への指示書であり、Prompt Guard が最も直接的な対策
-2. po.md の tools リストから Agent を除外する方法は不適切 — PO は AC Review Round (L132) と Phase 0.9 Mid-phase resume (L95-100) で Agent tool が必要
-3. ランタイムのツール呼び出し制限はプラットフォーム側の機能であり、現時点では autopilot.md のテキストレベルの対策が現実的
+### Bug 2: Regex strengthening — CORRECT
 
-**他に必要な変更:** なし。変更は autopilot.md のみで完結する。
+**Current (buggy, line 20):** `grep -q 'git push'`
+- Matches "git push" anywhere in the command string, including inside arguments
 
-### エッジケース
+**Proposed:** A regex matching `git push` as a command, not as a substring in arguments. Something like `grep -qE '(^|[;&|]\s*)git\s+push'` or equivalent. This is a single-line change on line 20.
 
-1. **Phase 0.9 Mid-phase resume (L95-100):**
-   セッション再開時に Developer/QA が存在しない場合、Agent tool での再生成が必要。AC3 でこれを「セッション再開時のみ」の例外として明記するのは適切。禁止規則の文言に「Phase 0.9 Mid-phase resume を除く」を明示すべき。
-   - 現状 L95-100 は既にこの例外を記述しているが、Autonomy Rules 側から逆参照がない
-   - AC1 の実装時に、新ルールと Phase 0.9 の双方向参照を入れることを推奨
+## 3. Edge Case Coverage
 
-2. **Developer/QA がクラッシュ・応答不能になった場合:**
-   Autonomy Rules L112 の「report what failed → STOP → user decides next step」が適用される。Agent tool 再生成禁止と整合する（ユーザー判断に委ねる）。新しいエージェント障害復旧手順は今回のスコープ外で問題ない。
+### Covered by ACs
+| AC | Scenario | Coverage |
+|----|----------|----------|
+| AC1 | Main-side SKILL.md changes after branch divergence (primary bug) | Primary regression test |
+| AC2 | Branch-side SKILL.md changes still detected | Regression guard |
+| AC3 | "git push" in command arguments | Secondary bug fix |
+| AC4 | Chained commands with real git push | Regression guard for AC3 |
 
-3. **Explore subagent の使用:**
-   既に Autonomy Rule 2 (L108) で禁止済み。新規禁止規則との重複なし。
+### Not covered but acceptable (no AC changes needed)
 
-4. **AC Review Round での正当な Agent tool 使用を阻害しないか:**
-   AC1 の禁止対象は「AC Review Round 以降」。AC Review Round 自体での spawn は禁止対象外。この境界が実装時に曖昧にならないよう、「AC Review Round で spawn した後は」と起点を明確にすべき。
+1. **Pipe commands** (e.g., `echo foo | git push`): Unusual for git push in practice. A well-designed regex for `&&`/`;`/`||` chains will naturally extend to `|`. Implementation detail, not worth a separate AC.
 
-### 実装複雑度
+2. **`git` with flags before subcommand** (e.g., `git -c key=val push`): Extremely rare in Claude Code tool calls. Not worth an AC.
 
-**変更量:** 小（autopilot.md のみ、推定 10〜15 行の追加・修正）
+3. **Subshell/backtick forms** (e.g., `` `git push` `` or `$(git push)`): Doesn't occur in real usage. Not worth an AC.
 
-| 変更箇所 | 内容 | 行数目安 |
-|----------|------|---------|
-| Autonomy Rules | ルール 5 追加（Agent 再生成禁止、Phase 0.9 例外明記） | 2〜3 行 |
-| Phase 2 | 注意書き 1 行追加 | 1 行 |
-| Plan Review Round | 注意書き 1 行追加 | 1 行 |
-| Phase 3 | 注意書き 1 行追加 | 1 行 |
-| Phase 4 | 注意書き 1 行追加 | 1 行 |
-| Phase 0.9 | 例外の補足（Autonomy Rules への逆参照） | 1 行 |
+4. **Multiple `git push` in one command** (e.g., `git push origin main && git push origin --tags`): Would be caught by the regex matching either occurrence. No issue.
 
-### テストへの影響
+## 4. Implementation Complexity
 
-既存テスト `test_autopilot_agent_teams_setup.bats` の構造を確認した:
-- **#165-AC1 (L227-244):** Phase 2, 3 で Agent tool が Developer に使われていないことを検証 → AC2 の注意書き追加と互換性あり
-- **#165-AC2 (L250-267):** Phase 2, 4 で Agent tool が QA に使われていないことを検証 → 同上
-- **AC-6 (L60-87):** Autonomy Rules の既存ルール検証 → AC1 のルール追加で新テスト追加が必要
+**Achievable in ~2 line changes:**
 
-**AC4 で追加すべきテストケース案:**
-```
-#11-AC1: Autonomy Rules に Agent re-generation 禁止文言が存在
-#11-AC2: Phase 2〜4 各セクションに Agent tool 禁止注意書きが存在
-#11-AC3: Phase 0.9 Mid-phase resume に例外条件が明記されていること
-```
+- **Line 34:** Change `git diff --name-only origin/main` to `git diff --name-only origin/main...HEAD` — one token addition.
+- **Line 20:** Change `grep -q 'git push'` to `grep -qE '(^|[;&|]\s*)git\s+push'` or similar — one line replacement.
 
-## 提案
+No new functions, no structural changes, no new dependencies. Minimal blast radius.
 
-### P1: Autonomy Rules 新ルールの文言案
+## 5. BATS Test Feasibility
 
-> 5. **Agent re-generation** — After AC Review Round spawns Developer and QA, do not use Agent tool to create new instances of these agents in Phase 2–4. Use SendMessage to communicate with existing agents. Exception: Phase 0.9 Mid-phase resume (session restart only).
+Two approaches are available:
 
-### P2: Phase 2〜4 注意書きの文言案
+1. **Content-based assertions** (consistent with existing test patterns like `test_eval_framework.bats`): Verify the script contains `origin/main...HEAD` and an appropriate regex pattern.
+2. **Functional tests**: Set up a temp git repo, pipe crafted JSON input to the script, check output JSON.
 
-各セクションの手順冒頭に統一フォーマットで追加:
+Either approach works. The ACs are fully testable.
 
-> **Important:** Do NOT use Agent tool to spawn new Developer/QA agents. Use SendMessage to communicate with agents spawned in AC Review Round.
+## 6. Per-AC Feedback
 
-### P3: 双方向参照の追加
+| AC | Verdict | Notes |
+|----|---------|-------|
+| AC1 | PASS | Correctly tests the primary bug. Given/When/Then is precise and verifiable. |
+| AC2 | PASS | Essential regression guard. Verifies the fix doesn't break core blocking behavior. |
+| AC3 | PASS | Correctly tests the secondary bug. Example command is realistic. |
+| AC4 | PASS | Good regression guard for AC3. Tests `&&` chaining which is the most common real-world pattern. |
 
-Phase 0.9 Mid-phase resume セクション末尾に:
+## Conclusion
 
-> This is the only exception to Autonomy Rule 5 (Agent re-generation prohibition).
+All four ACs are ready for the plan phase. No modifications required.
