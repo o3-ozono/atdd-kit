@@ -98,6 +98,7 @@ Bootstrap the Agent Teams infrastructure before any phase execution. This phase 
    - Phase 4 (PR Review): spawn QA (name: "QA", subagent_type: "qa") only. Load prior Decision Trail as context.
    - Phase 1 (discover) or AC Review Round: no re-spawn needed — agents are created in AC Review Round.
    Then proceed to the determined phase using SendMessage.
+   Note: This mid-phase resume is the sole exception to Autonomy Rule 5 (Agent re-generation prohibition). It applies only when agents do not exist in the current session due to a session restart.
 7. On failure at any step: report the error → STOP. Do NOT fall back to solo execution. See Autonomy Rules below.
 
 ## Autonomy Rules

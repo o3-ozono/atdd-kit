@@ -512,3 +512,22 @@ AUTOPILOT="commands/autopilot.md"
 @test "#11-AC2: Phase 4 contains SendMessage-only guard" {
   sed -n '/^## Phase 4: PR Review/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
 }
+
+# ---------------------------------------------------------------------------
+# #11-AC3: Bidirectional cross-reference between Phase 0.9 and Rule 5
+# ---------------------------------------------------------------------------
+
+@test "#11-AC3: Phase 0.9 Mid-phase resume references Rule 5 or Autonomy Rules" {
+  # The mid-phase resume section must reference the prohibition rule
+  sed -n '/Mid-phase resume/,/^## /p' "$AUTOPILOT" | grep -qi 'Autonomy Rule 5\|Rule 5\|re-generation prohibition'
+}
+
+@test "#11-AC3: Rule 5 references Phase 0.9 Mid-phase resume as exception" {
+  # Rule 5 text must mention Phase 0.9 or Mid-phase resume as the exception
+  sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep '^5\.' | grep -qi 'Phase 0.9\|Mid-phase resume'
+}
+
+@test "#11-AC3: Mid-phase resume is the only spawn reference outside AC Review Round" {
+  # Phase 2-4 main flow should not contain spawn references
+  ! sed -n '/## Phase 2:/,/## Phase 5:/p' "$AUTOPILOT" | grep -qi 'spawn.*Developer\|spawn.*QA'
+}
