@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-04-12
+
+### Added
+- New `record` skill: generates Decision Record in `docs/decisions/YYYY-MM-DD-<topic>.md` after ship completes (#13)
+- `ship` Step 11: chains to `record` skill after merge for automatic Decision Record generation (#13)
+- `discover` deliverables template: `### Discussion Summary` section for recording approach exploration and rationale (#13)
+- `plan` deliverables template: `### Discussion Summary` section for recording design decisions and trade-offs (#13)
+
 ## [1.5.1] - 2026-04-12
 
 ### Fixed

@@ -170,6 +170,16 @@ PR #XX merged.
 - Switched to main
 ```
 
+### Step 11: Chain to Decision Record
+
+After merge is complete, invoke the `record` skill to generate a Decision Record:
+
+```
+Generating Decision Record for Issue #YY...
+```
+
+Invoke `atdd-kit:record` via the Skill tool, passing the Issue number.
+
 ## Red Flags (STOP)
 
 - Merging without CI green

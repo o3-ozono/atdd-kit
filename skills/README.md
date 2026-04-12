@@ -7,7 +7,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 ## Workflow Chain
 
 ```
-bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
+bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship → record
 ```
 
 ## State Gate
@@ -34,6 +34,7 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 | [ideate](ideate/) | Auto-triggers on exploratory design requests; also chained from issue | Between issue and discover (optional, skippable) |
 | [issue](issue/) | Auto-triggers on feature/task requests | Entry point → chains to ideate |
 | [plan](plan/) | Second step of Issue Ready flow | Core chain: test & implementation strategy |
+| [record](record/) | Automatically chained from ship after merge | Core chain: Decision Record generation |
 | [session-start](session-start/) | Auto-invoked by other skills | Session initialization |
 | [ship](ship/) | Manually invoked after verify passes | Core chain: PR finalization → merge |
 | [sim-pool](sim-pool/) | Auto-triggers before iOS simulator tool calls | iOS simulator access management |

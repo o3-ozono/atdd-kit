@@ -262,6 +262,15 @@ Format:
 ### Approach
 [Description of chosen approach]
 
+### Discussion Summary
+
+| Approach | Summary | Verdict |
+|----------|---------|---------|
+| A: [name] | [1-line summary] | ✅ Selected — [rationale] / ❌ Rejected — [reason] |
+| B: [name] | [1-line summary] | ✅ Selected — [rationale] / ❌ Rejected — [reason] |
+
+> Record all considered approaches, rejected options, and the selection rationale here. This section is consumed by the `record` skill to generate a permanent Decision Record in `docs/decisions/`.
+
 ### User Story
 **As a** [persona], **I want to** [goal], **so that** [reason].
 
