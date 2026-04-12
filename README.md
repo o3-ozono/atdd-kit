@@ -41,9 +41,10 @@ atdd-kit implements the Double-Loop TDD model from Freeman & Pryce's *[Growing O
 
 Also influenced by:
 
+- [ATDD by Example](https://www.amazon.com/dp/0321784154) (Markus Gärtner, 2012) — The practical ATDD guide that popularized the term "ATDD"
 - [obra/superpowers](https://github.com/obra/superpowers) — Process enforcement patterns (Red Flags, `<HARD-GATE>`, Iron Laws)
 - [BDD](https://cucumber.io/docs/bdd/) (Dan North) — Given/When/Then acceptance criteria format
-- [Morph LLM](https://www.morphllm.com/agent-engineering), [Claude Code Auto Mode](https://www.anthropic.com/engineering/claude-code-auto-mode) — Tiered autonomy model
+
 
 ## Quick Start
 
