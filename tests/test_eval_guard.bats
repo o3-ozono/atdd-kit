@@ -186,6 +186,13 @@ create_eval_marker() {
   echo "$result" | grep -q "deny"
 }
 
+@test "AC4: pipe with git push is intercepted" {
+  change_skill_on_branch
+
+  result=$(run_guard "echo foo | git push origin feature-branch")
+  echo "$result" | grep -q "deny"
+}
+
 @test "AC4: git push at start of chain is intercepted" {
   change_skill_on_branch
 

@@ -17,7 +17,7 @@ INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -1)
 
 # Only intercept git push commands
-if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push\b'; then
+if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|)\s*git\s+push\b'; then
   echo '{}'
   exit 0
 fi
