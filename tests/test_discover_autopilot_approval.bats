@@ -1,35 +1,38 @@
 #!/usr/bin/env bats
 
 # Issue #155: discover の AC 承認がレビュー前に行われるため二重承認になる
+# Issue #3: autopilot モード検出を --autopilot フラグ方式に移行
 # Tests verify autopilot-mode conditional branching in discover and autopilot
 
 DISCOVER="skills/discover/SKILL.md"
 AUTOPILOT="commands/autopilot.md"
+PLAN="skills/plan/SKILL.md"
+ATDD="skills/atdd/SKILL.md"
 OVERRIDES=".claude/rules/workflow-overrides.md"
 
-# --- AC5: HARD-GATE autopilot exception ---
+# --- HARD-GATE autopilot exception ---
 
-@test "AC5: HARD-GATE contains autopilot exception clause" {
+@test "HARD-GATE contains autopilot exception clause with --autopilot flag" {
   # HARD-GATE must mention that autopilot AC Review Round satisfies the approval requirement
-  grep -q 'teammate-message' "$DISCOVER"
+  grep -q '\-\-autopilot' "$DISCOVER"
   grep -qi 'AC Review Round' "$DISCOVER"
 }
 
-@test "AC5: HARD-GATE exception requires BOTH teammate-message AND AC Review Round approval" {
+@test "HARD-GATE exception requires BOTH --autopilot AND AC Review Round approval" {
   # Must not read as "autopilot means no approval needed" -- both conditions required
   local hard_gate
   hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
-  echo "$hard_gate" | grep -qi 'teammate-message'
+  echo "$hard_gate" | grep -q '\-\-autopilot'
   echo "$hard_gate" | grep -qi 'AC Review Round'
 }
 
 # --- AC1: autopilot mode skips Step 7 approval gate and Step 8 ---
 
 @test "AC1: Step 7 has autopilot-mode conditional branch" {
-  # Step 7 must contain conditional logic for autopilot context
+  # Step 7 must contain conditional logic for --autopilot flag
   local step7
   step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
-  echo "$step7" | grep -qi 'teammate-message\|autopilot'
+  echo "$step7" | grep -qi '\-\-autopilot\|autopilot'
 }
 
 @test "AC1: Step 7 autopilot mode outputs draft AC without approval request" {
@@ -70,15 +73,15 @@ OVERRIDES=".claude/rules/workflow-overrides.md"
   echo "$step8" | grep -qi 'inline.*plan\|plan.*inline\|plan.*Core.*Flow'
 }
 
-# --- AC4: autopilot Issue comment posting after AC Review Round ---
+# --- autopilot Issue comment posting after AC Review Round ---
 
-@test "AC4: autopilot AC Review Round posts Issue comment after user approval" {
+@test "autopilot AC Review Round posts Issue comment after user approval" {
   local acr
   acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
   echo "$acr" | grep -q 'gh issue comment'
 }
 
-@test "AC4: autopilot Issue comment is posted AFTER approval, not before" {
+@test "autopilot Issue comment is posted AFTER approval, not before" {
   local acr
   acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
   # "approval" or "approve" must appear before "gh issue comment" in the section
@@ -90,21 +93,21 @@ OVERRIDES=".claude/rules/workflow-overrides.md"
   [[ "$approval_line" -lt "$comment_line" ]]
 }
 
-# --- AC3: Three Amigos unified approval flow ---
+# --- Three Amigos unified approval flow ---
 
-@test "AC3: autopilot AC Review Round mentions Three Amigos integration" {
+@test "autopilot AC Review Round mentions Three Amigos integration" {
   local acr
   acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
   echo "$acr" | grep -qi 'Three Amigos'
 }
 
-@test "AC3: autopilot AC Review Round has reject handling" {
+@test "autopilot AC Review Round has reject handling" {
   local acr
   acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
   echo "$acr" | grep -qi 'reject'
 }
 
-@test "AC3: reject triggers PO modification, not AC Review Round restart" {
+@test "reject triggers PO modification, not AC Review Round restart" {
   local acr
   acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
   echo "$acr" | grep -qi 'PO.*修正\|PO.*modif\|PO.*revise\|PO.*correct'
@@ -122,4 +125,58 @@ OVERRIDES=".claude/rules/workflow-overrides.md"
   local hard_gate
   hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
   echo "$hard_gate" | grep -qi 'autopilot\|AC Review Round'
+}
+
+# --- AC3+AC4: AUTOPILOT-GUARD uses --autopilot flag in all 3 skills ---
+
+@test "AC3: plan AUTOPILOT-GUARD uses --autopilot flag for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+
+@test "AC4: atdd AUTOPILOT-GUARD uses --autopilot flag for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+
+@test "AC1: discover AUTOPILOT-GUARD uses --autopilot flag for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+
+# --- AC5: autopilot.md passes --autopilot flag in Skill calls ---
+
+@test "AC5: autopilot Phase 1 passes --autopilot in discover Skill call" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -q '\-\-autopilot'
+}
+
+@test "AC5: autopilot Phase 3 passes --autopilot in atdd Skill call" {
+  local phase3
+  phase3=$(sed -n '/## Phase 3/,/## Phase 4/p' "$AUTOPILOT")
+  echo "$phase3" | grep -q '\-\-autopilot'
+}
+
+# --- Negative tests: no teammate-message residue in AUTOPILOT-GUARDs ---
+
+@test "No teammate-message references remain in discover AUTOPILOT-GUARD" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
+  ! echo "$guard" | grep -qi 'teammate-message'
+}
+
+@test "No teammate-message references remain in plan AUTOPILOT-GUARD" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
+  ! echo "$guard" | grep -qi 'teammate-message'
+}
+
+@test "No teammate-message references remain in atdd AUTOPILOT-GUARD" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
+  ! echo "$guard" | grep -qi 'teammate-message'
 }
