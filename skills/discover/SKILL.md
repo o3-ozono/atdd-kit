@@ -1,6 +1,6 @@
 ---
 name: discover
-description: "Explore requirements through dialogue and derive ACs (Given/When/Then). First step of the Issue Ready flow. Used for all task types: development, bug, refactoring, documentation, investigation."
+description: "Explore requirements through dialogue and derive ACs (Given/When/Then). First step of the Issue Ready flow. Used for all task types: development, bug, refactoring, documentation, research."
 ---
 
 ## Session Start Check (required)
@@ -22,9 +22,9 @@ If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash com
 If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
-The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (ACs for dev tasks, completion criteria for docs/investigation).
+The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (ACs for dev tasks, completion criteria for docs/research).
 
-> **Used for all task types.** Development, bug, refactoring, documentation, investigation -- all start here.
+> **Used for all task types.** Development, bug, refactoring, documentation, research -- all start here.
 
 ---
 
@@ -63,8 +63,8 @@ Detect the task type from Issue labels or user description at skill startup.
 | `type:development` | Development | Development flow |
 | `type:bug` | Bug | Bug flow |
 | `type:development` + `refactoring` | Refactoring | Refactoring flow |
-| `type:documentation` | Documentation | Docs/investigation flow |
-| `type:investigation` | Investigation | Docs/investigation flow |
+| `type:documentation` | Documentation | Docs/research flow |
+| `type:research` | Research | Docs/research flow |
 
 If unclear, ask with AskUserQuestion:
 
@@ -400,11 +400,11 @@ Same steps as development flow, with these differences:
 
 ---
 
-## Documentation / Investigation Flow (type:documentation / type:investigation)
+## Documentation / Research Flow (type:documentation / type:research)
 
 ### Step 1: Understand the Scope
 
-1. Read the Issue to understand the scope of the investigation/documentation
+1. Read the Issue to understand the scope of the research/documentation
 2. Ask questions **one at a time** if information is missing
 
 ### Step 2: Approach Exploration

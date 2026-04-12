@@ -79,7 +79,7 @@ Execute these steps **in order**. Do not skip any.
 
 1. Read Issue comments to find the approved deliverables from discover:
    - Development/bug/refactoring: User Story + ACs (Given/When/Then)
-   - Documentation/investigation: completion criteria
+   - Documentation/research: completion criteria
 2. If deliverables are not found, notify the user that discover is incomplete and suggest running `atdd-kit:discover`
 
 ### Step 2: Codebase Analysis

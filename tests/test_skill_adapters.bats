@@ -183,6 +183,6 @@
   grep -q 'agents/' commands/autopilot.md
 }
 
-@test "autopilot uses subagent_type for agent spawning" {
-  grep -q 'subagent_type' commands/autopilot.md
+@test "autopilot uses team_name for agent spawning" {
+  grep -q 'team_name' commands/autopilot.md
 }

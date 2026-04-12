@@ -36,7 +36,7 @@ After creating an Issue, execute the following steps in order before approval (`
 
 Same flow as development tasks.
 
-## Documentation / Investigation (`type:documentation` / `type:investigation`)
+## Documentation / Research (`type:documentation` / `type:research`)
 
 | Step | Action | Skill/Command | Output |
 |------|--------|---------------|--------|
