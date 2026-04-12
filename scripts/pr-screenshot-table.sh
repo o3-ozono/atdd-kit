@@ -22,6 +22,10 @@ if [ $# -lt 2 ]; then
 fi
 
 PR_NUMBER="$1"
+if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+  echo "Error: PR_NUMBER must be a positive integer, got: '$PR_NUMBER'" >&2
+  exit 1
+fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 
