@@ -217,6 +217,14 @@ Format:
 | AC1: [name] | [layer] | [reason] |
 | AC2: [name] | [layer] | [reason] |
 
+### Discussion Summary
+
+| Decision | Rationale | Alternatives Considered |
+|----------|-----------|------------------------|
+| [design choice] | [why chosen] | [what else was considered and why rejected] |
+
+> Record key design decisions and trade-offs made during planning. This section is consumed by the `record` skill to generate a permanent Decision Record in `docs/decisions/`.
+
 ### Implementation Strategy
 
 #### Target Files
