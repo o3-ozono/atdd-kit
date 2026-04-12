@@ -17,7 +17,7 @@ INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -1)
 
 # Only intercept git push commands
-if ! echo "$COMMAND" | grep -q 'git push'; then
+if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|)\s*git\s+push\b'; then
   echo '{}'
   exit 0
 fi
@@ -31,7 +31,7 @@ if [ -z "$BRANCH" ] || [ "$BRANCH" = "main" ]; then
 fi
 
 # Get changed SKILL.md files compared to origin/main
-CHANGED_SKILLS=$(git diff --name-only origin/main -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
+CHANGED_SKILLS=$(git diff --name-only origin/main...HEAD -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
 
 if [ -z "$CHANGED_SKILLS" ]; then
   # No skill changes — allow push

@@ -1,131 +1,230 @@
 # AC Review: QA Perspective
 
-Issue #11: bug: autopilot の Agent Team で Developer/QA エージェントが滞留・大量生成される
+Issue #22: bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
 
-## Overall Assessment
+## Root Cause Summary
 
-AC セットは十分にテスト可能であり、Bug の根本原因（Autonomy Rules に Agent tool 再生成禁止規則が欠落）に対して適切な修正範囲を定義している。Prompt Guard パターンによる修正であるため、検証は「禁止規則テキストの存在確認」が主軸となる。
+- **Bug 1 (line 34):** `git diff --name-only origin/main` は双方向 diff。main 側の SKILL.md 変更もブランチ側の変更として検出される。
+- **Bug 2 (line 20):** `grep -q 'git push'` は部分文字列マッチ。コマンド引数中の "git push" 文字列にも反応する。
 
-## Per-AC Evaluation
+**Fix:** three-dot diff (`origin/main...HEAD`) + regex 強化（`^\s*git\s+push\b` 等）。`hooks/eval-guard.sh` の 2 行修正。
 
-### AC1: Autonomy Rules に「AC Review Round 以降の Agent tool による Developer/QA 新規生成禁止」を明記
+## Overall Testability Assessment
 
-**テスト可能性:** 高
-- Autonomy Rules セクション内に禁止規則の文言が存在するかを grep で検証可能
-- 既存テスト（test_autopilot_agent_teams_setup.bats AC-6 テスト群、行 60-87）と同一パターン
+**高い。** eval-guard.sh は stdin から JSON を受け取り、stdout に JSON を返す純粋な入出力スクリプト。git 環境のセットアップが必要だが、BATS の `setup()` で一時 git リポジトリを作成し、ブランチ・リモート・diff 状態を制御すれば全 AC を自動検証可能。
 
-**検証方法:**
+既存テストに eval-guard 専用の BATS ファイルは存在しない。新規作成が必要（例: `tests/test_eval_guard.bats`）。
+
+## Per-AC Feedback
+
+### AC1: merge-base 基点の SKILL.md 変更検出（regression test）
+
+> - Given: main から分岐したブランチで README のみを編集し、分岐後に main 側で skills/*/SKILL.md が更新されている
+> - When: ブランチ上で git push を実行する
+> - Then: eval-guard は push をブロックしない
+
+**Testability:** 高。BATS で以下のセットアップが可能:
+1. 一時 git リポジトリ作成、`skills/foo/SKILL.md` を含む initial commit
+2. ブランチ作成・切替
+3. ブランチで `README.md` のみ編集・commit
+4. main に戻って `skills/foo/SKILL.md` を変更・commit
+5. ブランチに戻って eval-guard を実行
+
+**Feedback:**
+
+1. **PASS — AC として十分。** regression の核心シナリオを正確に記述している。
+
+2. **Minor: "git push を実行する" の表現を精密化すべき。** eval-guard は実際には `git push` コマンドそのものを実行するのではなく、PreToolUse hook として Bash ツールの入力 JSON を受け取る。When 節を以下に修正すると BATS テスト作成時に曖昧さがない:
+   > When: `{"command": "git push origin branch"}` を含む JSON を eval-guard.sh の stdin に渡す
+
+   ただし、AC としてのユーザー可読性を考慮すると現行表現でも許容範囲。テスト実装時に hook の入力形式に変換すればよい。
+
+3. **Edge case 追加推奨: main 側で複数の SKILL.md が変更されたケース。** 単一 SKILL.md の変更検出で十分だが、`git diff --name-only origin/main...HEAD` の出力が空であることの検証として、main 側で 2-3 個の SKILL.md を変更するバリエーションがあるとより堅牢。これは AC 追加ではなく、テストケースのバリエーションとして実装すべき。
+
+**Verdict: PASS**
+
+### AC2: ブランチ導入の SKILL.md 変更は正しく検出
+
+> - Given: ブランチ上で skills/session-start/SKILL.md を変更し、eval マーカーが存在しない
+> - When: ブランチ上で git push を実行する
+> - Then: eval-guard が push をブロックし、「SKILL.md changes detected (session-start)」を含むメッセージを表示する
+
+**Testability:** 高。AC1 のセットアップにブランチ側の SKILL.md 変更を追加するだけ。
+
+**Feedback:**
+
+1. **PASS — 正常系のブロック動作を正確に記述している。**
+
+2. **Then の出力検証が具体的で良い。** `"SKILL.md changes detected (session-start)"` という文字列を指定しているため、BATS で `[[ "$output" == *"SKILL.md changes detected (session-start)"* ]]` で検証可能。
+
+3. **Minor: JSON 出力構造の検証も追加すべき。** eval-guard は `permissionDecision: "deny"` を含む JSON を返す。Then 節に以下を追加するとより厳密:
+   > かつ、出力 JSON の `permissionDecision` が `"deny"` である
+
+4. **Edge case 追加推奨: 複数の SKILL.md 変更。** 例えば `skills/session-start/SKILL.md` と `skills/discover/SKILL.md` の両方を変更した場合、メッセージに両方のスキル名が含まれるか。現行コード L54 の `tr '\n' ','` ロジックの検証になる。これもテストケースバリエーションとして実装すべき。
+
+**Verdict: PASS**
+
+### AC3: コマンド引数中の "git push" 文字列で誤検知しない
+
+> - Given: ブランチ上で skills/*/SKILL.md を変更している
+> - When: git commit -m "fix: remember to git push" のように引数に "git push" を含むコマンドを実行する
+> - Then: eval-guard はそのコマンドをブロックしない
+
+**Testability:** 高。stdin に `{"command": "git commit -m \"fix: remember to git push\""}` を渡して `{}` が返ることを検証。
+
+**Feedback:**
+
+1. **PASS — Bug 2 の regression テストとして的確。**
+
+2. **Given 条件 "skills/*/SKILL.md を変更している" は必須。** SKILL.md 変更がなければそもそもブロックロジックに到達しないため、この Given は正しい。ただし、テスト実装時にこの前提条件を忘れると false positive（テストが通るが実際にはブロックロジックに到達していない）になるリスクがある。
+
+3. **追加テストケース推奨（AC 追加は不要、テストバリエーションとして）:**
+   - `git log --oneline | grep "git push"` — パイプ内の文字列
+   - `echo "run git push later"` — echo 引数内
+   - `GIT_PUSH_OPTS=foo git commit` — 環境変数名に PUSH を含む
+
+**Verdict: PASS**
+
+### AC4: チェーンコマンド中の git push を正しく検出
+
+> - Given: ブランチ上で skills/*/SKILL.md を変更し、eval マーカーが存在しない
+> - When: git add . && git push origin branch のようなチェーンコマンドを実行する
+> - Then: eval-guard が push をブロックする
+
+**Testability:** 高。stdin に `{"command": "git add . && git push origin branch"}` を渡して deny JSON が返ることを検証。
+
+**Feedback:**
+
+1. **PASS — チェーンコマンドのケースは重要。**
+
+2. **追加テストケース推奨（AC 追加は不要、テストバリエーションとして）:**
+   - `git add . ; git push origin branch` — セミコロン区切り
+   - `git add . || git push origin branch` — OR チェーン
+   - `git push origin branch && echo done` — git push が先頭
+   - `(cd repo && git push)` — サブシェル内
+
+3. **パイプコマンドの検討:**
+   - `echo foo | git push` — パイプ経由の push。現行の regex fix がこのパターンをカバーするか要確認。regex が `git\s+push` を行頭/コマンド境界でマッチさせるなら、パイプの右辺もマッチすべき。
+   - **Recommendation:** パイプコマンドのテストケースを AC4 のバリエーションとして追加するか、独立した AC5 として追加するか検討。現行 AC4 の scope が「チェーンコマンド」に限定されているため、パイプは別のテストケースとして扱うのが適切。
+
+**Verdict: PASS（パイプケースはテストバリエーションとして追加推奨）**
+
+## Boundary Conditions（AC に含まれていないエッジケース）
+
+### B1: origin/main が存在しない場合
+
+**Priority: 中**
+
+現行コード L34 では `git diff --name-only origin/main ... 2>/dev/null || echo ""` で fallback している。origin/main が存在しない場合（例: fork リポジトリで origin が upstream を指している、または shallow clone で origin/main が未取得）、`CHANGED_SKILLS` は空になり push が許可される。
+
+three-dot diff (`origin/main...HEAD`) でも origin/main が存在しなければ同様にエラー → 空文字 → push 許可。これは fail-open として正しい動作だが、意図的かどうかを AC で明示すべき。
+
+**Recommendation:** 追加 AC は不要だが、テストケースとして「origin/main が存在しない環境で push が許可される」を含めるべき。
+
+### B2: detached HEAD 状態
+
+**Priority: 低**
+
+現行コード L26-31 で detached HEAD（`BRANCH` が空）の場合は即 push 許可。three-dot diff の修正はこのパスに影響しない。既存動作の維持を確認するテストケースとして含めるべき。
+
+### B3: eval マーカーが存在する場合
+
+**Priority: 中**
+
+AC1-AC4 は全て eval マーカーが「存在しない」前提。AC2 の逆パターンとして「SKILL.md を変更しているが eval マーカーが存在する → push 許可」のテストケースが必要。これは既存動作の regression テストとして重要。
+
+**Recommendation:** 独立した AC は不要だが、テストケースとして必須。
+
+### B4: main ブランチ上での push
+
+**Priority: 低**
+
+現行コード L27-30 で main ブランチでは即 push 許可。three-dot diff の修正はこのパスに影響しない。既存動作の維持を確認するテストケースとして含めるべき。
+
+### B5: SKILL.md 以外のファイル変更のみ
+
+**Priority: 低**
+
+AC1 がこのケースをカバーしている（README のみ編集）。追加 AC は不要。
+
+## Error Cases
+
+### E1: git コマンド失敗
+
+現行コード L34 の `2>/dev/null || echo ""` により、git diff が失敗しても空文字 → push 許可。fail-open 設計として正しい。three-dot diff でも同じ fallback パターンを維持すべき。
+
+**Recommendation:** AC 追加は不要。テストケースとして「git diff が失敗する環境で push が許可される」を含めるべき。
+
+### E2: stdin の JSON パース失敗
+
+現行コード L17 の `sed` が `"command"` フィールドを抽出できない場合、`COMMAND` は空 → grep が false → push 許可。これも fail-open として正しい。
+
+**Recommendation:** テストケースとして「不正な JSON 入力で push が許可される」を含めるべき。
+
+## Coverage Gaps
+
+### Gap 1: regex の具体的なパターンが AC に未記載
+
+AC3/AC4 は「誤検知しない」「正しく検出する」と述べているが、具体的な regex パターンを規定していない。実装者が `grep -q '^git push'`（行頭のみ）にするか `grep -qE '(^|&&|\|\||;)\s*git\s+push'`（コマンド境界）にするかで、カバー範囲が大きく異なる。
+
+**Recommendation:** AC に regex パターンを規定する必要はないが、AC4 のテストバリエーション（セミコロン、パイプ、サブシェル）を十分に含めることで、実装の regex がこれらのパターンを正しく処理することを保証すべき。
+
+### Gap 2: `sed` による command 抽出の脆弱性
+
+現行コード L17 の `sed` は JSON パースとして脆弱。`"command"` フィールドにエスケープされた引用符が含まれる場合（例: `"command": "git commit -m \"fix: \\\"git push\\\" issue\""`）、抽出が不正確になる可能性がある。
+
+**Recommendation:** これは Issue #22 の scope 外（既存の技術的負債）。AC には含めないが、将来の改善 Issue として記録すべき。
+
+## BATS テスト設計の推奨事項
+
+### テストファイル構成
+
+新規ファイル `tests/test_eval_guard.bats` を作成。
+
+### setup() パターン
+
 ```bash
-grep -A 30 "## Autonomy Rules" "$AUTOPILOT" | grep -q '<禁止規則の文言>'
+setup() {
+  TEST_DIR=$(mktemp -d)
+  # 一時 git リポジトリ作成
+  git -C "$TEST_DIR" init
+  git -C "$TEST_DIR" commit --allow-empty -m "initial"
+  # skills/foo/SKILL.md を含む構造を作成
+  mkdir -p "$TEST_DIR/skills/session-start"
+  echo "test" > "$TEST_DIR/skills/session-start/SKILL.md"
+  git -C "$TEST_DIR" add .
+  git -C "$TEST_DIR" commit -m "add skill"
+  # origin/main をシミュレート
+  git -C "$TEST_DIR" branch -M main
+  # ...ブランチ作成、リモート設定等
+}
 ```
 
-**境界条件:**
-- AC Review Round 自体は Agent tool 使用が正当（行 132: 初回生成ポイント）。禁止規則の適用範囲は「AC Review Round の後」であり、AC Review Round 自体は除外されるべき。AC の文言「AC Review Round 以降」の「以降」が AC Review Round を含むか否かが曖昧。
-- **推奨:** 「AC Review Round で生成した Developer/QA を、Phase 2 以降で Agent tool により再生成することを禁止」と明確化する。
+### テスト数の見積もり
 
-**既存 Autonomy Rules との統合:**
-- 現在の 4 項目（Solo execution, Explore subagent substitution, Self-executing skill steps, Context-priority execution）の 5 番目として追加される。既存項目との重複はない。「Solo execution」は PO が単独実行することの禁止、本 AC は既存エージェントの重複生成の禁止であり、対象が異なる。
+| AC | 最小テスト数 | バリエーション含む |
+|----|------------|-----------------|
+| AC1 | 1 | 2（単一/複数 SKILL.md） |
+| AC2 | 1 | 2（単一/複数スキル名） |
+| AC3 | 1 | 3（commit -m、echo、log） |
+| AC4 | 1 | 4（&&、;、パイプ、サブシェル） |
+| 境界条件 | 4 | 4（B1-B4） |
+| **合計** | **8** | **15** |
 
-**判定:** PASS
+## Summary
 
-### AC2: Phase 2〜4 各セクションに「Agent tool 禁止、SendMessage のみ」の注意書き追加
+| AC | Testability | Verdict | Key Issues |
+|----|------------|---------|------------|
+| AC1 | 高 | **PASS** | regression テストとして的確。When 節の表現は許容範囲。 |
+| AC2 | 高 | **PASS** | 正常系ブロック動作を正確に記述。JSON 出力構造の検証を追加推奨。 |
+| AC3 | 高 | **PASS** | Bug 2 の regression テストとして的確。追加バリエーション推奨。 |
+| AC4 | 高 | **PASS** | チェーンコマンドをカバー。パイプケースをバリエーションに追加推奨。 |
 
-**テスト可能性:** 高
-- 各フェーズセクション内に注意書きの文言が存在するかを grep で独立検証可能
-- Phase 2, Plan Review Round, Phase 3, Phase 4 それぞれについて個別テストケースが書ける
+**Overall Verdict: PASS（全 AC 承認）**
 
-**検証方法:**
-```bash
-grep -A 20 "## Phase 2: plan" "$AUTOPILOT" | grep -q '<注意書きの文言>'
-grep -A 20 "## Plan Review Round" "$AUTOPILOT" | grep -q '<注意書きの文言>'
-grep -A 20 "## Phase 3: Implementation" "$AUTOPILOT" | grep -q '<注意書きの文言>'
-grep -A 20 "## Phase 4: PR Review" "$AUTOPILOT" | grep -q '<注意書きの文言>'
-```
+AC 自体の追加・修正は不要。以下はテスト実装時の推奨事項:
 
-**既存テストとの衝突リスク（重要）:**
-
-`#165-AC1`（行 227-232）と `#165-AC2`（行 250-255）は Phase 2〜4 で `Use Agent tool.*Developer` / `Use Agent tool.*QA` という文字列が存在しないことを否定テストで確認している:
-
-```bash
-! grep -A 15 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'Use Agent tool.*Developer'
-! grep -A 15 "## Phase 3: Implementation" "$AUTOPILOT" | grep -q 'Use Agent tool.*Developer'
-! grep -A 20 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'Use Agent tool.*QA'
-! grep -A 15 "## Phase 4: PR Review" "$AUTOPILOT" | grep -q 'Use Agent tool.*QA'
-```
-
-AC2 の注意書きに "Use Agent tool" というパターンを含めると、これらの既存テストが失敗する。
-
-**注意書きの文言制約:**
-- OK: "Do NOT spawn new agents -- use SendMessage only"
-- OK: "Agent re-generation is prohibited -- SendMessage only"
-- NG: "Do NOT use Agent tool to spawn Developer" (既存テスト `#165-AC1` が失敗)
-- NG: "Use Agent tool is prohibited" (`Use Agent tool.*Developer` にマッチする可能性)
-
-**判定:** PASS（実装時に文言制約を厳守すること）
-
-### AC3: Phase 0.9 Mid-phase resume は「セッション再開時のみ」の例外として矛盾なし
-
-**テスト可能性:** 高
-- Phase 0.9 セクション（行 95-100）に Mid-phase resume のロジックが既に存在する
-- 「セッション再開時のみ Agent tool を使う」という条件の存在を grep で検証可能
-
-**矛盾分析:**
-- Phase 0.9 の Mid-phase resume は「Phase 0.5 で start phase が AC Review Round 以降と判定された場合」のみ Agent tool を使用
-- これは「新セッション開始時にエージェントがまだ存在しない」状態を前提
-- AC1 の禁止規則は「エージェントが既に存在する状態」での追加生成を禁止
-- 両者は前提条件（エージェントの存在有無）が異なるため矛盾しない
-
-**検証方法:**
-- Phase 0.9 セクションに resume/restart の文脈でのみ Agent tool が参照されていることを確認
-- AC1 の禁止規則テキストに「Phase 0.9 Mid-phase resume は例外」と明示されていることを確認
-
-**判定:** PASS
-
-### AC4: 既存テスト（test_autopilot_agent_teams_setup.bats）が全パス
-
-**テスト可能性:** 高
-- `bats tests/test_autopilot_agent_teams_setup.bats` を実行して全テスト（現在 71 テスト）がパスすることを確認
-
-**影響分析:**
-- AC1 の変更: Autonomy Rules セクションへの追加。AC-6 テスト群（行 60-87）は `grep -A 20` で検索しているため、追加項目が 20 行以内に収まっていれば既存テストに影響なし。20 行を超える場合は既存テストの grep 範囲外となるため影響なし。
-- AC2 の変更: Phase 2〜4 への注意書き追加。上記「既存テストとの衝突リスク」のとおり、文言に注意が必要。
-
-**判定:** PASS（AC2 の文言制約を厳守する前提）
-
-## Missing Scenarios / Coverage Gaps
-
-### 1. Plan Review Round が AC2 の対象に含まれるか
-
-AC2 は「Phase 2〜4」としているが、Plan Review Round は Phase 2 と Phase 3 の間に位置する独立セクション。Plan Review Round も SendMessage のみであるべきだが、AC2 の範囲に明示的に含まれていない。
-
-**現状:** Plan Review Round（行 160-171）は既に SendMessage のみで記述されており、Agent tool の記述はない。しかし注意書きの追加対象としては AC2 に含めるべき。
-
-**推奨:** AC2 の記述を「Phase 2〜4 各セクションおよび Plan Review Round に」と修正するか、「Phase 2 以降のすべてのセクション（Plan Review Round 含む）に」と表現する。
-
-**重要度:** 中 -- Plan Review Round は既に SendMessage のみで記述されているが、防御的に注意書きを追加すべき。
-
-### 2. 禁止規則違反時の Failure Mode
-
-AC1 は禁止規則の「明記」を求めているが、違反時の Failure Mode（報告 + STOP）が既存の Autonomy Rules の Failure Mode（行 112: "report what failed -> STOP -> user decides next step"）で十分カバーされるかを確認する必要がある。
-
-**現状:** 既存の Autonomy Rules には共通の Failure Mode が記載されている（行 112）。新規禁止規則もこの共通 Failure Mode に従うのであれば、追加の AC は不要。
-
-**推奨:** AC1 の実装時に、新規禁止規則が Autonomy Rules セクション内（共通 Failure Mode の適用範囲内）に配置されていることを確認。独立セクションに配置する場合は Failure Mode を明記する必要がある。
-
-**重要度:** 低 -- 構造的に Autonomy Rules セクション内に追加すれば自動的にカバーされる。
-
-### 3. Phase 1 (discover) の除外確認
-
-Phase 1 では PO が単独で Skill tool を使用し、Developer/QA エージェントは存在しない。AC2 が Phase 2〜4 に限定しているのは正しい。ただし Phase 1 で誤って Agent tool を使ってしまうケースは AC の対象外。
-
-**現状:** Phase 1 の Tools annotation は `Bash (gh), Skill` であり Agent tool は含まれていない（行 116）。構造的に防止されている。
-
-**重要度:** 低 -- 既存構造で十分。
-
-## QA Verdict
-
-**PASS** -- AC セットは Bug の根本原因に対して適切な修正範囲を定義しており、各 AC は独立してテスト可能。以下の点を実装時に考慮すること:
-
-1. **AC2 の文言制約:** 既存テスト `#165-AC1`, `#165-AC2` との衝突を避ける文言を使用する
-2. **AC1 の適用範囲明確化:** 「AC Review Round 以降」を「AC Review Round で生成した後、Phase 2 以降で」と明確化する
-3. **AC2 に Plan Review Round を含める:** 防御的に注意書きの追加対象とする
+1. **パイプコマンド** (`echo foo | git push`) のテストバリエーションを AC4 に追加
+2. **境界条件テスト** (B1-B4) をテストスイートに含める
+3. **eval マーカー存在時の push 許可** を regression テストとして含める
+4. **origin/main 不在時の fail-open 動作** をテストで確認

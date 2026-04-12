@@ -1,205 +1,274 @@
 # Test Strategy: QA
 
-Issue #11: bug: autopilot の Agent Team で Developer/QA エージェントが滞留・大量生成される
+Issue #22: bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
 
 ## 1. AC ごとのテスト層選定
 
 | AC | テスト層 | 理由 |
 |----|---------|------|
-| AC1: Autonomy Rules に Rule 5 追加 | 構造テスト (BATS/grep) | autopilot.md の Autonomy Rules セクション内に禁止規則テキストが存在するかを grep で検証。既存 AC-6 テスト群と同一手法。 |
-| AC2: Phase 2〜4 + Plan Review Round に SendMessage 専用ガード追加 | 構造テスト (BATS/grep) | 各フェーズセクション内にガード文言が存在するかを grep で検証。既存 #165-AC1/#165-AC2 テストと同一手法。 |
-| AC3: Phase 0.9 と Rule 5 の双方向参照 | 構造テスト (BATS/grep) | Phase 0.9 内に Rule 5 への参照、Rule 5 内に Phase 0.9 への参照が存在するかを grep で検証。 |
-| AC4: 既存テスト全パス | リグレッションテスト (BATS) | `bats tests/test_autopilot_agent_teams_setup.bats` の全 86 テストがパスすることを確認。 |
+| AC1: merge-base 基点の SKILL.md 変更検出 | Unit (BATS) — 動的 | git リポジトリの分岐状態を再現し、スクリプトを実行して stdout JSON を検証 |
+| AC2: ブランチ導入の SKILL.md 変更検出 | Unit (BATS) — 動的 | ブランチ側の SKILL.md 変更を再現してブロック動作を検証 |
+| AC3: 引数中の "git push" 誤検知防止 | Unit (BATS) — 動的 | stdin JSON の command フィールドに対する regex 挙動を検証 |
+| AC4: チェーンコマンド中の git push 検出 | Unit (BATS) — 動的 | チェーンコマンドの command フィールドに対する regex 検証 |
 
-**設計判断:** このリポジトリのテストは全て BATS による構造テスト（マークダウン指示書の内容を grep で検証）であり、ランタイムの統合テストは存在しない。Prompt Guard パターンの修正であるため、「禁止規則のテキストが正しく記述されているか」を検証することがテストの目的である。
+全 AC が Unit (BATS) 動的テスト。Integration / E2E 層は不要。
 
-## 2. 具体的なテストケース一覧
+**理由:** eval-guard.sh は stdin JSON → stdout JSON の純粋な変換スクリプト。外部依存は git コマンドのみで、一時 git リポジトリで完全に制御可能。Claude Code の hook フレームワークとの統合テスト（E2E）は scope 外。
 
-テストは既存テストファイル `tests/test_autopilot_agent_teams_setup.bats` に `Issue #11` セクションとして追加する。
+## 2. テストファイル構成
 
-### AC1: Autonomy Rules に Rule 5 追加
+### 新規テストファイル
+
+```
+tests/test_eval_guard.bats
+```
+
+**配置理由:** eval-guard.sh は `hooks/` 直下のコアスクリプト（addon 固有ではない）。`tests/` 配下に配置。
+
+**既存テストとの関係:**
+- `tests/` 配下の既存テストは全て静的テスト（grep でマークダウンを検証）
+- `addons/ios/tests/` 配下の sim-pool-guard テストは動的テスト（スクリプト実行 + JSON 検証）
+- eval-guard テストは sim-pool-guard の **動的テストパターン**（`run_guard()` ヘルパー + `jq` アサーション）を採用
+- 加えて、git リポジトリのセットアップが必要（sim-pool-guard にはない要素）
+
+**既存テストへの影響: なし。** eval-guard 専用の BATS テストは存在しないため、既存テストの修正は不要。
+
+### テストファイルの内部構成
+
+```
+tests/test_eval_guard.bats
+├── setup()                  — 一時 git リポジトリ + bare remote + eval マーカーディレクトリ
+├── teardown()               — 一時ディレクトリの削除
+├── run_eval_guard()         — ヘルパー関数（command → stdin JSON → スクリプト実行）
+├── AC1 セクション (2 tests) — merge-base regression テスト
+├── AC2 セクション (3 tests) — ブランチ側 SKILL.md 検出 + メッセージ検証
+├── AC3 セクション (3 tests) — コマンド引数の誤検知防止
+├── AC4 セクション (4 tests) — チェーンコマンド + パイプ検出
+├── BOUNDARY セクション (6 tests) — 境界条件テスト
+└── REGRESSION セクション (3 tests) — 既存動作の維持確認
+```
+
+## 3. テスト環境のセットアップ
+
+### setup() 設計
+
+eval-guard.sh は以下の外部状態に依存する:
+1. **git リポジトリ** — `git branch --show-current`, `git diff --name-only origin/main...HEAD`
+2. **eval マーカー** — `$XDG_CACHE_HOME/atdd-kit/eval-ran-<branch>`
+3. **stdin JSON** — `{"command": "..."}` 形式の PreToolUse hook 入力
 
 ```bash
-# ---------------------------------------------------------------------------
-# #11-AC1: Autonomy Rules — Agent re-generation prohibition (Rule 5)
-# ---------------------------------------------------------------------------
+setup() {
+  # --- 一時 git リポジトリ ---
+  TEST_REPO="${BATS_TMPDIR}/eval-guard-repo-$$"
+  mkdir -p "$TEST_REPO"
+  git -C "$TEST_REPO" init -b main
+  git -C "$TEST_REPO" config user.email "test@test.com"
+  git -C "$TEST_REPO" config user.name "test"
 
-@test "#11-AC1: Autonomy Rules contains agent re-generation prohibition" {
-  grep -A 40 "## Autonomy Rules" "$AUTOPILOT" | grep -qi 'agent.*re-\?gen\|re-\?spawn.*prohibit\|new agent.*prohibit\|Agent tool.*prohibit'
-}
+  # initial commit with SKILL.md
+  mkdir -p "$TEST_REPO/skills/session-start"
+  mkdir -p "$TEST_REPO/skills/discover"
+  echo "initial" > "$TEST_REPO/skills/session-start/SKILL.md"
+  echo "initial" > "$TEST_REPO/skills/discover/SKILL.md"
+  echo "readme" > "$TEST_REPO/README.md"
+  git -C "$TEST_REPO" add .
+  git -C "$TEST_REPO" commit -m "initial"
 
-@test "#11-AC1: Rule 5 is numbered as item 5 in Autonomy Rules" {
-  grep -A 40 "## Autonomy Rules" "$AUTOPILOT" | grep -q '^5\.'
-}
+  # origin/main をシミュレート（bare リポジトリ + remote 設定）
+  BARE_REPO="${BATS_TMPDIR}/eval-guard-bare-$$"
+  git clone --bare "$TEST_REPO" "$BARE_REPO"
+  git -C "$TEST_REPO" remote add origin "$BARE_REPO"
+  git -C "$TEST_REPO" fetch origin
 
-@test "#11-AC1: Rule 5 specifies SendMessage as the correct alternative" {
-  grep -A 40 "## Autonomy Rules" "$AUTOPILOT" | grep -qi 'SendMessage'
-}
+  # --- eval マーカーディレクトリ ---
+  TEST_CACHE="${BATS_TMPDIR}/eval-guard-cache-$$"
+  mkdir -p "$TEST_CACHE/atdd-kit"
+  export XDG_CACHE_HOME="$TEST_CACHE"
 
-@test "#11-AC1: Rule 5 scopes prohibition to after AC Review Round" {
-  # 禁止範囲は AC Review Round 後（Phase 2 以降）であることを明示
-  grep -A 40 "## Autonomy Rules" "$AUTOPILOT" | grep -qi 'AC Review Round\|Phase 2'
-}
-
-@test "#11-AC1: Rule 5 is covered by existing Failure Mode" {
-  # Rule 5 が Autonomy Rules セクション内にあり、共通 Failure Mode の適用を受ける
-  # (Autonomy Rules の末尾 "Failure mode: report what failed..." で全ルールをカバー)
-  count=$(grep -c '## Autonomy Rules' "$AUTOPILOT")
-  [ "$count" -eq 1 ]
-  grep -A 50 "## Autonomy Rules" "$AUTOPILOT" | grep -q 'Failure mode.*STOP'
+  # --- eval-guard.sh の絶対パス ---
+  GUARD="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/hooks/eval-guard.sh"
 }
 ```
 
-### AC2: Phase 2〜4 + Plan Review Round に SendMessage 専用ガード追加
+### teardown() 設計
 
 ```bash
-# ---------------------------------------------------------------------------
-# #11-AC2: SendMessage-only guard in Phase 2-4 and Plan Review Round
-# ---------------------------------------------------------------------------
-
-@test "#11-AC2: Phase 2 contains SendMessage-only guard" {
-  grep -A 25 "## Phase 2: plan" "$AUTOPILOT" | grep -qi 'SendMessage only\|SendMessage.*continue\|Do NOT spawn\|re-generation.*prohibit'
-}
-
-@test "#11-AC2: Plan Review Round contains SendMessage-only guard" {
-  grep -A 20 "## Plan Review Round" "$AUTOPILOT" | grep -qi 'SendMessage only\|SendMessage.*continue\|Do NOT spawn\|re-generation.*prohibit'
-}
-
-@test "#11-AC2: Phase 3 contains SendMessage-only guard" {
-  grep -A 25 "## Phase 3: Implementation" "$AUTOPILOT" | grep -qi 'SendMessage only\|SendMessage.*continue\|Do NOT spawn\|re-generation.*prohibit'
-}
-
-@test "#11-AC2: Phase 4 contains SendMessage-only guard" {
-  grep -A 20 "## Phase 4: PR Review" "$AUTOPILOT" | grep -qi 'SendMessage only\|SendMessage.*continue\|Do NOT spawn\|re-generation.*prohibit'
+teardown() {
+  rm -rf "$TEST_REPO" "$BARE_REPO" "$TEST_CACHE"
 }
 ```
 
-### AC3: Phase 0.9 と Rule 5 の双方向参照
+### run_eval_guard() ヘルパー
+
+sim-pool-guard の `run_guard()` パターンに倣い、command フィールドを含む JSON を stdin に渡す。eval-guard.sh は `git branch`, `git diff` を実行するため、カレントディレクトリを一時 git リポジトリにする必要がある。
 
 ```bash
-# ---------------------------------------------------------------------------
-# #11-AC3: Bidirectional cross-reference between Phase 0.9 and Rule 5
-# ---------------------------------------------------------------------------
-
-@test "#11-AC3: Phase 0.9 Mid-phase resume references Autonomy Rules or Rule 5" {
-  grep -A 60 "## Phase 0.9" "$AUTOPILOT" | grep -qi 'Autonomy Rules\|Rule 5\|only exception\|session.*re-start\|session.*resume'
-}
-
-@test "#11-AC3: Rule 5 references Phase 0.9 Mid-phase resume as exception" {
-  # Rule 5 のテキスト内に Phase 0.9 の例外への言及がある
-  grep -A 40 "## Autonomy Rules" "$AUTOPILOT" | grep -qi 'Phase 0.9\|Mid-phase resume\|session.*re-start\|exception'
-}
-
-@test "#11-AC3: Mid-phase resume is the only Agent tool usage outside AC Review Round" {
-  # Phase 0.9 の Mid-phase resume と AC Review Round 以外に Agent tool でのスポーン記述がないこと
-  # (既存テスト #165-AC5 と補完関係)
-  ! sed -n '/## Phase 2:/,/## Phase 5:/p' "$AUTOPILOT" | grep -qi 'spawn.*Developer\|spawn.*QA'
+run_eval_guard() {
+  local command="$1"
+  printf '{"command": "%s"}' "$command" | \
+    (cd "$TEST_REPO" && bash "$GUARD")
 }
 ```
 
-### AC4: 既存テスト全パス（リグレッション）
+### シナリオ別セットアップヘルパー
+
+AC ごとにブランチ・コミット状態が異なるため、テスト内でセットアップヘルパーを呼ぶ。
 
 ```bash
-# ---------------------------------------------------------------------------
-# #11-AC4: Regression — existing tests remain passing
-# ---------------------------------------------------------------------------
+# AC1 用: main 分岐後に main 側で SKILL.md 変更、ブランチは README のみ
+create_main_side_change() {
+  git -C "$TEST_REPO" checkout -b feature
+  echo "changed" > "$TEST_REPO/README.md"
+  git -C "$TEST_REPO" add README.md
+  git -C "$TEST_REPO" commit -m "edit readme"
+  git -C "$TEST_REPO" checkout main
+  echo "changed on main" > "$TEST_REPO/skills/session-start/SKILL.md"
+  git -C "$TEST_REPO" add .
+  git -C "$TEST_REPO" commit -m "main: update SKILL.md"
+  git -C "$TEST_REPO" push origin main
+  git -C "$TEST_REPO" checkout feature
+}
 
-# AC4 は独立テストケースではなく、bats 全体実行で検証:
-#   bats tests/test_autopilot_agent_teams_setup.bats
-# 全 86 既存テスト + #11 新規テストが全パスすること。
-#
-# 特に以下の既存テストとの非干渉を重点確認:
-# - #165-AC1 (行 227-232): Phase 2/3 で "Use Agent tool.*Developer" が存在しないこと
-# - #165-AC2 (行 250-255): Phase 2/4 で "Use Agent tool.*QA" が存在しないこと
-# - AC-6 (行 60-87): Autonomy Rules の既存 4 項目が保持されること
+# AC2 用: ブランチ上で SKILL.md を変更
+create_branch_skill_change() {
+  git -C "$TEST_REPO" checkout -b feature
+  echo "changed on branch" > "$TEST_REPO/skills/session-start/SKILL.md"
+  git -C "$TEST_REPO" add .
+  git -C "$TEST_REPO" commit -m "branch: update SKILL.md"
+}
 ```
 
-## 3. 既存テストとの関係
+## 4. 各 AC のテストケース設計
 
-### 流用可能な既存テスト
+### AC1: merge-base 基点の SKILL.md 変更検出（regression test）
 
-| 既存テスト | 関係 | 扱い |
-|-----------|------|------|
-| AC-6 テスト群 (行 60-87) | AC1 と同じ Autonomy Rules セクションを対象 | そのまま流用（Rule 1-4 の存在確認は変更不要） |
-| `#165-AC1` (行 227-232) | AC2 と補完関係（Phase 2/3 で Agent tool が不在） | そのまま流用（AC2 のガード追加と矛盾しない前提） |
-| `#165-AC2` (行 250-255) | AC2 と補完関係（Phase 2/4 で Agent tool が不在） | そのまま流用 |
-| `#165-AC5` (行 317-323) | AC3 と補完関係（AC Review Round のみ Agent tool） | そのまま流用 |
-| `#165-AC6` (行 329-343) | AC3 と補完関係（Mid-phase resume ロジック） | そのまま流用 |
+セットアップ: `create_main_side_change()` — main 分岐後に main 側で SKILL.md を変更。ブランチ側は README のみ。
 
-### 新規追加が必要なテスト
+```
+main:     A --- B (SKILL.md changed, pushed to origin)
+               \
+feature:        C (README only) ← HEAD
+```
 
-| テストケース | AC | 理由 |
-|------------|-----|------|
-| Rule 5 存在確認 | AC1 | 既存 AC-6 テストは Rule 1-4 のみ検証 |
-| Rule 5 番号確認 | AC1 | 5 番目として正しく番号付けされていること |
-| Rule 5 の SendMessage 代替指示 | AC1 | 禁止だけでなく代替手段の提示を検証 |
-| Rule 5 のスコープ確認 | AC1 | AC Review Round 後に限定されていること |
-| Rule 5 の Failure Mode 包含 | AC1 | 共通 Failure Mode の適用範囲内であること |
-| Phase 2 ガード | AC2 | 新規追加文言の存在確認 |
-| Plan Review Round ガード | AC2 | 新規追加文言の存在確認 |
-| Phase 3 ガード | AC2 | 新規追加文言の存在確認 |
-| Phase 4 ガード | AC2 | 新規追加文言の存在確認 |
-| Phase 0.9 → Rule 5 参照 | AC3 | Mid-phase resume が例外であることの明示 |
-| Rule 5 → Phase 0.9 参照 | AC3 | Rule 5 テキスト内の例外言及 |
-| spawn スコープ確認 | AC3 | Phase 2-4 に spawn 記述がないこと（#165-AC5 補完） |
+| テスト ID | テスト名 | stdin command | 期待結果 |
+|----------|---------|---------------|---------|
+| AC1.1 | main 側 SKILL.md 変更で誤ブロックしない | `git push origin feature` | `{}` を返す |
+| AC1.2 | main 側で複数 SKILL.md 変更でも誤ブロックしない | `git push origin feature` | `{}` を返す |
 
-**新規テスト数:** 12 テスト
+AC1.2 のセットアップでは、main で `skills/session-start/SKILL.md` と `skills/discover/SKILL.md` の両方を変更する。
 
-### 衝突リスクのあるテスト（AC4 重点確認対象）
+**Key insight:** `origin/main...HEAD` (three-dot) は merge-base からの差分を返すため、main 側の SKILL.md 変更はブランチの diff に含まれない。`origin/main` (two-dot, 現行バグ) は main の HEAD との双方向 diff を返すため、main 側の変更も含まれてしまう。
 
-| 既存テスト | 衝突リスク | 対策 |
-|-----------|-----------|------|
-| `#165-AC1` 行 230: `! grep -A 15 "## Phase 2: plan" \| grep -q 'Use Agent tool.*Developer'` | **中** — AC2 のガード文言に "Use Agent tool" を含めると失敗 | ガード文言に "Use Agent tool" パターンを使わない（後述） |
-| `#165-AC1` 行 231: `! grep -A 15 "## Phase 3: Implementation" \| grep -q 'Use Agent tool.*Developer'` | **中** — 同上 | 同上 |
-| `#165-AC2` 行 253: `! grep -A 20 "## Phase 2: plan" \| grep -q 'Use Agent tool.*QA'` | **中** — 同上 | 同上 |
-| `#165-AC2` 行 254: `! grep -A 15 "## Phase 4: PR Review" \| grep -q 'Use Agent tool.*QA'` | **中** — 同上 | 同上 |
-| AC-6 行 80: `grep -A 25 "## Autonomy Rules" \| grep -q "STOP"` | **低** — grep 範囲 25 行以内に STOP が残っていれば OK | Rule 5 追加後も共通 Failure Mode の STOP が 25 行以内にあることを確認 |
+### AC2: ブランチ導入の SKILL.md 変更は正しく検出
 
-## 4. カバレッジ戦略とリグレッションリスク分析
+セットアップ: `create_branch_skill_change()` — ブランチ上で SKILL.md を変更。eval マーカーなし。
 
-### カバレッジマトリクス
+| テスト ID | テスト名 | stdin command | 期待結果 |
+|----------|---------|---------------|---------|
+| AC2.1 | ブランチの SKILL.md 変更を検出してブロック | `git push origin feature` | `permissionDecision: "deny"` |
+| AC2.2 | ブロックメッセージにスキル名を含む | `git push origin feature` | reason に `"SKILL.md changes detected (session-start)"` |
+| AC2.3 | 複数 SKILL.md 変更時に全スキル名をメッセージに含む | `git push origin feature` | reason に `"session-start"` と `"discover"` の両方 |
 
-| 検証観点 | AC1 | AC2 | AC3 | AC4 |
-|---------|-----|-----|-----|-----|
-| 禁止規則テキストの存在 | x | | | |
-| 禁止規則の番号付け | x | | | |
-| 代替手段（SendMessage）の提示 | x | x | | |
-| 禁止スコープの明示 | x | | | |
-| Failure Mode の包含 | x | | | |
-| Phase 2 ガード | | x | | |
-| Plan Review Round ガード | | x | | |
-| Phase 3 ガード | | x | | |
-| Phase 4 ガード | | x | | |
-| Phase 0.9 → Rule 5 参照 | | | x | |
-| Rule 5 → Phase 0.9 例外 | | | x | |
-| spawn スコープ確認 | | | x | |
-| 既存 86 テスト全パス | | | | x |
+AC2.3 のセットアップでは、ブランチで `skills/session-start/SKILL.md` と `skills/discover/SKILL.md` の両方を変更する。
 
-### リグレッションリスク
+### AC3: コマンド引数中の "git push" 文字列で誤検知しない
 
-| リスク | 重大度 | 対策 |
-|--------|--------|------|
-| AC2 ガード文言が `#165-AC1`/`#165-AC2` の否定テストを壊す | **高** | ガード文言の制約を厳守: "Do NOT spawn new agents" や "Agent re-generation is prohibited" は OK。"Use Agent tool" を含む文言は NG。 |
-| AC1 の Rule 5 追加で Autonomy Rules セクションが長くなり、AC-6 テスト（`grep -A 20`/`grep -A 25`）が影響を受ける | **低** | 既存 Rule 1-4 と Failure Mode は現在 10 行程度。Rule 5 を 2-3 行で追加しても `grep -A 20` の範囲内に収まる。 |
-| AC3 の双方向参照追加で Phase 0.9 セクションが長くなり、`#165-AC6`（`grep -A 60`）が影響を受ける | **低** | Phase 0.9 は現在 18 行。参照文言を 1 行追加しても `grep -A 60` の範囲内。 |
-| AC Review Round の Agent tool 記述に影響 | **なし** | AC Review Round は修正対象外。既存テスト AC-2（行 97-129）に影響なし。 |
+セットアップ: `create_branch_skill_change()` — SKILL.md 変更あり（ブロック条件到達のため）。eval マーカーなし。
 
-### AC2 ガード文言の制約（Developer 向け実装ガイダンス）
+**重要:** SKILL.md 変更があることで、`git push` 検出の後段のブロックロジックに到達することを保証する。SKILL.md 変更がなければそもそもブロックしないため、テストが false positive（通るが意味がない）になる。
 
-既存テストとの衝突を回避するため、AC2 のガード文言は以下の制約に従う必要がある:
+| テスト ID | テスト名 | stdin command | 期待結果 |
+|----------|---------|---------------|---------|
+| AC3.1 | commit メッセージ中の "git push" で誤検知しない | `git commit -m "fix: remember to git push"` | `{}` を返す |
+| AC3.2 | echo 引数中の "git push" で誤検知しない | `echo "run git push later"` | `{}` を返す |
+| AC3.3 | grep 引数中の "git push" で誤検知しない | `git log --oneline \| grep "git push"` | `{}` を返す |
 
-**使用可能な文言パターン:**
-- "Do NOT spawn new agents -- use SendMessage only"
-- "Agent re-generation is prohibited (see Autonomy Rules Rule 5)"
-- "Continue via SendMessage. Do NOT create new Developer/QA agents"
+### AC4: チェーンコマンド中の git push を正しく検出
 
-**使用不可の文言パターン（既存テスト失敗を引き起こす）:**
-- "Do NOT use Agent tool to spawn Developer" (`Use Agent tool.*Developer` にマッチ)
-- "Use Agent tool is prohibited for QA" (`Use Agent tool.*QA` にマッチ)
+セットアップ: `create_branch_skill_change()` — SKILL.md 変更あり、eval マーカーなし。
 
-### テスト実行計画
+| テスト ID | テスト名 | stdin command | 期待結果 |
+|----------|---------|---------------|---------|
+| AC4.1 | && チェーンの git push を検出 | `git add . && git push origin feature` | `permissionDecision: "deny"` |
+| AC4.2 | ; チェーンの git push を検出 | `git add . ; git push origin feature` | `permissionDecision: "deny"` |
+| AC4.3 | \|\| チェーンの git push を検出 | `git add . \|\| git push origin feature` | `permissionDecision: "deny"` |
+| AC4.4 | パイプ経由の git push を検出 | `echo foo \| git push origin feature` | `permissionDecision: "deny"` |
 
-1. 実装前: `bats tests/test_autopilot_agent_teams_setup.bats` を実行し 86/86 パスを確認（ベースライン）
-2. 新規テスト追加: #11 セクションの 12 テストを追加
-3. 実装後: `bats tests/test_autopilot_agent_teams_setup.bats` を実行し 98/98 パス（86 既存 + 12 新規）を確認
-4. 全テスト: `bats tests/` で全テストファイルのリグレッションがないことを確認
+## 5. テストバリエーション（境界条件・エラーケース）
+
+### BOUNDARY: 境界条件テスト
+
+| テスト ID | テスト名 | 条件 | 期待結果 |
+|----------|---------|------|---------|
+| B1 | main ブランチ上の push はスキップ | `git checkout main` した状態 | `{}` を返す |
+| B2 | detached HEAD の push はスキップ | `git checkout --detach` した状態 | `{}` を返す |
+| B3 | eval マーカー存在時は push 許可 | SKILL.md 変更あり + `eval-ran-feature` マーカーファイル存在 | `{}` を返す |
+| B4 | origin/main 不在時は push 許可（fail-open） | `git remote remove origin` した状態 | `{}` を返す |
+| B5 | 不正 JSON 入力で push 許可（fail-open） | stdin に `invalid json` | `{}` を返す |
+| B6 | 空 command で push 許可 | `{"command": ""}` | `{}` を返す |
+
+### REGRESSION: 既存動作の維持確認
+
+| テスト ID | テスト名 | 検証内容 |
+|----------|---------|---------|
+| REG.1 | eval-guard.sh が存在する | `[[ -f hooks/eval-guard.sh ]]` |
+| REG.2 | eval-guard.sh が set -euo pipefail で始まる | `grep -q 'set -euo pipefail' hooks/eval-guard.sh` |
+| REG.3 | 出力が有効な JSON | 全テストケースの出力が `jq -e .` でパース可能、または空文字列 `{}` |
+
+## 6. カバレッジ戦略
+
+### テスト数サマリー
+
+| セクション | テスト数 |
+|-----------|---------|
+| AC1 (regression) | 2 |
+| AC2 (正常ブロック) | 3 |
+| AC3 (誤検知防止) | 3 |
+| AC4 (チェーンコマンド) | 4 |
+| BOUNDARY | 6 |
+| REGRESSION | 3 |
+| **合計** | **21** |
+
+### リグレッションリスク分析
+
+| 変更箇所 | リスク | テストカバレッジ |
+|----------|-------|---------------|
+| L34: `git diff --name-only origin/main` → `origin/main...HEAD` | **高** — diff の意味が根本的に変わる | AC1.1, AC1.2 が直接カバー。AC2.1-AC2.3 が逆方向を確認 |
+| L20: `grep -q 'git push'` → regex 強化 | **高** — マッチ範囲が変わる | AC3.1-AC3.3 が false positive 排除。AC4.1-AC4.4 が true positive 確認 |
+| それ以外の行 | **なし** — 変更なし | BOUNDARY + REGRESSION で既存動作を確認 |
+
+### カバレッジギャップ（許容）
+
+1. **L17 の sed JSON パース:** 脆弱だが Issue #22 scope 外。B5 (不正 JSON) で fail-open を確認するのみ。
+2. **XDG_CACHE_HOME 未設定時の fallback:** L44 の `${XDG_CACHE_HOME:-$HOME/.cache}` — setup() で XDG_CACHE_HOME を設定するため fallback パスは未テスト。Priority 低。
+
+## 7. JSON 出力の検証方法
+
+sim-pool-guard テストの `jq -e` パターンを採用。
+
+**ブロックしない場合:**
+```bash
+result=$(run_eval_guard "git commit -m 'test'")
+[[ "$result" == '{}' ]]
+```
+
+**ブロックする場合:**
+```bash
+result=$(run_eval_guard "git push origin feature")
+echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
+```
+
+**メッセージ検証:**
+```bash
+reason=$(echo "$result" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+[[ "$reason" == *"SKILL.md changes detected (session-start)"* ]]
+```
+
+## 8. テスト実行
+
+```bash
+bats tests/test_eval_guard.bats
+```
+
+`jq` がテスト環境に必要（JSON パース用）。プロジェクトの既存テスト（sim-pool-guard）も `jq` を使用しているため、追加依存なし。

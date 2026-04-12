@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - pr-screenshot-table.sh: safe image_paths expansion — convert string concatenation to bash array, remove SC2086 disable (#26)
 - pr-screenshot-table.sh: add PR number input validation with integer regex check (#26)
 - .gitignore: add `*.local.*`, `*.secret`, `*.secrets` catch-all patterns (#26)
+- eval-guard.sh: use three-dot diff (`origin/main...HEAD`) to detect only branch-introduced SKILL.md changes, preventing false positives when main advances (#22)
+- eval-guard.sh: strengthen `git push` detection regex to avoid false positives from "git push" in command arguments (#22)
 
 ## [1.5.0] - 2026-04-12
 

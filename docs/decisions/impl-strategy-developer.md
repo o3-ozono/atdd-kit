@@ -1,161 +1,279 @@
-# Implementation Strategy: Developer
+# Implementation Strategy: Issue #22
 
-**Issue:** #11 — bug: Autonomy Rules に Agent tool 再生成禁止規則が欠落
+**Issue:** #22 — bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
 **Author:** Developer Agent
 **Date:** 2026-04-12
+**Prior Decision:** `docs/decisions/ac-review-developer.md`
 
-## 1. 変更箇所の一覧
+## 1. File Structure and Modification Map
 
-対象ファイルは `commands/autopilot.md` のみ。全 6 箇所の変更。
+### Modified Files
 
-| # | セクション | 行番号 | AC | 変更内容 |
-|---|-----------|--------|-----|---------|
-| C1 | Autonomy Rules | L110 の後（L111 の前） | AC1 | Rule 5 追加 |
-| C2 | Phase 2: plan | L148 の後 | AC2 | SendMessage 専用ガード注意書き |
-| C3 | Plan Review Round | L162 の後 | AC2 | SendMessage 専用ガード注意書き |
-| C4 | Phase 3: Implementation | L177 の後 | AC2 | SendMessage 専用ガード注意書き |
-| C5 | Phase 4: PR Review | L189 の後 | AC2 | SendMessage 専用ガード注意書き |
-| C6 | Phase 0.9 Mid-phase resume | L100 の後 | AC3 | Autonomy Rule 5 への逆参照 |
+| # | File | Nature of Change |
+|---|------|------------------|
+| F1 | `hooks/eval-guard.sh` | Line 34: two-dot diff → three-dot diff. Line 20: simple grep → regex for command detection. |
+| F2 | `tests/test_eval_guard.bats` | **New file** — Functional BATS tests for all 4 ACs |
+| F3 | `hooks/README.md` | Update eval-guard description to reflect three-dot diff |
+| F4 | `CHANGELOG.md` | Add entry under `[Unreleased]` |
+| F5 | `.claude-plugin/plugin.json` | Version bump (PATCH) |
 
-## 2. 各変更の具体的な内容
+### Unchanged Files (verify-only)
 
-### C1: Autonomy Rules — Rule 5 追加 (AC1)
+| File | Reason |
+|------|--------|
+| `.claude/settings.json` | Hook registration unchanged — same matcher, same command |
+| `commands/auto-eval.md` | Eval logic unchanged — marker creation unaffected |
+| `tests/test_eval_framework.bats` | Tests auto-eval command content, not eval-guard behavior |
 
-**挿入位置:** L110（Rule 4）の直後、L111（空行）の前
+## 2. Concrete Code Changes
 
-**追加テキスト:**
+### F1: `hooks/eval-guard.sh`
+
+#### Change 1: Line 20 — Command detection regex
+
+**Before:**
+```bash
+if ! echo "$COMMAND" | grep -q 'git push'; then
+```
+
+**After:**
+```bash
+if ! echo "$COMMAND" | grep -qE '(^|[;&|]+\s*)git\s+push'; then
+```
+
+**Rationale:**
+- `(^|[;&|]+\s*)` — matches `git push` at start of command OR after chain operators (`&&`, `||`, `;`, `|`)
+- `git\s+push` — requires whitespace between `git` and `push` (stricter than literal string)
+- Does NOT match `git push` embedded inside quoted arguments (e.g., `git commit -m "remember to git push"`) because the `git push` substring is preceded by a space inside quotes, not by a chain operator or start-of-string in the top-level command structure
+
+**Edge case analysis:**
+- `git push origin main` — matches (`^git\s+push`) 
+- `git add . && git push` — matches (`&&\s*git\s+push`)
+- `git add . ; git push` — matches (`;\s*git\s+push`)
+- `git commit -m "fix: remember to git push"` — does NOT match (preceded by space inside quotes, not a chain operator)
+- `echo "git push" | some_tool` — does NOT match at the `echo` level, because `grep -qE` processes the full command string and `git push` after `echo "` is not preceded by a chain operator. However, the pipe `|` could match. Let me refine.
+
+**Refined regex for line 20:**
+```bash
+if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push'; then
+```
+
+This explicitly matches only after `&&`, `;`, `||`, or at start-of-string. Single `|` (pipe) is excluded because `echo "foo" | git push` is not a real-world pattern for pushing, and the pipe's left side doesn't contain a push.
+
+**Final decision:** Use `(^|&&|;|\|\|)\s*git\s+push\b`
+
+- `^` — start of command string
+- `&&` — AND chain
+- `;` — sequential chain  
+- `\|\|` — OR chain (escaped pipe)
+- `\s*git\s+push\b` — optional whitespace, then `git push` as word boundary
+
+```bash
+if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push\b'; then
+```
+
+**Verification of AC3 scenario:**
+- Input: `git commit -m "fix: remember to git push"`
+- The substring `git push` is at position after `to `, not after `^`, `&&`, `;`, or `||`
+- Result: NO match — command is not intercepted. CORRECT.
+
+**Verification of AC4 scenario:**
+- Input: `git add . && git push origin branch`
+- The substring `git push` is after `&& `, which matches `&&\s*git\s+push`
+- Result: MATCH — command is intercepted. CORRECT.
+
+#### Change 2: Line 34 — Three-dot diff
+
+**Before:**
+```bash
+CHANGED_SKILLS=$(git diff --name-only origin/main -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
+```
+
+**After:**
+```bash
+CHANGED_SKILLS=$(git diff --name-only origin/main...HEAD -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
+```
+
+**Rationale:**
+- `origin/main...HEAD` uses the merge-base as the comparison point (three-dot diff)
+- Only detects changes introduced on the current branch, not changes on main since divergence
+- Same semantics as GitHub PR diff view
+- The `2>/dev/null || echo ""` error handling remains — if merge-base computation fails (shallow clone, no remote), returns empty string (fail-open: allows push)
+
+### F2: `tests/test_eval_guard.bats` (New File)
+
+Functional tests that invoke `hooks/eval-guard.sh` with crafted JSON input and verify output.
+
+#### Test Infrastructure
+
+```bash
+setup() {
+  GUARD="hooks/eval-guard.sh"
+  TEST_REPO="${BATS_TMPDIR}/eval-guard-repo-$$"
+  
+  # Create a minimal git repo to simulate branch scenarios
+  git init "$TEST_REPO"
+  cd "$TEST_REPO"
+  git checkout -b main
+  mkdir -p skills/test-skill
+  echo "initial" > skills/test-skill/SKILL.md
+  echo "readme" > README.md
+  git add -A && git commit -m "initial"
+  
+  # Set up origin/main reference
+  git branch -m main
+  git checkout -b test-branch
+}
+
+teardown() {
+  rm -rf "$TEST_REPO"
+}
+
+make_input() {
+  local cmd="$1"
+  printf '{"tool_name":"Bash","command":"%s"}' "$cmd"
+}
+```
+
+**Note:** The `setup` creates a local repo with a `main` branch and a `test-branch`. For three-dot diff tests, we need to simulate `origin/main` — this requires either a bare remote or using `git update-ref refs/remotes/origin/main`. The latter is simpler:
+
+```bash
+# In setup, after creating test-branch:
+git update-ref refs/remotes/origin/main main
+```
+
+#### Test Cases
+
+| Test ID | AC | Scenario | Input Command | Expected |
+|---------|-----|----------|---------------|----------|
+| T1.1 | AC1 | Main-side SKILL.md change, branch has no skill changes | `git push origin test-branch` | `{}` (allow) |
+| T1.2 | AC1 | Main-side SKILL.md change, branch only has README edit | `git push` | `{}` (allow) |
+| T2.1 | AC2 | Branch introduces SKILL.md change, no eval marker | `git push` | deny with "SKILL.md changes detected" |
+| T2.2 | AC2 | Branch introduces SKILL.md change, eval marker exists | `git push` | `{}` (allow) |
+| T2.3 | AC2 | Deny message contains skill name | `git push` | deny message contains skill name |
+| T3.1 | AC3 | "git push" in commit message argument | `git commit -m "remember to git push"` | `{}` (allow — not intercepted) |
+| T3.2 | AC3 | "git push" in echo argument | `echo "run git push later"` | `{}` (allow — not intercepted) |
+| T4.1 | AC4 | Chain command with git push | `git add . && git push origin branch` | intercepted (proceeds to diff check) |
+| T4.2 | AC4 | Semicolon chain with git push | `git add . ; git push` | intercepted (proceeds to diff check) |
+| T4.3 | AC4 | OR chain with git push | `git add . || git push` | intercepted (proceeds to diff check) |
+
+**AC1 test setup detail (T1.1, T1.2):**
+```bash
+# Simulate main advancing after branch creation:
+# 1. On test-branch, edit README only
+echo "branch change" > README.md
+git add README.md && git commit -m "readme edit"
+
+# 2. Advance origin/main with a SKILL.md change
+git update-ref refs/remotes/origin/main $(
+  git stash -q 2>/dev/null
+  git checkout main -q
+  echo "main update" > skills/test-skill/SKILL.md
+  git add -A && git commit -m "main skill update" -q
+  git rev-parse HEAD
+)
+git checkout test-branch -q
+
+# Now: origin/main has SKILL.md change, test-branch does NOT
+# Two-dot diff would show SKILL.md (bug)
+# Three-dot diff should NOT show SKILL.md (fix)
+```
+
+**AC2 test setup detail (T2.1):**
+```bash
+# On test-branch, modify SKILL.md
+echo "branch skill change" > skills/test-skill/SKILL.md
+git add -A && git commit -m "skill edit on branch"
+# Three-dot diff SHOULD show SKILL.md (correct detection)
+```
+
+### F3: `hooks/README.md`
+
+Update the eval-guard.sh description:
+
+**Before (line 33):**
+```
+2. If the command contains `git push`, checks for SKILL.md changes vs origin/main
+```
+
+**After:**
+```
+2. If the command is a `git push` (not in arguments), checks for SKILL.md changes on this branch vs merge-base with origin/main
+```
+
+### F4: `CHANGELOG.md`
+
 ```markdown
-5. **Agent re-generation** — Once Developer and QA are spawned in AC Review Round, do not create new instances of these agents in Phase 2–4. Communicate with existing agents exclusively via SendMessage. Exception: Phase 0.9 Mid-phase resume handles session-restart re-creation only.
+## [Unreleased]
+
+### Fixed
+- eval-guard.sh: use three-dot diff (`origin/main...HEAD`) to detect only branch-introduced SKILL.md changes, preventing false positives when main advances (#22)
+- eval-guard.sh: strengthen git push detection regex to avoid false positives from "git push" in command arguments (#22)
 ```
 
-**設計判断:**
-- "Agent tool" という文字列を使わず "create new instances" で表現。理由: 既存テスト `#165-AC1` (L230-231) が `grep -q 'Use Agent tool.*Developer'` で Phase 2/3 内の否定検査をしている。Autonomy Rules セクションは Phase 2/3 の `grep -A 15` 範囲外なのでテスト上は問題ないが、将来のテスト拡張に備えて安全な表現を採用
-- Phase 0.9 例外を同一文中に明記し、例外の根拠を自明にする
+### F5: `.claude-plugin/plugin.json`
 
-### C2: Phase 2 — SendMessage 専用ガード (AC2)
+PATCH bump — this is a bug fix with no behavioral contract change for the hook's external interface.
 
-**挿入位置:** L148（既存の説明文）の直後、L150（手順 1）の前
+Current version needs to be read at implementation time.
 
-**追加テキスト:**
-```markdown
-> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
-```
+## 3. Implementation Sequence (Test-First)
 
-**設計判断:**
-- blockquote (`>`) で視覚的に目立たせる
-- "Use Agent tool" は使わず "New agent creation is prohibited" で表現 — テスト `#165-AC1` L230 の `! grep -A 15 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'Use Agent tool.*Developer'` に抵触しない
-- "see Autonomy Rule 5" で根拠を参照可能にする
+### Phase 1: Red — Write Failing Tests
 
-### C3: Plan Review Round — SendMessage 専用ガード (AC2)
+**Step 1.1:** Create `tests/test_eval_guard.bats` with all test cases (T1.1-T4.3).
 
-**挿入位置:** L162（既存の説明文）の直後、L164（手順 1）の前
+Run tests to confirm they fail against the current buggy code:
+- T1.1, T1.2 should FAIL (current two-dot diff detects main-side changes)
+- T3.1, T3.2 should FAIL (current grep matches "git push" in arguments)
+- T2.1, T2.2, T2.3, T4.1, T4.2, T4.3 should PASS (existing correct behavior)
 
-**追加テキスト:**
-```markdown
-> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
-```
+**Verification:** `bats tests/test_eval_guard.bats` — exactly T1.x and T3.x fail.
 
-### C4: Phase 3 — SendMessage 専用ガード (AC2)
+### Phase 2: Green — Fix the Bugs
 
-**挿入位置:** L177（既存の説明文）の直後、L179（手順 1）の前
+**Step 2.1:** Fix line 34 (three-dot diff) — this fixes T1.1, T1.2.
 
-**追加テキスト:**
-```markdown
-> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer agent via SendMessage only (see Autonomy Rule 5).
-```
+**Step 2.2:** Fix line 20 (regex) — this fixes T3.1, T3.2.
 
-**注意:** Phase 3 は Developer のみ。QA への言及は不要。
+**Verification:** `bats tests/test_eval_guard.bats` — all tests pass.
 
-### C5: Phase 4 — SendMessage 専用ガード (AC2)
+### Phase 3: Housekeeping
 
-**挿入位置:** L189（既存の説明文）の直後、L191（手順 1）の前
+**Step 3.1:** Update `hooks/README.md` (F3).
 
-**追加テキスト:**
-```markdown
-> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing QA agent via SendMessage only (see Autonomy Rule 5).
-```
+**Step 3.2:** Update `CHANGELOG.md` (F4).
 
-**注意:** Phase 4 は QA のみ。Developer への言及は不要。
+**Step 3.3:** Bump version in `.claude-plugin/plugin.json` (F5).
 
-### C6: Phase 0.9 Mid-phase resume — 逆参照追加 (AC3)
+**Step 3.4:** Run full test suite: `bats tests/` to verify no regressions.
 
-**挿入位置:** L100（`Then proceed to the determined phase using SendMessage.`）の直後
-
-**追加テキスト:**
-```markdown
-   Note: This mid-phase resume is the sole exception to Autonomy Rule 5 (Agent re-generation prohibition). It applies only when agents do not exist in the current session due to a session restart.
-```
-
-**設計判断:**
-- インデント（3 スペース）で Mid-phase resume のサブ項目として配置
-- "sole exception" で例外が唯一であることを明示
-- "session restart" で適用条件を限定
-
-## 3. 実装順序
-
-依存関係: C1（Rule 5 定義）→ C2〜C5（Rule 5 参照）、C6（Rule 5 逆参照）
+## 4. Dependencies
 
 ```
-Step 1: C1 — Autonomy Rules に Rule 5 追加 (AC1)
-  └── 他の全変更が "Autonomy Rule 5" を参照するため、最初に実施
-
-Step 2: C2, C3, C4, C5 — Phase 2〜4 注意書き追加 (AC2)
-  └── 互いに独立。上から順に実施（ファイル内の行番号順）
-
-Step 3: C6 — Phase 0.9 逆参照追加 (AC3)
-  └── Rule 5 の存在に依存
-
-Step 4: 既存テスト全パス確認 (AC4)
-  └── bats tests/test_autopilot_agent_teams_setup.bats を実行
+F2 (tests) ← F1 (guard fix) ← F3 (README) ← F4 (CHANGELOG) + F5 (version)
+   write first    fix second     then docs      finally housekeeping
 ```
 
-**AC → Step マッピング:**
+- F2 has no dependencies — tests are written against the expected behavior
+- F1 depends on F2 being written first (test-first methodology)
+- F3, F4, F5 are independent of each other but depend on F1 being complete
 
-| AC | Step | 変更 |
-|----|------|------|
-| AC1 | Step 1 | C1 |
-| AC2 | Step 2 | C2, C3, C4, C5 |
-| AC3 | Step 3 | C6 |
-| AC4 | Step 4 | テスト実行（コード変更なし） |
+## 5. Technical Risks and Mitigations
 
-## 4. 技術リスクと対策
+| # | Risk | Likelihood | Impact | Mitigation |
+|---|------|-----------|--------|------------|
+| R1 | BATS test git repo setup is fragile | Medium | Medium | Use `BATS_TMPDIR` for isolation. Clean up in `teardown`. Use `git update-ref` instead of a real remote. |
+| R2 | Regex doesn't cover all chain operators | Low | Low | AC4 specifies `&&` as the test case. Regex covers `&&`, `;`, `\|\|`. Pipe `\|` intentionally excluded — `echo "x" \| git push` is not real usage. |
+| R3 | `\b` word boundary in grep -E | Low | Medium | `\b` is supported by GNU grep and BSD grep (macOS). Verify in CI. Fallback: use `git\s+push(\s\|$)` if `\b` is unsupported. |
+| R4 | Three-dot diff with unrelated histories | Very Low | Low | `2>/dev/null \|\| echo ""` handles merge-base failure. Fail-open. |
+| R5 | `sed` command on line 17 fails to extract command from complex JSON | Pre-existing | — | Out of scope for this bug fix. The `sed` extraction is simplistic but works for Claude Code's Bash tool JSON format. |
 
-### Risk 1: 既存テスト `#165-AC1`, `#165-AC2` との衝突 (High priority)
+## 6. Per-AC Implementation Mapping
 
-**リスク:** 注意書きに "Use Agent tool" を含めると、以下の既存テストが失敗する:
-- L230: `! grep -A 15 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'Use Agent tool.*Developer'`
-- L231: `! grep -A 15 "## Phase 3: Implementation" "$AUTOPILOT" | grep -q 'Use Agent tool.*Developer'`
-- L253: `! grep -A 20 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'Use Agent tool.*QA'`
-- L254: `! grep -A 15 "## Phase 4: PR Review" "$AUTOPILOT" | grep -q 'Use Agent tool.*QA'`
-
-**対策:** 注意書きでは "New agent creation is prohibited" を使い、"Use Agent tool" を回避。Autonomy Rules セクションの Rule 5 も "create new instances" で表現。
-
-**検証方法:** 各変更後に `grep -A 15 "## Phase 2: plan" commands/autopilot.md | grep -q 'Use Agent tool.*Developer'` が false を返すことを確認。
-
-### Risk 2: Autonomy Rules の `grep -A 20` 範囲 (Low)
-
-**リスク:** 既存テスト AC-6 (L60-82) は `grep -A 20 "## Autonomy Rules"` で既存ルールを検証。Rule 5 追加で行数が増えると、`-A 20` では新ルールまで到達しない可能性。
-
-**対策:** 現在 Autonomy Rules セクションは L103-L112 の 10 行。Rule 5 追加で 11〜12 行。`-A 20` で十分到達する。ただし、Issue #11 用の新テストケースでは `-A 25` 以上を推奨。
-
-### Risk 3: blockquote がテストパターンに干渉 (Low)
-
-**リスク:** `> **Constraint:**` の blockquote 記法が既存テストの grep パターンにマッチしないか。
-
-**対策:** 既存テストは `SendMessage.*Developer` や `SendMessage.*QA` のパターンで肯定検査をしている (L103, L107, L111-112, L116, L120)。blockquote 内にも "SendMessage" が含まれるが、これは肯定検査に追加マッチするだけで、テスト結果に影響しない（肯定テストなので追加マッチは無害）。
-
-### Risk 4: Phase 0.9 の逆参照がテスト `#165-AC6` に影響 (None)
-
-**リスク:** C6 の追加テキストが Phase 0.9 関連テスト (L329-343) に影響しないか。
-
-**対策:** 影響なし。`#165-AC6` テストは `resume`, `re-spawn`, `Phase 4.*QA`, `Phase 3.*Developer`, `Phase 2.*Developer.*QA` を検索しており、追加テキストはこれらに新たなマッチを生まない。
-
-## 5. 変更量サマリ
-
-| 指標 | 値 |
-|------|-----|
-| 対象ファイル数 | 1 (`commands/autopilot.md`) |
-| 追加行数 | 約 10 行 |
-| 削除行数 | 0 行 |
-| 変更箇所数 | 6 箇所 (C1〜C6) |
-| 既存テスト影響 | なし（AC4 で全パス確認） |
+| AC | Phase | Step | File | Change |
+|----|-------|------|------|--------|
+| AC1 | 1→2 | 1.1→2.1 | F2→F1 | Tests T1.1-T1.2 → Line 34 three-dot diff |
+| AC2 | 1→verify | 1.1 | F2 | Tests T2.1-T2.3 (should pass with existing code) |
+| AC3 | 1→2 | 1.1→2.2 | F2→F1 | Tests T3.1-T3.2 → Line 20 regex |
+| AC4 | 1→verify | 1.1 | F2 | Tests T4.1-T4.3 (should pass with existing code, verify with new regex) |
