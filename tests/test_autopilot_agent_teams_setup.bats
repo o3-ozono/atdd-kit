@@ -492,3 +492,23 @@ AUTOPILOT="commands/autopilot.md"
   [ "$count" -eq 1 ]
   sed -n '/^## Autonomy Rules/,/^## /p' "$AUTOPILOT" | grep -q 'Failure mode.*STOP'
 }
+
+# ---------------------------------------------------------------------------
+# #11-AC2: SendMessage-only guard in Phase 2-4 and Plan Review Round
+# ---------------------------------------------------------------------------
+
+@test "#11-AC2: Phase 2 contains SendMessage-only guard" {
+  sed -n '/^## Phase 2: plan/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+@test "#11-AC2: Plan Review Round contains SendMessage-only guard" {
+  sed -n '/^## Plan Review Round/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+@test "#11-AC2: Phase 3 contains SendMessage-only guard" {
+  sed -n '/^## Phase 3: Implementation/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
+
+@test "#11-AC2: Phase 4 contains SendMessage-only guard" {
+  sed -n '/^## Phase 4: PR Review/,/^## /p' "$AUTOPILOT" | grep -qi 'prohibited.*phase\|SendMessage only'
+}
