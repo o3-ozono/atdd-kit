@@ -13,3 +13,6 @@ credentials.json
 Thumbs.db
 *.p8
 *.log
+*.local.*
+*.secret
+*.secrets

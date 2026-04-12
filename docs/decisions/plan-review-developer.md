@@ -1,114 +1,118 @@
-# Plan Review: Developer Perspective
+# Plan Review: Developer
 
-**Issue:** #11 — bug: autopilot の Agent Team で Developer/QA エージェントが滞留・大量生成される
+**Issue:** #26 — fix: security hardening for pr-screenshot-table.sh and .gitignore
 **Reviewer:** Developer Agent
 **Date:** 2026-04-12
 
-## Overall Assessment
+## Overall Verdict: PASS
 
-統合 Plan は的確で、スコープ・変更量・リスク対策のバランスが良い。autopilot.md のみの変更で完結し、既存テストとの互換性も十分に考慮されている。
+Plan is technically sound. All 4 ACs are correctly mapped to implementation targets with appropriate techniques. bash 3.2 compatibility verified. One minor observation noted for implementer awareness.
 
-**Verdict: PASS** — 指摘 0 件、軽微な改善提案 2 件
+## R1: File structure validity — PASS
 
-## 観点別レビュー
+| Target File | Exists | Action | Correct |
+|---|---|---|---|
+| `scripts/pr-screenshot-table.sh` (line 24) | Yes | Modify — PR number validation | Yes, line 24 is `PR_NUMBER="$1"` |
+| `scripts/pr-screenshot-table.sh` (lines 175-183) | Yes | Modify — array conversion | Yes, lines 175-183 are the image_paths string concatenation + SC2086 disable |
+| `scripts/pr-screenshot-table.sh` (lines 293-297) | Yes | Modify — AWK `-v` fix | Yes, lines 293-297 are the AWK section replacement with shell expansion |
+| `.gitignore` (append) | Yes | Modify — add patterns | Yes, 16 lines currently |
+| `tests/test_pr_screenshot_security.bats` | No (new) | Create | Yes, follows `tests/test_*.bats` naming convention |
 
-### 1. ファイル構成の妥当性
+No missing files. `scripts/upload-image-to-github.mjs` is correctly identified as unchanged — it accepts positional arguments (`process.argv.slice(2)`), so the array expansion change is transparent.
 
-**判定: 妥当**
+## R2: Implementation order risks — PASS
 
-`commands/autopilot.md` のみの変更で十分な理由:
+Plan states AC1, AC2, AC3 are independent (different locations in `pr-screenshot-table.sh`) and AC4 is fully independent (`.gitignore` only). This is correct:
 
-1. **バグの本質:** LLM が Phase 2〜4 で SendMessage の代わりに Agent tool を使うのは、禁止規則の欠落が原因。autopilot.md は LLM への指示書であり、Prompt Guard の追加先として正しい
-2. **po.md の tools リスト変更は不適切:** PO は AC Review Round (L132) と Phase 0.9 Mid-phase resume (L95-100) で Agent tool が必要。tools リストから Agent を除外すると正当なユースケースが壊れる
-3. **ランタイム制限は不要:** Agent Teams のツール制限はプラットフォーム側の機能であり、テキストレベルの Prompt Guard が現時点で最も現実的な対策
+- AC1 modifies lines 293-297 (AWK section)
+- AC2 modifies lines 175-183 (image_paths section)
+- AC3 modifies around line 24 (after `PR_NUMBER="$1"`)
+- AC4 modifies `.gitignore` (append)
 
-他に変更が必要なファイルはないことを確認済み:
-- `agents/po.md` — 変更不要（Agent tool は正当に必要）
-- `agents/developer.md`, `agents/qa.md` — 変更なし（SendMessage を持たない設計は正しい）
-- `tests/` — 新規テストは QA 戦略に従い追加される
+No overlap between modification zones. Test writing order (AC3 -> AC1 -> AC2) is reasonable — AC3 is simplest (exit code check), AC2 needs mock design for array expansion.
 
-### 2. 実装順序のリスク
+Plan specifies CHANGELOG + version bump last. Correct.
 
-**判定: リスクなし**
+## R3: Technical risk assessment — PASS
 
-提案された順序: C1 → C2-C5 → C6 → テスト
+### bash 3.2 compatibility — Verified
 
-この順序は依存関係に沿っている:
-- C1 (Rule 5 定義) が先行する必要がある — C2〜C5 と C6 が "Autonomy Rule 5" を参照するため
-- C2〜C5 は互いに独立 — ファイル内の上から順に実施するのは自然
-- C6 は C1 に依存するが C2〜C5 には依存しない — Step 2 と Step 3 は並列可能だが、順次実行でもリスクなし
-- テストは全変更完了後に実行 — 正しい
+All three proposed constructs tested on this machine (bash 3.2.57):
 
-**逆順リスクの検証:**
-- C2〜C5 を C1 より先に実施すると "see Autonomy Rule 5" の参照先が存在しない状態で一時的に不整合になるが、最終的には解消される。git commit は全変更完了後なので実害なし
+| Construct | bash 3.2 | Verified |
+|---|---|---|
+| `[[ "$PR_NUMBER" =~ ^[0-9]+$ ]]` | Supported | Yes — tested with valid, invalid, injection, empty inputs |
+| `image_paths+=("$path")` array append | Supported | Yes — tested with spaces in paths |
+| `"${image_paths[@]}"` expansion | Supported | Yes — correctly preserves individual arguments |
+| AWK `-v section_file="$VAR"` | AWK feature, not bash-dependent | Yes — tested with spaces in path |
 
-### 3. 技術リスク評価
+### node argument order — No risk
 
-#### Risk 1: 既存テスト `#165-AC1`/`#165-AC2` との衝突
+`upload-image-to-github.mjs` uses `process.argv.slice(2)` — first arg is PR_URL, rest are image paths. Array expansion `"${image_paths[@]}"` preserves insertion order identical to the current string concatenation. No behavioral change.
 
-**実装戦略の対策: 十分**
+### AWK `-v` with special characters — Verified
 
-テストパターンを精密に検証した結果:
+AWK `-v section_file="$SECTION_FILE"` correctly handles paths with spaces. The `$SECTION_FILE` is constructed from `$TMPDIR_BASE` (via `mktemp -d`) which produces paths without special characters in practice. The fix still improves safety for defense-in-depth.
 
-| テスト | grep パターン | Phase 2 C2 ガード文 | 結果 |
-|--------|-------------|---------------------|------|
-| L230 | `Use Agent tool.*Developer` | "New agent creation is prohibited...Developer/QA agents via SendMessage" | マッチしない (SAFE) |
-| L231 | `Use Agent tool.*Developer` | (Phase 3 C4 も同様) | マッチしない (SAFE) |
-| L253 | `Use Agent tool.*QA` | "New agent creation is prohibited...Developer/QA agents via SendMessage" | マッチしない (SAFE) |
-| L254 | `Use Agent tool.*QA` | (Phase 4 C5 も同様) | マッチしない (SAFE) |
+## R4: Architecture consistency — PASS
 
-また、肯定テスト (L235, L239, L243, L258, L262, L266) は `SendMessage.*Developer` / `SendMessage.*QA` を検索しており、ガード文内の "SendMessage" が追加マッチするが、肯定テストなので無害。
+| Aspect | Plan | Codebase Pattern | Match |
+|---|---|---|---|
+| Test file naming | `tests/test_pr_screenshot_security.bats` | `tests/test_*.bats` | Yes |
+| Test setup pattern | `BATS_TEST_TMPDIR` + `setup()` fixtures | Same as `test_check_plugin_version.bats` | Yes |
+| Error output | `>&2` with Usage format | Matches existing line 20 pattern | Yes |
+| shellcheck compliance | Remove SC2086 disable | Eliminates a suppression — improves compliance | Yes |
+| `.gitignore` style | Append patterns at end | Current file has no section headers, flat list | Yes |
 
-#### Risk 2: Autonomy Rules の `-A 20` 範囲
+## R5: Edge cases — PASS (with observation)
 
-**実装戦略の対策: 十分**
+### Addressed by plan
+- AC1: Special characters in `$SECTION_FILE` path — AWK `-v` handles this
+- AC2: Spaces in image paths — array expansion handles this
+- AC3: Empty string, non-integer, special characters — `[[ =~ ^[0-9]+$ ]]` rejects all
 
-現状の Autonomy Rules セクション:
-- L103: `## Autonomy Rules` (見出し)
-- L105: 前文
-- L107-L110: Rule 1〜4
-- L112: Failure mode
+### Observation: empty array under `set -u`
 
-C1 追加後:
-- L111: Rule 5 (1 行追加)
-- セクション合計: L103〜L113 = 11 行
+On bash 3.2 with `set -euo pipefail`, expanding `"${image_paths[@]}"` on an **empty** array triggers "unbound variable" error. However, this is not a real risk because:
 
-既存テスト AC-6 (L64-82) は `grep -A 20` または `-A 25` を使用。Rule 5 の "Agent re-generation" は見出しから 8 行目に位置するため、`-A 20` で十分到達する。
+1. The guard at line 163 (`if [ ! -s "$UPLOAD_LIST" ]`) exits before reaching the array construction
+2. The `while` loop at line 176 reads from `$UPLOAD_LIST` which is guaranteed non-empty at that point
+3. Each UPLOAD_LIST entry has a non-empty `path` (set by `extract_image` which only writes on success)
 
-#### Risk 3: C4/C5 のエージェント限定表現
+Therefore `image_paths` will always have at least one element when expansion occurs. No plan change needed, but the implementer should be aware that adding a length guard (`if [ ${#image_paths[@]} -gt 0 ]`) before expansion would be a defensive option if the surrounding control flow ever changes.
 
-**検証:**
-- C4 (Phase 3): "Developer agent" のみ言及 — Phase 3 は Developer 専用なので正しい
-- C5 (Phase 4): "QA agent" のみ言及 — Phase 4 は QA 専用なので正しい
-- C2 (Phase 2): "Developer/QA agents" 両方言及 — Phase 2 は両方に SendMessage するので正しい
-- C3 (Plan Review Round): "Developer/QA agents" 両方言及 — 同上
+### `.gitignore` pattern specificity
 
-各フェーズの役割分担と一致しており、問題なし。
+`*.local.*` will match files like `settings.local.json` (intended) but also `foo.local.bar.baz` (edge case, acceptable for gitignore). `*.secret` and `*.secrets` are suffix-only patterns — no false positive risk.
 
-#### Risk 4: blockquote (`>`) 記法の影響
+## R6: Test coverage — PASS
 
-**検証:**
-既存テストで blockquote 内容に影響を受けるパターンはない。grep は行単位で検索するため、blockquote のプレフィックス `> ` は grep パターンの前にあるだけで、マッチングに影響しない（`grep -q 'SendMessage.*Developer'` は `> **Constraint:** ...SendMessage...Developer...` にもマッチするが、肯定テストなので無害）。
+| AC | Test Layer | Coverage | Assessment |
+|---|---|---|---|
+| AC1: AWK injection | Unit (BATS) | AWK output correctness with normal and special-character paths | Adequate — tests the actual AWK transformation |
+| AC2: image_paths array | Unit (BATS) | Array expansion preserves individual arguments including spaces | Adequate — verifies the fix purpose |
+| AC3: PR number validation | Unit (BATS) | Exit code + error message for invalid inputs | Adequate — simplest to test, good edge case coverage |
+| AC4: .gitignore patterns | Unit (BATS) | `git check-ignore` for each pattern | Adequate — `git check-ignore` is the authoritative check |
 
-### 4. テスト戦略との整合
+Test pattern follows `test_check_plugin_version.bats` conventions (`BATS_TEST_TMPDIR`, `setup()` fixtures). This is the correct approach for this repo.
 
-QA の新規 12 テスト計画は実装戦略の 6 変更箇所すべてをカバーしている:
-- AC1 (Rule 5): Autonomy Rules セクション内の検証
-- AC2 (ガード): Phase 2〜4 + Plan Review Round の 4 セクション検証
-- AC3 (逆参照): Phase 0.9 の検証
-- AC4 (既存テスト): 86 テスト全パス
+**Note on AC1/AC2 testability:** The plan correctly identifies that AC1 and AC2 test the transformation logic in isolation (AWK output, argument passing) rather than requiring full script execution with `gh` CLI mocking. This is appropriate for security-focused unit tests.
 
-テスト追加先が `test_autopilot_agent_teams_setup.bats`（既存ファイル）であることも妥当。autopilot.md の構造テストが集約されている。
+## Version Bump
 
-## 改善提案（任意）
+Current version: **1.5.0** (verified in `.claude-plugin/plugin.json`).
 
-### P1: C2〜C5 のガード文末に改行の一貫性
+Plan does not specify a version number. This is a PATCH-level fix (security hardening, no behavioral change for valid inputs). Recommended bump: **1.5.0 -> 1.5.1**.
 
-blockquote の後に空行を入れるか入れないかで、マークダウンのレンダリングが変わる。実装時に全 4 箇所で一貫させること（blockquote 後に空行 1 行を推奨）。
+## Summary
 
-### P2: Rule 5 の文言で "Phase 2–4" の範囲明示
+| Criterion | Verdict | Notes |
+|---|---|---|
+| R1: File structure validity | PASS | All target files verified at correct line numbers |
+| R2: Implementation order risks | PASS | All ACs independent, no dependency issues |
+| R3: Technical risk assessment | PASS | bash 3.2 compatibility verified on this machine |
+| R4: Architecture consistency | PASS | Follows existing test and code patterns |
+| R5: Edge cases | PASS | Empty array edge case is safe due to existing guard |
+| R6: Test coverage | PASS | All ACs covered with appropriate test strategies |
 
-Rule 5 案の "in Phase 2–4" は Plan Review Round を含むか曖昧。実装時に "in Phase 2, Plan Review Round, Phase 3, and Phase 4" と列挙するか、"after AC Review Round" で包括的に表現するか統一すべき。実装戦略の C1 テキスト案は "in Phase 2–4" だが、Plan Review Round はフェーズ番号を持たないため、明示的に含めるのが安全。
-
-推奨文言修正:
-> do not create new instances of these agents in Phase 2, Plan Review Round, Phase 3, or Phase 4.
+**Plan is ready for implementation.**

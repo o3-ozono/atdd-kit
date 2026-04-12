@@ -22,6 +22,10 @@ if [ $# -lt 2 ]; then
 fi
 
 PR_NUMBER="$1"
+if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+  echo "Error: PR_NUMBER must be a positive integer, got: '$PR_NUMBER'" >&2
+  exit 1
+fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 
@@ -172,15 +176,14 @@ PR_URL="https://github.com/${REPO}/pull/${PR_NUMBER}"
 UPLOAD_RESULT="${TMPDIR_BASE}/upload_result.txt"
 
 # 画像パスだけを抽出してアップロードスクリプトに渡す
-image_paths=""
+image_paths=()
 while IFS='=' read -r key path; do
-  image_paths="${image_paths} ${path}"
+  image_paths+=("$path")
 done < "$UPLOAD_LIST"
 
 echo ""
 echo "画像をアップロード中..."
-# shellcheck disable=SC2086
-node "${SCRIPT_DIR}/upload-image-to-github.mjs" "$PR_URL" $image_paths > "$UPLOAD_RESULT" 2>/dev/null || true
+node "${SCRIPT_DIR}/upload-image-to-github.mjs" "$PR_URL" "${image_paths[@]}" > "$UPLOAD_RESULT" 2>/dev/null || true
 
 # 結果をキーにマッピング
 UPLOAD_MAP="${TMPDIR_BASE}/upload_map.txt"
@@ -290,8 +293,8 @@ CURRENT_BODY="$(gh pr view "$PR_NUMBER" --json body -q .body)"
 if echo "$CURRENT_BODY" | grep -q "^## Screenshots"; then
   SECTION_FILE="${TMPDIR_BASE}/section.txt"
   echo "$FULL_SECTION" > "$SECTION_FILE"
-  NEW_BODY="$(echo "$CURRENT_BODY" | awk '
-    /^## Screenshots/ { skip=1; while ((getline line < "'"$SECTION_FILE"'") > 0) print line; next }
+  NEW_BODY="$(echo "$CURRENT_BODY" | awk -v section_file="$SECTION_FILE" '
+    /^## Screenshots/ { skip=1; while ((getline line < section_file) > 0) print line; next }
     /^## / && skip { skip=0 }
     !skip { print }
   ')"
