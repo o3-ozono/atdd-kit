@@ -46,13 +46,13 @@
     },
     {
       "id": 3,
-      "name": "autopilot-guard-direct-invocation-warning",
+      "name": "autopilot-guard-direct-invocation-block",
       "prompt": "/atdd-kit:discover を直接実行。Issue #400 の要件を探索したい。autopilot は経由していない。",
-      "expected_output": "Shows warning recommending autopilot, but proceeds with execution since it is a soft warning.",
+      "expected_output": "AUTOPILOT-GUARD blocks execution. Shows message recommending autopilot and STOPs.",
       "files": [],
       "assertions": [
-        {"id": "D1", "text": "autopilot 経由での実行を推奨する警告メッセージを表示している", "type": "structural"},
-        {"id": "D2", "text": "スキルの実行自体はブロックせず続行している", "type": "structural"}
+        {"id": "D1", "text": "autopilot 経由での実行を推奨するメッセージを表示している", "type": "structural"},
+        {"id": "D2", "text": "スキルの実行をブロックして STOP している（続行しない）", "type": "structural"}
       ]
     }
   ]
