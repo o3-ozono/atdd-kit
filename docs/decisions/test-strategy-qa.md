@@ -1,274 +1,334 @@
-# Test Strategy: QA
+# Test Strategy -- QA
 
-Issue #22: bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
+Issue #3: bug: discover の autopilot モード検出が PO 直接呼び出しを認識しない
 
-## 1. AC ごとのテスト層選定
+## 1. Outer Loop (Story Test)
 
-| AC | テスト層 | 理由 |
-|----|---------|------|
-| AC1: merge-base 基点の SKILL.md 変更検出 | Unit (BATS) — 動的 | git リポジトリの分岐状態を再現し、スクリプトを実行して stdout JSON を検証 |
-| AC2: ブランチ導入の SKILL.md 変更検出 | Unit (BATS) — 動的 | ブランチ側の SKILL.md 変更を再現してブロック動作を検証 |
-| AC3: 引数中の "git push" 誤検知防止 | Unit (BATS) — 動的 | stdin JSON の command フィールドに対する regex 挙動を検証 |
-| AC4: チェーンコマンド中の git push 検出 | Unit (BATS) — 動的 | チェーンコマンドの command フィールドに対する regex 検証 |
+- **User Story:** autopilot PO として、discover/plan/atdd を Skill tool で直接呼び出した際に autopilot モードが正しく検出されてほしい。そうすることで、AUTOPILOT-GUARD 警告のスキップと承認フロー制御が正しく動作する。
+- **Test layer:** Integration (BATS)
+- **Rationale:** 対象は SKILL.md / autopilot.md のプロンプトテキスト。実行環境不要で、テキストパターン検証で十分。BATS の sed + grep パターンで cross-file consistency を含む統合検証が可能。E2E は不要（LLM 実行を伴わないテキスト仕様変更のため）。
 
-全 AC が Unit (BATS) 動的テスト。Integration / E2E 層は不要。
+## 2. AC ごとのテスト層選定
 
-**理由:** eval-guard.sh は stdin JSON → stdout JSON の純粋な変換スクリプト。外部依存は git コマンドのみで、一時 git リポジトリで完全に制御可能。Claude Code の hook フレームワークとの統合テスト（E2E）は scope 外。
+| AC | テスト層 | Rationale |
+|----|---------|-----------|
+| AC1: discover の `--autopilot` 検出 | Unit (BATS) | SKILL.md 内の4箇所（HARD-GATE, AUTOPILOT-GUARD, Step 7, Step 8）のテキストパターン検証 |
+| AC2: discover Standalone モード維持 | Unit (BATS) | Step 7/Step 8 の standalone 分岐テキストが維持されていることの検証 |
+| AC3: plan の `--autopilot` 検出 | Unit (BATS) | AUTOPILOT-GUARD 内のテキストパターン検証 |
+| AC4: atdd の `--autopilot` 検出 | Unit (BATS) | AUTOPILOT-GUARD 内のテキストパターン検証 |
+| AC5: autopilot.md の `--autopilot` 付与 | Unit (BATS) | Phase 1, Phase 3 の Skill 呼び出しテキスト検証 |
+| AC6: 既存テスト全件 PASS | Integration (BATS) | テストファイル自体の更新。`bats tests/` 実行で全件 PASS を確認 |
 
-## 2. テストファイル構成
+## 3. 具体的なテストケース設計
 
-### 新規テストファイル
+### テストファイル
 
-```
-tests/test_eval_guard.bats
-```
+既存の `tests/test_discover_autopilot_approval.bats` を更新する。新規テストファイルは作成しない（同一テーマ・同一ファイル群を対象としているため）。
 
-**配置理由:** eval-guard.sh は `hooks/` 直下のコアスクリプト（addon 固有ではない）。`tests/` 配下に配置。
-
-**既存テストとの関係:**
-- `tests/` 配下の既存テストは全て静的テスト（grep でマークダウンを検証）
-- `addons/ios/tests/` 配下の sim-pool-guard テストは動的テスト（スクリプト実行 + JSON 検証）
-- eval-guard テストは sim-pool-guard の **動的テストパターン**（`run_guard()` ヘルパー + `jq` アサーション）を採用
-- 加えて、git リポジトリのセットアップが必要（sim-pool-guard にはない要素）
-
-**既存テストへの影響: なし。** eval-guard 専用の BATS テストは存在しないため、既存テストの修正は不要。
-
-### テストファイルの内部構成
-
-```
-tests/test_eval_guard.bats
-├── setup()                  — 一時 git リポジトリ + bare remote + eval マーカーディレクトリ
-├── teardown()               — 一時ディレクトリの削除
-├── run_eval_guard()         — ヘルパー関数（command → stdin JSON → スクリプト実行）
-├── AC1 セクション (2 tests) — merge-base regression テスト
-├── AC2 セクション (3 tests) — ブランチ側 SKILL.md 検出 + メッセージ検証
-├── AC3 セクション (3 tests) — コマンド引数の誤検知防止
-├── AC4 セクション (4 tests) — チェーンコマンド + パイプ検出
-├── BOUNDARY セクション (6 tests) — 境界条件テスト
-└── REGRESSION セクション (3 tests) — 既存動作の維持確認
-```
-
-## 3. テスト環境のセットアップ
-
-### setup() 設計
-
-eval-guard.sh は以下の外部状態に依存する:
-1. **git リポジトリ** — `git branch --show-current`, `git diff --name-only origin/main...HEAD`
-2. **eval マーカー** — `$XDG_CACHE_HOME/atdd-kit/eval-ran-<branch>`
-3. **stdin JSON** — `{"command": "..."}` 形式の PreToolUse hook 入力
+### ファイルヘッダ / 変数
 
 ```bash
-setup() {
-  # --- 一時 git リポジトリ ---
-  TEST_REPO="${BATS_TMPDIR}/eval-guard-repo-$$"
-  mkdir -p "$TEST_REPO"
-  git -C "$TEST_REPO" init -b main
-  git -C "$TEST_REPO" config user.email "test@test.com"
-  git -C "$TEST_REPO" config user.name "test"
+#!/usr/bin/env bats
 
-  # initial commit with SKILL.md
-  mkdir -p "$TEST_REPO/skills/session-start"
-  mkdir -p "$TEST_REPO/skills/discover"
-  echo "initial" > "$TEST_REPO/skills/session-start/SKILL.md"
-  echo "initial" > "$TEST_REPO/skills/discover/SKILL.md"
-  echo "readme" > "$TEST_REPO/README.md"
-  git -C "$TEST_REPO" add .
-  git -C "$TEST_REPO" commit -m "initial"
+# Issue #3: discover の autopilot モード検出が PO 直接呼び出しを認識しない
+# Tests verify --autopilot flag detection in discover, plan, atdd, and autopilot
 
-  # origin/main をシミュレート（bare リポジトリ + remote 設定）
-  BARE_REPO="${BATS_TMPDIR}/eval-guard-bare-$$"
-  git clone --bare "$TEST_REPO" "$BARE_REPO"
-  git -C "$TEST_REPO" remote add origin "$BARE_REPO"
-  git -C "$TEST_REPO" fetch origin
+DISCOVER="skills/discover/SKILL.md"
+PLAN="skills/plan/SKILL.md"
+ATDD="skills/atdd/SKILL.md"
+AUTOPILOT="commands/autopilot.md"
+```
 
-  # --- eval マーカーディレクトリ ---
-  TEST_CACHE="${BATS_TMPDIR}/eval-guard-cache-$$"
-  mkdir -p "$TEST_CACHE/atdd-kit"
-  export XDG_CACHE_HOME="$TEST_CACHE"
+Note: 既存の `OVERRIDES` 変数は使用されていないため削除。`PLAN` と `ATDD` を追加。
 
-  # --- eval-guard.sh の絶対パス ---
-  GUARD="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/hooks/eval-guard.sh"
+---
+
+### AC1: discover の --autopilot 検出 (6テスト)
+
+```bash
+# --- AC1: --autopilot フラグで autopilot モード検出 ---
+
+@test "AC1: HARD-GATE autopilot exception references --autopilot flag" {
+  local hard_gate
+  hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
+  echo "$hard_gate" | grep -q '\-\-autopilot'
+}
+
+@test "AC1: HARD-GATE exception requires BOTH --autopilot AND AC Review Round" {
+  local hard_gate
+  hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
+  echo "$hard_gate" | grep -q '\-\-autopilot'
+  echo "$hard_gate" | grep -qi 'AC Review Round'
+}
+
+@test "AC1: AUTOPILOT-GUARD uses --autopilot flag for mode detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+
+@test "AC1: Step 7 autopilot branch uses --autopilot flag" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -q '\-\-autopilot'
+}
+
+@test "AC1: Step 7 autopilot mode outputs draft AC and skips approval" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -qi 'draft'
+  echo "$step7" | grep -qi 'skip'
+}
+
+@test "AC1: Step 8 autopilot skip references --autopilot flag" {
+  local step8
+  step8=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
+  echo "$step8" | grep -q '\-\-autopilot'
 }
 ```
 
-### teardown() 設計
+---
+
+### AC2: Standalone モード維持 (3テスト -- 既存テスト継続)
 
 ```bash
-teardown() {
-  rm -rf "$TEST_REPO" "$BARE_REPO" "$TEST_CACHE"
+# --- AC2: standalone mode preserves approval gate ---
+
+@test "AC2: Step 7 standalone mode preserves approval request text" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -qi 'Approve.*Needs revision\|approve'
+}
+
+@test "AC2: Step 8 standalone mode preserves Issue comment posting" {
+  local step8
+  step8=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
+  echo "$step8" | grep -q 'gh issue comment'
+}
+
+@test "AC2: Step 8 standalone mode preserves inline plan execution" {
+  local step8
+  step8=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
+  echo "$step8" | grep -qi 'inline.*plan\|plan.*inline\|plan.*Core.*Flow'
 }
 ```
 
-### run_eval_guard() ヘルパー
+Note: 既存テスト #7, #8, #9 をそのまま維持。assertion パターンは standalone パスのテキストを検証しており、`--autopilot` 変更に影響されない。
 
-sim-pool-guard の `run_guard()` パターンに倣い、command フィールドを含む JSON を stdin に渡す。eval-guard.sh は `git branch`, `git diff` を実行するため、カレントディレクトリを一時 git リポジトリにする必要がある。
+---
+
+### AC3: plan の --autopilot 検出 (1テスト -- 新規)
 
 ```bash
-run_eval_guard() {
-  local command="$1"
-  printf '{"command": "%s"}' "$command" | \
-    (cd "$TEST_REPO" && bash "$GUARD")
+# --- AC3: plan の AUTOPILOT-GUARD ---
+
+@test "AC3: plan AUTOPILOT-GUARD uses --autopilot flag" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
+  echo "$guard" | grep -q '\-\-autopilot'
 }
 ```
 
-### シナリオ別セットアップヘルパー
+---
 
-AC ごとにブランチ・コミット状態が異なるため、テスト内でセットアップヘルパーを呼ぶ。
+### AC4: atdd の --autopilot 検出 (1テスト -- 新規)
 
 ```bash
-# AC1 用: main 分岐後に main 側で SKILL.md 変更、ブランチは README のみ
-create_main_side_change() {
-  git -C "$TEST_REPO" checkout -b feature
-  echo "changed" > "$TEST_REPO/README.md"
-  git -C "$TEST_REPO" add README.md
-  git -C "$TEST_REPO" commit -m "edit readme"
-  git -C "$TEST_REPO" checkout main
-  echo "changed on main" > "$TEST_REPO/skills/session-start/SKILL.md"
-  git -C "$TEST_REPO" add .
-  git -C "$TEST_REPO" commit -m "main: update SKILL.md"
-  git -C "$TEST_REPO" push origin main
-  git -C "$TEST_REPO" checkout feature
-}
+# --- AC4: atdd の AUTOPILOT-GUARD ---
 
-# AC2 用: ブランチ上で SKILL.md を変更
-create_branch_skill_change() {
-  git -C "$TEST_REPO" checkout -b feature
-  echo "changed on branch" > "$TEST_REPO/skills/session-start/SKILL.md"
-  git -C "$TEST_REPO" add .
-  git -C "$TEST_REPO" commit -m "branch: update SKILL.md"
+@test "AC4: atdd AUTOPILOT-GUARD uses --autopilot flag" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
+  echo "$guard" | grep -q '\-\-autopilot'
 }
 ```
 
-## 4. 各 AC のテストケース設計
+---
 
-### AC1: merge-base 基点の SKILL.md 変更検出（regression test）
-
-セットアップ: `create_main_side_change()` — main 分岐後に main 側で SKILL.md を変更。ブランチ側は README のみ。
-
-```
-main:     A --- B (SKILL.md changed, pushed to origin)
-               \
-feature:        C (README only) ← HEAD
-```
-
-| テスト ID | テスト名 | stdin command | 期待結果 |
-|----------|---------|---------------|---------|
-| AC1.1 | main 側 SKILL.md 変更で誤ブロックしない | `git push origin feature` | `{}` を返す |
-| AC1.2 | main 側で複数 SKILL.md 変更でも誤ブロックしない | `git push origin feature` | `{}` を返す |
-
-AC1.2 のセットアップでは、main で `skills/session-start/SKILL.md` と `skills/discover/SKILL.md` の両方を変更する。
-
-**Key insight:** `origin/main...HEAD` (three-dot) は merge-base からの差分を返すため、main 側の SKILL.md 変更はブランチの diff に含まれない。`origin/main` (two-dot, 現行バグ) は main の HEAD との双方向 diff を返すため、main 側の変更も含まれてしまう。
-
-### AC2: ブランチ導入の SKILL.md 変更は正しく検出
-
-セットアップ: `create_branch_skill_change()` — ブランチ上で SKILL.md を変更。eval マーカーなし。
-
-| テスト ID | テスト名 | stdin command | 期待結果 |
-|----------|---------|---------------|---------|
-| AC2.1 | ブランチの SKILL.md 変更を検出してブロック | `git push origin feature` | `permissionDecision: "deny"` |
-| AC2.2 | ブロックメッセージにスキル名を含む | `git push origin feature` | reason に `"SKILL.md changes detected (session-start)"` |
-| AC2.3 | 複数 SKILL.md 変更時に全スキル名をメッセージに含む | `git push origin feature` | reason に `"session-start"` と `"discover"` の両方 |
-
-AC2.3 のセットアップでは、ブランチで `skills/session-start/SKILL.md` と `skills/discover/SKILL.md` の両方を変更する。
-
-### AC3: コマンド引数中の "git push" 文字列で誤検知しない
-
-セットアップ: `create_branch_skill_change()` — SKILL.md 変更あり（ブロック条件到達のため）。eval マーカーなし。
-
-**重要:** SKILL.md 変更があることで、`git push` 検出の後段のブロックロジックに到達することを保証する。SKILL.md 変更がなければそもそもブロックしないため、テストが false positive（通るが意味がない）になる。
-
-| テスト ID | テスト名 | stdin command | 期待結果 |
-|----------|---------|---------------|---------|
-| AC3.1 | commit メッセージ中の "git push" で誤検知しない | `git commit -m "fix: remember to git push"` | `{}` を返す |
-| AC3.2 | echo 引数中の "git push" で誤検知しない | `echo "run git push later"` | `{}` を返す |
-| AC3.3 | grep 引数中の "git push" で誤検知しない | `git log --oneline \| grep "git push"` | `{}` を返す |
-
-### AC4: チェーンコマンド中の git push を正しく検出
-
-セットアップ: `create_branch_skill_change()` — SKILL.md 変更あり、eval マーカーなし。
-
-| テスト ID | テスト名 | stdin command | 期待結果 |
-|----------|---------|---------------|---------|
-| AC4.1 | && チェーンの git push を検出 | `git add . && git push origin feature` | `permissionDecision: "deny"` |
-| AC4.2 | ; チェーンの git push を検出 | `git add . ; git push origin feature` | `permissionDecision: "deny"` |
-| AC4.3 | \|\| チェーンの git push を検出 | `git add . \|\| git push origin feature` | `permissionDecision: "deny"` |
-| AC4.4 | パイプ経由の git push を検出 | `echo foo \| git push origin feature` | `permissionDecision: "deny"` |
-
-## 5. テストバリエーション（境界条件・エラーケース）
-
-### BOUNDARY: 境界条件テスト
-
-| テスト ID | テスト名 | 条件 | 期待結果 |
-|----------|---------|------|---------|
-| B1 | main ブランチ上の push はスキップ | `git checkout main` した状態 | `{}` を返す |
-| B2 | detached HEAD の push はスキップ | `git checkout --detach` した状態 | `{}` を返す |
-| B3 | eval マーカー存在時は push 許可 | SKILL.md 変更あり + `eval-ran-feature` マーカーファイル存在 | `{}` を返す |
-| B4 | origin/main 不在時は push 許可（fail-open） | `git remote remove origin` した状態 | `{}` を返す |
-| B5 | 不正 JSON 入力で push 許可（fail-open） | stdin に `invalid json` | `{}` を返す |
-| B6 | 空 command で push 許可 | `{"command": ""}` | `{}` を返す |
-
-### REGRESSION: 既存動作の維持確認
-
-| テスト ID | テスト名 | 検証内容 |
-|----------|---------|---------|
-| REG.1 | eval-guard.sh が存在する | `[[ -f hooks/eval-guard.sh ]]` |
-| REG.2 | eval-guard.sh が set -euo pipefail で始まる | `grep -q 'set -euo pipefail' hooks/eval-guard.sh` |
-| REG.3 | 出力が有効な JSON | 全テストケースの出力が `jq -e .` でパース可能、または空文字列 `{}` |
-
-## 6. カバレッジ戦略
-
-### テスト数サマリー
-
-| セクション | テスト数 |
-|-----------|---------|
-| AC1 (regression) | 2 |
-| AC2 (正常ブロック) | 3 |
-| AC3 (誤検知防止) | 3 |
-| AC4 (チェーンコマンド) | 4 |
-| BOUNDARY | 6 |
-| REGRESSION | 3 |
-| **合計** | **21** |
-
-### リグレッションリスク分析
-
-| 変更箇所 | リスク | テストカバレッジ |
-|----------|-------|---------------|
-| L34: `git diff --name-only origin/main` → `origin/main...HEAD` | **高** — diff の意味が根本的に変わる | AC1.1, AC1.2 が直接カバー。AC2.1-AC2.3 が逆方向を確認 |
-| L20: `grep -q 'git push'` → regex 強化 | **高** — マッチ範囲が変わる | AC3.1-AC3.3 が false positive 排除。AC4.1-AC4.4 が true positive 確認 |
-| それ以外の行 | **なし** — 変更なし | BOUNDARY + REGRESSION で既存動作を確認 |
-
-### カバレッジギャップ（許容）
-
-1. **L17 の sed JSON パース:** 脆弱だが Issue #22 scope 外。B5 (不正 JSON) で fail-open を確認するのみ。
-2. **XDG_CACHE_HOME 未設定時の fallback:** L44 の `${XDG_CACHE_HOME:-$HOME/.cache}` — setup() で XDG_CACHE_HOME を設定するため fallback パスは未テスト。Priority 低。
-
-## 7. JSON 出力の検証方法
-
-sim-pool-guard テストの `jq -e` パターンを採用。
-
-**ブロックしない場合:**
-```bash
-result=$(run_eval_guard "git commit -m 'test'")
-[[ "$result" == '{}' ]]
-```
-
-**ブロックする場合:**
-```bash
-result=$(run_eval_guard "git push origin feature")
-echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
-```
-
-**メッセージ検証:**
-```bash
-reason=$(echo "$result" | jq -r '.hookSpecificOutput.permissionDecisionReason')
-[[ "$reason" == *"SKILL.md changes detected (session-start)"* ]]
-```
-
-## 8. テスト実行
+### AC5: autopilot.md の --autopilot 付与 (2テスト -- 新規)
 
 ```bash
-bats tests/test_eval_guard.bats
+# --- AC5: autopilot.md の Skill 呼び出しに --autopilot 付与 ---
+
+@test "AC5: autopilot Phase 1 discover call includes --autopilot" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -q '\-\-autopilot'
+}
+
+@test "AC5: autopilot Phase 3 atdd call includes --autopilot" {
+  local phase3
+  phase3=$(sed -n '/## Phase 3/,/## Phase 4/p' "$AUTOPILOT")
+  echo "$phase3" | grep -q '\-\-autopilot'
+}
 ```
 
-`jq` がテスト環境に必要（JSON パース用）。プロジェクトの既存テスト（sim-pool-guard）も `jq` を使用しているため、追加依存なし。
+---
+
+### Negative tests: 旧方式除去の確認 (3テスト -- 新規)
+
+```bash
+# --- REGRESSION: <teammate-message> 旧方式が除去されている ---
+
+@test "REGRESSION: discover AUTOPILOT-GUARD does not use teammate-message for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
+  ! echo "$guard" | grep -q 'teammate-message'
+}
+
+@test "REGRESSION: plan AUTOPILOT-GUARD does not use teammate-message for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
+  ! echo "$guard" | grep -q 'teammate-message'
+}
+
+@test "REGRESSION: atdd AUTOPILOT-GUARD does not use teammate-message for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
+  ! echo "$guard" | grep -q 'teammate-message'
+}
+```
+
+---
+
+### Cross-file consistency (2テスト -- 既存テスト更新)
+
+```bash
+# --- Cross-file consistency ---
+
+@test "discover HARD-GATE and autopilot AC Review Round are consistent on approval flow" {
+  grep -qi 'AC Review Round' "$DISCOVER"
+  grep -qi 'approval' "$AUTOPILOT"
+}
+
+@test "discover autopilot exception is documented in HARD-GATE, not just Step 7" {
+  local hard_gate
+  hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
+  echo "$hard_gate" | grep -qi '\-\-autopilot\|AC Review Round'
+}
+```
+
+Note: テスト #15 はそのまま維持。テスト #16 は `autopilot\|AC Review Round` → `\-\-autopilot\|AC Review Round` に更新（より厳密に。ただし optional -- 現行でも PASS する）。
+
+---
+
+### Autopilot AC Review Round テスト (5テスト -- 既存テスト維持)
+
+```bash
+# --- autopilot AC Review Round (既存テスト -- 変更なし) ---
+
+@test "autopilot AC Review Round posts Issue comment after user approval" {
+  local acr
+  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
+  echo "$acr" | grep -q 'gh issue comment'
+}
+
+@test "autopilot Issue comment is posted AFTER approval, not before" {
+  local acr
+  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
+  local approval_line comment_line
+  approval_line=$(echo "$acr" | grep -ni 'approv' | head -1 | cut -d: -f1)
+  comment_line=$(echo "$acr" | grep -ni 'gh issue comment' | head -1 | cut -d: -f1)
+  [[ -n "$approval_line" ]]
+  [[ -n "$comment_line" ]]
+  [[ "$approval_line" -lt "$comment_line" ]]
+}
+
+@test "autopilot AC Review Round mentions Three Amigos integration" {
+  local acr
+  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
+  echo "$acr" | grep -qi 'Three Amigos'
+}
+
+@test "autopilot AC Review Round has reject handling" {
+  local acr
+  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
+  echo "$acr" | grep -qi 'reject'
+}
+
+@test "reject triggers PO modification, not AC Review Round restart" {
+  local acr
+  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
+  echo "$acr" | grep -qi 'PO.*修正\|PO.*modif\|PO.*revise\|PO.*correct'
+}
+```
+
+## 4. 既存テスト更新計画
+
+### `test_discover_autopilot_approval.bats` 全18テスト
+
+| # | 既存テスト名 | 対応 | 詳細 |
+|---|------------|------|------|
+| 1 | AC5: HARD-GATE contains autopilot exception clause | **更新** | `teammate-message` grep → `--autopilot` grep。テスト名も AC1 に付け替え |
+| 2 | AC5: HARD-GATE exception requires BOTH teammate-message AND AC Review Round approval | **更新** | テスト名・assertion を `--autopilot` + AC Review Round に変更 |
+| 3 | AC1: Step 7 has autopilot-mode conditional branch | **更新** | `teammate-message\|autopilot` → `--autopilot` に厳密化 |
+| 4 | AC1: Step 7 autopilot mode outputs draft AC without approval request | **維持** | `draft` grep は変更不要 |
+| 5 | AC1: Step 7 autopilot mode skips approval request | **統合** | テスト #4 と統合して「outputs draft AC and skips approval」に |
+| 6 | AC1: Step 8 has autopilot skip instruction | **更新** | `--autopilot` を含む assertion に強化 |
+| 7 | AC2: Step 7 standalone mode preserves approval request text | **維持** | standalone パスは変更なし |
+| 8 | AC2: Step 8 standalone mode preserves Issue comment posting | **維持** | standalone パスは変更なし |
+| 9 | AC2: Step 8 standalone mode preserves inline plan execution | **維持** | standalone パスは変更なし |
+| 10 | AC4: autopilot AC Review Round posts Issue comment after user approval | **維持** | autopilot.md の AC Review Round は変更なし |
+| 11 | AC4: autopilot Issue comment is posted AFTER approval, not before | **維持** | 順序検証は変更なし |
+| 12 | AC3: autopilot AC Review Round mentions Three Amigos integration | **維持** | 変更なし |
+| 13 | AC3: autopilot AC Review Round has reject handling | **維持** | 変更なし |
+| 14 | AC3: reject triggers PO modification, not AC Review Round restart | **維持** | 変更なし |
+| 15 | Cross-file: HARD-GATE and autopilot AC Review Round are consistent | **維持** | `teammate-message` に依存していない |
+| 16 | Cross-file: autopilot exception is documented in HARD-GATE | **更新 (optional)** | `--autopilot` に厳密化 |
+
+**まとめ:**
+- **更新:** 4件 (#1, #2, #3, #6) + 1件 optional (#16)
+- **維持:** 11件 (#7-#15)
+- **統合:** 1件 (#4 + #5 → 1テスト)
+- **削除:** 0件
+- **新規追加:** 7件 (AC1-GUARD, AC3, AC4, AC5 x2, REGRESSION x3)
+
+### 最終テスト数
+
+18 (既存) - 1 (統合) + 7 (新規) = **24件**
+
+## 5. カバレッジ戦略
+
+### 境界条件
+
+| 境界条件 | テストの有無 | 対応 |
+|---------|------------|------|
+| `--autopilot` が引数の唯一の要素 | テスト不要 | SKILL.md はプロンプト記述。LLM が `--autopilot` の存在を判定するため、位置の厳密なテストは不適切 |
+| `--autopilot` と Issue 番号の順序 | テスト不要 | 同上 |
+| typo（`--auto-pilot`, `-autopilot`） | テスト不要 | LLM の引数解釈の問題であり、テキストパターンテストの対象外 |
+| Bug Flow Step 5 の autopilot 分岐 | カバー済み | Step 5 は "same as development flow Step 7" と参照。Step 7 テスト (AC1) で間接カバー |
+
+### エッジケース
+
+| エッジケース | テストの有無 | 対応 |
+|------------|------------|------|
+| ユーザーが standalone で `--autopilot` を付けた場合 | テスト不要 | ユーザーの意図的な操作。ブロックしない方針 |
+| HARD-GATE と AUTOPILOT-GUARD の一貫性 | テストあり | AC1 のテストで HARD-GATE と GUARD の両方を検証 |
+| 3つの SKILL.md 間の一貫性 | テストあり | AC1 (discover), AC3 (plan), AC4 (atdd) + REGRESSION negative tests |
+
+## 6. リグレッションリスク分析
+
+### 影響範囲
+
+`teammate-message` を grep しているテストは `test_discover_autopilot_approval.bats` のみ（tests/ 配下全43ファイルを確認済み）。他のテストファイルへの影響はない。
+
+### リスク一覧
+
+| リスク | 影響度 | 発生確率 | 対策 |
+|--------|-------|---------|------|
+| 既存テスト #1, #2 が FAIL | 高 | 確実 | AC6: テスト更新で対応 |
+| 既存テスト #3 が assertion 緩すぎで PASS するが不正確 | 低 | 中 | `--autopilot` に厳密化 |
+| plan/atdd の AUTOPILOT-GUARD 変更で他テストが FAIL | 低 | なし | 他テストに plan/atdd GUARD テストは存在しない |
+| autopilot.md Phase 1 変更で test_po_dev_qa.bats が FAIL | 低 | なし | `Phase.*1.*discover` パターンは `--autopilot` 追加後も PASS |
+| autopilot.md Phase 1 変更で test_autopilot_args.bats が FAIL | 低 | なし | 引数解析テストで Skill 呼び出し記述に依存していない |
+
+### 既存機能の安全性
+
+以下の機能は変更の影響を受けない:
+- AC Review Round フロー（autopilot.md のこのセクションは変更なし）
+- Plan Review Round フロー（変更なし）
+- Phase 3-5 フロー（Phase 3 の atdd 呼び出しに `--autopilot` 追加のみ）
+- discover Development Flow Steps 1-6（変更なし）
+- discover Bug Flow Steps 1-4, 6（変更なし）
+- plan Core Flow Steps 1-8（AUTOPILOT-GUARD のみ変更）
+- atdd 全フロー（AUTOPILOT-GUARD のみ変更）

@@ -1,279 +1,311 @@
-# Implementation Strategy: Issue #22
+# Implementation Strategy — Developer
 
-**Issue:** #22 — bug: eval-guard.sh が main 側の SKILL.md 変更を誤検知する
-**Author:** Developer Agent
+**Issue:** #3 — bug: discover の autopilot モード検出が PO 直接呼び出しを認識しない
+**Author:** Developer
 **Date:** 2026-04-12
 **Prior Decision:** `docs/decisions/ac-review-developer.md`
 
-## 1. File Structure and Modification Map
+## 1. Flag Detection Specification
 
-### Modified Files
+### Detection Method
 
-| # | File | Nature of Change |
-|---|------|------------------|
-| F1 | `hooks/eval-guard.sh` | Line 34: two-dot diff → three-dot diff. Line 20: simple grep → regex for command detection. |
-| F2 | `tests/test_eval_guard.bats` | **New file** — Functional BATS tests for all 4 ACs |
-| F3 | `hooks/README.md` | Update eval-guard description to reflect three-dot diff |
-| F4 | `CHANGELOG.md` | Add entry under `[Unreleased]` |
-| F5 | `.claude-plugin/plugin.json` | Version bump (PATCH) |
+ARGUMENTS 文字列に対する単純な contains チェック。SKILL.md はマークダウン指示であり LLM が解釈するため、プログラム的なパース（正規表現等）は不要。
 
-### Unchanged Files (verify-only)
+**判定基準:**
+- ARGUMENTS に `--autopilot` が含まれる → **Autopilot mode**
+- ARGUMENTS に `--autopilot` が含まれない → **Standalone mode**
+
+**記述パターン（全スキル共通）:**
+```
+If ARGUMENTS contains `--autopilot`: [autopilot behavior]
+If ARGUMENTS does not contain `--autopilot`: [standalone behavior]
+```
+
+**Rationale:**
+- LLM が自然言語指示として解釈するため `contains` で十分
+- 引数順序（`"3 --autopilot"` vs `"--autopilot 3"`）に依存しない
+- 将来のフラグ追加（`"3 --autopilot --verbose"`）にも対応可能
+- `<teammate-message>` のようなコンテキスト依存ではなく明示的フラグなので確実に制御可能
+
+## 2. Target Files and Changes
+
+### File 1: `skills/discover/SKILL.md` (AC1 + AC2)
+
+**4 箇所の変更:**
+
+#### 1a — HARD-GATE autopilot exception (L15)
+
+```
+Before:
+**Autopilot exception:** When discover is invoked via autopilot (`<teammate-message>` from team-lead is present), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) `<teammate-message>` from team-lead is present, AND (2) the AC Review Round completes with user approval.
+
+After:
+**Autopilot exception:** When discover is invoked via autopilot (ARGUMENTS contains `--autopilot`), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) the AC Review Round completes with user approval.
+```
+
+#### 1b — AUTOPILOT-GUARD (L18-23)
+
+```
+Before:
+<AUTOPILOT-GUARD>
+If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
+- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
+- **Do not block execution.** Proceed normally after showing the warning.
+If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
+</AUTOPILOT-GUARD>
+
+After:
+<AUTOPILOT-GUARD>
+If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
+- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
+- **Do not block execution.** Proceed normally after showing the warning.
+If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
+</AUTOPILOT-GUARD>
+```
+
+#### 1c — Step 7 (L230-232)
+
+```
+Before:
+**Autopilot mode** (a `<teammate-message>` from team-lead is present): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
+
+**Standalone mode** (no `<teammate-message>` — user invoked discover directly): Present the full AC set to the user:
+
+After:
+**Autopilot mode** (ARGUMENTS contains `--autopilot`): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
+
+**Standalone mode** (ARGUMENTS does not contain `--autopilot` — user invoked discover directly): Present the full AC set to the user:
+```
+
+#### 1d — Step 8 (L251)
+
+```
+Before:
+> **Autopilot mode skip:** When discover was invoked via autopilot (`<teammate-message>` from team-lead), this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
+
+After:
+> **Autopilot mode skip:** When ARGUMENTS contains `--autopilot`, this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
+```
+
+**AC2 (Standalone 維持):** 上記 1b の AUTOPILOT-GUARD と 1c の Step 7 の Standalone モード記述を維持。AC1 の変更後もフラグなし呼び出しは従来通り動作する。検証は同一コミット内で行う。
+
+---
+
+### File 2: `skills/plan/SKILL.md` (AC3)
+
+**1 箇所の変更:**
+
+#### 2a — AUTOPILOT-GUARD (L16-21)
+
+```
+Before:
+<AUTOPILOT-GUARD>
+If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
+- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
+- **Do not block execution.** Proceed normally after showing the warning.
+If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
+</AUTOPILOT-GUARD>
+
+After:
+<AUTOPILOT-GUARD>
+If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
+- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
+- **Do not block execution.** Proceed normally after showing the warning.
+If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
+</AUTOPILOT-GUARD>
+```
+
+---
+
+### File 3: `skills/atdd/SKILL.md` (AC4)
+
+**1 箇所の変更:**
+
+#### 3a — AUTOPILOT-GUARD (L12-17)
+
+File 2 と完全同一パターンの書き換え。
+
+---
+
+### File 4: `commands/autopilot.md` (AC5)
+
+**2 箇所の変更:**
+
+#### 4a — Phase 1, step 3 (L124)
+
+```
+Before:
+3. Use Skill tool to invoke `atdd-kit:discover` for the Issue
+
+After:
+3. Use Skill tool to invoke `atdd-kit:discover` with args `"<number> --autopilot"` for the Issue
+```
+
+#### 4b — Phase 3, step 1 (L187)
+
+```
+Before:
+1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and all prior Decision Trail file paths as context — Developer uses Skill tool to invoke `atdd-kit:atdd`
+
+After:
+1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and all prior Decision Trail file paths as context — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
+```
+
+---
+
+### File 5: `tests/test_discover_autopilot_approval.bats` (AC6)
+
+**テスト更新方針:**
+
+既存テストは Issue #155 の AC 体系に基づいている。検出メカニズムが `<teammate-message>` → `--autopilot` に変わるため、以下を更新:
+
+#### 更新が必要なテスト（3 件）
+
+| Test (Line) | Current assertion | After |
+|-------------|-------------------|-------|
+| L12-16 "HARD-GATE contains autopilot exception clause" | `grep -q 'teammate-message'` | `grep -q '\-\-autopilot'` |
+| L18-24 "HARD-GATE exception requires BOTH..." | `grep -qi 'teammate-message'` + テスト名 | `grep -qi '\-\-autopilot'` + テスト名を `--autopilot AND AC Review Round` に変更 |
+| L32 Step 7 conditional | `grep -qi 'teammate-message\|autopilot'` | `grep -qi '\-\-autopilot\|autopilot'` (引き続きマッチするため実質変更不要だが、明示的に `--autopilot` を先頭にすべき) |
+
+#### 変更不要なテスト（11 件）
+
+| Test group | Reason |
+|------------|--------|
+| L28-31 "Step 7 has autopilot-mode conditional branch" | `autopilot` でマッチするため変更不要（`--autopilot` は `autopilot` を含む） |
+| L35-39 "Step 7 outputs draft AC" | `draft` のアサーション — 影響なし |
+| L41-45 "Step 7 skips approval" | `skip` のアサーション — 影響なし |
+| L47-51 "Step 8 has autopilot skip" | `skip\|autopilot` — 引き続きマッチ |
+| L55-71 AC2 Standalone tests | `Approve`, `gh issue comment`, `plan` のアサーション — 影響なし |
+| L75-91 AC4 autopilot tests | autopilot.md の AC Review Round セクションをテスト — 影響なし |
+| L95-111 AC3 Three Amigos tests | autopilot.md をテスト — 影響なし |
+| L115-125 Cross-file consistency | `AC Review Round` と `approval` のアサーション — 影響なし |
+
+#### 新規テスト追加（2 件）
+
+新規 AC に対応するテストを追加:
+
+```bash
+# --- AC5: autopilot.md passes --autopilot flag in Skill calls ---
+
+@test "AC5: autopilot Phase 1 passes --autopilot in discover Skill call" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -q '\-\-autopilot'
+}
+
+@test "AC5: autopilot Phase 3 passes --autopilot in atdd Skill call" {
+  local phase3
+  phase3=$(sed -n '/## Phase 3/,/## Phase 4/p' "$AUTOPILOT")
+  echo "$phase3" | grep -q '\-\-autopilot'
+}
+```
+
+#### AUTOPILOT-GUARD テスト追加（3 件）
+
+```bash
+# --- AUTOPILOT-GUARD uses --autopilot flag ---
+
+@test "discover AUTOPILOT-GUARD uses --autopilot flag for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+
+@test "plan AUTOPILOT-GUARD uses --autopilot flag for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "skills/plan/SKILL.md")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+
+@test "atdd AUTOPILOT-GUARD uses --autopilot flag for detection" {
+  local guard
+  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "skills/atdd/SKILL.md")
+  echo "$guard" | grep -q '\-\-autopilot'
+}
+```
+
+#### 残骸チェックテスト追加（1 件）
+
+```bash
+# --- No teammate-message residue in autopilot detection ---
+
+@test "No teammate-message references remain in skill AUTOPILOT-GUARDs" {
+  for skill in discover plan atdd; do
+    local guard
+    guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "skills/$skill/SKILL.md")
+    ! echo "$guard" | grep -qi 'teammate-message'
+  done
+}
+```
+
+## 3. Implementation Order
+
+```
+AC3 (plan AUTOPILOT-GUARD)           ← 最小変更、パターン確立
+  ↓
+AC4 (atdd AUTOPILOT-GUARD)           ← 同一パターン適用
+  ↓
+AC1+AC2 (discover 4箇所 + Standalone 維持) ← 最大変更
+  ↓
+AC5 (autopilot.md 呼び出し側更新)     ← 判定側と呼び出し側を接続
+  ↓
+AC6 (テスト更新 + 全件 PASS)          ← 最終検証
+```
+
+**Rationale:**
+1. **AC3 → AC4:** plan/atdd の AUTOPILOT-GUARD は完全同一パターン。最小変更（1箇所ずつ）から着手してパターンを確立する。
+2. **AC1+AC2:** discover は 4 箇所の変更があり blast radius が最大。AC3/AC4 で確立したパターンを適用する。AC2 は AC1 の変更が Standalone 動作を壊していないことの検証であり、同一コミットに含める。
+3. **AC5:** 判定側（SKILL.md）の変更完了後に、呼び出し側（autopilot.md）を更新して接続を完成させる。
+4. **AC6:** 全変更完了後にテストを更新し、`bats tests/` で全件 PASS を確認する。
+
+### Commit Strategy
+
+| Order | AC | Commit message |
+|-------|-----|---------------|
+| 1 | AC3 | `fix: AC3 -- plan AUTOPILOT-GUARD を --autopilot フラグ検出に移行 (#3)` |
+| 2 | AC4 | `fix: AC4 -- atdd AUTOPILOT-GUARD を --autopilot フラグ検出に移行 (#3)` |
+| 3 | AC1+AC2 | `fix: AC1+AC2 -- discover の全 autopilot 検出を --autopilot フラグに移行 (#3)` |
+| 4 | AC5 | `fix: AC5 -- autopilot.md の Skill 呼び出しに --autopilot フラグ付与 (#3)` |
+| 5 | AC6 | `test: AC6 -- テストを --autopilot フラグベースに更新 (#3)` |
+
+## 4. AC Dependencies
+
+```
+AC3 ──┐
+      ├── 独立（並行実装可能だが順次実装を推奨）
+AC4 ──┘
+      ↓
+AC1 ── AC2（同一変更セット）
+      ↓
+AC5（呼び出し側。AC1/AC3/AC4 の判定条件に依存）
+      ↓
+AC6（全変更の検証。全 AC に依存）
+```
+
+## 5. Risks and Mitigations
+
+| # | Risk | Impact | Likelihood | Mitigation |
+|---|------|--------|------------|------------|
+| R1 | `teammate-message` の残骸が SKILL.md に残り LLM が旧ロジックに従う | 中 | 低 | 実装後に `grep -r 'teammate-message' skills/{discover,plan,atdd}/SKILL.md` で 0 件確認。AC6 の残骸チェックテストでも検証。 |
+| R2 | テスト更新漏れで BATS FAIL | 低 | 中 | AC6 で `bats tests/` 全件 PASS を確認 |
+| R3 | Bug Flow Step 5 / Docs Flow Step 4 の autopilot 対応漏れ | 低 | 低 | これらは "same as development flow Step 7" と記述。Step 7 の変更が波及。ただし実装時にテキスト確認 |
+| R4 | discover HARD-GATE 内の条件更新漏れ | 高 | 低 | AC1 の変更スコープに L15 を明示的に含めている |
+| R5 | Skill description フィールドに `teammate-message` 残骸 | なし | なし | description は trigger 条件のみで autopilot 検出ロジックを含まない |
+
+## 6. Verification Plan
+
+実装完了後の検証手順:
+
+1. `bats tests/test_discover_autopilot_approval.bats` — 全テスト PASS
+2. `bats tests/` — 全テストスイート PASS（リグレッション確認）
+3. `grep -r 'teammate-message' skills/discover/SKILL.md skills/plan/SKILL.md skills/atdd/SKILL.md` — 0 件（AUTOPILOT-GUARD/HARD-GATE/Step 7/Step 8 に旧ロジック残骸なし）
+4. `grep -r '\-\-autopilot' skills/discover/SKILL.md skills/plan/SKILL.md skills/atdd/SKILL.md commands/autopilot.md` — 全変更箇所がヒット
+
+## 7. Files NOT Changed (with rationale)
 
 | File | Reason |
 |------|--------|
-| `.claude/settings.json` | Hook registration unchanged — same matcher, same command |
-| `commands/auto-eval.md` | Eval logic unchanged — marker creation unaffected |
-| `tests/test_eval_framework.bats` | Tests auto-eval command content, not eval-guard behavior |
-
-## 2. Concrete Code Changes
-
-### F1: `hooks/eval-guard.sh`
-
-#### Change 1: Line 20 — Command detection regex
-
-**Before:**
-```bash
-if ! echo "$COMMAND" | grep -q 'git push'; then
-```
-
-**After:**
-```bash
-if ! echo "$COMMAND" | grep -qE '(^|[;&|]+\s*)git\s+push'; then
-```
-
-**Rationale:**
-- `(^|[;&|]+\s*)` — matches `git push` at start of command OR after chain operators (`&&`, `||`, `;`, `|`)
-- `git\s+push` — requires whitespace between `git` and `push` (stricter than literal string)
-- Does NOT match `git push` embedded inside quoted arguments (e.g., `git commit -m "remember to git push"`) because the `git push` substring is preceded by a space inside quotes, not by a chain operator or start-of-string in the top-level command structure
-
-**Edge case analysis:**
-- `git push origin main` — matches (`^git\s+push`) 
-- `git add . && git push` — matches (`&&\s*git\s+push`)
-- `git add . ; git push` — matches (`;\s*git\s+push`)
-- `git commit -m "fix: remember to git push"` — does NOT match (preceded by space inside quotes, not a chain operator)
-- `echo "git push" | some_tool` — does NOT match at the `echo` level, because `grep -qE` processes the full command string and `git push` after `echo "` is not preceded by a chain operator. However, the pipe `|` could match. Let me refine.
-
-**Refined regex for line 20:**
-```bash
-if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push'; then
-```
-
-This explicitly matches only after `&&`, `;`, `||`, or at start-of-string. Single `|` (pipe) is excluded because `echo "foo" | git push` is not a real-world pattern for pushing, and the pipe's left side doesn't contain a push.
-
-**Final decision:** Use `(^|&&|;|\|\|)\s*git\s+push\b`
-
-- `^` — start of command string
-- `&&` — AND chain
-- `;` — sequential chain  
-- `\|\|` — OR chain (escaped pipe)
-- `\s*git\s+push\b` — optional whitespace, then `git push` as word boundary
-
-```bash
-if ! echo "$COMMAND" | grep -qE '(^|&&|;|\|\|)\s*git\s+push\b'; then
-```
-
-**Verification of AC3 scenario:**
-- Input: `git commit -m "fix: remember to git push"`
-- The substring `git push` is at position after `to `, not after `^`, `&&`, `;`, or `||`
-- Result: NO match — command is not intercepted. CORRECT.
-
-**Verification of AC4 scenario:**
-- Input: `git add . && git push origin branch`
-- The substring `git push` is after `&& `, which matches `&&\s*git\s+push`
-- Result: MATCH — command is intercepted. CORRECT.
-
-#### Change 2: Line 34 — Three-dot diff
-
-**Before:**
-```bash
-CHANGED_SKILLS=$(git diff --name-only origin/main -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
-```
-
-**After:**
-```bash
-CHANGED_SKILLS=$(git diff --name-only origin/main...HEAD -- 'skills/*/SKILL.md' 2>/dev/null || echo "")
-```
-
-**Rationale:**
-- `origin/main...HEAD` uses the merge-base as the comparison point (three-dot diff)
-- Only detects changes introduced on the current branch, not changes on main since divergence
-- Same semantics as GitHub PR diff view
-- The `2>/dev/null || echo ""` error handling remains — if merge-base computation fails (shallow clone, no remote), returns empty string (fail-open: allows push)
-
-### F2: `tests/test_eval_guard.bats` (New File)
-
-Functional tests that invoke `hooks/eval-guard.sh` with crafted JSON input and verify output.
-
-#### Test Infrastructure
-
-```bash
-setup() {
-  GUARD="hooks/eval-guard.sh"
-  TEST_REPO="${BATS_TMPDIR}/eval-guard-repo-$$"
-  
-  # Create a minimal git repo to simulate branch scenarios
-  git init "$TEST_REPO"
-  cd "$TEST_REPO"
-  git checkout -b main
-  mkdir -p skills/test-skill
-  echo "initial" > skills/test-skill/SKILL.md
-  echo "readme" > README.md
-  git add -A && git commit -m "initial"
-  
-  # Set up origin/main reference
-  git branch -m main
-  git checkout -b test-branch
-}
-
-teardown() {
-  rm -rf "$TEST_REPO"
-}
-
-make_input() {
-  local cmd="$1"
-  printf '{"tool_name":"Bash","command":"%s"}' "$cmd"
-}
-```
-
-**Note:** The `setup` creates a local repo with a `main` branch and a `test-branch`. For three-dot diff tests, we need to simulate `origin/main` — this requires either a bare remote or using `git update-ref refs/remotes/origin/main`. The latter is simpler:
-
-```bash
-# In setup, after creating test-branch:
-git update-ref refs/remotes/origin/main main
-```
-
-#### Test Cases
-
-| Test ID | AC | Scenario | Input Command | Expected |
-|---------|-----|----------|---------------|----------|
-| T1.1 | AC1 | Main-side SKILL.md change, branch has no skill changes | `git push origin test-branch` | `{}` (allow) |
-| T1.2 | AC1 | Main-side SKILL.md change, branch only has README edit | `git push` | `{}` (allow) |
-| T2.1 | AC2 | Branch introduces SKILL.md change, no eval marker | `git push` | deny with "SKILL.md changes detected" |
-| T2.2 | AC2 | Branch introduces SKILL.md change, eval marker exists | `git push` | `{}` (allow) |
-| T2.3 | AC2 | Deny message contains skill name | `git push` | deny message contains skill name |
-| T3.1 | AC3 | "git push" in commit message argument | `git commit -m "remember to git push"` | `{}` (allow — not intercepted) |
-| T3.2 | AC3 | "git push" in echo argument | `echo "run git push later"` | `{}` (allow — not intercepted) |
-| T4.1 | AC4 | Chain command with git push | `git add . && git push origin branch` | intercepted (proceeds to diff check) |
-| T4.2 | AC4 | Semicolon chain with git push | `git add . ; git push` | intercepted (proceeds to diff check) |
-| T4.3 | AC4 | OR chain with git push | `git add . || git push` | intercepted (proceeds to diff check) |
-
-**AC1 test setup detail (T1.1, T1.2):**
-```bash
-# Simulate main advancing after branch creation:
-# 1. On test-branch, edit README only
-echo "branch change" > README.md
-git add README.md && git commit -m "readme edit"
-
-# 2. Advance origin/main with a SKILL.md change
-git update-ref refs/remotes/origin/main $(
-  git stash -q 2>/dev/null
-  git checkout main -q
-  echo "main update" > skills/test-skill/SKILL.md
-  git add -A && git commit -m "main skill update" -q
-  git rev-parse HEAD
-)
-git checkout test-branch -q
-
-# Now: origin/main has SKILL.md change, test-branch does NOT
-# Two-dot diff would show SKILL.md (bug)
-# Three-dot diff should NOT show SKILL.md (fix)
-```
-
-**AC2 test setup detail (T2.1):**
-```bash
-# On test-branch, modify SKILL.md
-echo "branch skill change" > skills/test-skill/SKILL.md
-git add -A && git commit -m "skill edit on branch"
-# Three-dot diff SHOULD show SKILL.md (correct detection)
-```
-
-### F3: `hooks/README.md`
-
-Update the eval-guard.sh description:
-
-**Before (line 33):**
-```
-2. If the command contains `git push`, checks for SKILL.md changes vs origin/main
-```
-
-**After:**
-```
-2. If the command is a `git push` (not in arguments), checks for SKILL.md changes on this branch vs merge-base with origin/main
-```
-
-### F4: `CHANGELOG.md`
-
-```markdown
-## [Unreleased]
-
-### Fixed
-- eval-guard.sh: use three-dot diff (`origin/main...HEAD`) to detect only branch-introduced SKILL.md changes, preventing false positives when main advances (#22)
-- eval-guard.sh: strengthen git push detection regex to avoid false positives from "git push" in command arguments (#22)
-```
-
-### F5: `.claude-plugin/plugin.json`
-
-PATCH bump — this is a bug fix with no behavioral contract change for the hook's external interface.
-
-Current version needs to be read at implementation time.
-
-## 3. Implementation Sequence (Test-First)
-
-### Phase 1: Red — Write Failing Tests
-
-**Step 1.1:** Create `tests/test_eval_guard.bats` with all test cases (T1.1-T4.3).
-
-Run tests to confirm they fail against the current buggy code:
-- T1.1, T1.2 should FAIL (current two-dot diff detects main-side changes)
-- T3.1, T3.2 should FAIL (current grep matches "git push" in arguments)
-- T2.1, T2.2, T2.3, T4.1, T4.2, T4.3 should PASS (existing correct behavior)
-
-**Verification:** `bats tests/test_eval_guard.bats` — exactly T1.x and T3.x fail.
-
-### Phase 2: Green — Fix the Bugs
-
-**Step 2.1:** Fix line 34 (three-dot diff) — this fixes T1.1, T1.2.
-
-**Step 2.2:** Fix line 20 (regex) — this fixes T3.1, T3.2.
-
-**Verification:** `bats tests/test_eval_guard.bats` — all tests pass.
-
-### Phase 3: Housekeeping
-
-**Step 3.1:** Update `hooks/README.md` (F3).
-
-**Step 3.2:** Update `CHANGELOG.md` (F4).
-
-**Step 3.3:** Bump version in `.claude-plugin/plugin.json` (F5).
-
-**Step 3.4:** Run full test suite: `bats tests/` to verify no regressions.
-
-## 4. Dependencies
-
-```
-F2 (tests) ← F1 (guard fix) ← F3 (README) ← F4 (CHANGELOG) + F5 (version)
-   write first    fix second     then docs      finally housekeeping
-```
-
-- F2 has no dependencies — tests are written against the expected behavior
-- F1 depends on F2 being written first (test-first methodology)
-- F3, F4, F5 are independent of each other but depend on F1 being complete
-
-## 5. Technical Risks and Mitigations
-
-| # | Risk | Likelihood | Impact | Mitigation |
-|---|------|-----------|--------|------------|
-| R1 | BATS test git repo setup is fragile | Medium | Medium | Use `BATS_TMPDIR` for isolation. Clean up in `teardown`. Use `git update-ref` instead of a real remote. |
-| R2 | Regex doesn't cover all chain operators | Low | Low | AC4 specifies `&&` as the test case. Regex covers `&&`, `;`, `\|\|`. Pipe `\|` intentionally excluded — `echo "x" \| git push` is not real usage. |
-| R3 | `\b` word boundary in grep -E | Low | Medium | `\b` is supported by GNU grep and BSD grep (macOS). Verify in CI. Fallback: use `git\s+push(\s\|$)` if `\b` is unsupported. |
-| R4 | Three-dot diff with unrelated histories | Very Low | Low | `2>/dev/null \|\| echo ""` handles merge-base failure. Fail-open. |
-| R5 | `sed` command on line 17 fails to extract command from complex JSON | Pre-existing | — | Out of scope for this bug fix. The `sed` extraction is simplistic but works for Claude Code's Bash tool JSON format. |
-
-## 6. Per-AC Implementation Mapping
-
-| AC | Phase | Step | File | Change |
-|----|-------|------|------|--------|
-| AC1 | 1→2 | 1.1→2.1 | F2→F1 | Tests T1.1-T1.2 → Line 34 three-dot diff |
-| AC2 | 1→verify | 1.1 | F2 | Tests T2.1-T2.3 (should pass with existing code) |
-| AC3 | 1→2 | 1.1→2.2 | F2→F1 | Tests T3.1-T3.2 → Line 20 regex |
-| AC4 | 1→verify | 1.1 | F2 | Tests T4.1-T4.3 (should pass with existing code, verify with new regex) |
+| `.claude/rules/workflow-overrides.md` | autopilot 検出方式に言及していない |
+| `agents/po.md`, `agents/developer.md`, `agents/qa.md` | Agent 定義は autopilot 検出ロジックを含まない |
+| `CHANGELOG.md` | plan フェーズで扱う（versioning rule に従い PR 内で更新） |
+| `.claude-plugin/plugin.json` | 同上 |
