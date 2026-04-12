@@ -12,14 +12,14 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 <HARD-GATE>
 Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (ACs or completion criteria) produced by this skill. This applies to EVERY task regardless of perceived simplicity. "Too simple to need discovery" is a rationalization -- all tasks start here.
 
-**Autopilot exception:** When discover is invoked via autopilot (`<teammate-message>` from team-lead is present), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) `<teammate-message>` from team-lead is present, AND (2) the AC Review Round completes with user approval.
+**Autopilot exception:** When discover is invoked via autopilot (ARGUMENTS contains `--autopilot`), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) the AC Review Round completes with user approval.
 </HARD-GATE>
 
 <AUTOPILOT-GUARD>
-If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
+If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
 - Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
 - **Do not block execution.** Proceed normally after showing the warning.
-If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
+If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
 </AUTOPILOT-GUARD>
 
 The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (ACs for dev tasks, completion criteria for docs/investigation).
@@ -227,9 +227,9 @@ For each item:
 
 ### Step 7: Present Deliverables and Get Approval
 
-**Autopilot mode** (a `<teammate-message>` from team-lead is present): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
+**Autopilot mode** (ARGUMENTS contains `--autopilot`): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
 
-**Standalone mode** (no `<teammate-message>` — user invoked discover directly): Present the full AC set to the user:
+**Standalone mode** (ARGUMENTS does not contain `--autopilot` — user invoked discover directly): Present the full AC set to the user:
 
 ```
 Please review these ACs:
@@ -248,7 +248,7 @@ Approve? [Approve / Needs revision]
 
 ### Step 8: Post to Issue Comment and Inline Plan Execution
 
-> **Autopilot mode skip:** When discover was invoked via autopilot (`<teammate-message>` from team-lead), this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
+> **Autopilot mode skip:** When ARGUMENTS contains `--autopilot`, this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
 
 Post the approved deliverables with `gh issue comment`.
 
