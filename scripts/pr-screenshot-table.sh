@@ -294,8 +294,8 @@ CURRENT_BODY="$(gh pr view "$PR_NUMBER" --json body -q .body)"
 if echo "$CURRENT_BODY" | grep -q "^## Screenshots"; then
   SECTION_FILE="${TMPDIR_BASE}/section.txt"
   echo "$FULL_SECTION" > "$SECTION_FILE"
-  NEW_BODY="$(echo "$CURRENT_BODY" | awk '
-    /^## Screenshots/ { skip=1; while ((getline line < "'"$SECTION_FILE"'") > 0) print line; next }
+  NEW_BODY="$(echo "$CURRENT_BODY" | awk -v section_file="$SECTION_FILE" '
+    /^## Screenshots/ { skip=1; while ((getline line < section_file) > 0) print line; next }
     /^## / && skip { skip=0 }
     !skip { print }
   ')"
