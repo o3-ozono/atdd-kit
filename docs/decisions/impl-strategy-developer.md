@@ -1,134 +1,112 @@
-# Implementation Strategy: Developer
+# Implementation Strategy: Issue #21
 
-**Issue:** #1 — bug: sim-pool-guard.sh が build_sim / build_run_sim / test_sim を CLONE_REQUIRED_TOOLS から除外している
+**Issue:** #21 — fix: sim-pool-guard.sh の allowlist を fail-closed → fail-open に設計転換
 **Author:** Developer Agent
 **Date:** 2026-04-12
+**Prior Decision:** `docs/decisions/ac-review-developer.md`
 
-## 1. 変更ファイル一覧と変更内容
+## 1. File Structure and Modification Map
 
-### 1-A. `addons/ios/scripts/sim-pool-guard.sh` — CLONE_REQUIRED_TOOLS 配列修正
+### Modified Files
 
-**変更内容:** `CLONE_REQUIRED_TOOLS` 配列に 3 エントリを追加する。
+| # | File | Nature of Change |
+|---|------|------------------|
+| F1 | `addons/ios/scripts/sim-pool-guard.sh` | Core logic rewrite: remove READONLY_TOOLS, add DENY_TOOLS, add `is_xcode_clone_required()`, rename CLONE_REQUIRED_TOOLS to CLONE_REQUIRED_IOS_SIM, rewrite `main()` flow |
+| F2 | `addons/ios/tests/test_sim_failclosed_guard.bats` | **Delete** — replaced by F3 |
+| F3 | `addons/ios/tests/test_sim_failopen_guard.bats` | **New file** — fail-open ALLOW, DENY_TOOLS, pattern match, addon.yml matchers |
+| F4 | `addons/ios/tests/test_sim_clone_required_variants.bats` | Remove READONLY_TOOLS negative tests; update array name to CLONE_REQUIRED_IOS_SIM; add `*_sim` pattern match tests |
+| F5 | `addons/ios/tests/test_sim_persist_block.bats` | Update static grep to match new array location if line numbers shift |
+| F6 | `CHANGELOG.md` | Add entry under `[Unreleased]` |
+| F7 | `.claude-plugin/plugin.json` | Version bump |
 
-**現在の配列 (L51-79):**
+### Unchanged Files (verify-only)
+
+| File | Reason |
+|------|--------|
+| `addons/ios/addon.yml` | Hook matchers already catch all tools; no change needed |
+| `addons/ios/tests/test_sim_auto_inject.bats` | UDID injection logic untouched |
+| `addons/ios/tests/test_sim_ephemeral_clone.bats` | Clone lifecycle untouched |
+| `addons/ios/tests/test_sim_golden_init.bats` | Golden init logic untouched |
+| `addons/ios/tests/test_sim_golden_set_fallback.bats` | Golden set logic untouched |
+| `addons/ios/tests/test_sim_orphan_cleanup.bats` | Cleanup logic untouched |
+| `addons/ios/tests/test_sim_pool_docs.bats` | Doc content tests |
+| `addons/ios/tests/test_sim_init_guidance.bats` | addon.yml guidance tests |
+
+## 2. Implementation Sequence
+
+Ordered by dependency. Each step depends on the prior step being complete.
+
+### Phase 1: Guard Script Core (F1 — sim-pool-guard.sh)
+
+#### Step 1.1 — Remove READONLY_TOOLS array and references (AC6)
+
+Remove lines 33-49 (`READONLY_TOOLS` array) and lines 387-390 (`in_array READONLY_TOOLS` check in `main()`).
+
+This is the prerequisite for all other changes — removing dead code first prevents merge conflicts.
+
+**Verification:** `bash -n sim-pool-guard.sh` passes (syntax check). `set -u` does not trigger on removed references.
+
+#### Step 1.2 — Add DENY_TOOLS array and check (AC4, AC5)
+
+Add new array after `PERSIST_CHECK_TOOLS`:
+
 ```bash
-CLONE_REQUIRED_TOOLS=(
-  "mcp__XcodeBuildMCP__build"          # L52
-  "mcp__XcodeBuildMCP__test"           # L53
-  "mcp__XcodeBuildMCP__run"            # L54
-  "mcp__XcodeBuildMCP__session_set_defaults"   # L55
-  ...
+# Unconditionally denied — golden image destruction risk
+DENY_TOOLS=(
+  "mcp__XcodeBuildMCP__erase_sims"
 )
 ```
 
-**修正後の配列 (L52-57 付近):**
-```bash
-CLONE_REQUIRED_TOOLS=(
-  "mcp__XcodeBuildMCP__build"
-  "mcp__XcodeBuildMCP__build_sim"           # NEW
-  "mcp__XcodeBuildMCP__build_run_sim"       # NEW
-  "mcp__XcodeBuildMCP__test"
-  "mcp__XcodeBuildMCP__test_sim"            # NEW
-  "mcp__XcodeBuildMCP__run"
-  "mcp__XcodeBuildMCP__session_set_defaults"
-  ...
-)
-```
-
-**配置位置の根拠:** AC Review (M2) の提案に従い、関連ツールの直後に配置して可読性を確保する。
-- `build_sim` と `build_run_sim` は `build` の直後
-- `test_sim` は `test` の直後
-
-**ロジック変更: なし。** `in_array` 関数は線形探索のため、配列内の位置に依存しない。`handle_xcodebuildmcp` と `main()` のフロー、case 文のパターンマッチングに変更不要。
-
-### 1-B. `addons/ios/tests/test_sim_clone_required_variants.bats` — 新規テストファイル
-
-**変更内容:** QA レビューで提案されたテスト構成に基づき、新規テストファイルを作成。12 テストケース。
-
-**テスト構成:**
-
-| AC | テスト名 | 検証タイプ |
-|----|---------|-----------|
-| AC1 | AC1.1-1.3: CLONE_REQUIRED_TOOLS contains build_sim / build_run_sim / test_sim | 静的: `grep -q` + `sed -n` |
-| AC2 | AC2.1-2.3: build_sim / build_run_sim / test_sim NOT in READONLY_TOOLS | 静的: `! grep -q` + `sed -n` |
-| AC3 | AC3.1-3.3: first call is DENY with session_set_defaults instruction | 動的: `jq -e` + additionalContext 検証 |
-| AC4 | AC4.1-4.3: ALLOW after session_set_defaults | 動的: `jq -e` permissionDecision == "allow" |
-
-**setup/teardown:** `test_sim_auto_inject.bats` のパターンをそのまま流用。
-- mock `xcrun` でゴールデンイメージとクローン応答をスタブ
-- 環境変数（`SIM_SESSION_DIR`, `SIM_MARKER_DIR`, `SIM_GOLDEN_NAME`）を設定
-- ゴールデンマーカー `golden-initialized-iOS-18-0` を事前作成（golden init スキップ）
-
-**AC3 テストの注意点:** 各テストケースは独立したセッション ID を使用する。`handle_xcodebuildmcp` は初回呼び出し時に `setup_flag` を touch するため（L334）、同一セッション ID で複数ツールをテストすると 2 番目以降が ALLOW になる。
-
-**AC4 テストの手順:** `test_sim_auto_inject.bats` AC5.2 のパターンに従う:
-1. `build` 等で初回呼び出し（クローン作成 + setup_flag 作成）
-2. `session_set_defaults` を呼び出し（setup_flag セット）
-3. `_sim` バリアントを呼び出し → ALLOW を確認
-
-### 1-C. `CHANGELOG.md` — バグフィックスエントリ追加
-
-**変更内容:** `[Unreleased]` セクションに `Fixed` エントリを追加。
-
-```markdown
-## [Unreleased]
-
-### Fixed
-- sim-pool-guard.sh: add `build_sim`, `build_run_sim`, `test_sim` to `CLONE_REQUIRED_TOOLS` — previously denied by fail-closed guard (#1)
-```
-
-### 1-D. `.claude-plugin/plugin.json` — バージョンバンプ
-
-**変更内容:** `1.1.0` → `1.1.1` (patch bump — バグフィックス)
-
-```json
-"version": "1.1.1"
-```
-
-**根拠:** SemVer patch increment。機能追加なし、既存 API の breaking change なし。fail-closed guard の allowlist gap を修正するバグフィックス。
-
-## 2. 実装順序
-
-依存関係を考慮した実装順序:
-
-```
-Step 1: addons/ios/scripts/sim-pool-guard.sh
-   |     -- 本体修正。テストの前提。
-   |
-Step 2: addons/ios/tests/test_sim_clone_required_variants.bats
-   |     -- 修正後のスクリプトに対するテスト。Step 1 に依存。
-   |
-Step 3: テスト実行・既存テストの回帰確認
-   |     -- Step 1-2 に依存。AC5 の検証。
-   |
-Step 4: CHANGELOG.md  ||  .claude-plugin/plugin.json
-         -- Housekeeping。Step 1-3 完了後。同一 PR に含める。
-```
-
-**Per-AC mapping:**
-
-| AC | Primary file | Step |
-|----|-------------|------|
-| AC1 | `sim-pool-guard.sh` (CLONE_REQUIRED_TOOLS) | 1 |
-| AC2 | `sim-pool-guard.sh` (READONLY_TOOLS に追加しないことの検証) | 2 (テスト) |
-| AC3 | `sim-pool-guard.sh` (handle_xcodebuildmcp ルーティング) | 1 (暗黙) + 2 (テスト) |
-| AC4 | `sim-pool-guard.sh` (handle_xcodebuildmcp + setup_flag) | 1 (暗黙) + 2 (テスト) |
-| AC5 | 既存テストスイート | 3 (回帰テスト) |
-
-## 3. 配置位置の詳細
-
-`sim-pool-guard.sh` L51-79 の `CLONE_REQUIRED_TOOLS` 配列を以下の順序に変更:
+Add DENY check in `main()` as the **first check**, before the `session_id` early-return:
 
 ```bash
-CLONE_REQUIRED_TOOLS=(
-  "mcp__XcodeBuildMCP__build"
-  "mcp__XcodeBuildMCP__build_sim"              # NEW — build の直後
-  "mcp__XcodeBuildMCP__build_run_sim"          # NEW — build_sim の直後
-  "mcp__XcodeBuildMCP__test"
-  "mcp__XcodeBuildMCP__test_sim"               # NEW — test の直後
-  "mcp__XcodeBuildMCP__run"
-  "mcp__XcodeBuildMCP__session_set_defaults"
-  "mcp__XcodeBuildMCP__session_use_defaults_profile"
+# 1. DENY_TOOLS — unconditional DENY (AC4, AC5: before session_id check)
+if in_array "$tool_name" "${DENY_TOOLS[@]}"; then
+  emit_deny "sim-pool: '${tool_name}' is denied to protect the golden image."
+  exit 0
+fi
+```
+
+**Ordering rationale (AC5):** DENY must fire even when `session_id` is empty. The current code returns early with ALLOW when `session_id` is empty (line 383). Placing DENY before session_id ensures `erase_sims` is blocked regardless of session context.
+
+#### Step 1.3 — Add `is_xcode_clone_required()` pattern matcher (AC2a, AC2b)
+
+Replace the XcodeBuildMCP entries in `CLONE_REQUIRED_TOOLS` with a function:
+
+```bash
+# XcodeBuildMCP clone-required: pattern match + explicit list
+is_xcode_clone_required() {
+  local tool="$1"
+  case "$tool" in
+    mcp__XcodeBuildMCP__*_sim)                        return 0 ;;
+    mcp__XcodeBuildMCP__screenshot)                   return 0 ;;
+    mcp__XcodeBuildMCP__snapshot_ui)                   return 0 ;;
+    mcp__XcodeBuildMCP__session_set_defaults)          return 0 ;;
+    mcp__XcodeBuildMCP__session_use_defaults_profile)  return 0 ;;
+    *)                                                 return 1 ;;
+  esac
+}
+```
+
+**Why `case` with glob:**
+- `case` glob patterns are POSIX-compatible and work under `set -euo pipefail`
+- `*_sim` matches any tool name ending in `_sim` — exactly the pattern we need
+- Zero subprocess overhead (shell built-in)
+- Forward-compatible: any future `*_sim` tool is captured automatically
+- No `shopt -s extglob` or bash-specific regex needed
+
+**Pattern coverage:**
+- `*_sim` catches: `build_sim`, `build_run_sim`, `test_sim`, `run_sim`, `install_app_sim`, `launch_app_sim`, `tap_sim`, `swipe_sim`, etc. (all current and future `_sim` suffixed tools)
+- Explicit list: `screenshot`, `snapshot_ui` (no `_sim` suffix but sim-interacting), `session_set_defaults`, `session_use_defaults_profile` (session target configuration)
+- **Not captured (intentional):** `debug_*` tools (no `_sim` suffix, may also target macOS — fall through to fail-open ALLOW), `build_device`, `list_schemes`, `get_build_logs`, etc. (non-sim operations — fall through to ALLOW)
+
+**Edge case — `*_sim` as substring:** A hypothetical tool like `get_sim_status` does NOT end with `_sim`, so `*_sim` does NOT match. `case "mcp__XcodeBuildMCP__get_sim_status" in *_sim)` evaluates to false. Correct behavior.
+
+#### Step 1.4 — Rename and slim CLONE_REQUIRED_TOOLS to ios-simulator only (AC3)
+
+```bash
+# ios-simulator clone-required tools (UDID injection needed)
+CLONE_REQUIRED_IOS_SIM=(
   "mcp__ios-simulator__launch_app"
   "mcp__ios-simulator__terminate_app"
   "mcp__ios-simulator__tap"
@@ -154,106 +132,220 @@ CLONE_REQUIRED_TOOLS=(
 )
 ```
 
-XcodeBuildMCP ツールのグループ順序: `build` → `build_sim` → `build_run_sim` → `test` → `test_sim` → `run` → `session_*`
+**Excluded (fall through to fail-open ALLOW):**
+- `get_booted_sim_id` (read-only, no UDID injection needed)
+- `stop_recording` (stops ongoing recording, UDID not needed)
 
-## 4. テストファイル構成の詳細
+**Why array instead of pattern matching for ios-simulator:** All 22 tools need UDID injection via `handle_ios_simulator`. The tool set is stable (ios-simulator MCP server). Pattern matching offers no advantage here since we need to be explicit about which tools get UDID injected.
 
-### ファイル: `addons/ios/tests/test_sim_clone_required_variants.bats`
-
-setup/teardown は `test_sim_auto_inject.bats` と同一パターン。mock `xcrun`、環境変数設定、ゴールデンマーカー事前作成の 3 点セット。
-
-#### 静的検証テスト (AC1, AC2)
-
-| テスト | パターン | 参考テスト |
-|--------|---------|-----------|
-| AC1.1-1.3: 配列含有 | `grep -q '"mcp__XcodeBuildMCP__build_sim"' <(sed -n '/^CLONE_REQUIRED_TOOLS=/,/^)/p' "$GUARD")` | `test_sim_failclosed_guard.bats` AC3.12-AC3.13 |
-| AC2.1-2.3: 配列非含有 | `! grep -q '"mcp__XcodeBuildMCP__build_sim"' <(sed -n '/^READONLY_TOOLS=/,/^)/p' "$GUARD")` | `test_sim_failclosed_guard.bats` AC3.12 |
-
-#### 動的検証テスト (AC3, AC4)
-
-| テスト | パターン | 参考テスト |
-|--------|---------|-----------|
-| AC3.1-3.3: 初回 DENY | `jq -e '.hookSpecificOutput.permissionDecision == "deny"'` + additionalContext に `session_set_defaults` 含有 | `test_sim_auto_inject.bats` AC5.1 |
-| AC4.1-4.3: ALLOW | `jq -e '.hookSpecificOutput.permissionDecision == "allow"'` | `test_sim_auto_inject.bats` AC5.2 |
-
-#### AC3 のセッション ID 分離
-
-各 AC3 テストは独立したセッション ID を使用:
-- AC3.1: `session-ac3-1`
-- AC3.2: `session-ac3-2`
-- AC3.3: `session-ac3-3`
-
-これにより、`handle_xcodebuildmcp` L334 の `touch "$setup_flag"` が他テストに影響しない。
-
-#### AC4 の 3 ステップ手順
+#### Step 1.5 — Rewrite `main()` routing logic (AC1 + all ACs integrated)
 
 ```bash
-# Step 1: 初回呼び出しでクローン作成 + setup_flag 作成
-run_guard "mcp__XcodeBuildMCP__build" '{}' "session-ac4-1" > /dev/null 2>&1 || true
+main() {
+  local input
+  input=$(cat)
 
-# Step 2: session_set_defaults でセットアップ完了
-run_guard "mcp__XcodeBuildMCP__session_set_defaults" \
-  '{"simulatorName":"atdd-kit-clone","persist":false}' "session-ac4-1"
+  local tool_name
+  tool_name=$(echo "$input" | jq -r '.tool_name // ""')
+  local tool_input
+  tool_input=$(echo "$input" | jq -c '.tool_input // {}')
+  local session_id
+  session_id=$(echo "$input" | jq -r '.session_id // ""')
 
-# Step 3: _sim バリアントが ALLOW されることを確認
-result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}' "session-ac4-1")
-echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
+  # 1. DENY_TOOLS — unconditional block (AC4, AC5)
+  if in_array "$tool_name" "${DENY_TOOLS[@]}"; then
+    emit_deny "sim-pool: '${tool_name}' is denied to protect the golden image."
+    exit 0
+  fi
+
+  # 2. No session_id — passthrough
+  if [ -z "$session_id" ]; then
+    emit_allow
+    exit 0
+  fi
+
+  # 3. Persist check (AC7)
+  if in_array "$tool_name" "${PERSIST_CHECK_TOOLS[@]}"; then
+    handle_persist_check "$tool_input"
+  fi
+
+  # 4. XcodeBuildMCP clone-required — pattern match (AC2a, AC2b)
+  if is_xcode_clone_required "$tool_name"; then
+    handle_xcodebuildmcp "$session_id" "$tool_name" "$tool_input"
+    exit 0
+  fi
+
+  # 5. ios-simulator clone-required — array match (AC3)
+  if in_array "$tool_name" "${CLONE_REQUIRED_IOS_SIM[@]}"; then
+    handle_ios_simulator "$session_id" "$tool_input"
+    exit 0
+  fi
+
+  # 6. Default — fail-open ALLOW (AC1)
+  emit_allow
+}
 ```
 
-### AC5 (既存ツール動作維持) のテスト方針
+**Flow diagram:**
 
-AC5 は新規テストを作成しない。以下の既存テストスイート全パスで検証:
-- `test_sim_failclosed_guard.bats` (17 テスト)
-- `test_sim_auto_inject.bats` (6 テスト)
-- `test_sim_ephemeral_clone.bats` (7 テスト)
-- `test_sim_persist_block.bats`
-- その他の `addons/ios/tests/test_sim_*.bats`
+```
+tool_name in DENY_TOOLS? ──yes──> DENY (exit)
+         │ no
+session_id empty? ──yes──> ALLOW (exit)
+         │ no
+tool_name in PERSIST_CHECK? ──yes──> persist:true? ──yes──> DENY (exit)
+         │                                    │ no
+         │                                    v (continue)
+is_xcode_clone_required? ──yes──> handle_xcodebuildmcp (exit)
+         │ no
+tool_name in CLONE_REQUIRED_IOS_SIM? ──yes──> handle_ios_simulator (exit)
+         │ no
+ALLOW (fail-open default)
+```
 
-## 5. リスク評価
+**Key ordering invariant:** `session_set_defaults` and `session_use_defaults_profile` appear in both `PERSIST_CHECK_TOOLS` and `is_xcode_clone_required`. Persist check runs first (step 3). If `persist:true`, DENY exits before reaching clone-required. If `persist:false` or omitted, execution continues to `is_xcode_clone_required`. This matches current behavior.
 
-### 壊れる可能性があるもの
+#### Step 1.6 — Update file header comment
 
-| リスク | 可能性 | 影響 | 軽減策 |
-|--------|--------|------|--------|
-| 既存テストの回帰 | 極低 | 高 | 既存テストスイート全パスを確認 |
-| タイポによる配列エントリ不一致 | 低 | 中 | 静的検証テスト (AC1) で防止 |
-| 配列順序変更による副作用 | なし | - | `in_array` は線形探索で順序非依存 |
-| `handle_xcodebuildmcp` の予期しない分岐 | なし | - | L320, L326 の条件は完全一致比較で `_sim` バリアントにマッチしない |
-| `PERSIST_CHECK_TOOLS` への影響 | なし | - | `_sim` バリアントは persist check 対象外（正しい挙動） |
+```bash
+# Line 2: "Fail-Closed Guard" → "Fail-Open Guard"
+# Line 5: "unknown tools are DENIED (fail-closed)" → "unknown tools are ALLOWED (fail-open)"
+```
 
-**総合リスク: 極めて低い。** 変更は配列への 3 要素追加のみで、ロジック変更なし。
+### Phase 2: Test Rewrite (F2, F3, F4, F5)
 
-## 6. CHANGELOG / バージョン更新
+#### Step 2.1 — Delete `test_sim_failclosed_guard.bats` (F2)
 
-### CHANGELOG.md
+All 17 tests test fail-closed behavior that no longer exists. Remove the entire file.
+
+#### Step 2.2 — Create `test_sim_failopen_guard.bats` (F3)
+
+| Test ID | AC | Description |
+|---------|-----|-------------|
+| FO1.1 | AC1 | Unknown XcodeBuildMCP tool (`unknown_new_tool`) → ALLOW |
+| FO1.2 | AC1 | Unknown ios-simulator tool → ALLOW |
+| FO1.3 | AC1 | `build_device` (non-sim XcodeBuildMCP) → ALLOW |
+| FO1.4 | AC1 | `swift_package_test` → ALLOW |
+| FO1.5 | AC1 | `debug_continue` (debug tool, no `_sim`) → ALLOW |
+| FO2.1 | AC2a | `build_sim` → DENY with session_set_defaults guidance (first call) |
+| FO2.2 | AC2a | `test_sim` → DENY with guidance (first call) |
+| FO2.3 | AC2a | `future_feature_sim` (hypothetical) → DENY with guidance |
+| FO2.4 | AC2b | `screenshot` → DENY with guidance (first call) |
+| FO2.5 | AC2b | `snapshot_ui` → DENY with guidance (first call) |
+| FO2.6 | AC2b | `session_set_defaults` (persist:false) → ALLOW via handle_xcodebuildmcp |
+| FO2.7 | AC2b | `session_use_defaults_profile` (persist:false) → ALLOW via handle_xcodebuildmcp |
+| FO3.1 | AC4 | `erase_sims` → DENY with golden image protection reason |
+| FO3.2 | AC4 | `erase_sims` DENY reason contains "golden image" |
+| FO3.3 | AC5 | `erase_sims` denied even with empty session_id |
+| FO4.1 | AC6 | No READONLY_TOOLS array in guard script |
+| FO4.2 | AC6 | Guard script has `is_xcode_clone_required` function |
+| FO4.3 | AC6 | Guard processes representative tools without unbound variable error |
+| FO5.1 | — | addon.yml matcher catches XcodeBuildMCP (migrated from old file) |
+| FO5.2 | — | addon.yml matcher catches ios-simulator (migrated) |
+| FO5.3 | — | addon.yml timeout is 90 seconds (migrated) |
+| FO5.4 | — | Empty session_id → ALLOW passthrough (migrated) |
+| FO5.5 | — | Guard script is executable (migrated) |
+
+**Mock setup:** Standard pattern from existing tests (mock xcrun in `$MOCK_BIN`).
+
+#### Step 2.3 — Update `test_sim_clone_required_variants.bats` (F4)
+
+Changes:
+- Remove AC2.1-2.3 (READONLY_TOOLS negative grep tests) — array no longer exists
+- Update AC1.1-1.3 static grep: `CLONE_REQUIRED_TOOLS` → `CLONE_REQUIRED_IOS_SIM`
+- The ios-simulator tools (`launch_app`, `tap`, etc.) should still be verified in this array
+- Update `run_guard` helper if the session flow changes (unlikely — same guard script, same stdin format)
+
+#### Step 2.4 — Verify `test_sim_persist_block.bats` (F5)
+
+AC4.9-4.10 grep for `PERSIST_CHECK_TOOLS`. This array is unchanged. Tests should pass as-is. Run to confirm.
+
+### Phase 3: Housekeeping (F6, F7)
+
+#### Step 3.1 — CHANGELOG.md
 
 ```markdown
 ## [Unreleased]
 
-### Fixed
-- sim-pool-guard.sh: add `build_sim`, `build_run_sim`, `test_sim` to `CLONE_REQUIRED_TOOLS` — previously denied by fail-closed guard (#1)
+### Changed
+- sim-pool-guard.sh: redesign from fail-closed to fail-open — unlisted tools now ALLOW instead of DENY (#21)
+- sim-pool-guard.sh: XcodeBuildMCP clone-required tools use `_sim` pattern matching instead of explicit list (#21)
+- sim-pool-guard.sh: rename `CLONE_REQUIRED_TOOLS` to `CLONE_REQUIRED_IOS_SIM` for clarity (#21)
+
+### Added
+- sim-pool-guard.sh: `DENY_TOOLS` array for golden image protection (`erase_sims`) (#21)
+- sim-pool-guard.sh: `is_xcode_clone_required()` function for pattern-based tool matching (#21)
+
+### Removed
+- sim-pool-guard.sh: `READONLY_TOOLS` array (superseded by fail-open default) (#21)
 ```
 
-### .claude-plugin/plugin.json
+#### Step 3.2 — .claude-plugin/plugin.json version bump
+
+This is a behavioral change (fail-closed → fail-open), not just a bug fix. Bump MINOR:
 
 ```json
-"version": "1.1.1"
+"version": "1.2.0"
 ```
 
-**バージョン選択の根拠:**
-- MAJOR: 変更なし（breaking change なし）
-- MINOR: 変更なし（新機能追加なし）
-- PATCH: +1（バグフィックス — allowlist gap の修正）
+**Rationale:** SemVer MINOR — the guard's behavior changes for unknown tools (DENY → ALLOW). Not a PATCH because the observable behavior changes. Not MAJOR because the hook contract (stdin JSON → stdout JSON) is unchanged.
 
-DEVELOPMENT.md のルール「Every feature PR merged to main must update the version and changelog」に従い、同一 PR に含める。
+### Phase 4: Verification
 
-## Summary
+#### Step 4.1 — Syntax check
 
-| # | File | Action | Lines changed |
-|---|------|--------|---------------|
-| 1 | `addons/ios/scripts/sim-pool-guard.sh` | 配列に 3 行追加 | +3 |
-| 2 | `addons/ios/tests/test_sim_clone_required_variants.bats` | 新規作成 (12 テスト) | +~120 |
-| 3 | `CHANGELOG.md` | Fixed エントリ追加 | +3 |
-| 4 | `.claude-plugin/plugin.json` | version bump 1.1.0 → 1.1.1 | +1 -1 |
+```bash
+bash -n addons/ios/scripts/sim-pool-guard.sh
+```
 
-**Total: 4 ファイル (3 modified, 1 new)。全変更は additive。削除やリファクタリングなし。**
+#### Step 4.2 — Full BATS suite
+
+```bash
+bats addons/ios/tests/
+```
+
+All tests must pass.
+
+#### Step 4.3 — Manual smoke test
+
+```bash
+# Fail-open default (unknown tool → ALLOW)
+echo '{"tool_name":"mcp__XcodeBuildMCP__list_schemes","tool_input":{},"session_id":"s1"}' \
+  | bash addons/ios/scripts/sim-pool-guard.sh
+# Expected: {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}
+
+# DENY (erase_sims, empty session_id)
+echo '{"tool_name":"mcp__XcodeBuildMCP__erase_sims","tool_input":{},"session_id":""}' \
+  | bash addons/ios/scripts/sim-pool-guard.sh
+# Expected: DENY with golden image reason
+
+# Pattern match (_sim tool)
+echo '{"tool_name":"mcp__XcodeBuildMCP__build_sim","tool_input":{},"session_id":"s1"}' \
+  | bash addons/ios/scripts/sim-pool-guard.sh
+# Expected: DENY with session_set_defaults guidance (first call, needs mock xcrun)
+```
+
+## 3. Technical Risks and Mitigations
+
+| # | Risk | Likelihood | Impact | Mitigation |
+|---|------|-----------|--------|------------|
+| R1 | `case` glob `*_sim` matches unintended tool names | Very Low | Medium | `*_sim` only matches at end of string. `get_sim_status` does NOT match. Verified by bash semantics. Test FO2.3 covers forward-compatibility. |
+| R2 | `CLONE_REQUIRED_IOS_SIM` rename breaks test greps | Medium | Low | `grep -r 'CLONE_REQUIRED_TOOLS' addons/ios/tests/` and update all references. Covered in Step 2.3. |
+| R3 | `set -u` with empty `DENY_TOOLS` expansion | Very Low | High | DENY_TOOLS always has at least one entry (`erase_sims`). Add comment documenting this invariant. |
+| R4 | DENY before session_id changes behavior for non-session invocations | Intentional | — | This is AC5. `erase_sims` must be blocked in all contexts. DENY message is context-independent. |
+| R5 | `handle_xcodebuildmcp` receives new pattern-matched tools | Expected | — | Handler is generic: ensure_clone → setup_flag check → ALLOW. Does not inspect specific tool names except `session_set_defaults` and `session_use_defaults_profile`. All `*_sim` tools follow the same path. |
+| R6 | Existing tests reference `READONLY_TOOLS` in static greps | Medium | Low | `test_sim_failclosed_guard.bats` deleted. `test_sim_clone_required_variants.bats` updated in Step 2.3. Search: `grep -r 'READONLY_TOOLS' addons/ios/tests/` |
+
+## 4. Per-AC Implementation Mapping
+
+| AC | Phase | Step | Primary Change |
+|----|-------|------|----------------|
+| AC1 (fail-open default) | 1 | 1.5 | `main()` final branch: `emit_deny` → `emit_allow` |
+| AC2a (`_sim` pattern) | 1 | 1.3 | New `is_xcode_clone_required()` function |
+| AC2b (individual tools) | 1 | 1.3 | `screenshot`, `snapshot_ui`, `session_*` in case statement |
+| AC3 (ios-simulator UDID) | 1 | 1.4 | `CLONE_REQUIRED_IOS_SIM` array (22 tools) |
+| AC4 (erase_sims DENY) | 1 | 1.2 | `DENY_TOOLS` array + check in `main()` |
+| AC5 (DENY before session_id) | 1 | 1.2 | DENY check placement in `main()` |
+| AC6 (READONLY_TOOLS removal) | 1 | 1.1 | Delete array + references |
+| AC7 (persist:true block) | — | — | No change — verify existing behavior maintained |
+| AC8 (BATS tests) | 2 | 2.1-2.4 | Delete old, create new, update existing |

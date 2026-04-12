@@ -58,21 +58,21 @@ run_guard() {
 # --- AC1.1: Clone is created on first tool call ---
 
 @test "AC1.1: simctl clone is called on first tool invocation" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   grep -q "simctl clone GOLDEN-UUID-1234" "$XCRUN_LOG"
 }
 
 # --- AC1.2: Clone is booted after creation ---
 
 @test "AC1.2: clone is booted after creation" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   grep -q "simctl boot CLONE-UUID-5678" "$XCRUN_LOG"
 }
 
 # --- AC1.3: Lock file created with clone info ---
 
 @test "AC1.3: session lock file contains clone UDID and name" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   [[ -f "$SIM_SESSION_DIR/test-session-clone1" ]]
   lock_content=$(cat "$SIM_SESSION_DIR/test-session-clone1")
   [[ "$lock_content" == CLONE-UUID-5678* ]]
@@ -82,16 +82,16 @@ run_guard() {
 # --- AC1.4: Second call reuses existing clone ---
 
 @test "AC1.4: second tool call reuses existing clone (no duplicate clone)" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   : > "$XCRUN_LOG"
-  run_guard "mcp__ios-simulator__take_screenshot" '{}'
+  run_guard "mcp__ios-simulator__screenshot" '{}'
   ! grep -q "simctl clone" "$XCRUN_LOG"
 }
 
 # --- AC1.5: Clone name includes timestamp and session prefix ---
 
 @test "AC1.5: clone name follows format atdd-kit-YYYYMMDDTHHMMSS-SESSION8" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   lock_content=$(cat "$SIM_SESSION_DIR/test-session-clone1")
   clone_name="${lock_content#*|}"
   # Check format: atdd-kit- followed by 15-char timestamp, dash, 8-char session
@@ -101,8 +101,8 @@ run_guard() {
 # --- AC1.6: Different sessions get different clones ---
 
 @test "AC1.6: different sessions get independent clones" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}' "session-aaa"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}' "session-bbb"
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}' "session-aaa"
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}' "session-bbb"
   [[ -f "$SIM_SESSION_DIR/session-aaa" ]]
   [[ -f "$SIM_SESSION_DIR/session-bbb" ]]
 }

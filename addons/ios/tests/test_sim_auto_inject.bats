@@ -49,8 +49,8 @@ run_guard() {
 
 # --- AC5.1: First XcodeBuildMCP build DENY with session_set_defaults instruction ---
 
-@test "AC5.1: first build call is DENY with session_set_defaults instruction" {
-  result=$(run_guard "mcp__XcodeBuildMCP__build" '{}')
+@test "AC5.1: first build_sim call is DENY with session_set_defaults instruction" {
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}')
   echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
   context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
   [[ "$context" == *"session_set_defaults"* ]]
@@ -59,20 +59,20 @@ run_guard() {
 
 # --- AC5.2: After session_set_defaults, build is ALLOWed ---
 
-@test "AC5.2: build is ALLOW after session_set_defaults has been called" {
-  # First: trigger clone creation via a build attempt
-  run_guard "mcp__XcodeBuildMCP__build" '{}' > /dev/null 2>&1 || true
+@test "AC5.2: build_sim is ALLOW after session_set_defaults has been called" {
+  # First: trigger clone creation via a build_sim attempt
+  run_guard "mcp__XcodeBuildMCP__build_sim" '{}' > /dev/null 2>&1 || true
   # Then: call session_set_defaults (this sets the setup flag)
   run_guard "mcp__XcodeBuildMCP__session_set_defaults" '{"simulatorName":"atdd-kit-clone","persist":false}'
-  # Now: build should be allowed
-  result=$(run_guard "mcp__XcodeBuildMCP__build" '{}')
+  # Now: build_sim should be allowed
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}')
   echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
 }
 
 # --- AC5.3: ios-simulator tools get udid injected via updatedInput ---
 
-@test "AC5.3: ios-simulator tap gets udid injected in updatedInput" {
-  result=$(run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}')
+@test "AC5.3: ios-simulator ui_tap gets udid injected in updatedInput" {
+  result=$(run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}')
   echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
   udid=$(echo "$result" | jq -r '.hookSpecificOutput.updatedInput.udid')
   [[ "$udid" == "CLONE-UUID-5678" ]]
@@ -81,7 +81,7 @@ run_guard() {
 # --- AC5.4: ios-simulator preserves original input fields ---
 
 @test "AC5.4: udid injection preserves original tool_input fields" {
-  result=$(run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}')
+  result=$(run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}')
   echo "$result" | jq -e '.hookSpecificOutput.updatedInput.x == 100'
   echo "$result" | jq -e '.hookSpecificOutput.updatedInput.y == 200'
 }
@@ -89,7 +89,7 @@ run_guard() {
 # --- AC5.5: DENY instruction mentions clone name ---
 
 @test "AC5.5: DENY additionalContext includes clone name" {
-  result=$(run_guard "mcp__XcodeBuildMCP__build" '{}')
+  result=$(run_guard "mcp__XcodeBuildMCP__build_sim" '{}')
   context=$(echo "$result" | jq -r '.hookSpecificOutput.additionalContext')
   [[ "$context" == *"atdd-kit-"* ]]
 }
@@ -98,7 +98,7 @@ run_guard() {
 
 @test "AC5.6: session_set_defaults is ALLOW and creates setup flag" {
   # First trigger clone creation
-  run_guard "mcp__XcodeBuildMCP__build" '{}' > /dev/null 2>&1 || true
+  run_guard "mcp__XcodeBuildMCP__build_sim" '{}' > /dev/null 2>&1 || true
   result=$(run_guard "mcp__XcodeBuildMCP__session_set_defaults" '{"simulatorName":"clone","persist":false}')
   echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "allow"'
   [[ -f "$SIM_SESSION_DIR/test-session-inject.setup" ]]

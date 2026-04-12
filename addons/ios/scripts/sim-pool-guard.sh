@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# addons/ios/scripts/sim-pool-guard.sh — Ephemeral Clone + Fail-Closed Guard
+# addons/ios/scripts/sim-pool-guard.sh — Ephemeral Clone + Fail-Open Guard
 #
 # PreToolUse hook: captures ALL XcodeBuildMCP / ios-simulator tool calls.
-# Uses allowlist-based routing — unknown tools are DENIED (fail-closed).
+# Uses deny-list + clone-required routing — unknown tools are ALLOWED (fail-open).
 # Manages ephemeral simulator clones per session via xcrun simctl clone.
 #
 # Environment overrides (for testing):
@@ -29,57 +29,40 @@ TTL_LOCAL="${SIM_TTL_LOCAL:-7200}"
 TTL_CI="${SIM_TTL_CI:-2400}"
 LOCK_WAIT_TIMEOUT=60
 
-# ── Allowlist ────────────────────────────────────────────
-# Read-only tools — always ALLOW without requiring a clone
-READONLY_TOOLS=(
-  "mcp__XcodeBuildMCP__list_schemes"
-  "mcp__XcodeBuildMCP__list_targets"
-  "mcp__XcodeBuildMCP__list_devices"
-  "mcp__XcodeBuildMCP__list_device_types"
-  "mcp__XcodeBuildMCP__list_runtimes"
-  "mcp__XcodeBuildMCP__discover_projects"
-  "mcp__XcodeBuildMCP__show_build_settings"
-  "mcp__XcodeBuildMCP__get_build_logs"
-  "mcp__XcodeBuildMCP__get_swift_packages"
-  "mcp__XcodeBuildMCP__session_show_defaults"
-  "mcp__XcodeBuildMCP__session_clear_defaults"
-  "mcp__XcodeBuildMCP__clean_build"
-  "mcp__ios-simulator__get_booted_simulators"
-  "mcp__ios-simulator__stop_recording"
+# ── Tool Classification ─────────────────────────────────
+
+# Unconditionally denied — golden image destruction risk
+DENY_TOOLS=(
+  "mcp__XcodeBuildMCP__erase_sims"
 )
 
-# Clone-required tools — ALLOW only with an active clone
-CLONE_REQUIRED_TOOLS=(
-  "mcp__XcodeBuildMCP__build"
-  "mcp__XcodeBuildMCP__build_sim"
-  "mcp__XcodeBuildMCP__build_run_sim"
-  "mcp__XcodeBuildMCP__test"
-  "mcp__XcodeBuildMCP__test_sim"
-  "mcp__XcodeBuildMCP__run"
-  "mcp__XcodeBuildMCP__session_set_defaults"
-  "mcp__XcodeBuildMCP__session_use_defaults_profile"
+# XcodeBuildMCP clone-required: pattern match + explicit list
+is_xcode_clone_required() {
+  local tool="$1"
+  case "$tool" in
+    mcp__XcodeBuildMCP__*_sim)                        return 0 ;;
+    mcp__XcodeBuildMCP__screenshot)                   return 0 ;;
+    mcp__XcodeBuildMCP__snapshot_ui)                   return 0 ;;
+    mcp__XcodeBuildMCP__session_set_defaults)          return 0 ;;
+    mcp__XcodeBuildMCP__session_use_defaults_profile)  return 0 ;;
+    *)                                                 return 1 ;;
+  esac
+}
+
+# ios-simulator clone-required tools (UDID injection needed)
+# Excluded: get_booted_sim_id (read-only), stop_recording (no UDID needed)
+CLONE_REQUIRED_IOS_SIM=(
+  "mcp__ios-simulator__ui_tap"
+  "mcp__ios-simulator__ui_swipe"
+  "mcp__ios-simulator__ui_type"
+  "mcp__ios-simulator__ui_describe_all"
+  "mcp__ios-simulator__ui_describe_point"
+  "mcp__ios-simulator__ui_view"
+  "mcp__ios-simulator__screenshot"
+  "mcp__ios-simulator__record_video"
+  "mcp__ios-simulator__install_app"
   "mcp__ios-simulator__launch_app"
-  "mcp__ios-simulator__terminate_app"
-  "mcp__ios-simulator__tap"
-  "mcp__ios-simulator__swipe"
-  "mcp__ios-simulator__long_press"
-  "mcp__ios-simulator__type_text"
-  "mcp__ios-simulator__press_button"
-  "mcp__ios-simulator__open_url"
-  "mcp__ios-simulator__take_screenshot"
-  "mcp__ios-simulator__list_apps"
-  "mcp__ios-simulator__get_ui_hierarchy"
-  "mcp__ios-simulator__start_recording"
-  "mcp__ios-simulator__add_media"
-  "mcp__ios-simulator__set_location"
-  "mcp__ios-simulator__clear_keychain"
-  "mcp__ios-simulator__get_app_container"
-  "mcp__ios-simulator__push_notification"
-  "mcp__ios-simulator__set_permission"
-  "mcp__ios-simulator__uninstall_app"
-  "mcp__ios-simulator__boot_simulator"
-  "mcp__ios-simulator__shutdown_simulator"
-  "mcp__ios-simulator__erase_simulator"
+  "mcp__ios-simulator__open_simulator"
 )
 
 # Persist-check tools — check for persist: true before allowing
@@ -378,39 +361,37 @@ main() {
   local session_id
   session_id=$(echo "$input" | jq -r '.session_id // ""')
 
-  # No session_id — passthrough
+  # 1. DENY_TOOLS — unconditional block (before session_id check)
+  if in_array "$tool_name" "${DENY_TOOLS[@]}"; then
+    emit_deny "sim-pool: '${tool_name}' is denied to protect the golden image."
+    exit 0
+  fi
+
+  # 2. No session_id — passthrough
   if [ -z "$session_id" ]; then
     emit_allow
     exit 0
   fi
 
-  # 1. READONLY_TOOLS — immediate ALLOW
-  if in_array "$tool_name" "${READONLY_TOOLS[@]}"; then
-    emit_allow
-    exit 0
-  fi
-
-  # 2. Persist check for relevant tools
+  # 3. Persist check for relevant tools
   if in_array "$tool_name" "${PERSIST_CHECK_TOOLS[@]}"; then
     handle_persist_check "$tool_input"
   fi
 
-  # 3. CLONE_REQUIRED_TOOLS — ensure clone, then handle
-  if in_array "$tool_name" "${CLONE_REQUIRED_TOOLS[@]}"; then
-    case "$tool_name" in
-      mcp__XcodeBuildMCP__*)
-        handle_xcodebuildmcp "$session_id" "$tool_name" "$tool_input"
-        ;;
-      mcp__ios-simulator__*)
-        handle_ios_simulator "$session_id" "$tool_input"
-        ;;
-    esac
+  # 4. XcodeBuildMCP clone-required — pattern match
+  if is_xcode_clone_required "$tool_name"; then
+    handle_xcodebuildmcp "$session_id" "$tool_name" "$tool_input"
     exit 0
   fi
 
-  # 4. Unknown tool — DENY (fail-closed)
-  emit_deny "sim-pool: Unknown tool '${tool_name}' is not in the allowlist. DENIED for safety. If this tool is safe, add it to READONLY_TOOLS or CLONE_REQUIRED_TOOLS in sim-pool-guard.sh."
-  exit 0
+  # 5. ios-simulator clone-required — array match
+  if in_array "$tool_name" "${CLONE_REQUIRED_IOS_SIM[@]}"; then
+    handle_ios_simulator "$session_id" "$tool_input"
+    exit 0
+  fi
+
+  # 6. Default — fail-open ALLOW
+  emit_allow
 }
 
 main

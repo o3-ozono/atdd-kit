@@ -62,7 +62,7 @@ run_guard() {
 # --- AC2.1: Golden boot on first clone request ---
 
 @test "AC2.1: first clone request boots golden (boot + bootstatus + shutdown)" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   grep -q "simctl boot GOLDEN-UUID-1234" "$XCRUN_LOG"
   grep -q "simctl bootstatus GOLDEN-UUID-1234" "$XCRUN_LOG"
   grep -q "simctl shutdown GOLDEN-UUID-1234" "$XCRUN_LOG"
@@ -71,7 +71,7 @@ run_guard() {
 # --- AC2.2: Marker created after golden init ---
 
 @test "AC2.2: marker file is created after golden initialization" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   [[ -f "$SIM_MARKER_DIR/golden-initialized-iOS-18-0" ]]
 }
 
@@ -80,7 +80,7 @@ run_guard() {
 @test "AC2.3: second clone request skips golden boot (marker exists)" {
   touch "$SIM_MARKER_DIR/golden-initialized-iOS-18-0"
   : > "$XCRUN_LOG"
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   ! grep -q "simctl boot GOLDEN-UUID-1234" "$XCRUN_LOG"
 }
 
@@ -88,7 +88,7 @@ run_guard() {
 
 @test "AC2.4: DENY with error when golden image not found" {
   export SIM_NO_GOLDEN=1
-  result=$(run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}')
+  result=$(run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}')
   echo "$result" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
   reason=$(echo "$result" | jq -r '.hookSpecificOutput.permissionDecisionReason')
   [[ "$reason" == *"Golden image"* ]]
@@ -98,7 +98,7 @@ run_guard() {
 
 @test "AC2.5: error message mentions Xcode > Settings > Platforms" {
   export SIM_NO_GOLDEN=1
-  result=$(run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}')
+  result=$(run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}')
   reason=$(echo "$result" | jq -r '.hookSpecificOutput.permissionDecisionReason')
   [[ "$reason" == *"Xcode"* && "$reason" == *"Platforms"* ]]
 }
@@ -106,7 +106,7 @@ run_guard() {
 # --- AC2.6: Marker includes runtime version ---
 
 @test "AC2.6: marker filename includes runtime version for re-init on Xcode update" {
-  run_guard "mcp__ios-simulator__tap" '{"x":100,"y":200}'
+  run_guard "mcp__ios-simulator__ui_tap" '{"x":100,"y":200}'
   ls "$SIM_MARKER_DIR" | grep -q "iOS-18-0"
 }
 
