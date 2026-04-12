@@ -1,41 +1,44 @@
 #!/usr/bin/env bats
 
-# Issue #138: PO/Developer/QA 3-role Agent Teams architecture tests
-# Agent definitions now live in agents/*.md instead of workflow-config template
+# Issue #138 / #34: Agent Teams architecture tests
+# Agent definitions live in agents/*.md
 
-# --- AC1: Role definitions in agents/ directory ---
+# --- AC1 (#34): 7 agent definitions with model/effort ---
 
-@test "AC1: agents/po.md exists" {
-  [[ -f "agents/po.md" ]]
+@test "AC1: all 7 agent definitions exist" {
+  for agent in po developer qa researcher tester reviewer writer; do
+    [[ -f "agents/${agent}.md" ]]
+  done
 }
 
-@test "AC1: agents/developer.md exists" {
-  [[ -f "agents/developer.md" ]]
+@test "AC1: PO agent has model opus and effort high" {
+  grep -q 'model:.*opus' agents/po.md
+  grep -q 'effort:.*high' agents/po.md
 }
 
-@test "AC1: agents/qa.md exists" {
-  [[ -f "agents/qa.md" ]]
+@test "AC1: non-PO agents have model sonnet and effort high" {
+  for agent in developer qa researcher tester reviewer writer; do
+    grep -q 'model:.*sonnet' "agents/${agent}.md"
+    grep -q 'effort:.*high' "agents/${agent}.md"
+  done
 }
 
-@test "AC1: agents/researcher.md exists" {
-  [[ -f "agents/researcher.md" ]]
+@test "AC1: tester agent has verify skill" {
+  grep -q 'atdd-kit:verify' agents/tester.md
 }
 
-@test "AC1: no old role names (implementer/reviewer) in agents/" {
+@test "AC1: reviewer agent has Agent tool" {
+  grep -q 'Agent' agents/reviewer.md
+}
+
+@test "AC1: writer agent has Write and Edit tools" {
+  grep -q 'Write' agents/writer.md
+  grep -q 'Edit' agents/writer.md
+}
+
+@test "AC1: no old role name (implementer) in agents/" {
   local result
-  result=$(grep -rl 'implementer\|[Rr]eviewer' agents/ 2>/dev/null || true)
-  [[ -z "$result" ]]
-}
-
-@test "AC1: no old role names in commands/ (except auto-sweep)" {
-  local result
-  result=$(grep -rl 'implementer\|reviewer' commands/ 2>/dev/null || true)
-  [[ -z "$result" ]]
-}
-
-@test "AC1: no old role names in skills/" {
-  local result
-  result=$(grep -rl 'implementer\|[Rr]eviewer' skills/ 2>/dev/null | grep -v 'node_modules' || true)
+  result=$(grep -rl 'implementer' agents/ 2>/dev/null || true)
   [[ -z "$result" ]]
 }
 

@@ -1,7 +1,8 @@
 ---
 name: qa
 description: "QA agent for code review and verification. Spawned by autopilot for review tasks."
-model: inherit
+model: sonnet
+effort: high
 tools:
   - Read
   - Grep
