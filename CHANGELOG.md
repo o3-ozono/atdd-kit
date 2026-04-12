@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-04-12
+
+### Fixed
+- pr-screenshot-table.sh: AWK code injection prevention — use `-v` option instead of shell expansion for file path (#26)
+- pr-screenshot-table.sh: safe image_paths expansion — convert string concatenation to bash array, remove SC2086 disable (#26)
+- pr-screenshot-table.sh: add PR number input validation with integer regex check (#26)
+- .gitignore: add `*.local.*`, `*.secret`, `*.secrets` catch-all patterns (#26)
+
 ## [1.5.0] - 2026-04-12
 
 ### Changed
