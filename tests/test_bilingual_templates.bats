@@ -6,13 +6,13 @@
 # --- Issue templates exist in both languages ---
 
 @test "ja issue templates exist for all types" {
-  for type in development bug-report investigation documentation refactoring; do
+  for type in development bug-report research documentation refactoring; do
     [[ -f "templates/issue/ja/${type}.yml" ]]
   done
 }
 
 @test "en issue templates exist for all types" {
-  for type in development bug-report investigation documentation refactoring; do
+  for type in development bug-report research documentation refactoring; do
     [[ -f "templates/issue/en/${type}.yml" ]]
   done
 }
@@ -20,7 +20,7 @@
 # --- ja and en templates have distinct name fields ---
 
 @test "ja and en issue templates have distinct name fields" {
-  for type in development bug-report investigation documentation refactoring; do
+  for type in development bug-report research documentation refactoring; do
     ja_name=$(grep '^name:' "templates/issue/ja/${type}.yml")
     en_name=$(grep '^name:' "templates/issue/en/${type}.yml")
     [ "$ja_name" != "$en_name" ]

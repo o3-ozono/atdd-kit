@@ -22,12 +22,12 @@ Copy from `${CLAUDE_PLUGIN_ROOT}/templates/issue/` to `.github/ISSUE_TEMPLATE/`:
 |--------|-------------|
 | `templates/issue/en/development.yml` | `.github/ISSUE_TEMPLATE/development.yml` |
 | `templates/issue/en/bug-report.yml` | `.github/ISSUE_TEMPLATE/bug-report.yml` |
-| `templates/issue/en/investigation.yml` | `.github/ISSUE_TEMPLATE/investigation.yml` |
+| `templates/issue/en/research.yml` | `.github/ISSUE_TEMPLATE/research.yml` |
 | `templates/issue/en/documentation.yml` | `.github/ISSUE_TEMPLATE/documentation.yml` |
 | `templates/issue/en/refactoring.yml` | `.github/ISSUE_TEMPLATE/refactoring.yml` |
 | `templates/issue/ja/development.yml` | `.github/ISSUE_TEMPLATE/development-ja.yml` |
 | `templates/issue/ja/bug-report.yml` | `.github/ISSUE_TEMPLATE/bug-report-ja.yml` |
-| `templates/issue/ja/investigation.yml` | `.github/ISSUE_TEMPLATE/investigation-ja.yml` |
+| `templates/issue/ja/research.yml` | `.github/ISSUE_TEMPLATE/research-ja.yml` |
 | `templates/issue/ja/documentation.yml` | `.github/ISSUE_TEMPLATE/documentation-ja.yml` |
 | `templates/issue/ja/refactoring.yml` | `.github/ISSUE_TEMPLATE/refactoring-ja.yml` |
 
@@ -48,7 +48,7 @@ gh label create "needs-pr-revision" --color "E4E669" --force
 gh label create "type:development" --color "A2EEEF" --force
 gh label create "type:bug" --color "D73A4A" --force
 gh label create "type:documentation" --color "0075CA" --force
-gh label create "type:investigation" --color "D4C5F9" --force
+gh label create "type:research" --color "D4C5F9" --force
 gh label create "refactoring" --color "BFDADC" --force
 gh label create "implementing" --color "0E8A16" --force
 ```

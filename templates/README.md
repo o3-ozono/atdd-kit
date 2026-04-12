@@ -13,7 +13,7 @@ Located in `issue/en/` and `issue/ja/`.
 | `issue/en/development.yml` | Development task Issue template |
 | `issue/en/bug-report.yml` | Bug report Issue template |
 | `issue/en/documentation.yml` | Documentation task Issue template |
-| `issue/en/investigation.yml` | Investigation task Issue template |
+| `issue/en/research.yml` | Research task Issue template |
 | `issue/en/refactoring.yml` | Refactoring task Issue template |
 
 ### PR Templates
