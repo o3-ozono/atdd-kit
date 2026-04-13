@@ -297,7 +297,7 @@ Format:
 | A: [name] | [1-line summary] | ✅ Selected — [rationale] / ❌ Rejected — [reason] |
 | B: [name] | [1-line summary] | ✅ Selected — [rationale] / ❌ Rejected — [reason] |
 
-> Record all considered approaches, rejected options, and the selection rationale here. This section is consumed by the `record` skill to generate a permanent Decision Record in `docs/decisions/`.
+> Record all considered approaches, rejected options, and the selection rationale here. This remains in the Issue comment as the permanent record.
 
 ### User Story
 **As a** [persona], **I want to** [goal], **so that** [reason].
