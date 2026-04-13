@@ -11,7 +11,8 @@
         {"id": "A1", "text": "State Gate チェックを実行している（in-progress ラベルと discover deliverables の確認）", "type": "structural"},
         {"id": "A2", "text": "plan の本体フロー（Test Strategy / Implementation Strategy）に進んでいる", "type": "structural"},
         {"id": "A3", "text": "plan 成果物フォーマットに `### Agent Composition` セクションが含まれている", "type": "structural"},
-        {"id": "A4", "text": "Agent Composition テーブルに Role / Count / Focus の列が含まれている", "type": "structural"}
+        {"id": "A4", "text": "Agent Composition テーブルに Role / Count / Focus の列が含まれている", "type": "structural"},
+        {"id": "A5", "text": "Outer Loop（Story Test）のテスト層選択において Recommended（推奨テスト層）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"}
       ]
     },
     {
