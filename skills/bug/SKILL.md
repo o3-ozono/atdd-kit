@@ -16,7 +16,7 @@ Takes a bug report from the user and drives it through Issue creation -> reprodu
 
 Start this flow automatically (even without explicit invocation) when:
 - User reports something like "bug", "broken", "not working", "crash", "error", "display issue", etc.
-- Japanese-language equivalents of the above: "bug", "defect", "something's wrong", "broken", "not working", "display issue", "crashing", "crash", "error", "stopped", "not responding", "frozen"
+- Japanese keywords (literal — match these tokens in user input): "バグ", "不具合", "おかしい", "壊れている", "動かない", "表示がおかしい", "落ちる", "クラッシュ", "エラー", "止まる", "反応しない", "フリーズ"
 - Screenshots or videos are attached
 - An existing Issue has the `type:bug` label and the user asks for a fix
 
