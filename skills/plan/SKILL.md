@@ -146,6 +146,20 @@ Describe *how* the implementation will be structured:
 2. **Architecture decisions** -- Design choices and rationale (e.g., "use existing Repository pattern", "add new ViewModel")
 3. **Dependencies** -- Ordering constraints between ACs (e.g., "AC2 depends on AC1's data model")
 4. **Risks** -- Anticipated risks and mitigations
+5. **Agent Composition** -- Determine the Variable-Count Agents (Reviewer, Researcher) count and focus/themes for Phase 3 and Phase 4.
+
+   Decide concretely based on task type and change scope:
+
+   | Task Type | Variable-Count Agents | Decision Criteria |
+   |-----------|-----------------------|-------------------|
+   | development / refactoring / bug | Reviewer x N | Number of components affected, security/performance risk |
+   | research | Researcher x N (min 2 per theme) | One agent per clearly separated theme |
+   | documentation | Reviewer x N | Document scope and target audience perspectives |
+
+   Sizing guide:
+   - Single file / single feature change → Reviewer x 1
+   - Multiple components / security or performance impact → Reviewer x 2+
+   - Clearly separated research themes → Researcher x (number of themes)
 
 Present as:
 
@@ -179,6 +193,7 @@ Present as:
 | Target files identified | "improve CI" | "change ci.yml line 100" |
 | Design decisions resolved | "choose A or B" | "A chosen (reason: ...)" |
 | Outer loop test defined | No story test | Story test layer and rationale specified |
+| Variable-Count Agents の人数・観点が具体化されている | "Reviewer x N" | "Reviewer x 2: (1) セキュリティ観点 (2) パフォーマンス観点" |
 
 Include check results at the end of the plan:
 
@@ -192,6 +207,7 @@ Include check results at the end of the plan:
 | Target files identified | OK |
 | Design decisions resolved | OK |
 | Outer loop test defined | OK |
+| Variable-Count Agents の人数・観点が具体化されている | OK / NG: [reason] |
 ```
 
 ### Step 6: Post to Issue Comment
@@ -242,6 +258,15 @@ Format:
 #### Risks
 - [risk]: [mitigation]
 
+### Agent Composition
+
+| Phase | Role | Count | Focus |
+|-------|------|-------|-------|
+| Phase 3 | [Reviewer / Researcher / Developer / Writer] | [N] | [観点またはテーマ] |
+| Phase 4 | [Reviewer] | [N] | [観点] |
+
+> If no Variable-Count Agents are used in a Phase for this task type, write "該当なし" in the Focus column.
+
 ### Readiness Check
 
 | Check | Result |
@@ -251,6 +276,7 @@ Format:
 | Target files identified | OK / NG: [reason] |
 | Design decisions resolved | OK / NG: [reason] |
 | Outer loop test defined | OK / NG: [reason] |
+| Variable-Count Agents の人数・観点が具体化されている | OK / NG: [reason] |
 ```
 
 ### Step 7: Risk-based Approval Classification
