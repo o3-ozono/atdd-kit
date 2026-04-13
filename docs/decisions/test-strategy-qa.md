@@ -1,334 +1,208 @@
-# Test Strategy -- QA
+# Test Strategy — QA (Issue #36)
 
-Issue #3: bug: discover の autopilot モード検出が PO 直接呼び出しを認識しない
+feat: discover スキルに DoD + AC の二層構造を導入する
+
+---
 
 ## 1. Outer Loop (Story Test)
 
-- **User Story:** autopilot PO として、discover/plan/atdd を Skill tool で直接呼び出した際に autopilot モードが正しく検出されてほしい。そうすることで、AUTOPILOT-GUARD 警告のスキップと承認フロー制御が正しく動作する。
-- **Test layer:** Integration (BATS)
-- **Rationale:** 対象は SKILL.md / autopilot.md のプロンプトテキスト。実行環境不要で、テキストパターン検証で十分。BATS の sed + grep パターンで cross-file consistency を含む統合検証が可能。E2E は不要（LLM 実行を伴わないテキスト仕様変更のため）。
+**User Story:**
+> As a atdd-kit を使う開発者（PO / Developer / QA エージェント含む），discover スキルが全タスクタイプで DoD を共通成果物として導出し、コード変更タスクでは User Story + AC を追加レイヤーとして導出するようにしたい，so that タスクの完了条件が常に明示され、タスクタイプによって成果物の形式がバラバラにならない。
 
-## 2. AC ごとのテスト層選定
+**選定テスト層:** BATS + skill-creator eval の組み合わせ
 
-| AC | テスト層 | Rationale |
-|----|---------|-----------|
-| AC1: discover の `--autopilot` 検出 | Unit (BATS) | SKILL.md 内の4箇所（HARD-GATE, AUTOPILOT-GUARD, Step 7, Step 8）のテキストパターン検証 |
-| AC2: discover Standalone モード維持 | Unit (BATS) | Step 7/Step 8 の standalone 分岐テキストが維持されていることの検証 |
-| AC3: plan の `--autopilot` 検出 | Unit (BATS) | AUTOPILOT-GUARD 内のテキストパターン検証 |
-| AC4: atdd の `--autopilot` 検出 | Unit (BATS) | AUTOPILOT-GUARD 内のテキストパターン検証 |
-| AC5: autopilot.md の `--autopilot` 付与 | Unit (BATS) | Phase 1, Phase 3 の Skill 呼び出しテキスト検証 |
-| AC6: 既存テスト全件 PASS | Integration (BATS) | テストファイル自体の更新。`bats tests/` 実行で全件 PASS を確認 |
+**理由:**
+- 変更対象は `skills/discover/SKILL.md` のプロンプトテキスト。LLM 実行を伴わない構造検証（フロー定義・テンプレート構造・用語統一）は BATS + grep が最適。
+- AC9 (eval regression guard) および AC2/AC3（成果物内容の実質検証）は skill-creator eval で LLM 出力を検証する必要がある。
+- Story 全体のアウトカム検証は「eval pass_rate ≥ 0.9」を代理指標とする（AC9）。
 
-## 3. 具体的なテストケース設計
+---
 
-### テストファイル
+## 2. Inner Loop — AC → Test Layer マッピング
 
-既存の `tests/test_discover_autopilot_approval.bats` を更新する。新規テストファイルは作成しない（同一テーマ・同一ファイル群を対象としているため）。
+| AC | テスト層 | 対象ファイル / Eval ID | 検証方法 | 既存流用 / 新規 |
+|----|---------|----------------------|---------|----------------|
+| AC1: 共通フローで DoD 導出ステップが実行される | BATS / grep | `skills/discover/SKILL.md` | 各フロー（Dev/Bug/Docs/Research）セクションに "DoD" 導出ステップが存在することを grep | **新規** `test_discover_dod_structure.bats` |
+| AC2: コード変更タスクで三層構造が導出される | skill-creator eval | eval id=0 (dev-feature), id=1 (bug-fix) | assertion 追加: "DoD"・"User Story"・Given/When/Then の三要素がすべて出力に含まれる | **既存更新** evals.json A1〜A7 に DoD 検証 assertion を追加 |
+| AC3: 非コードタスクで DoD のみ導出される | skill-creator eval | eval id=2 (documentation) | assertion 追加（肯定）: "DoD" が含まれる / （否定）: "User Story" / Given/When/Then が含まれない | **既存更新** evals.json C1/C2 を DoD 用語に対応 |
+| AC4: Completion Criteria 用語の廃止 | BATS / grep | `skills/discover/SKILL.md` | negative grep: "Completion Criteria" が存在しないことを確認 | **新規** `test_discover_dod_structure.bats` |
+| AC5: 成果物テンプレートで DoD が先頭配置 | BATS / grep | `skills/discover/SKILL.md` | 各フローのテンプレートブロック内で "DoD" が先頭セクションとして現れることを行番号順序で確認 | **新規** `test_discover_dod_structure.bats` |
+| AC6: Bug Flow 成果物に DoD セクションが含まれる | BATS + eval | `skills/discover/SKILL.md` + eval id=1 | SKILL.md の Bug Flow テンプレートに DoD セクションが Root Cause より前にあることを確認。eval assertion B6 を追加 | **新規** (SKILL.md grep) + **既存更新** (eval B6 追加) |
+| AC7: Refactoring 固有の DoD 必須項目 | BATS / grep | `skills/discover/SKILL.md` | Refactoring フローセクションに "外部から観測可能な動作が変わらない" に相当する DoD 必須文言が存在することを grep | **新規** `test_discover_dod_structure.bats` |
+| AC8: plan スキルが新ヘッダを正しく読み取る | BATS / grep | `skills/plan/SKILL.md` | plan Step 1 の "Documentation/research" 判定ロジックが "DoD" ヘッダを認識できることを grep（"completion criteria" のみへの依存がないこと） | **新規** `test_discover_dod_structure.bats` |
+| AC9: Eval regression guard | skill-creator eval | `skills/discover/evals/baseline.json` + evals.json | `auto-eval` 実行後の pass_rate ≥ 0.9（baseline 1.0 から 10% 以内） | **既存 baseline 比較** |
 
-### ファイルヘッダ / 変数
+---
+
+## 3. Coverage Analysis — AC9 (Eval Regression Guard)
+
+### baseline.json の現状
+
+```
+pass_rate: 1.0
+- dev-feature: 7/7
+- bug-fix:     5/5
+- documentation: 4/4
+```
+
+### evals.json 更新計画
+
+#### eval id=0 (dev-feature) — 追加 assertion
+
+```jsonc
+{"id": "A8", "text": "DoDセクションが成果物の先頭に配置されている（User Story より前）", "type": "structural"},
+{"id": "A9", "text": "DoDセクションが存在し、タスク固有の完了条件がリスト化されている", "type": "structural"}
+```
+
+#### eval id=1 (bug-fix) — 追加 assertion
+
+```jsonc
+{"id": "B6", "text": "DoDセクションが成果物に含まれ、Root Cause セクションより前に配置されている", "type": "structural"}
+```
+
+#### eval id=2 (documentation) — 更新 assertion
+
+- C1 更新: "完了基準が検証可能なチェックリスト形式" → "DoDセクションが検証可能な項目リストとして記述されている"
+- C2 更新: "Given/When/Then 形式ではなくチェックリスト形式を使用している" → "User Story と Given/When/Then が含まれず、DoDのみが成果物に含まれている"
+- C5 追加: `{"id": "C5", "text": "成果物に 'Completion Criteria' の表記が使用されていない", "type": "structural"}`
+
+### baseline 比較手順
+
+1. 実装前に現 baseline.json が pass_rate=1.0 であることを確認（既存）
+2. SKILL.md 変更後、`auto-eval` を実行
+3. 出力 pass_rate が 0.9 以上であることを確認（AC9 の合格基準）
+4. 0.9 未満の場合: 低下した eval とアサーションを特定し、SKILL.md の該当箇所を修正してから再実行
+5. pass_rate が 0.9 以上になったら baseline.json を更新（上書き）
+
+---
+
+## 4. Regression Risk
+
+### 既存 BATS テストへの影響
+
+| テストファイル | 影響 | 理由 |
+|--------------|------|------|
+| `test_discover_approach_parity.bats` | **影響なし** | Step 2 の equal-detail ルールは変更なし |
+| `test_discover_autopilot_approval.bats` | **影響なし** | Step 7/8 の autopilot 分岐ロジックは変更なし |
+| `test_legacy_terms.bats` | **要確認** | "Completion Criteria" が legacy term になるため、AC4 の grep negative テストと重複しないよう調整が必要。ただし現行 `test_legacy_terms.bats` は "type:investigation" 等を対象としており直接競合しない |
+| その他 43 ファイル | **影響なし** | `skills/discover/SKILL.md` の構造変更に依存するテストは上記 2 ファイルのみ |
+
+### eval への影響
+
+- 既存 C1/C2 assertion は "Completion Criteria" を前提としているため、SKILL.md 変更後に **false negative** が発生する（テストが PASS するが正しい動作を検証できていない）。上記の assertion 更新で対処する。
+- 新規 assertion (A8, A9, B6, C5) の追加により total テスト数が増加するため、pass_rate は新規 assertion が FAIL した場合に低下する。これは regression ではなく「新規要件の非充足」として扱う。
+
+### plan スキルへの影響
+
+Developer レビュー (ac-review-developer.md) で指摘されたとおり、`skills/plan/SKILL.md` Step 1 の判定ロジックが "completion criteria" のみに依存している場合、documentation タスクの plan フローが壊れる。AC8 の BATS テストで plan Step 1 に "DoD" ヘッダへの対応が含まれていることを確認する。
+
+---
+
+## 5. Tests to Add
+
+### 新規 BATS ファイル: `tests/test_discover_dod_structure.bats`
 
 ```bash
 #!/usr/bin/env bats
 
-# Issue #3: discover の autopilot モード検出が PO 直接呼び出しを認識しない
-# Tests verify --autopilot flag detection in discover, plan, atdd, and autopilot
+# Issue #36: discover スキルに DoD + AC の二層構造を導入する
+# Tests verify DoD derivation structure, terminology, and template placement
 
 DISCOVER="skills/discover/SKILL.md"
 PLAN="skills/plan/SKILL.md"
-ATDD="skills/atdd/SKILL.md"
-AUTOPILOT="commands/autopilot.md"
-```
 
-Note: 既存の `OVERRIDES` 変数は使用されていないため削除。`PLAN` と `ATDD` を追加。
+# --- AC1: 各フローに DoD 導出ステップが存在する ---
 
----
-
-### AC1: discover の --autopilot 検出 (6テスト)
-
-```bash
-# --- AC1: --autopilot フラグで autopilot モード検出 ---
-
-@test "AC1: HARD-GATE autopilot exception references --autopilot flag" {
-  local hard_gate
-  hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
-  echo "$hard_gate" | grep -q '\-\-autopilot'
+@test "AC1: Development Flow contains DoD derivation step" {
+  local dev_flow
+  dev_flow=$(sed -n '/## Development Flow/,/## Bug Flow/p' "$DISCOVER")
+  echo "$dev_flow" | grep -qi 'DoD\|Definition of Done'
 }
 
-@test "AC1: HARD-GATE exception requires BOTH --autopilot AND AC Review Round" {
-  local hard_gate
-  hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
-  echo "$hard_gate" | grep -q '\-\-autopilot'
-  echo "$hard_gate" | grep -qi 'AC Review Round'
+@test "AC1: Bug Flow contains DoD derivation step" {
+  local bug_flow
+  bug_flow=$(sed -n '/## Bug Flow/,/## Refactoring Flow/p' "$DISCOVER")
+  echo "$bug_flow" | grep -qi 'DoD\|Definition of Done'
 }
 
-@test "AC1: AUTOPILOT-GUARD uses --autopilot flag for mode detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  echo "$guard" | grep -q '\-\-autopilot'
+@test "AC1: Documentation/Research Flow contains DoD derivation step" {
+  local doc_flow
+  doc_flow=$(sed -n '/## Documentation \/ Research Flow/,/## Skill Completion/p' "$DISCOVER")
+  echo "$doc_flow" | grep -qi 'DoD\|Definition of Done'
 }
 
-@test "AC1: Step 7 autopilot branch uses --autopilot flag" {
-  local step7
-  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
-  echo "$step7" | grep -q '\-\-autopilot'
+# --- AC4: "Completion Criteria" 用語が存在しない ---
+
+@test "AC4: SKILL.md does not contain 'Completion Criteria' term" {
+  ! grep -q 'Completion Criteria' "$DISCOVER"
 }
 
-@test "AC1: Step 7 autopilot mode outputs draft AC and skips approval" {
-  local step7
-  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
-  echo "$step7" | grep -qi 'draft'
-  echo "$step7" | grep -qi 'skip'
+# --- AC5: 成果物テンプレートで DoD が先頭に配置されている ---
+
+@test "AC5: Development Flow template has DoD section before User Story" {
+  local template_section
+  template_section=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
+  local dod_line us_line
+  dod_line=$(echo "$template_section" | grep -n 'DoD\|Definition of Done' | head -1 | cut -d: -f1)
+  us_line=$(echo "$template_section" | grep -n 'User Story' | head -1 | cut -d: -f1)
+  [[ -n "$dod_line" ]]
+  [[ -n "$us_line" ]]
+  [[ "$dod_line" -lt "$us_line" ]]
 }
 
-@test "AC1: Step 8 autopilot skip references --autopilot flag" {
-  local step8
-  step8=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
-  echo "$step8" | grep -q '\-\-autopilot'
-}
-```
-
----
-
-### AC2: Standalone モード維持 (3テスト -- 既存テスト継続)
-
-```bash
-# --- AC2: standalone mode preserves approval gate ---
-
-@test "AC2: Step 7 standalone mode preserves approval request text" {
-  local step7
-  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
-  echo "$step7" | grep -qi 'Approve.*Needs revision\|approve'
+@test "AC5: Documentation/Research Flow template has DoD section" {
+  local doc_template
+  doc_template=$(sed -n '/## Documentation \/ Research Flow/,/## Skill Completion/p' "$DISCOVER")
+  echo "$doc_template" | grep -qi '### DoD\|## DoD\|DoD'
 }
 
-@test "AC2: Step 8 standalone mode preserves Issue comment posting" {
-  local step8
-  step8=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
-  echo "$step8" | grep -q 'gh issue comment'
+# --- AC6: Bug Flow テンプレートに DoD セクションが Root Cause より前に存在する ---
+
+@test "AC6: Bug Flow template has DoD section before Root Cause" {
+  local bug_template
+  bug_template=$(sed -n '/## Bug Flow/,/## Refactoring Flow/p' "$DISCOVER")
+  local dod_line rc_line
+  dod_line=$(echo "$bug_template" | grep -n 'DoD\|Definition of Done' | head -1 | cut -d: -f1)
+  rc_line=$(echo "$bug_template" | grep -n 'Root Cause' | head -1 | cut -d: -f1)
+  [[ -n "$dod_line" ]]
+  [[ -n "$rc_line" ]]
+  [[ "$dod_line" -lt "$rc_line" ]]
 }
 
-@test "AC2: Step 8 standalone mode preserves inline plan execution" {
-  local step8
-  step8=$(sed -n '/### Step 8/,/^---$/p' "$DISCOVER")
-  echo "$step8" | grep -qi 'inline.*plan\|plan.*inline\|plan.*Core.*Flow'
+# --- AC7: Refactoring フローの DoD に「外部動作不変」必須項目の記述がある ---
+
+@test "AC7: Refactoring Flow mentions externally-observable behavior unchanged in DoD" {
+  local refactoring_flow
+  refactoring_flow=$(sed -n '/## Refactoring Flow/,/## Documentation/p' "$DISCOVER")
+  echo "$refactoring_flow" | grep -qi '外部.*動作\|observable.*behavior\|behavior.*unchanged\|externally'
 }
-```
 
-Note: 既存テスト #7, #8, #9 をそのまま維持。assertion パターンは standalone パスのテキストを検証しており、`--autopilot` 変更に影響されない。
+# --- AC8: plan Step 1 が DoD ヘッダを認識できる ---
 
----
+@test "AC8: plan Step 1 reads discover deliverables by DoD header (not only completion criteria)" {
+  local step1
+  step1=$(sed -n '/### Step 1/,/### Step 2/p' "$PLAN")
+  # plan は "User Story + ACs" または "DoD" で識別できる必要がある
+  # "completion criteria" のみへの依存は NG
+  echo "$step1" | grep -qi 'DoD\|User Story'
+}
 
-### AC3: plan の --autopilot 検出 (1テスト -- 新規)
+# --- REGRESSION: Mandatory Checklist に DoD チェック項目がある ---
 
-```bash
-# --- AC3: plan の AUTOPILOT-GUARD ---
-
-@test "AC3: plan AUTOPILOT-GUARD uses --autopilot flag" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  echo "$guard" | grep -q '\-\-autopilot'
+@test "REGRESSION: Mandatory Checklist includes DoD derivation check" {
+  local checklist
+  checklist=$(sed -n '/## Mandatory Checklist/,/^$/p' "$DISCOVER")
+  echo "$checklist" | grep -qi 'DoD'
 }
 ```
 
----
+### evals.json 追加 assertion 一覧（再掲）
 
-### AC4: atdd の --autopilot 検出 (1テスト -- 新規)
-
-```bash
-# --- AC4: atdd の AUTOPILOT-GUARD ---
-
-@test "AC4: atdd AUTOPILOT-GUARD uses --autopilot flag" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-```
-
----
-
-### AC5: autopilot.md の --autopilot 付与 (2テスト -- 新規)
-
-```bash
-# --- AC5: autopilot.md の Skill 呼び出しに --autopilot 付与 ---
-
-@test "AC5: autopilot Phase 1 discover call includes --autopilot" {
-  local phase1
-  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
-  echo "$phase1" | grep -q '\-\-autopilot'
-}
-
-@test "AC5: autopilot Phase 3 atdd call includes --autopilot" {
-  local phase3
-  phase3=$(sed -n '/## Phase 3/,/## Phase 4/p' "$AUTOPILOT")
-  echo "$phase3" | grep -q '\-\-autopilot'
-}
-```
-
----
-
-### Negative tests: 旧方式除去の確認 (3テスト -- 新規)
-
-```bash
-# --- REGRESSION: <teammate-message> 旧方式が除去されている ---
-
-@test "REGRESSION: discover AUTOPILOT-GUARD does not use teammate-message for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  ! echo "$guard" | grep -q 'teammate-message'
-}
-
-@test "REGRESSION: plan AUTOPILOT-GUARD does not use teammate-message for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  ! echo "$guard" | grep -q 'teammate-message'
-}
-
-@test "REGRESSION: atdd AUTOPILOT-GUARD does not use teammate-message for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
-  ! echo "$guard" | grep -q 'teammate-message'
-}
-```
-
----
-
-### Cross-file consistency (2テスト -- 既存テスト更新)
-
-```bash
-# --- Cross-file consistency ---
-
-@test "discover HARD-GATE and autopilot AC Review Round are consistent on approval flow" {
-  grep -qi 'AC Review Round' "$DISCOVER"
-  grep -qi 'approval' "$AUTOPILOT"
-}
-
-@test "discover autopilot exception is documented in HARD-GATE, not just Step 7" {
-  local hard_gate
-  hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
-  echo "$hard_gate" | grep -qi '\-\-autopilot\|AC Review Round'
-}
-```
-
-Note: テスト #15 はそのまま維持。テスト #16 は `autopilot\|AC Review Round` → `\-\-autopilot\|AC Review Round` に更新（より厳密に。ただし optional -- 現行でも PASS する）。
-
----
-
-### Autopilot AC Review Round テスト (5テスト -- 既存テスト維持)
-
-```bash
-# --- autopilot AC Review Round (既存テスト -- 変更なし) ---
-
-@test "autopilot AC Review Round posts Issue comment after user approval" {
-  local acr
-  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
-  echo "$acr" | grep -q 'gh issue comment'
-}
-
-@test "autopilot Issue comment is posted AFTER approval, not before" {
-  local acr
-  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
-  local approval_line comment_line
-  approval_line=$(echo "$acr" | grep -ni 'approv' | head -1 | cut -d: -f1)
-  comment_line=$(echo "$acr" | grep -ni 'gh issue comment' | head -1 | cut -d: -f1)
-  [[ -n "$approval_line" ]]
-  [[ -n "$comment_line" ]]
-  [[ "$approval_line" -lt "$comment_line" ]]
-}
-
-@test "autopilot AC Review Round mentions Three Amigos integration" {
-  local acr
-  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
-  echo "$acr" | grep -qi 'Three Amigos'
-}
-
-@test "autopilot AC Review Round has reject handling" {
-  local acr
-  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
-  echo "$acr" | grep -qi 'reject'
-}
-
-@test "reject triggers PO modification, not AC Review Round restart" {
-  local acr
-  acr=$(sed -n '/## AC Review Round/,/## Phase 2/p' "$AUTOPILOT")
-  echo "$acr" | grep -qi 'PO.*修正\|PO.*modif\|PO.*revise\|PO.*correct'
-}
-```
-
-## 4. 既存テスト更新計画
-
-### `test_discover_autopilot_approval.bats` 全18テスト
-
-| # | 既存テスト名 | 対応 | 詳細 |
-|---|------------|------|------|
-| 1 | AC5: HARD-GATE contains autopilot exception clause | **更新** | `teammate-message` grep → `--autopilot` grep。テスト名も AC1 に付け替え |
-| 2 | AC5: HARD-GATE exception requires BOTH teammate-message AND AC Review Round approval | **更新** | テスト名・assertion を `--autopilot` + AC Review Round に変更 |
-| 3 | AC1: Step 7 has autopilot-mode conditional branch | **更新** | `teammate-message\|autopilot` → `--autopilot` に厳密化 |
-| 4 | AC1: Step 7 autopilot mode outputs draft AC without approval request | **維持** | `draft` grep は変更不要 |
-| 5 | AC1: Step 7 autopilot mode skips approval request | **統合** | テスト #4 と統合して「outputs draft AC and skips approval」に |
-| 6 | AC1: Step 8 has autopilot skip instruction | **更新** | `--autopilot` を含む assertion に強化 |
-| 7 | AC2: Step 7 standalone mode preserves approval request text | **維持** | standalone パスは変更なし |
-| 8 | AC2: Step 8 standalone mode preserves Issue comment posting | **維持** | standalone パスは変更なし |
-| 9 | AC2: Step 8 standalone mode preserves inline plan execution | **維持** | standalone パスは変更なし |
-| 10 | AC4: autopilot AC Review Round posts Issue comment after user approval | **維持** | autopilot.md の AC Review Round は変更なし |
-| 11 | AC4: autopilot Issue comment is posted AFTER approval, not before | **維持** | 順序検証は変更なし |
-| 12 | AC3: autopilot AC Review Round mentions Three Amigos integration | **維持** | 変更なし |
-| 13 | AC3: autopilot AC Review Round has reject handling | **維持** | 変更なし |
-| 14 | AC3: reject triggers PO modification, not AC Review Round restart | **維持** | 変更なし |
-| 15 | Cross-file: HARD-GATE and autopilot AC Review Round are consistent | **維持** | `teammate-message` に依存していない |
-| 16 | Cross-file: autopilot exception is documented in HARD-GATE | **更新 (optional)** | `--autopilot` に厳密化 |
-
-**まとめ:**
-- **更新:** 4件 (#1, #2, #3, #6) + 1件 optional (#16)
-- **維持:** 11件 (#7-#15)
-- **統合:** 1件 (#4 + #5 → 1テスト)
-- **削除:** 0件
-- **新規追加:** 7件 (AC1-GUARD, AC3, AC4, AC5 x2, REGRESSION x3)
-
-### 最終テスト数
-
-18 (既存) - 1 (統合) + 7 (新規) = **24件**
-
-## 5. カバレッジ戦略
-
-### 境界条件
-
-| 境界条件 | テストの有無 | 対応 |
-|---------|------------|------|
-| `--autopilot` が引数の唯一の要素 | テスト不要 | SKILL.md はプロンプト記述。LLM が `--autopilot` の存在を判定するため、位置の厳密なテストは不適切 |
-| `--autopilot` と Issue 番号の順序 | テスト不要 | 同上 |
-| typo（`--auto-pilot`, `-autopilot`） | テスト不要 | LLM の引数解釈の問題であり、テキストパターンテストの対象外 |
-| Bug Flow Step 5 の autopilot 分岐 | カバー済み | Step 5 は "same as development flow Step 7" と参照。Step 7 テスト (AC1) で間接カバー |
-
-### エッジケース
-
-| エッジケース | テストの有無 | 対応 |
-|------------|------------|------|
-| ユーザーが standalone で `--autopilot` を付けた場合 | テスト不要 | ユーザーの意図的な操作。ブロックしない方針 |
-| HARD-GATE と AUTOPILOT-GUARD の一貫性 | テストあり | AC1 のテストで HARD-GATE と GUARD の両方を検証 |
-| 3つの SKILL.md 間の一貫性 | テストあり | AC1 (discover), AC3 (plan), AC4 (atdd) + REGRESSION negative tests |
-
-## 6. リグレッションリスク分析
-
-### 影響範囲
-
-`teammate-message` を grep しているテストは `test_discover_autopilot_approval.bats` のみ（tests/ 配下全43ファイルを確認済み）。他のテストファイルへの影響はない。
-
-### リスク一覧
-
-| リスク | 影響度 | 発生確率 | 対策 |
-|--------|-------|---------|------|
-| 既存テスト #1, #2 が FAIL | 高 | 確実 | AC6: テスト更新で対応 |
-| 既存テスト #3 が assertion 緩すぎで PASS するが不正確 | 低 | 中 | `--autopilot` に厳密化 |
-| plan/atdd の AUTOPILOT-GUARD 変更で他テストが FAIL | 低 | なし | 他テストに plan/atdd GUARD テストは存在しない |
-| autopilot.md Phase 1 変更で test_po_dev_qa.bats が FAIL | 低 | なし | `Phase.*1.*discover` パターンは `--autopilot` 追加後も PASS |
-| autopilot.md Phase 1 変更で test_autopilot_args.bats が FAIL | 低 | なし | 引数解析テストで Skill 呼び出し記述に依存していない |
-
-### 既存機能の安全性
-
-以下の機能は変更の影響を受けない:
-- AC Review Round フロー（autopilot.md のこのセクションは変更なし）
-- Plan Review Round フロー（変更なし）
-- Phase 3-5 フロー（Phase 3 の atdd 呼び出しに `--autopilot` 追加のみ）
-- discover Development Flow Steps 1-6（変更なし）
-- discover Bug Flow Steps 1-4, 6（変更なし）
-- plan Core Flow Steps 1-8（AUTOPILOT-GUARD のみ変更）
-- atdd 全フロー（AUTOPILOT-GUARD のみ変更）
+| Eval | Assertion ID | 内容 | 種別 |
+|------|-------------|------|------|
+| dev-feature | A8 | DoD セクションが User Story より前に配置されている | structural |
+| dev-feature | A9 | DoD セクションが存在し完了条件がリスト化されている | structural |
+| bug-fix | B6 | DoD セクションが Root Cause セクションより前に存在する | structural |
+| documentation | C1 (更新) | DoD セクションが検証可能な項目リストとして記述されている | structural |
+| documentation | C2 (更新) | User Story と Given/When/Then が含まれず DoD のみが成果物に含まれている | structural |
+| documentation | C5 (追加) | "Completion Criteria" の表記が使用されていない | structural |

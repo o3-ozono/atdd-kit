@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-13
+
+### Added
+- discover: DoD (Definition of Done) derivation step (Step 2.5) added to Development, Bug, and Refactoring flows (#36)
+- discover: DoD derivation step added to Documentation/Research flow (replaces Completion Criteria) (#36)
+- discover: DoD section now appears at the top of all Issue comment templates across all task types (#36)
+- discover: Refactoring flow requires a DoD item confirming externally observable behavior is unchanged (#36)
+- tests: `test_discover_dod_structure.bats` with 26 tests covering AC1-AC9 (#36)
+
+### Changed
+- discover: "Completion Criteria" terminology replaced with "DoD (Definition of Done)" throughout all flows (#36)
+- discover: Documentation/Research flow Step 3 renamed from "Define Completion Criteria" to "DoD Derivation" (#36)
+- plan: Step 1 and description updated to read DoD + ACs from discover deliverables (#36)
+- docs/issue-ready-flow.md: "completion criteria" references updated to "DoD" (#36)
+- commands/autopilot.md: "completion criteria" reference updated to "DoD items" (#36)
+
 ## [1.7.0] - 2026-04-12
 
 ### Added

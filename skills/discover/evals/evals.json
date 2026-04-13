@@ -5,7 +5,7 @@
       "id": 0,
       "name": "dev-feature",
       "prompt": "Issue #100 の作業を始めたい。ダッシュボードにグラフのエクスポート機能（PNG/SVG）を追加する。ユーザーからの要望が多い。",
-      "expected_output": "2-3 approaches with tradeoffs, user story, 3+ ACs in Given/When/Then, UX heuristic check (U1-U5), interruption scenario check (I1-I4)",
+      "expected_output": "DoD list at top, then 2-3 approaches with tradeoffs, user story, 3+ ACs in Given/When/Then, UX heuristic check (U1-U5), interruption scenario check (I1-I4)",
       "files": [],
       "assertions": [
         {"id": "A1", "text": "2つ以上のアプローチがPros/Cons付きで比較されている", "type": "structural"},
@@ -14,34 +14,38 @@
         {"id": "A4", "text": "ACの数が3以上である", "type": "structural"},
         {"id": "A5", "text": "UXヒューリスティックチェック U1-U5 の全5項目が言及されている", "type": "structural"},
         {"id": "A6", "text": "中断シナリオチェック I1-I4 の全4項目が言及されている", "type": "structural"},
-        {"id": "A7", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"}
+        {"id": "A7", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"},
+        {"id": "A8", "text": "DoD または Definition of Done セクションが存在し、User Story セクションより前に配置されている", "type": "structural"},
+        {"id": "A9", "text": "DoD セクションに完了条件がチェックリスト形式でリスト化されている", "type": "structural"}
       ]
     },
     {
       "id": 1,
       "name": "bug-fix",
       "prompt": "本番でログインボタンを連打するとエラー500が返る。Issue #201 に報告が来ている。iOS Safari で再現確認済み。",
-      "expected_output": "Root cause classification (AC Gap/Test Gap/Logic Error), fix approaches, regression test AC, fix ACs in Given/When/Then",
+      "expected_output": "DoD list at top, then root cause classification (AC Gap/Test Gap/Logic Error), fix approaches, regression test AC, fix ACs in Given/When/Then",
       "files": [],
       "assertions": [
         {"id": "B1", "text": "根本原因が AC Gap / Test Gap / Logic Error のいずれかに分類されている", "type": "structural"},
         {"id": "B2", "text": "リグレッションテストACが含まれている（バグ再現条件をACとして記述）", "type": "structural"},
         {"id": "B3", "text": "全ACが Given/When/Then 形式で記述されている", "type": "structural"},
         {"id": "B4", "text": "2つ以上の修正アプローチがPros/Cons付きで比較されている", "type": "structural"},
-        {"id": "B5", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"}
+        {"id": "B5", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"},
+        {"id": "B6", "text": "DoD または Definition of Done セクションが存在し、Root Cause セクションより前に配置されている", "type": "structural"}
       ]
     },
     {
       "id": 2,
       "name": "documentation",
       "prompt": "Issue #305。APIの認証フローについてドキュメントが古くなっている。OAuth2.0 に移行したのに旧フローのままで、新メンバーが混乱している。",
-      "expected_output": "Verifiable completion criteria as checklist, approach exploration, no Given/When/Then (docs flow uses completion criteria instead)",
+      "expected_output": "Verifiable DoD items as list (not Given/When/Then), approach exploration, no User Story, no Acceptance Criteria section",
       "files": [],
       "assertions": [
-        {"id": "C1", "text": "完了基準が検証可能なチェックリスト形式で記述されている（曖昧な表現なし）", "type": "structural"},
-        {"id": "C2", "text": "Given/When/Then 形式ではなくチェックリスト形式を使用している", "type": "structural"},
+        {"id": "C1", "text": "DoD または Definition of Done セクションが検証可能な項目リストとして記述されている（曖昧な表現なし）", "type": "structural"},
+        {"id": "C2", "text": "User Story と Given/When/Then が含まれず、DoD のみが成果物に含まれている", "type": "structural"},
         {"id": "C3", "text": "2つ以上のアプローチがPros/Cons付きで比較されている", "type": "structural"},
-        {"id": "C4", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"}
+        {"id": "C4", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"},
+        {"id": "C5", "text": "'Completion Criteria' という表記が使用されていない", "type": "structural"}
       ]
     },
     {

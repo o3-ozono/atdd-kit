@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Create test strategy and implementation strategy from discover's ACs. Second step of the Issue Ready flow."
+description: "Create test strategy and implementation strategy from discover's deliverables (DoD + ACs). Second step of the Issue Ready flow."
 ---
 
 ## Session Start Check (required)
@@ -32,7 +32,7 @@ Before executing plan, verify the Issue meets these preconditions:
 
 > **Inline Mode exception:** When plan is called inline from discover, skip this gate (discover deliverables are being created in the same flow).
 
-The second step of the Issue Ready flow. Takes approved ACs / completion criteria from discover and produces a test strategy (AC-to-test-layer mapping) and implementation strategy.
+The second step of the Issue Ready flow. Takes approved DoD + ACs from discover and produces a test strategy (AC-to-test-layer mapping) and implementation strategy.
 
 > **Code is NOT written here.** plan decides *how* to test and implement. `atdd` writes the actual code.
 
@@ -78,8 +78,8 @@ Execute these steps **in order**. Do not skip any.
 ### Step 1: Read discover Deliverables
 
 1. Read Issue comments to find the approved deliverables from discover:
-   - Development/bug/refactoring: User Story + ACs (Given/When/Then)
-   - Documentation/research: completion criteria
+   - Development/bug/refactoring: DoD + User Story + ACs (Given/When/Then)
+   - Documentation/research: DoD
 2. If deliverables are not found, notify the user that discover is incomplete and suggest running `atdd-kit:discover`
 
 ### Step 2: Codebase Analysis

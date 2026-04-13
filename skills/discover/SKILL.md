@@ -10,7 +10,7 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 # discover Skill -- Requirements Exploration and AC Derivation
 
 <HARD-GATE>
-Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (ACs or completion criteria) produced by this skill. This applies to EVERY task regardless of perceived simplicity. "Too simple to need discovery" is a rationalization -- all tasks start here.
+Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (DoD, ACs, or both) produced by this skill. This applies to EVERY task regardless of perceived simplicity. "Too simple to need discovery" is a rationalization -- all tasks start here.
 
 **Autopilot exception:** When discover is invoked via autopilot (ARGUMENTS contains `--autopilot`), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) the AC Review Round completes with user approval.
 </HARD-GATE>
@@ -22,7 +22,7 @@ If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash com
 If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
-The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (ACs for dev tasks, completion criteria for docs/research).
+The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks).
 
 > **Used for all task types.** Development, bug, refactoring, documentation, research -- all start here.
 
@@ -149,6 +149,29 @@ Which approach? [A / B / Suggest alternative]
 
 5. Repeat until the user approves
 
+### Step 2.5: DoD Derivation
+
+Based on the approved approach, derive the **Definition of Done** for this task.
+
+DoD items describe *when the task is complete* (delivery conditions), not *how* the feature behaves.
+
+Typical DoD items:
+- Implementation satisfies all ACs
+- All new code has tests at the appropriate layer
+- No regression in existing tests
+- PR reviewed and merged
+
+Confirm with the user or proceed with defaults:
+
+```
+Recommended DoD:
+- [ ] [condition 1]
+- [ ] [condition 2]
+...
+
+Reply 'ok' to accept, or suggest additions/changes.
+```
+
 ### Step 3: User Story Derivation
 
 Based on the approved approach, derive a user story.
@@ -259,6 +282,11 @@ Format:
 ```markdown
 ## discover Deliverables
 
+### DoD (Definition of Done)
+- [ ] [verifiable DoD item 1]
+- [ ] [verifiable DoD item 2]
+- ...
+
 ### Approach
 [Description of chosen approach]
 
@@ -345,6 +373,12 @@ Is this analysis correct? [Yes / Needs correction]
 
 Same as development flow Step 2: explore 2-3 approaches and get approval.
 
+### Step 3.5: DoD Derivation
+
+Same as development flow Step 2.5: derive DoD items for this bug fix. Always include:
+- The bug no longer reproduces under the original reproduction steps
+- Regression test passes
+
 ### Step 4: Fix AC Derivation
 
 Based on the approved approach, derive fix ACs in Given/When/Then format.
@@ -364,6 +398,11 @@ Format:
 
 ```markdown
 ## discover Deliverables
+
+### DoD (Definition of Done)
+- [ ] The bug no longer reproduces under the original reproduction steps
+- [ ] Regression test for this bug passes
+- [ ] [other verifiable DoD item]
 
 ### Root Cause
 **Classification:** [A / B / C] -- [class name]
@@ -394,6 +433,7 @@ Format:
 
 Same steps as development flow, with these differences:
 
+- **DoD required item:** Always include a DoD item stating that externally observable behavior is unchanged (e.g., "外部から観測可能な動作が変わらない" / "externally observable behavior is unchanged — verified by regression test suite").
 - **User story perspective:** The subject is a developer or team (e.g., "As a developer, I want X to be easier to test")
 - **AC focus:** Always include an AC verifying that externally observable behavior is unchanged
 - **UX / Interruption checks:** Mark as not applicable for pure internal refactoring (don't skip -- explicitly state not applicable with a reason)
@@ -412,9 +452,9 @@ Same steps as development flow, with these differences:
 1. Consider 2-3 approaches, present to user
 2. Get approval
 
-### Step 3: Define Completion Criteria
+### Step 3: DoD Derivation
 
-Define **verifiable** completion criteria. Vague criteria are not allowed.
+Define the **Definition of Done** — verifiable completion conditions. Vague criteria are not allowed.
 
 | Bad | Good |
 |-----|------|
@@ -424,13 +464,13 @@ Define **verifiable** completion criteria. Vague criteria are not allowed.
 
 ### Step 4: Present Deliverables and Get Approval
 
-Present completion criteria:
+Present DoD items:
 
 ```
-Are these completion criteria acceptable?
+Are these DoD items acceptable?
 
-- [ ] [criterion 1]
-- [ ] [criterion 2]
+- [ ] [DoD item 1]
+- [ ] [DoD item 2]
 - ...
 
 [Approve / Needs revision]
@@ -445,16 +485,16 @@ Format:
 ```markdown
 ## discover Deliverables
 
+### DoD (Definition of Done)
+- [ ] [verifiable DoD item 1]
+- [ ] [verifiable DoD item 2]
+- ...
+
 ### Scope
 [Investigation/documentation scope]
 
 ### Approach
 [Description]
-
-### Completion Criteria
-- [ ] [verifiable criterion 1]
-- [ ] [verifiable criterion 2]
-- ...
 ```
 
 ---
@@ -478,6 +518,8 @@ Do not skip any item.
 - [ ] Not editing code or files (Issue comments only)
 - [ ] Not bundling multiple questions in one message
 - [ ] Approach exploration done (2-3 approaches presented)
+- [ ] DoD derivation step completed (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
+- [ ] DoD section is at the top of the Issue comment
 - [ ] Not skipping UX check (U1-U5) for development tasks
 - [ ] Not skipping interruption scenario check (I1-I4) for development tasks
 - [ ] ACs are in Given/When/Then format
