@@ -9,7 +9,8 @@
       "files": [],
       "assertions": [
         {"id": "A1", "text": "複数のアプローチ（Firebase Auth vs 自前実装）を比較している", "type": "structural"},
-        {"id": "A2", "text": "Issue 作成前の設計探索フェーズであることを認識している", "type": "structural"}
+        {"id": "A2", "text": "Issue 作成前の設計探索フェーズであることを認識している", "type": "structural"},
+        {"id": "E1", "text": "アプローチ選択の提示に Recommended 付きの推奨案が含まれており、ユーザーが選択肢から選ぶ形式（AskUserQuestion または選択肢提示）になっている", "type": "structural"}
       ]
     },
     {

@@ -40,12 +40,17 @@ When an Issue number is provided (chained from `issue` skill):
 
 ### Step 0: Offer Skip
 
-Present the option to skip brainstorming:
+Use AskUserQuestion with:
+- header: "Brainstorm?"
+- options:
+  1. "(Recommended) Skip to discover — requirements are clear"
+  2. "Yes, brainstorm first"
+- multiSelect: false
 
-> Want to brainstorm before diving into requirements? [Yes / Skip to discover]
+Recommended: Skip to discover — reply 'ok' to accept, or provide alternative
 
-- If **Skip**: Chain directly to `atdd-kit:discover` (skip Steps 1-3, go to Step 4)
-- If **Yes**: Continue to Step 1
+- If **Skip to discover** (Recommended): Chain directly to `atdd-kit:discover` (skip Steps 1-3, go to Step 4)
+- If **Yes, brainstorm first**: Continue to Step 1
 
 ### Step 1: Understand the Idea
 
@@ -72,11 +77,17 @@ Present 2-3 approaches:
 - Summary: ...
 - Pros: ...
 - Cons: ...
-
-**Recommended: [A/B]** (reason: ...)
-
-Which approach? [A / B / Suggest alternative]
 ```
+
+Then use AskUserQuestion with:
+- header: "Approach?"
+- options:
+  1. "(Recommended) [recommended approach name] — [brief reason]"
+  2. "[alternative approach name]"
+  3. "Suggest alternative"
+- multiSelect: false
+
+Recommended: [recommended approach] — reply 'ok' to accept, or provide alternative
 
 Iterate until the user is satisfied with an approach.
 
@@ -91,9 +102,16 @@ Present a concise summary of what was decided:
 **Chosen approach:** [name and summary]
 **Key tradeoffs:** [what we accepted]
 **Scope:** [what's in and out]
-
-Ready to proceed to requirements? [Yes / Not yet]
 ```
+
+Then use AskUserQuestion with:
+- header: "Proceed?"
+- options:
+  1. "(Recommended) Yes, proceed to requirements"
+  2. "Not yet, revise"
+- multiSelect: false
+
+Recommended: Yes, proceed — reply 'ok' to accept, or provide alternative
 
 ### Step 4: Transition to discover
 
@@ -141,9 +159,16 @@ Present a concise summary of what was decided:
 **Chosen approach:** [name and summary]
 **Key tradeoffs:** [what we accepted]
 **Scope:** [what's in and out]
-
-Proceed to create an Issue? [Yes / Not yet]
 ```
+
+Then use AskUserQuestion with:
+- header: "Create Issue?"
+- options:
+  1. "(Recommended) Yes, create Issue"
+  2. "Not yet, revise"
+- multiSelect: false
+
+Recommended: Yes, create Issue — reply 'ok' to accept, or provide alternative
 
 ### Step 4: Transition to issue
 
