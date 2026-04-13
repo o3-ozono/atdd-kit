@@ -1,22 +1,22 @@
 #!/usr/bin/env bats
 
-# Issue #34 AC7: No legacy terms remain (excluding CHANGELOG.md and docs/decisions/)
+# Issue #34 AC7: No legacy terms remain (excluding CHANGELOG.md)
 
 @test "AC7: no 'type:investigation' label in any file" {
   local result
-  result=$(grep -rn 'type:investigation' --include='*.md' --include='*.yml' --include='*.json' . | grep -v CHANGELOG.md | grep -v 'docs/decisions/' || true)
+  result=$(grep -rn 'type:investigation' --include='*.md' --include='*.yml' --include='*.json' --exclude-dir='.claude' --exclude-dir='.git' . | grep -v CHANGELOG.md || true)
   [[ -z "$result" ]]
 }
 
 @test "AC7: no 'ready-to-implement' (or underscore variant) in source files" {
   local result
-  result=$(grep -rEn 'ready.to.implement' --include='*.md' --include='*.yml' --include='*.json' . | grep -v CHANGELOG.md | grep -v 'docs/decisions/' || true)
+  result=$(grep -rEn 'ready.to.implement' --include='*.md' --include='*.yml' --include='*.json' --exclude-dir='.claude' --exclude-dir='.git' . | grep -v CHANGELOG.md || true)
   [[ -z "$result" ]]
 }
 
 @test "AC7: no files named 'investigation' exist" {
   local result
-  result=$(find . -name '*investigation*' -not -path '*/CHANGELOG.md' -not -path '*/docs/decisions/*' -not -path '*/.git/*' 2>/dev/null || true)
+  result=$(find . -name '*investigation*' -not -path '*/CHANGELOG.md' -not -path '*/.git/*' -not -path '*/.claude/*' 2>/dev/null || true)
   [[ -z "$result" ]]
 }
 

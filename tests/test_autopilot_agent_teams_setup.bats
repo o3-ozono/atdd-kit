@@ -221,7 +221,7 @@ AUTOPILOT="commands/autopilot.md"
 }
 
 # ===========================================================================
-# Issue #165: SendMessage continuation and Decision Trail
+# Issue #165: SendMessage continuation (Decision Trail removed per #42)
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
@@ -272,38 +272,20 @@ AUTOPILOT="commands/autopilot.md"
 }
 
 # ---------------------------------------------------------------------------
-# #165-AC3: Decision Trail file write-out per phase
+# #42: No docs/decisions/ references anywhere in autopilot.md
 # ---------------------------------------------------------------------------
 
-@test "#165-AC3: AC Review Round references docs/decisions/ write-out" {
-  grep -A 20 "## AC Review Round" "$AUTOPILOT" | grep -q 'docs/decisions/'
+@test "#42: autopilot.md must not instruct writing to docs/decisions/" {
+  # Only the single prohibition sentence mentioning docs/decisions is allowed.
+  count=$(grep -c 'docs/decisions' "$AUTOPILOT")
+  [ "$count" -le 1 ]
 }
 
-@test "#165-AC3: Phase 2 references docs/decisions/ write-out" {
-  grep -A 20 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'docs/decisions/'
-}
-
-@test "#165-AC3: Plan Review Round references docs/decisions/ write-out" {
-  grep -A 20 "## Plan Review Round" "$AUTOPILOT" | grep -q 'docs/decisions/'
-}
-
-@test "#165-AC3: Phase 0.9 creates docs/decisions/ directory" {
-  grep -A 40 "## Phase 0.9" "$AUTOPILOT" | grep -q 'docs/decisions'
-}
-
-# ---------------------------------------------------------------------------
-# #165-AC4: Decision Trail persistence (PR commit + Issue comment)
-# ---------------------------------------------------------------------------
-
-@test "#165-AC4: Phase 3 includes git add docs/decisions" {
-  grep -A 20 "## Phase 3: Implementation" "$AUTOPILOT" | grep -q 'git add.*docs/decisions\|docs/decisions.*commit'
-}
-
-@test "#165-AC4: AC Review Round PO posts integrated result as Issue comment" {
+@test "#42: AC Review Round PO posts integrated result as Issue comment" {
   sed -n '/^## AC Review Round/,/^## Phase 2/p' "$AUTOPILOT" | grep -q 'gh issue comment'
 }
 
-@test "#165-AC4: Plan Review Round PO posts integrated result as Issue comment" {
+@test "#42: Plan Review Round PO posts integrated result as Issue comment" {
   grep -A 30 "## Plan Review Round" "$AUTOPILOT" | grep -q 'gh issue comment'
 }
 
@@ -345,7 +327,7 @@ AUTOPILOT="commands/autopilot.md"
 }
 
 # ===========================================================================
-# Issue #180: Agent name change and Decision Trail file rename
+# Issue #180: Agent name change (Decision Trail file rename AC removed per #42)
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
@@ -376,34 +358,6 @@ AUTOPILOT="commands/autopilot.md"
 
 @test "#180-AC1: description uses Developer not Dev" {
   head -10 "$AUTOPILOT" | grep -q 'Developer\|Agent Teams'
-}
-
-# ---------------------------------------------------------------------------
-# #180-AC2: Decision Trail file names use developer not dev
-# ---------------------------------------------------------------------------
-
-@test "#180-AC2: ac-review-developer.md referenced in AC Review Round" {
-  grep -A 20 "## AC Review Round" "$AUTOPILOT" | grep -q 'ac-review-developer.md'
-}
-
-@test "#180-AC2: impl-strategy-developer.md referenced in Phase 2" {
-  grep -A 20 "## Phase 2: plan" "$AUTOPILOT" | grep -q 'impl-strategy-developer.md'
-}
-
-@test "#180-AC2: plan-review-developer.md referenced in Plan Review Round" {
-  grep -A 20 "## Plan Review Round" "$AUTOPILOT" | grep -q 'plan-review-developer.md'
-}
-
-@test "#180-AC2: No old ac-review-dev.md filename in autopilot.md" {
-  ! grep -q 'ac-review-dev\.md' "$AUTOPILOT"
-}
-
-@test "#180-AC2: No old impl-strategy-dev.md filename in autopilot.md" {
-  ! grep -q 'impl-strategy-dev\.md' "$AUTOPILOT"
-}
-
-@test "#180-AC2: No old plan-review-dev.md filename in autopilot.md" {
-  ! grep -q 'plan-review-dev\.md' "$AUTOPILOT"
 }
 
 # ===========================================================================
