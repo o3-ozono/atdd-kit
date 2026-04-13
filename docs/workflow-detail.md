@@ -62,11 +62,15 @@ PO orchestrates task-type-specific Agent Teams in the user's session. The team c
 
 **Agent Lifecycle:** Task-type-specific agents are spawned once in AC Review Round with `isolation: "worktree"`. All subsequent phases communicate with the same agents via SendMessage — no new Agent generation occurs. This preserves agent context across the full workflow.
 
-**Decision Trail:** Each agent turn writes results to `docs/decisions/{phase}-{role}.md`. These files are committed to the PR, providing a persistent record of all review and strategy decisions. PO reads these files to integrate feedback and posts summaries as Issue comments.
+**Output Channels:** Agent deliverables flow through two channels — never repository files.
+- **Inter-agent handoff** (e.g., QA strategy consumed by Developer): returned via `SendMessage` reply to PO.
+- **Human-facing work log** (AC confirmation, Plan conclusion, review results, research reports): PO posts as Issue / PR comments via `gh issue comment` / `gh pr comment`.
+
+Agents must not write deliverables to `docs/decisions/` or any other repository path. Knowledge that deserves long-term reference is graduated into existing docs (`docs/`, `DEVELOPMENT.md`, etc.) by explicit human decision.
 
 **Worktree Isolation:** PO enters an isolated worktree (`autopilot-{issue_number}`) at Phase 0.9 via EnterWorktree. Developer and QA agents use `isolation: "worktree"` at spawn time for filesystem-level isolation. This enables safe concurrent autopilot sessions on the same repository. Cleanup happens at Phase 5 via ExitWorktree.
 
-**Mid-phase Resume:** When a session restarts at a mid-phase (Phase 2-4), Phase 0.9 re-spawns the required agents (Developer and/or QA depending on the phase) with prior Decision Trail files as context, then continues via SendMessage.
+**Mid-phase Resume:** When a session restarts at a mid-phase (Phase 2-4), Phase 0.9 re-spawns the required agents (Developer and/or QA depending on the phase), loads prior phase context by reading Issue/PR comments via `gh`, then continues via SendMessage.
 
 Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start)
 

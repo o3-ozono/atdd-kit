@@ -22,7 +22,6 @@ On-demand reference documents loaded by skills and commands. These are not alway
 
 | Directory | Purpose |
 |-----------|---------|
-| [decisions/](decisions/) | Design decision records (created per-session by autopilot) |
 | [plans/](plans/) | Plan documents for complex features |
 | [process/](process/) | Process documentation |
 
