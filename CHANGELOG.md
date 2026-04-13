@@ -34,6 +34,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Rationale
 The original Issue #42 was a one-off bug ("Phase 4 Reviewer Decision Trail file not committed"), but investigation showed the underlying mechanism was over-engineered: auto-generated files were not actually being read, the same information already existed in Issue / PR comments, and the write / commit responsibility was unclear across roles. Removing the mechanism eliminates the bug class entirely and aligns the workflow with where discussion already happens.
 
+## [1.10.0] - 2026-04-13
+
+### Added
+- docs: `skill-authoring-guide.md` — Dialogue UX design principles for skill authors (AskUserQuestion constraints, Recommended pattern, closed question guidelines) (#35)
+- tests: `test_question_design_migration.bats` with 40 tests covering AC1-AC7 (#35)
+- ideate: evals `baseline.json` with pass_rate 1.0 baseline for 4 eval scenarios (#35)
+- issue: evals `baseline.json` with pass_rate 1.0 baseline for 5 eval scenarios (#35)
+- bug: evals `baseline.json` with pass_rate 1.0 baseline for 2 eval scenarios (#35)
+
+### Changed
+- ideate: Step 0 (Brainstorm?), Step 2 approach selection, Step 3 approval — converted from inline text choices to AskUserQuestion + Recommended pattern (#35)
+- issue: Priority confirmation — converted from inline text to AskUserQuestion + Recommended pattern (#35)
+- bug: Fix Proposal approval — converted from inline arrow prompt to AskUserQuestion + Recommended pattern (#35)
+- discover: Approach selection, DoD confirmation, User Story confirmation, AC approval, Root Cause confirmation, Docs DoD approval — converted to AskUserQuestion + Recommended pattern (#35)
+- plan: Outer Loop test layer selection, Large Plans split decision — converted to AskUserQuestion + Recommended pattern (#35)
+- ideate evals: added E1 assertion (Recommended pattern in approach selection) — total 10 assertions (#35)
+- issue evals: added A4 assertion (Recommended in Priority confirmation) — total 13 assertions (#35)
+- bug evals: added A3 assertion (Recommended in Fix Proposal) — total 5 assertions (#35)
+- discover evals: added A10 assertion (Recommended in key decision points) — total 23 assertions (#35)
+- plan evals: added A5 assertion (Recommended in Story Test layer selection) — total 10 assertions (#35)
+
 ## [1.9.0] - 2026-04-13
 
 ### Added
