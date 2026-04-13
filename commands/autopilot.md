@@ -18,16 +18,14 @@ PO（プロダクトオーナー）が team-lead として常駐し、discover �
 
 ### Variable-Count Agents (Reviewer, Researcher)
 
-Reviewer and Researcher agents have variable count (x N). Before spawning:
-1. PO determines the number of agents and their review focus / research themes
-2. PO presents the proposed composition to the user for approval:
-   ```
-   エージェント構成の承認:
-   - Reviewer x 2: (1) セキュリティ観点 (2) パフォーマンス観点
-   承認しますか？ [Yes / No / 修正提案]
-   ```
-3. User approves → PO spawns the agents
-4. User rejects → PO revises and re-presents
+Reviewer and Researcher agents have variable count (x N). The composition (count and focus/themes)
+is determined during plan and approved as part of the `### Agent Composition` section in the plan comment.
+
+When spawning Variable-Count Agents in Phase 3 or Phase 4:
+1. Read the `### Agent Composition` section from the `## Implementation Plan` comment in the Issue
+2. Spawn agents according to the approved composition directly — no additional user approval required
+3. If the plan comment does not contain a `### Agent Composition` section: report error and STOP
+   (see Autonomy Rules — failure mode: report what failed → STOP → user decides next step)
 
 ## Prerequisites
 - `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
@@ -121,6 +119,7 @@ Bootstrap the Agent Teams infrastructure before any phase execution. This phase 
 6. **Mid-phase resume:** If Phase 0.5 determined a start phase beyond AC Review Round, re-spawn the required agents for the task type before proceeding. Use the Agent Composition Table to determine which agents are needed for the current phase and task type. Load prior Decision Trail files from `docs/decisions/` as context.
    - Phase 1 (discover) or AC Review Round: no re-spawn needed — agents are created in AC Review Round.
    - Phase 2+ : spawn agents required by the task type's Phase 1/2 composition.
+   - **Phase 3 or Phase 4 resume:** Before proceeding, verify that the plan comment (containing `## Implementation Plan` with a `### Agent Composition` section) exists in the Issue. If the plan comment is absent, report: "plan が未完了です。Phase 2 から再実行してください" and STOP. Do not proceed without an approved Agent Composition.
    Then proceed to the determined phase using SendMessage.
    Note: This mid-phase resume is the sole exception to Autonomy Rule 5 (Agent re-generation prohibition). It applies only when agents do not exist in the current session due to a session restart.
 7. On failure at any step: report the error → STOP. Do NOT fall back to solo execution. See Autonomy Rules below.
@@ -210,7 +209,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number, approved AC set, unified Plan, and prior Decision Trail file paths as context:
    - **PO:** AC との整合性、スコープ逸脱の有無
-   - **Developer:** ファイル構成の妥当性、実装順序のリスク、技術リスク評価 — write results to `docs/decisions/plan-review-developer.md`
+   - **Developer:** ファイル構成の妥当性、実装順序のリスク、技術リスク評価、Agent Composition の妥当性（人数・観点の具体性） — write results to `docs/decisions/plan-review-developer.md`
    - **QA:** テスト層の妥当性（Unit/Integration/E2E の使い分け）、カバレッジ戦略の網羅性 — write results to `docs/decisions/plan-review-qa.md`
 2. PO collects and integrates review results from `docs/decisions/plan-review-developer.md` and `docs/decisions/plan-review-qa.md`
 3. PO finalizes Plan (Stakeholder approval is NOT required for Plan)
@@ -221,7 +220,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 **Tools:** SendMessage, Skill
 
-> **Constraint:** New agent creation is prohibited in this phase (except variable-count agents with user approval). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+> **Constraint:** New agent creation is prohibited in this phase (except variable-count agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
 
 ### development / refactoring: Developer implements
 
@@ -239,7 +238,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 ### research: Researcher x N investigates (min 2 per theme)
 
-1. PO spawns Researcher agents (variable count, user-approved in AC Review Round)
+1. PO spawns Researcher agents (variable count, per plan-approved Agent Composition)
 2. Each Researcher investigates their assigned theme and writes findings to `docs/decisions/research-<theme>.md`
 3. PO synthesizes findings into a unified research report
 
@@ -252,11 +251,11 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 **Tools:** SendMessage
 
-> **Constraint:** New agent creation is prohibited in this phase (except variable-count Reviewer agents with user approval). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+> **Constraint:** New agent creation is prohibited in this phase (except variable-count Reviewer agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
 
 ### development / bug / documentation / refactoring: Reviewer x N
 
-1. PO spawns Reviewer agents (variable count, user-approved — see Variable-Count Agents section)
+1. PO spawns Reviewer agents (variable count, per plan-approved Agent Composition — see Variable-Count Agents section)
 2. Each Reviewer reviews from their assigned perspective and writes results to `docs/decisions/pr-review-reviewer-<N>.md`
 3. PO collects results:
    - If issues found: PO adds `needs-pr-revision`, Developer/Writer fixes

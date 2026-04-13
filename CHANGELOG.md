@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-04-13
+
+### Added
+- plan: Agent Composition section added to plan deliverables — Step 4 derivation guidance, Step 6 template, and Step 5 Readiness Check row (#41)
+- tests: `test_plan_agent_composition.bats` with 13 tests covering AC2-AC7 (#41)
+
+### Changed
+- autopilot: Variable-Count Agents now spawned directly from plan-approved Agent Composition — no additional user approval required at Phase 3/4 spawn time (#41)
+- autopilot: Plan Review Round Developer instruction now includes Agent Composition review (count and focus concreteness) (#41)
+- autopilot: Phase 0.9 mid-phase resume now validates plan comment exists before proceeding to Phase 3/4; reports error and STOPs if absent (#41)
+
 ## [1.8.0] - 2026-04-13
 
 ### Added

@@ -1,9 +1,10 @@
 {
-  "timestamp": "2026-04-06T14:30:00Z",
+  "timestamp": "2026-04-13T06:00:00Z",
   "skill_name": "atdd-kit:plan",
   "pass_rate": 1.0,
   "results": [
-    {"eval_name": "state-gate-pass", "pass_rate": 1.0, "passed": 2, "total": 2},
-    {"eval_name": "state-gate-reject-no-label", "pass_rate": 1.0, "passed": 3, "total": 3}
+    {"eval_name": "state-gate-pass", "pass_rate": 1.0, "passed": 4, "total": 4},
+    {"eval_name": "state-gate-reject-no-label", "pass_rate": 1.0, "passed": 3, "total": 3},
+    {"eval_name": "autopilot-guard-direct-invocation-block", "pass_rate": 1.0, "passed": 2, "total": 2}
   ]
 }
