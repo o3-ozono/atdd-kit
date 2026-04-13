@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-04-13T12:00:00Z",
+  "skill_name": "atdd-kit:bug",
+  "pass_rate": 1.0,
+  "results": [
+    {"eval_name": "bug-report-classification", "pass_rate": 1.0, "passed": 3, "total": 3},
+    {"eval_name": "bug-chains-to-discover", "pass_rate": 1.0, "passed": 2, "total": 2}
+  ]
+}

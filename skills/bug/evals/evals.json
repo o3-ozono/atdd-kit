@@ -9,7 +9,8 @@
       "files": [],
       "assertions": [
         {"id": "A1", "text": "バグスキルが起動している（症状・再現手順・環境の収集）", "type": "structural"},
-        {"id": "A2", "text": "session-start チェックを実行している", "type": "structural"}
+        {"id": "A2", "text": "session-start チェックを実行している", "type": "structural"},
+        {"id": "A3", "text": "Fix Proposal 提示後に Recommended（推奨: 修正を進める）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで承認できる形式になっている", "type": "structural"}
       ]
     },
     {
