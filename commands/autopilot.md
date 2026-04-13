@@ -115,14 +115,22 @@ Bootstrap the Agent Teams infrastructure before any phase execution. This phase 
 2. Use TeamCreate to create team `autopilot-{issue_number}` — record the returned team_name for all subsequent Agent tool calls
 3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`. Available agents: po.md, developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md. The system_prompt is the markdown body; the `tools` and `skills` fields in frontmatter control agent capabilities.
 4. Use EnterWorktree with name `autopilot-{issue_number}` to enter an isolated worktree — all subsequent phases (1–5) execute inside this worktree
-5. Create `docs/decisions/` directory in the worktree for Decision Trail output: `mkdir -p docs/decisions`
-6. **Mid-phase resume:** If Phase 0.5 determined a start phase beyond AC Review Round, re-spawn the required agents for the task type before proceeding. Use the Agent Composition Table to determine which agents are needed for the current phase and task type. Load prior Decision Trail files from `docs/decisions/` as context.
+5. **Mid-phase resume:** If Phase 0.5 determined a start phase beyond AC Review Round, re-spawn the required agents for the task type before proceeding. Use the Agent Composition Table to determine which agents are needed for the current phase and task type. Load prior phase context by reading Issue/PR comments via `gh issue view` / `gh pr view`.
    - Phase 1 (discover) or AC Review Round: no re-spawn needed — agents are created in AC Review Round.
    - Phase 2+ : spawn agents required by the task type's Phase 1/2 composition.
    - **Phase 3 or Phase 4 resume:** Before proceeding, verify that the plan comment (containing `## Implementation Plan` with a `### Agent Composition` section) exists in the Issue. If the plan comment is absent, report: "plan が未完了です。Phase 2 から再実行してください" and STOP. Do not proceed without an approved Agent Composition.
    Then proceed to the determined phase using SendMessage.
    Note: This mid-phase resume is the sole exception to Autonomy Rule 5 (Agent re-generation prohibition). It applies only when agents do not exist in the current session due to a session restart.
-7. On failure at any step: report the error → STOP. Do NOT fall back to solo execution. See Autonomy Rules below.
+6. On failure at any step: report the error → STOP. Do NOT fall back to solo execution. See Autonomy Rules below.
+
+## Output Channels (applies to all phases)
+
+All agent output flows through two channels — never via repository files:
+
+- **Inter-agent handoff** (e.g., QA strategy consumed by Developer): use `SendMessage`. Do not persist to files.
+- **Human-facing work log** (AC confirmation, Plan conclusion, review results, research reports): post as Issue / PR comments via `gh issue comment` / `gh pr comment`.
+
+Writing agent deliverables to `docs/decisions/` or any other repository path is prohibited. Curated knowledge that deserves long-term reference must be graduated into existing docs (`docs/`, `DEVELOPMENT.md`, etc.) by explicit human decision — not by agents automatically.
 
 ## Autonomy Rules
 
@@ -160,7 +168,7 @@ PO + task-type-specific agents で draft AC をレビューする。Agent Compos
    - **PO:** 要件の網羅性、ユーザーストーリーとの整合性、ビジネス価値
    - **Developer:** アーキテクチャ整合性、技術的実現性、エッジケース、実装複雑度
    - **QA:** テスト可能性、境界条件の網羅性、エラーケース、カバレッジの抜け
-   Each agent writes results to `docs/decisions/ac-review-developer.md` or `docs/decisions/ac-review-qa.md`.
+   Each agent returns their review via `SendMessage` reply to PO.
 
 ### bug: PO + Tester + Developer (bug-triage)
 
@@ -168,7 +176,7 @@ PO + task-type-specific agents で draft AC をレビューする。Agent Compos
    - **PO:** 影響範囲、優先度判定
    - **Tester:** 再現確認、テスト環境情報
    - **Developer:** 原因仮説、修正方針
-   Each agent writes results to `docs/decisions/ac-review-tester.md` or `docs/decisions/ac-review-developer.md`.
+   Each agent returns their triage via `SendMessage` reply to PO.
 
 ### research / documentation: PO only
 
@@ -176,7 +184,7 @@ PO + task-type-specific agents で draft AC をレビューする。Agent Compos
 
 ### Common (all task types)
 
-2. PO collects review results from agents (read from `docs/decisions/ac-review-*.md`)
+2. PO collects review results from agents (via SendMessage replies)
 3. PO integrates feedback and modifies ACs accordingly
 4. Present final AC set to Stakeholder for approval with the message: "Three Amigos レビュー結果を統合した最終版です。" This is the single approval point — discover's Step 7 approval was skipped in autopilot mode.
    - **Approve:** Proceed to step 5
@@ -191,12 +199,12 @@ Developer が実装戦略、QA がテスト戦略を主導し、PO が統合す�
 
 > **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
 
-1. Use SendMessage to: "Developer" with implementation strategy instructions. Include Issue number, approved AC set, and prior Decision Trail references as context:
+1. Use SendMessage to: "Developer" with implementation strategy instructions. Include Issue number, approved AC set, and reference to the Issue comment containing prior phase context:
    - ファイル構成、実装順序、依存関係、技術リスク
-   - Agent must write results to `docs/decisions/impl-strategy-developer.md`
-2. Use SendMessage to: "QA" with test strategy instructions. Include Issue number, approved AC set, and prior Decision Trail references as context:
+   - Developer returns the strategy via SendMessage reply
+2. Use SendMessage to: "QA" with test strategy instructions. Include Issue number, approved AC set, and reference to the Issue comment containing prior phase context:
    - AC ごとのテスト層選定（Unit/Integration/E2E）、カバレッジ戦略、リグレッションリスク分析
-   - Agent must write results to `docs/decisions/test-strategy-qa.md`
+   - QA returns the strategy via SendMessage reply
 3. PO integrates both strategies into a unified Plan
 
 ## Plan Review Round
@@ -207,11 +215,11 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 > **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
 
-1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number, approved AC set, unified Plan, and prior Decision Trail file paths as context:
+1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number, approved AC set, unified Plan, and reference to the Issue comment containing prior phase context:
    - **PO:** AC との整合性、スコープ逸脱の有無
-   - **Developer:** ファイル構成の妥当性、実装順序のリスク、技術リスク評価、Agent Composition の妥当性（人数・観点の具体性） — write results to `docs/decisions/plan-review-developer.md`
-   - **QA:** テスト層の妥当性（Unit/Integration/E2E の使い分け）、カバレッジ戦略の網羅性 — write results to `docs/decisions/plan-review-qa.md`
-2. PO collects and integrates review results from `docs/decisions/plan-review-developer.md` and `docs/decisions/plan-review-qa.md`
+   - **Developer:** ファイル構成の妥当性、実装順序のリスク、技術リスク評価、Agent Composition の妥当性（人数・観点の具体性） — returns review via SendMessage reply
+   - **QA:** テスト層の妥当性（Unit/Integration/E2E の使い分け）、カバレッジ戦略の網羅性 — returns review via SendMessage reply
+2. PO collects and integrates review results (via SendMessage replies)
 3. PO finalizes Plan (Stakeholder approval is NOT required for Plan)
 4. Post Plan as Issue comment with `gh issue comment`
 5. `gh issue edit <number> --add-label ready-to-go`
@@ -224,11 +232,10 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 ### development / refactoring: Developer implements
 
-1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and all prior Decision Trail file paths as context — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
+1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and reference to the Issue comments containing prior phase context — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
 2. Developer creates branch, Draft PR, and implements AC by AC
 3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs are complete
-4. Developer runs `git add docs/decisions/` to include all Decision Trail files in PR commits
-5. Developer marks PR as ready and adds `ready-for-PR-review` label
+4. Developer marks PR as ready and adds `ready-for-PR-review` label
 
 ### bug: Developer fixes + Tester verifies
 
@@ -239,8 +246,8 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 ### research: Researcher x N investigates (min 2 per theme)
 
 1. PO spawns Researcher agents (variable count, per plan-approved Agent Composition)
-2. Each Researcher investigates their assigned theme and writes findings to `docs/decisions/research-<theme>.md`
-3. PO synthesizes findings into a unified research report
+2. Each Researcher investigates their assigned theme and returns findings via SendMessage reply to PO
+3. PO synthesizes findings into a unified research report and posts it as an Issue / PR comment
 
 ### documentation: Writer creates
 
@@ -256,7 +263,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 ### development / bug / documentation / refactoring: Reviewer x N
 
 1. PO spawns Reviewer agents (variable count, per plan-approved Agent Composition — see Variable-Count Agents section)
-2. Each Reviewer reviews from their assigned perspective and writes results to `docs/decisions/pr-review-reviewer-<N>.md`
+2. Each Reviewer reviews from their assigned perspective and returns results via SendMessage reply to PO. PO then posts the consolidated review as a PR comment.
 3. PO collects results:
    - If issues found: PO adds `needs-pr-revision`, Developer/Writer fixes
    - If no issues: PO posts review PASS comment

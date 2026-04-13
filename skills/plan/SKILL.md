@@ -241,7 +241,7 @@ Format:
 |----------|-----------|------------------------|
 | [design choice] | [why chosen] | [what else was considered and why rejected] |
 
-> Record key design decisions and trade-offs made during planning. This section is consumed by the `record` skill to generate a permanent Decision Record in `docs/decisions/`.
+> Record key design decisions and trade-offs made during planning. This remains in the Issue comment as the permanent record.
 
 ### Implementation Strategy
 

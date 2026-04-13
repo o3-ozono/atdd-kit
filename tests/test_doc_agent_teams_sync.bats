@@ -110,11 +110,10 @@
 }
 
 # CC9: global grep — no auto-implement/auto-review outside plans/
-@test "CC9: no auto-implement outside plans/, decisions/, CHANGELOG, tests, settings.local.json, .tmp" {
+@test "CC9: no auto-implement outside plans/, CHANGELOG, tests, settings.local.json, .tmp" {
   result=$(grep -rn 'auto-implement' . \
     --include="*.md" --include="*.yml" --include="*.yaml" --include="*.sh" \
     | grep -v 'docs/plans/' \
-    | grep -v 'docs/decisions/' \
     | grep -v 'CHANGELOG.md' \
     | grep -v 'tests/' \
     | grep -v '\.tmp/' \
@@ -124,11 +123,10 @@
   [ -z "$result" ]
 }
 
-@test "CC9: no auto-review outside plans/, decisions/, CHANGELOG, tests, settings.local.json, skills/ship, .tmp" {
+@test "CC9: no auto-review outside plans/, CHANGELOG, tests, settings.local.json, skills/ship, .tmp" {
   result=$(grep -rn 'auto-review' . \
     --include="*.md" --include="*.yml" --include="*.yaml" --include="*.sh" \
     | grep -v 'docs/plans/' \
-    | grep -v 'docs/decisions/' \
     | grep -v 'CHANGELOG.md' \
     | grep -v 'tests/' \
     | grep -v 'skills/ship/' \

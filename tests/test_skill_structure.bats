@@ -2,7 +2,7 @@
 
 # Skill lists for structure validation
 setup() {
-  ALL_SKILLS=(atdd bug debugging discover ideate issue plan record session-start ship sim-pool skill-gate ui-test-debugging verify)
+  ALL_SKILLS=(atdd bug debugging discover ideate issue plan session-start ship sim-pool skill-gate ui-test-debugging verify)
   # Skills with approval gates (discover, plan, ideate)
   # bug and issue are intake skills that chain to discover for approval
   APPROVAL_GATE_SKILLS=(discover plan ideate)
