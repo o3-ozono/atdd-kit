@@ -149,6 +149,29 @@ Which approach? [A / B / Suggest alternative]
 
 5. Repeat until the user approves
 
+### Step 2.5: DoD Derivation
+
+Based on the approved approach, derive the **Definition of Done** for this task.
+
+DoD items describe *when the task is complete* (delivery conditions), not *how* the feature behaves.
+
+Typical DoD items:
+- Implementation satisfies all ACs
+- All new code has tests at the appropriate layer
+- No regression in existing tests
+- PR reviewed and merged
+
+Confirm with the user or proceed with defaults:
+
+```
+Recommended DoD:
+- [ ] [condition 1]
+- [ ] [condition 2]
+...
+
+Reply 'ok' to accept, or suggest additions/changes.
+```
+
 ### Step 3: User Story Derivation
 
 Based on the approved approach, derive a user story.
@@ -258,6 +281,11 @@ Format:
 
 ```markdown
 ## discover Deliverables
+
+### DoD (Definition of Done)
+- [ ] [verifiable DoD item 1]
+- [ ] [verifiable DoD item 2]
+- ...
 
 ### Approach
 [Description of chosen approach]
@@ -478,6 +506,8 @@ Do not skip any item.
 - [ ] Not editing code or files (Issue comments only)
 - [ ] Not bundling multiple questions in one message
 - [ ] Approach exploration done (2-3 approaches presented)
+- [ ] DoD derivation step completed (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
+- [ ] DoD section is at the top of the Issue comment
 - [ ] Not skipping UX check (U1-U5) for development tasks
 - [ ] Not skipping interruption scenario check (I1-I4) for development tasks
 - [ ] ACs are in Given/When/Then format
