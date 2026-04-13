@@ -195,7 +195,7 @@ Present as:
 | Target files identified | "improve CI" | "change ci.yml line 100" |
 | Design decisions resolved | "choose A or B" | "A chosen (reason: ...)" |
 | Outer loop test defined | No story test | Story test layer and rationale specified |
-| Variable-Count Agents の人数・観点が具体化されている | "Reviewer x N" | "Reviewer x 2: (1) セキュリティ観点 (2) パフォーマンス観点" |
+| Variable-Count Agent count and focus are concrete | "Reviewer x N" | "Reviewer x 2: (1) security perspective (2) performance perspective" |
 
 Include check results at the end of the plan:
 
@@ -209,7 +209,7 @@ Include check results at the end of the plan:
 | Target files identified | OK |
 | Design decisions resolved | OK |
 | Outer loop test defined | OK |
-| Variable-Count Agents の人数・観点が具体化されている | OK / NG: [reason] |
+| Variable-Count Agent count and focus are concrete | OK / NG: [reason] |
 ```
 
 ### Step 6: Post to Issue Comment
@@ -264,10 +264,10 @@ Format:
 
 | Phase | Role | Count | Focus |
 |-------|------|-------|-------|
-| Phase 3 | [Reviewer / Researcher / Developer / Writer] | [N] | [観点またはテーマ] |
-| Phase 4 | [Reviewer] | [N] | [観点] |
+| Phase 3 | [Reviewer / Researcher / Developer / Writer] | [N] | [perspective or theme] |
+| Phase 4 | [Reviewer] | [N] | [perspective] |
 
-> If no Variable-Count Agents are used in a Phase for this task type, write "該当なし" in the Focus column.
+> If no Variable-Count Agents are used in a Phase for this task type, write "N/A" in the Focus column.
 
 ### Readiness Check
 
@@ -278,7 +278,7 @@ Format:
 | Target files identified | OK / NG: [reason] |
 | Design decisions resolved | OK / NG: [reason] |
 | Outer loop test defined | OK / NG: [reason] |
-| Variable-Count Agents の人数・観点が具体化されている | OK / NG: [reason] |
+| Variable-Count Agent count and focus are concrete | OK / NG: [reason] |
 ```
 
 ### Step 7: Risk-based Approval Classification

@@ -433,7 +433,7 @@ Format:
 
 Same steps as development flow, with these differences:
 
-- **DoD required item:** Always include a DoD item stating that externally observable behavior is unchanged (e.g., "外部から観測可能な動作が変わらない" / "externally observable behavior is unchanged — verified by regression test suite").
+- **DoD required item:** Always include a DoD item stating that externally observable behavior is unchanged (e.g., "externally observable behavior is unchanged — verified by regression test suite").
 - **User story perspective:** The subject is a developer or team (e.g., "As a developer, I want X to be easier to test")
 - **AC focus:** Always include an AC verifying that externally observable behavior is unchanged
 - **UX / Interruption checks:** Mark as not applicable for pure internal refactoring (don't skip -- explicitly state not applicable with a reason)
