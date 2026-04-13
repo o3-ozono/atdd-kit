@@ -161,6 +161,8 @@ Describe *how* the implementation will be structured:
    - Multiple components / security or performance impact → Reviewer x 2+
    - Clearly separated research themes → Researcher x (number of themes)
 
+   > **Scope:** Only Variable-Count Agents (Reviewer, Researcher) are listed in the `### Agent Composition` section. Fixed-count agents (Writer x 1, Developer x 1, etc.) are determined by the Agent Composition Table in `commands/autopilot.md` and do not need to be listed here.
+
 Present as:
 
 ```

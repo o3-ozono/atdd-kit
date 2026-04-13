@@ -22,7 +22,7 @@ Reviewer and Researcher agents have variable count (x N). The composition (count
 is determined during plan and approved as part of the `### Agent Composition` section in the plan comment.
 
 When spawning Variable-Count Agents in Phase 3 or Phase 4:
-1. Read the `### Agent Composition` section from the plan comment in the Issue
+1. Read the `### Agent Composition` section from the `## Implementation Plan` comment in the Issue
 2. Spawn agents according to the approved composition directly — no additional user approval required
 3. If the plan comment does not contain a `### Agent Composition` section: report error and STOP
    (see Autonomy Rules — failure mode: report what failed → STOP → user decides next step)
@@ -220,7 +220,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 **Tools:** SendMessage, Skill
 
-> **Constraint:** New agent creation is prohibited in this phase (except variable-count agents with user approval). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+> **Constraint:** New agent creation is prohibited in this phase (except variable-count agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
 
 ### development / refactoring: Developer implements
 
@@ -251,7 +251,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 **Tools:** SendMessage
 
-> **Constraint:** New agent creation is prohibited in this phase (except variable-count Reviewer agents with user approval). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+> **Constraint:** New agent creation is prohibited in this phase (except variable-count Reviewer agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
 
 ### development / bug / documentation / refactoring: Reviewer x N
 

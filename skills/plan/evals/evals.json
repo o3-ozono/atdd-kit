@@ -5,11 +5,13 @@
       "id": 0,
       "name": "state-gate-pass",
       "prompt": "Issue #200 の plan を実行して。Issue には in-progress ラベルが付いていて、discover deliverables コメントがある。",
-      "expected_output": "State Gate passes. Plan execution proceeds with test strategy and implementation strategy.",
+      "expected_output": "Plan execution proceeds with test strategy, implementation strategy, and agent composition.",
       "files": [],
       "assertions": [
         {"id": "A1", "text": "State Gate チェックを実行している（in-progress ラベルと discover deliverables の確認）", "type": "structural"},
-        {"id": "A2", "text": "plan の本体フロー（Test Strategy / Implementation Strategy）に進んでいる", "type": "structural"}
+        {"id": "A2", "text": "plan の本体フロー（Test Strategy / Implementation Strategy）に進んでいる", "type": "structural"},
+        {"id": "A3", "text": "plan 成果物フォーマットに `### Agent Composition` セクションが含まれている", "type": "structural"},
+        {"id": "A4", "text": "Agent Composition テーブルに Role / Count / Focus の列が含まれている", "type": "structural"}
       ]
     },
     {
