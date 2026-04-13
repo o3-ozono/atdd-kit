@@ -373,6 +373,12 @@ Is this analysis correct? [Yes / Needs correction]
 
 Same as development flow Step 2: explore 2-3 approaches and get approval.
 
+### Step 3.5: DoD Derivation
+
+Same as development flow Step 2.5: derive DoD items for this bug fix. Always include:
+- The bug no longer reproduces under the original reproduction steps
+- Regression test passes
+
 ### Step 4: Fix AC Derivation
 
 Based on the approved approach, derive fix ACs in Given/When/Then format.
@@ -392,6 +398,11 @@ Format:
 
 ```markdown
 ## discover Deliverables
+
+### DoD (Definition of Done)
+- [ ] The bug no longer reproduces under the original reproduction steps
+- [ ] Regression test for this bug passes
+- [ ] [other verifiable DoD item]
 
 ### Root Cause
 **Classification:** [A / B / C] -- [class name]
