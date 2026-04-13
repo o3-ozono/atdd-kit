@@ -10,7 +10,7 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 # discover Skill -- Requirements Exploration and AC Derivation
 
 <HARD-GATE>
-Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (ACs or completion criteria) produced by this skill. This applies to EVERY task regardless of perceived simplicity. "Too simple to need discovery" is a rationalization -- all tasks start here.
+Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (DoD, ACs, or both) produced by this skill. This applies to EVERY task regardless of perceived simplicity. "Too simple to need discovery" is a rationalization -- all tasks start here.
 
 **Autopilot exception:** When discover is invoked via autopilot (ARGUMENTS contains `--autopilot`), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) the AC Review Round completes with user approval.
 </HARD-GATE>
@@ -22,7 +22,7 @@ If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash com
 If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
-The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (ACs for dev tasks, completion criteria for docs/research).
+The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks; DoD replaces completion criteria for docs/research).
 
 > **Used for all task types.** Development, bug, refactoring, documentation, research -- all start here.
 
@@ -412,9 +412,9 @@ Same steps as development flow, with these differences:
 1. Consider 2-3 approaches, present to user
 2. Get approval
 
-### Step 3: Define Completion Criteria
+### Step 3: DoD Derivation
 
-Define **verifiable** completion criteria. Vague criteria are not allowed.
+Define the **Definition of Done** — verifiable completion conditions. Vague criteria are not allowed.
 
 | Bad | Good |
 |-----|------|
@@ -424,13 +424,13 @@ Define **verifiable** completion criteria. Vague criteria are not allowed.
 
 ### Step 4: Present Deliverables and Get Approval
 
-Present completion criteria:
+Present DoD items:
 
 ```
-Are these completion criteria acceptable?
+Are these DoD items acceptable?
 
-- [ ] [criterion 1]
-- [ ] [criterion 2]
+- [ ] [DoD item 1]
+- [ ] [DoD item 2]
 - ...
 
 [Approve / Needs revision]
@@ -445,16 +445,16 @@ Format:
 ```markdown
 ## discover Deliverables
 
+### DoD (Definition of Done)
+- [ ] [verifiable DoD item 1]
+- [ ] [verifiable DoD item 2]
+- ...
+
 ### Scope
 [Investigation/documentation scope]
 
 ### Approach
 [Description]
-
-### Completion Criteria
-- [ ] [verifiable criterion 1]
-- [ ] [verifiable criterion 2]
-- ...
 ```
 
 ---

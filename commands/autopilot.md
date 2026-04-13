@@ -264,7 +264,7 @@ PO・Developer・QA 全員で Plan をレビューする。Developer and QA agen
 
 ### research: PO reviews
 
-1. PO reviews the synthesized research report for completeness against completion criteria
+1. PO reviews the synthesized research report for completeness against DoD items
 2. If gaps found: PO sends Researchers back to investigate
 3. If complete: PO posts review PASS comment
 

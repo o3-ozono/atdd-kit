@@ -42,7 +42,7 @@ Same flow as development tasks.
 |------|--------|---------------|--------|
 | 1 | **Create Issue** | -- | Issue (no `in-progress` label yet) |
 | 2 | **Brainstorming** | `discover` | Acquires `in-progress` lock. Scope and approach -> Issue comment |
-| 3 | **Define completion criteria** | -- | Verifiable completion criteria -> Issue comment |
+| 3 | **DoD derivation** | -- | Verifiable DoD items -> Issue comment |
 | 4 | **Work plan** | `plan` | Work plan -> Issue comment |
 | 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-go` |
 
@@ -52,7 +52,7 @@ Before adding `ready-to-go` label, verify all of the following.
 
 | Check | Bad Example | Good Example |
 |-------|-------------|-------------|
-| Completion criteria are verifiable | "improved" | "zero build errors" |
+| DoD items are verifiable | "improved" | "zero build errors" |
 | Subtasks are concrete | "investigate", "organize" | "change X to Y" |
 | Design decisions are resolved | "choose approach A or B" | "approach A chosen (reason: ...)" |
 | Target files are identified | "improve CI" | "change ci.yml line 100" |
