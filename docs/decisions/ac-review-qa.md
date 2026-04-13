@@ -1,114 +1,116 @@
-# AC Review — QA Perspective (Issue #36)
+# AC Review — QA (Issue #41)
 
-## Testability
+## 総合評価
 
-各 AC の検証方法を示す。
-
-| AC | 検証方法 | Evidence type |
-|----|---------|---------------|
-| AC1: 共通フローで DoD が導出される | SKILL.md の各フローセクション（Development / Bug / Docs/Research）に DoD 導出ステップが存在するかを grep / bats で確認 | bats / grep |
-| AC2: コード変更タスクで三層構造が導出される | evals "dev-feature" / "bug-fix" プロンプトに DoD・User Story・Given/When/Then の三要素すべてが含まれることを eval assertion で確認 | eval |
-| AC3: 非コードタスクで DoD のみ導出される | evals "documentation" 出力に "DoD" があり "User Story" / Given/When/Then が含まれないことを eval assertion（否定）で確認 | eval |
-| AC4: Completion Criteria の廃止 | SKILL.md 全体を grep して "Completion Criteria" が存在しないことを bats negative テストで確認 | bats / grep |
-| AC5: 成果物テンプレートに DoD セクションが存在する | SKILL.md 各フローのテンプレートブロックで "DoD" が先頭セクションとして現れることを bats で行番号順序チェック | bats / grep |
-
-### 総評
-
-AC1・AC4 は grep / bats で客観的に検証できる。AC2・AC3 は eval を拡張すれば検証可能。AC5 のみ「先頭に配置」という順序条件が含まれるため、grep だけでは不十分で行番号順序比較が必要になる点に注意。
+NEEDS REVISION
 
 ---
 
-## Boundary Coverage
+## 指摘事項
 
-以下の境界条件が現在の AC セットに明示されていない。
+### AC1: plan 成果物に `### Agent Composition` セクションが含まれ、Phase 3/Phase 4 のエージェント人数・フォーカス観点が表形式で記載される
 
-1. **Refactoring タスクが三層構造に含まれる根拠の明示**
-   - AC2 の Given に "refactoring" が含まれるが、Refactoring フローは UX/Interruption チェックを "not applicable" とする特殊フローであり、三層構造（DoD → User Story → AC）が成立するか否かの説明が不足している。AC2 の Given に注記を追加するか分離した AC が必要。
+**テスト可能性:** 「表形式で記載される」は SKILL.md のテンプレートを grep または bats で検証可能。ただし「エージェント人数・フォーカス観点」という表の列定義が AC 本文に書かれておらず、テスト時の期待値が一意に定まらない。テンプレートの列名（例: Role / Count / Focus）を AC 本文または別の参照先で明記すべき。
 
-2. **タスクタイプが不明瞭なとき**
-   - ユーザーがタスクタイプを選択できなかった場合、DoD のみを生成するのか三層構造を生成するのかが AC に記載されていない。フォールバック動作の仕様が必要。
+**境界条件:** AC1 は task type を限定していないが、Agent Composition Table（autopilot.md）では research タスクで Researcher（variable-count）を使い、documentation タスクで Writer（fixed 1）を使う。これらのタスクタイプでも同じ `### Agent Composition` セクションを plan 成果物に含めるかが不明確。タスクタイプ別の出力差異を AC で明示する必要がある。
 
-3. **DoD が空になるケース**
-   - アプローチ探索後に DoD 項目がゼロ件になった場合の扱いが AC にない（後述「エラーケース」参照）。
+### AC2: `skills/plan/SKILL.md` の Step 4 と Step 6 に Agent Composition の導出ステップとテンプレートが明記されている
 
----
+**テスト可能性:** ドキュメントの存在確認として客観的に検証可能。ただし「導出ステップ」と「テンプレートが明記されている」の判定基準が曖昧。「Step 4 に Agent Composition セクションが存在する」「Step 6 のテンプレートブロックに `### Agent Composition` ヘッダーが含まれる」のように、grep で確認できる具体的な記述に修正を推奨。
 
-## Error Cases
+**現状との差分確認:** 現行 SKILL.md の Step 4 は Implementation Strategy、Step 6 は Post to Issue Comment に該当する。Step 4 に「どのように Agent Composition を導出するか」のステップを追加することを意図しているなら、Step 5 (Readiness Check) との順序関係も明記が必要。
 
-以下のエラーシナリオが AC セットに含まれていない。
+### AC3: plan Step 5 の Readiness Check に「Phase 3/4 の Variable-Count Agents が具体化されている」項目が追加されている
 
-1. **DoD 導出結果がゼロ件の場合**
-   - Given: アプローチ探索後、DoD 項目が抽出できない
-   - Expected: ユーザーへのフィードバックを返し、最低 1 件の DoD が確定するまで次ステップへ進まない
-   - 現行 AC に完全に欠落している。
+**テスト可能性:** SKILL.md の Readiness Check テーブルに該当行が存在するか grep で確認可能。ただし「具体化されている」の判定基準が曖昧。既存 Readiness Check の記法（Bad/Good 例）に合わせて、Bad 例と Good 例を AC に含めるべき。
 
-2. **Docs フローで誤って User Story が出力されるケース**
-   - AC3 は否定条件で記述されているが、実際のモデル出力で User Story が漏れ込んだ場合の検出方法が evals.json に実装されているかは今後の実装次第。
-   - 現行 evals.json の C2 アサーション（"Given/When/Then 形式ではなくチェックリスト形式"）が "DoD チェックリスト" 形式に変更されたあとも有効かを確認する必要がある。
+例:
+- Bad: "Reviewer x N"（人数が未定）
+- Good: "Reviewer x 2: (1) セキュリティ観点 (2) パフォーマンス観点"
 
-3. **User Story が存在するが AC が空のケース**
-   - Bug フローなどで root cause は特定できたが AC が導出されなかった場合の扱いが未定義。
+### AC4: Issue が `ready-to-go` で autopilot が Phase 3/4 に進むとき、Variable-Count Agents の spawn で追加承認要求が発生しない
 
----
+**テスト可能性（最大の懸念）:** 「追加承認要求が発生しない」は LLM の振る舞いに関するテストであり、bats/grep での静的検証が困難。AC4 を検証するには、autopilot.md の Variable-Count Agents セクションのテキストが「plan 承認済み構成から spawn」という記述に変更されていることを grep で確認する、静的検証 AC として再定義すべき。
 
-## Coverage Gaps
+動的振る舞い（実際に承認要求が出ないこと）を検証するには eval ケースが必要だが、現 AC にそのような言及がない。eval ケースの追加要否を明示すること。
 
-既存動作のうち今回の変更で regression するリスクがあるが AC でカバーされていないもの。
+**境界条件（重要）:** 以下の境界条件が AC4 でカバーされていない:
+1. Phase 3 のみが対象か Phase 4 の Reviewer spawn も対象か（Issue 本文の User Story では「Phase 3/4」と記載されているが AC4 は「Phase 3/4」とのみ書いており、Phase 3（Researcher/Developer）と Phase 4（Reviewer）の両方で承認不要となるのか明確でない）
+2. `ready-to-go` ラベルがない状態（`needs-plan-revision` → 修正後 → `ready-to-go`）でも同様に動作するか
 
-1. **evals.json の Docs eval (C1/C2) が DoD 用語変更に未対応**
-   - 現行 C2 アサーション: "Given/When/Then ではなくチェックリスト形式" — 今回の変更後も "DoD" セクションが存在することを検証する assertion がない。AC4 でカバーしているが evals への反映が明示されていない。
+### AC5: `commands/autopilot.md` の Variable-Count Agents セクションが plan-based に改訂され、Plan Review Round で Agent Composition もレビュー対象と明記されている
 
-2. **Bug フローの DoD 導出ステップ**
-   - AC1 の Given が "任意のタスクタイプ" とある一方、現行 SKILL.md の Bug フローには DoD 導出ステップが存在しない。Bug フローにも DoD ステップを追加する必要があるかが実装前に不明確。
+**テスト可能性:** 2 つの条件が混在している。「Variable-Count Agents セクションが plan-based に改訂」と「Plan Review Round で Agent Composition もレビュー対象と明記」は独立した検証可能な条件であり、AC を分割するか Given/When/Then 形式で 2 つの Then として明記すべき。
 
-3. **Mandatory Checklist の更新漏れ**
-   - SKILL.md 末尾の Mandatory Checklist に "DoD 導出ステップが実行されたか" に相当する項目が現在存在しない。変更後も checklist が旧来のままだとレビュー・テスト時にチェック漏れが生じる。
+**エラーケース:** 現行の autopilot.md には Variable-Count Agents セクションで「ユーザーへの承認要求」手順が明記されている（4 ステップ）。この手順を削除・変更した場合、既存のドキュメントと整合が取れているかを Readiness Check で確認する AC が必要。
 
-4. **既存 BATS テストへの影響確認**
-   - `test_discover_approach_parity.bats` / `test_discover_autopilot_approval.bats` はいずれも SKILL.md の構造を grep しているため、Step 番号や見出し文言が変わると false negative が発生するリスクがある。
+### AC6: Plan Review Round の Developer/QA への SendMessage レビュー観点に Agent Composition が含まれる
+
+**テスト可能性:** autopilot.md の Plan Review Round セクションに「Agent Composition」というキーワードが含まれるかで grep 検証可能。AC として最もシンプルで明確。
 
 ---
 
-## Regression Risk
+## 追加/削除/修正提案
 
-以下の既存動作が壊れていないことを確認しなければならない。
+### 修正提案: AC1 にテンプレート列定義を追加
 
-| リスク項目 | 確認方法 |
-|-----------|---------|
-| AUTOPILOT-GUARD が正しく機能する（直接呼び出しをブロック） | evals "autopilot-guard-direct-invocation-block" (D1/D2) を継続実行 |
-| autopilot モードで Step 7 承認ゲートがスキップされる | `test_discover_autopilot_approval.bats` を継続実行 |
-| アプローチ比較の equal-detail ルールが保持される | `test_discover_approach_parity.bats` を継続実行 |
-| Development フローの UX / Interruption チェック（U1-U5 / I1-I4）が維持される | evals "dev-feature" (A5, A6) を継続実行 |
-| Docs フローが Given/When/Then を使わない（チェックリスト形式）ことが維持される | evals "documentation" (C2) を継続実行（DoD 用語変更に合わせて assertion 更新も必要） |
-| Bug フローで Regression test AC が含まれる | evals "bug-fix" (B2) を継続実行 |
+現行: 「Phase 3/Phase 4 のエージェント人数・フォーカス観点が表形式で記載される」
+
+修正案:
+- **Given:** plan スキルが development タスクで実行されたとき
+- **When:** plan 成果物（Issue コメント）が投稿されると
+- **Then:** `### Agent Composition` セクションに、Phase 3 と Phase 4 それぞれのエージェント（Role / Count / Focus）が表形式で記載されている
+
+補足: research/documentation タスクの扱い（Variable-Count Agents の有無）を別 AC か注記で明示すること。
+
+### 修正提案: AC4 を静的検証 AC に再定義
+
+現行: 「Variable-Count Agents の spawn で追加承認要求が発生しない」（動的振る舞い）
+
+修正案:
+- **Given:** `commands/autopilot.md` の Variable-Count Agents セクションを確認するとき
+- **When:** Phase 3/4 の spawn 手順を参照すると
+- **Then:** 手順に「ユーザーへの承認要求（presents the proposed composition to the user for approval）」ステップが存在せず、「plan 承認済み Agent Composition から直接 spawn する」旨が明記されている
+
+動的振る舞いをカバーする場合は別途 eval AC として追加する。
+
+### 追加提案: AC7（タスクタイプ別 Agent Composition の扱い）
+
+- **Given:** plan スキルが research または documentation タスクで実行されたとき
+- **When:** plan 成果物（Issue コメント）が投稿されると
+- **Then:** `### Agent Composition` セクションが含まれる（または明示的に「該当なし」と記載される）
+
+理由: research/documentation タスクでも autopilot は Variable-Count Agents（Researcher/Writer）を使うため、plan 成果物でどう扱うかを明示する必要がある。現 AC セットに境界条件として欠落している。
+
+### 追加提案: AC8（既存 Variable-Count Agents 承認フローとの後方互換性）
+
+- **Given:** autopilot.md の変更後に `commands/autopilot.md` の Autonomy Rules セクションを確認するとき
+- **When:** Variable-Count Agents に関する記述を参照すると
+- **Then:** 既存の Autonomy Rule（Agent re-generation 禁止）との整合が取れており、矛盾する記述が存在しない
+
+理由: 現行 autopilot.md の Autonomy Rule 5 は「Phase 3/4 でエージェントを新規生成しない」例外として Variable-Count Agents を扱っている。plan 承認に統合した場合、このルールとの整合確認が必要。
 
 ---
 
-## Missing ACs
+## 補足
 
-以下の追加 AC を推奨する。
+### Readiness Check 項目（AC3）のフォーマット整合
 
-### 推奨 AC6: DoD が空の場合の処理
-- **Given:** discover の DoD 導出ステップが完了したとき
-- **When:** 導出された DoD 項目が 0 件のとき
-- **Then:** ユーザーにフィードバックを返し、最低 1 件の DoD が確定するまで次ステップへ進まない
+現行 SKILL.md の Readiness Check テーブルは「Bad / Good」列を持つ。AC3 で追加を求めている新規項目も同様の形式（Check / Bad / Good）で記述されるべきことを実装者に明示すること。
 
-### 推奨 AC7: Refactoring フロー固有の DoD 必須項目
-- **Given:** discover が refactoring タスクで実行されたとき
-- **When:** 成果物が提示されると
-- **Then:** DoD に "外部から観測可能な動作が変わらない" ことを示す項目が必ず含まれる
+### Phase 3/4 スコープの明確化
 
-### 推奨 AC8: evals.json の Docs eval 更新（テスト設計 AC）
-- **Given:** SKILL.md 変更後
-- **When:** evals.json の documentation eval (C1/C2) を実行すると
-- **Then:** "DoD" セクションが存在すること、かつ "Completion Criteria" という表記が使われないことが assertion で確認できる
+Issue 本文の User Story では「Phase 3/4 のエージェント構成を plan 承認時に一括確認」と記述されている。しかし Phase 3 と Phase 4 では Variable-Count Agents の性質が異なる:
 
-*注: AC8 は実装ではなくテスト設計の AC だが、今回の変更で evals.json が陳腐化するリスクが高いため明示する。*
+- Phase 3: Researcher（research タスク）— テーマ数に依存
+- Phase 4: Reviewer（development/bug/documentation/refactoring タスク）— レビュー観点数に依存
 
----
+両 Phase を「同じ `### Agent Composition` テーブルの行として列挙する」のか「Phase ごとに分けた表を作る」のかが AC から読み取れない。実装前に明示すること。
 
-## Verdict
+### リグレッションリスク
 
-APPROVE WITH CHANGES
-
-AC1〜AC5 は目的と検証方法が明確で基本的な品質は十分。ただし DoD ゼロ件エラーケース（推奨 AC6）・Refactoring フロー固有条件（推奨 AC7）・evals 更新の担保（推奨 AC8）が欠落しており、これらを補完または計画スコープに明示した上で実装に進むことを推奨する。
+| リスク | 対応状況 |
+|--------|---------|
+| plan スキルの既存テンプレート（Step 6）への追加で既存 plan 出力フォーマットが壊れる | AC に言及なし — 実装者が注意すること |
+| autopilot.md の Variable-Count Agents 手順変更で既存 Phase 4 Reviewer spawn が壊れる | AC8（追加提案）でカバー推奨 |
+| `docs/workflow-detail.md` の「Variable-Count Agents with user approval」言及との矛盾 | AC5 でカバーされているが、docs/ 変更範囲を明示すること |

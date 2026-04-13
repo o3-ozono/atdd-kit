@@ -1,77 +1,61 @@
-# AC Review — Developer Perspective
+# AC Review — Developer (Issue #41)
 
-## Architecture Integrity
+## 総合評価
 
-The proposed DoD → User Story → AC three-layer structure is consistent with the existing skill chain. `discover` produces structured deliverables consumed by `plan` (Step 1: "Development/bug/refactoring: User Story + ACs"). `plan` does not reference "Completion Criteria" by label — it reads whatever discover posts. The Documentation/Research flow change (Completion Criteria → DoD) requires verifying that `plan`'s Step 1 read logic still works when the heading changes. Currently `plan` distinguishes flows by "User Story + ACs" vs "completion criteria" — if discover's doc/research output heading changes to "DoD", plan's detection logic may silently misclassify the task type.
+PASS（軽微な文言明確化を推奨）
 
-**Downstream impact to assess:**
-- `skills/plan/SKILL.md` Step 1: reads discover deliverables by content pattern; must tolerate new "DoD" heading in doc/research outputs.
-- `skills/verify/SKILL.md`: verify checks against ACs; no structural change expected for dev tasks.
-- `skills/atdd/SKILL.md`: atdd reads ACs from Issue comments; no change expected.
+## 指摘事項
 
-The shared prefix (DoD first in all task types) is architecturally sound and will make the Issue comment format more consistent.
+### AC1: Agent Composition セクションのタスクタイプ依存
+- **観点:** アーキテクチャ整合性
+- **指摘:** AC1の文言は「Phase 3/Phase 4 のエージェント人数・フォーカス観点が表形式で記載される」となっているが、research タスクでは Phase 3 に Researcher が登場し、documentation では Writer が登場する。「Phase 3/Phase 4」と固定表記すると development/refactoring/bug 専用に見えてしまう。SKILL.md は全タスクタイプ共通ファイルであるため、タスクタイプに依存しない汎用的な表現（例: 「各 Phase の Variable-Count Agents」）に修正する方が一貫性を保てる。
+- **深刻度:** 低（実装上の曖昧さを生む可能性あり）
 
-## Technical Feasibility
+### AC4: mid-phase resume 時の Agent Composition 取得
+- **観点:** エッジケース・技術的実現性
+- **指摘:** AC4 は「追加承認要求が発生しない」ことを要求するが、この実現は「plan コメントから Agent Composition を読み取れる」ことが前提条件。Phase 0.9 の mid-phase resume で Phase 3/4 にジャンプする場合、plan コメントが存在しない異常ケース（plan が未完了のまま resume された場合）の扱いが定義されていない。このケースで Agent Composition を取得できず、かつ承認要求も禁止されると、spawn できないまま処理が進む危険がある。
+- **深刻度:** 中（異常ケースの fallback が未定義）
 
-Implementable as markdown changes to SKILL.md. The approach requires:
+### AC3: Readiness Check の記述粒度
+- **観点:** アーキテクチャ整合性
+- **指摘:** 「Phase 3/4 の Variable-Count Agents が具体化されている」という追加チェック項目は、research/documentation タスクでは Reviewer ではなく Researcher/Writer になる。チェック項目をタスクタイプ固有の表現にすると SKILL.md の汎用性が下がる。タスクタイプに依存しない表現（例: 「Variable-Count Agents の人数と観点が具体化されている」）の方が整合性が高い。
+- **深刻度:** 低
 
-1. Extracting a new "DoD Derivation" step that runs after Approach Exploration across **all** flows (Development, Bug, Refactoring, Documentation, Research).
-2. Updating the Documentation/Research flow Step 3 ("Define Completion Criteria") to "Derive DoD" with matching output format.
-3. Updating the Issue comment templates (Step 5/8 format blocks) in both dev and doc/research flows to add a DoD section at the top.
-4. Updating the Mandatory Checklist to add a DoD check item.
-5. Renaming "Completion Criteria" terminology throughout the doc/research flow sections.
+### AC6: レビュー担当エージェントの不明確さ
+- **観点:** 実装複雑度
+- **指摘:** AC6 は「Developer/QA への SendMessage レビュー観点に Agent Composition が含まれる」としているが、Agent Composition（誰を何人 spawn するか）はアーキテクチャ側の判断であり、QA ではなく Developer が評価すべき観点。QA は test strategy の妥当性を担当するため、Agent Composition を QA のレビュー観点に含めると責任分担が曖昧になる。Developer への指示のみに絞る方が明確。
+- **深刻度:** 低
 
-No new files need to be created. The change is confined to `skills/discover/SKILL.md` with potential follow-on edits to `skills/plan/SKILL.md`.
+## 追加/削除/修正提案
 
-## Edge Cases
+### 修正提案: AC1 の文言をタスクタイプ汎用化
 
-**Gap 1 — Refactoring tasks with internal-only changes:**
-The draft ACs (AC2, AC3) cover "development / bug / refactoring" together for three-layer output, and "research / documentation" for DoD-only output. Refactoring typically has no user-facing behavior change. The current Refactoring Flow note says "User story perspective: The subject is a developer or team." The AC set does not address whether DoD for a pure refactoring task looks different from a feature task, or whether the User Story in the refactoring case should be optional (given it is developer-facing). This is not a blocker but should be clarified in the implementation.
+**現状:** 「Phase 3/Phase 4 のエージェント人数・フォーカス観点が表形式で記載される」
 
-**Gap 2 — Existing "Completion Criteria" in live Issue comments:**
-AC4 covers terminology removal from the SKILL.md definition, but does not cover backward compatibility of already-posted Issue comments that use "Completion Criteria." `plan`'s Step 1 looks for discover deliverables by content pattern. If old comments use "Completion Criteria" and new SKILL.md produces "DoD," there is a potential plan state-gate ambiguity. This is an operational edge case (not a blocker) but plan's detection should be made robust.
+**修正案:**
+> **AC1 (修正):** plan 成果物に `### Agent Composition` セクションが含まれ、各 Phase の Variable-Count Agents（人数・観点またはテーマ）が表形式で記載される
 
-**Gap 3 — Bug flow DoD derivation:**
-The Bug Flow in the current SKILL.md goes: Understand Bug → Root Cause → Fix Approach → Fix AC Derivation. The draft does not specify where DoD is inserted in the Bug Flow. AC1 says "discover が任意のタスクタイプで実行されたとき" which implies the Bug Flow must also include DoD, but the draft AC set does not have a concrete test for the Bug Flow Issue comment format containing DoD.
+**理由:** 「Phase 3/Phase 4」固定は development/refactoring/bug の文脈。SKILL.md は全タスクタイプ共通のため汎用表現が適切。
 
-**Gap 4 — AC count threshold interaction:**
-The existing "Split heuristic: if AC count reaches 7 or more" applies to ACs only. With DoD items added, the total item count in the deliverables increases. No AC addresses whether DoD items should be counted separately from ACs for the split heuristic.
+### 追加提案: AC7 — mid-phase resume 時の plan 不在ケース
 
-## Implementation Complexity
+**Given:** autopilot が Phase 0.9 の mid-phase resume で Phase 3/4 にジャンプする  
+**When:** plan コメントが Issue に存在しない（plan が未完了のまま session が中断されたケース）  
+**Then:** `commands/autopilot.md` に従いエラーを報告し、ユーザーに Phase 2 からの再実行を促す（サイレントな spawn 省略または無限ループを発生させない）
 
-**Files requiring changes:**
+**理由:** AC4 の「追加承認要求が発生しない」を実現するには plan コメントから Agent Composition を必ず読み取れることが前提。この前提が崩れる異常ケースの扱いを明示することで、AC4 の実装が完全になる。
 
-| File | Sections | Scope |
-|------|----------|-------|
-| `skills/discover/SKILL.md` | Development Flow Steps 3-8, Bug Flow Steps 4-6, Refactoring Flow, Documentation/Research Flow Steps 3-5, Mandatory Checklist | Medium — ~6-8 sections, all within one file |
-| `skills/plan/SKILL.md` | Step 1 (deliverable detection logic) | Small — 1 section, verify "DoD" heading is handled |
+### 修正提案: AC6 の担当エージェント明確化
 
-The change scope is reasonable. SKILL.md is a single large file; the edits are additive (inserting DoD derivation step) plus renaming (Completion Criteria → DoD in doc/research sections). No new files needed.
+**現状:** 「Developer/QA への SendMessage レビュー観点に Agent Composition が含まれる」
 
-**Eval implications (critical):**
-`skills/discover/evals/baseline.json` shows pass_rate=1.0 across all evals. The `documentation` eval (eval id=2) has assertion C2: "Given/When/Then 形式ではなくチェックリスト形式を使用している" and C1: verifiable checklist. If the documentation flow output heading changes from "Completion Criteria" to "DoD" but the format stays checklist, C1/C2 remain valid. However, if the output format changes structurally (DoD items use different list semantics), C1/C2 may need updating. A before/after eval run is mandatory per DEVELOPMENT.md rules.
+**修正案:**
+> **AC6 (修正):** Plan Review Round で Developer への SendMessage レビュー指示に「Agent Composition の妥当性（人数・観点の具体性）」が含まれる
 
-## Missing ACs
+**理由:** Agent Composition はアーキテクチャ判断であり Developer が評価すべき。QA への SendMessage に含める必要はなく、責任分担を明確にする。
 
-**AC6: Bug Flow Issue comment contains DoD section**
-- **Given:** discover が bug タスクで実行されたとき
-- **When:** 成果物が提示されると
-- **Then:** DoD セクションが Issue コメントの先頭に含まれている（Root Cause の前）
+## 補足
 
-**AC7: plan スキルが DoD ヘッダを含む discover 成果物を正しく読み取れる**
-- **Given:** discover が documentation タスクを完了し、"DoD" ヘッダを含む Issue コメントを投稿したとき
-- **When:** plan が Issue コメントを読み取ると
-- **Then:** タスクタイプが documentation と正しく判定され、plan が適切な doc/research フローで動作する
-
-**AC8: Eval regression guard (DoD as implementation constraint)**
-- **Given:** skills/discover/SKILL.md に変更を加えたとき
-- **When:** auto-eval を実行すると
-- **Then:** pass_rate が baseline (1.0) から 10% 以上低下しない
-
-(AC8 is an implementation constraint rather than a user-visible behavior, but it should be documented as a DoD item per DEVELOPMENT.md Skill Changes Require Eval Evidence rules.)
-
-## Verdict
-
-APPROVE WITH CHANGES
-
-Architectural fit is sound and the implementation is technically feasible, but the AC set has gaps in Bug Flow DoD coverage (AC6) and plan downstream compatibility (AC7) that should be added before implementation to prevent silent regressions in the skill chain.
+- **変更規模の見積もり:** `skills/plan/SKILL.md` に約 20-30 行（`### Agent Composition` セクションテンプレート追加、Step 4 への導出ステップ追加、Step 6 テンプレート追記、Step 5 Readiness Check 項目追加）、`commands/autopilot.md` に約 10-15 行（Variable-Count Agents セクション改訂、Plan Review Round の SendMessage 指示追記）。Issue 分割は不要な規模。
+- **スコープ逸脱リスク:** research/documentation タスクの Researcher/Writer も同じ「承認が唐突」問題を持つが、Issue 本文の例が `Reviewer x 1` のみのため、今回のスコープが research/documentation を含むか否かを明示することを推奨。含める場合は AC1/AC3 の汎用化修正が必要になる。
+- **既存ドキュメント整合:** `docs/` 配下に Variable-Count Agents の承認フローを記述したファイルが存在する場合は合わせて更新が必要（DoD の「既存ドキュメントと矛盾しない」を確保するため、atdd フェーズで確認が必要）。
