@@ -7,6 +7,7 @@ On-demand reference documents loaded by skills and commands. These are not alway
 | Document | Description |
 |----------|-------------|
 | [atdd-guide.md](atdd-guide.md) | ATDD methodology guide for the atdd skill and Issue templates |
+| [skill-authoring-guide.md](skill-authoring-guide.md) | Dialogue UX design principles for skill authors (AskUserQuestion, closed questions, Recommended pattern) |
 | [autonomy-levels.md](autonomy-levels.md) | Autonomy level definitions and escalation rules |
 | [bug-fix-process.md](bug-fix-process.md) | Bug fix workflow and triage process |
 | [commit-guide.md](commit-guide.md) | Commit message conventions and examples |
