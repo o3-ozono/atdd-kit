@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-04-03T00:00:00Z",
+  "timestamp": "2026-04-13T00:00:00Z",
   "skill_name": "atdd-kit:discover",
   "pass_rate": 1.0,
   "results": [
-    {"eval_name": "dev-feature", "pass_rate": 1.0, "passed": 7, "total": 7},
-    {"eval_name": "bug-fix", "pass_rate": 1.0, "passed": 5, "total": 5},
-    {"eval_name": "documentation", "pass_rate": 1.0, "passed": 4, "total": 4}
+    {"eval_name": "dev-feature", "pass_rate": 1.0, "passed": 9, "total": 9},
+    {"eval_name": "bug-fix", "pass_rate": 1.0, "passed": 6, "total": 6},
+    {"eval_name": "documentation", "pass_rate": 1.0, "passed": 5, "total": 5}
   ]
 }

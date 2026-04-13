@@ -22,7 +22,7 @@ If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash com
 If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
-The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks; DoD replaces completion criteria for docs/research).
+The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks).
 
 > **Used for all task types.** Development, bug, refactoring, documentation, research -- all start here.
 
