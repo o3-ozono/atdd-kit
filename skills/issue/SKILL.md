@@ -53,6 +53,16 @@ Based on the detected type, ask about each required template field, one question
 | **P2** | Feature development, important improvements, non-critical | New screen, UX improvement |
 | **P3** | Refactoring, documentation, research, minor improvements | Code cleanup, tech research |
 
+When confirming priority with the user, use AskUserQuestion with:
+- header: "Priority?"
+- options:
+  1. "(Recommended) [inferred priority based on context] — [brief reason]"
+  2. "[next most likely priority]"
+  3. "[remaining priority]"
+- multiSelect: false
+
+Recommended: [inferred priority] — reply 'ok' to accept, or provide alternative
+
 ## Step 3: Create Issue
 
 - Register with `gh issue create`

@@ -10,7 +10,8 @@
       "assertions": [
         {"id": "A1", "text": "Issue テンプレートを選択している（type:development）", "type": "structural"},
         {"id": "A2", "text": "Issue 作成後に ideate スキルへチェーンしている", "type": "structural"},
-        {"id": "A3", "text": "判定結果（タスクタイプ）が表示されている", "type": "structural"}
+        {"id": "A3", "text": "判定結果（タスクタイプ）が表示されている", "type": "structural"},
+        {"id": "A4", "text": "Priority 確認において Recommended（推奨優先度）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"}
       ]
     },
     {

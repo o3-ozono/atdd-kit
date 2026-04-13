@@ -192,7 +192,8 @@
 
 # --- AC7: commands/autopilot.md must not be modified ---
 
-@test "AC7: commands/autopilot.md has no changes from main" {
-  run git diff main -- commands/autopilot.md
+@test "AC7: commands/autopilot.md has no changes from branch start point" {
+  branch_start=$(git merge-base main HEAD)
+  run git diff "$branch_start" -- commands/autopilot.md
   [ -z "$output" ]
 }
