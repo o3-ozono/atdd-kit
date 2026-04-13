@@ -1,311 +1,287 @@
 # Implementation Strategy — Developer
 
-**Issue:** #3 — bug: discover の autopilot モード検出が PO 直接呼び出しを認識しない
+**Issue:** #36 — feat: discover スキルに DoD + AC の二層構造を導入する
 **Author:** Developer
 **Date:** 2026-04-12
-**Prior Decision:** `docs/decisions/ac-review-developer.md`
+**Prior Decisions:** `docs/decisions/ac-review-developer.md`, `docs/decisions/ac-review-qa.md`
 
-## 1. Flag Detection Specification
+## 1. Target Files and Changes
 
-### Detection Method
+### File 1: `skills/discover/SKILL.md` — 主要変更対象
 
-ARGUMENTS 文字列に対する単純な contains チェック。SKILL.md はマークダウン指示であり LLM が解釈するため、プログラム的なパース（正規表現等）は不要。
+**変更セクション:**
 
-**判定基準:**
-- ARGUMENTS に `--autopilot` が含まれる → **Autopilot mode**
-- ARGUMENTS に `--autopilot` が含まれない → **Standalone mode**
+#### 1a — HARD-GATE (L13) の説明文更新
 
-**記述パターン（全スキル共通）:**
-```
-If ARGUMENTS contains `--autopilot`: [autopilot behavior]
-If ARGUMENTS does not contain `--autopilot`: [standalone behavior]
-```
+`deliverables (ACs or completion criteria)` → `deliverables (DoD, ACs, or completion criteria)` に更新し、DoD が共通成果物であることを明示する。
 
-**Rationale:**
-- LLM が自然言語指示として解釈するため `contains` で十分
-- 引数順序（`"3 --autopilot"` vs `"--autopilot 3"`）に依存しない
-- 将来のフラグ追加（`"3 --autopilot --verbose"`）にも対応可能
-- `<teammate-message>` のようなコンテキスト依存ではなく明示的フラグなので確実に制御可能
+#### 1b — 説明文 (L25) 更新
 
-## 2. Target Files and Changes
+`structured deliverables (ACs for dev tasks, completion criteria for docs/research)` → `structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks; DoD replaces completion criteria for docs/research)` に更新。
 
-### File 1: `skills/discover/SKILL.md` (AC1 + AC2)
+#### 1c — Development Flow に Step 2.5 を挿入（DoD 導出）
 
-**4 箇所の変更:**
-
-#### 1a — HARD-GATE autopilot exception (L15)
+Step 2（アプローチ探索）と Step 3（User Story 導出）の間に新ステップを挿入:
 
 ```
-Before:
-**Autopilot exception:** When discover is invoked via autopilot (`<teammate-message>` from team-lead is present), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) `<teammate-message>` from team-lead is present, AND (2) the AC Review Round completes with user approval.
+### Step 2.5: DoD Derivation
 
-After:
-**Autopilot exception:** When discover is invoked via autopilot (ARGUMENTS contains `--autopilot`), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) the AC Review Round completes with user approval.
+Based on the approved approach, derive the Definition of Done.
+
+List verifiable completion conditions for this task. These are different from ACs:
+- ACs describe **how** the feature behaves (user-visible behavior)
+- DoD describes **when the task is complete** (delivery conditions)
+
+Typical DoD items:
+- Implementation passes all ACs
+- All new code has tests at the appropriate layer
+- No regression in existing tests (pass_rate maintained)
+- PR review approved and merged
+
+Confirm with user or proceed with defaults.
 ```
 
-#### 1b — AUTOPILOT-GUARD (L18-23)
+ステップ番号の繰り上げ: 現行 Step 3-8 → Step 3-9（内容は変更なし、番号のみ）。
+
+#### 1d — Bug Flow に DoD 導出ステップを挿入（AC6 対応）
+
+Bug Flow Step 4（Fix AC Derivation）の前に DoD 導出ステップを追加。Bug Flow の Issue コメントテンプレートに `### DoD` セクションを Root Cause の前に追加。
+
+#### 1e — Refactoring Flow に DoD 必須項目を追記（AC7 対応）
+
+Refactoring フロー説明セクションに以下を追加:
 
 ```
-Before:
-<AUTOPILOT-GUARD>
-If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
-- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
-- **Do not block execution.** Proceed normally after showing the warning.
-If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
-</AUTOPILOT-GUARD>
-
-After:
-<AUTOPILOT-GUARD>
-If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
-- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
-- **Do not block execution.** Proceed normally after showing the warning.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
-</AUTOPILOT-GUARD>
+- **DoD required item:** Always include a DoD item stating "externally observable behavior is unchanged" 
+  (verified by regression test suite).
 ```
 
-#### 1c — Step 7 (L230-232)
+#### 1f — Documentation/Research Flow の Step 3 改名
+
+`### Step 3: Define Completion Criteria` → `### Step 3: DoD Derivation`
+
+テキスト全体を「completion criteria」から「DoD」に書き換え。提示フォーマットを以下に変更:
 
 ```
-Before:
-**Autopilot mode** (a `<teammate-message>` from team-lead is present): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
+Are these DoD items acceptable?
 
-**Standalone mode** (no `<teammate-message>` — user invoked discover directly): Present the full AC set to the user:
-
-After:
-**Autopilot mode** (ARGUMENTS contains `--autopilot`): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
-
-**Standalone mode** (ARGUMENTS does not contain `--autopilot` — user invoked discover directly): Present the full AC set to the user:
+- [ ] [verifiable DoD item 1]
+- [ ] [verifiable DoD item 2]
 ```
 
-#### 1d — Step 8 (L251)
+#### 1g — 全フローの Issue コメントテンプレートに DoD セクションを先頭追加（AC5 対応）
+
+Development Flow Step 9（旧 Step 8）、Bug Flow Step 6、Docs/Research Flow Step 5 のテンプレートを更新:
+
+```markdown
+## discover Deliverables
+
+### DoD (Definition of Done)
+- [ ] [条件1]
+- [ ] [条件2]
+...
+
+### Approach  ← 現行と同じ位置
+...
+```
+
+コード変更タスクのテンプレートはその後に User Story + AC セクションが続く。
+
+#### 1h — Mandatory Checklist に DoD 項目を追加
 
 ```
-Before:
-> **Autopilot mode skip:** When discover was invoked via autopilot (`<teammate-message>` from team-lead), this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
-
-After:
-> **Autopilot mode skip:** When ARGUMENTS contains `--autopilot`, this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
+- [ ] DoD derivation step completed (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
+- [ ] DoD section is at the top of the Issue comment template
 ```
 
-**AC2 (Standalone 維持):** 上記 1b の AUTOPILOT-GUARD と 1c の Step 7 の Standalone モード記述を維持。AC1 の変更後もフラグなし呼び出しは従来通り動作する。検証は同一コミット内で行う。
+#### 1i — 「Completion Criteria」用語の完全廃止（AC4 対応）
+
+全箇所（L13, L25, Step 3 heading, Step 3 body, Step 4 presentation, Step 5 template heading）で `completion criteria` / `Completion Criteria` を `DoD` / `Definition of Done` に置換。
 
 ---
 
-### File 2: `skills/plan/SKILL.md` (AC3)
+### File 2: `skills/plan/SKILL.md` — 小規模変更（AC8 対応）
 
-**1 箇所の変更:**
-
-#### 2a — AUTOPILOT-GUARD (L16-21)
+**変更箇所: Step 1 (L81-82)**
 
 ```
 Before:
-<AUTOPILOT-GUARD>
-If this skill was invoked directly by the user (via slash command) and NOT as a subagent dispatched by autopilot (i.e., no `<teammate-message>` context is present):
-- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
-- **Do not block execution.** Proceed normally after showing the warning.
-If this skill was dispatched as a subagent by autopilot (a `<teammate-message>` from team-lead is present): skip this warning silently.
-</AUTOPILOT-GUARD>
+   - Development/bug/refactoring: User Story + ACs (Given/When/Then)
+   - Documentation/research: completion criteria
 
 After:
-<AUTOPILOT-GUARD>
-If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
-- Display warning: "This skill is designed to run within autopilot. Use `/atdd-kit:autopilot <number>` instead."
-- **Do not block execution.** Proceed normally after showing the warning.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this warning silently.
-</AUTOPILOT-GUARD>
+   - Development/bug/refactoring: DoD + User Story + ACs (Given/When/Then)
+   - Documentation/research: DoD (replaces completion criteria)
 ```
 
----
-
-### File 3: `skills/atdd/SKILL.md` (AC4)
-
-**1 箇所の変更:**
-
-#### 3a — AUTOPILOT-GUARD (L12-17)
-
-File 2 と完全同一パターンの書き換え。
-
----
-
-### File 4: `commands/autopilot.md` (AC5)
-
-**2 箇所の変更:**
-
-#### 4a — Phase 1, step 3 (L124)
+`description` フィールド (L3) も更新:
 
 ```
 Before:
-3. Use Skill tool to invoke `atdd-kit:discover` for the Issue
+description: "Create test strategy and implementation strategy from discover's ACs. Second step of the Issue Ready flow."
 
 After:
-3. Use Skill tool to invoke `atdd-kit:discover` with args `"<number> --autopilot"` for the Issue
-```
-
-#### 4b — Phase 3, step 1 (L187)
-
-```
-Before:
-1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and all prior Decision Trail file paths as context — Developer uses Skill tool to invoke `atdd-kit:atdd`
-
-After:
-1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and all prior Decision Trail file paths as context — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
+description: "Create test strategy and implementation strategy from discover's deliverables (DoD + ACs). Second step of the Issue Ready flow."
 ```
 
 ---
 
-### File 5: `tests/test_discover_autopilot_approval.bats` (AC6)
+### File 3: `skills/discover/evals/evals.json` — eval 更新（AC9 対応）
 
-**テスト更新方針:**
+**変更対象: eval id=2 "documentation"**
 
-既存テストは Issue #155 の AC 体系に基づいている。検出メカニズムが `<teammate-message>` → `--autopilot` に変わるため、以下を更新:
+assertion C1/C2 を更新して DoD ヘッダの存在を確認:
 
-#### 更新が必要なテスト（3 件）
-
-| Test (Line) | Current assertion | After |
-|-------------|-------------------|-------|
-| L12-16 "HARD-GATE contains autopilot exception clause" | `grep -q 'teammate-message'` | `grep -q '\-\-autopilot'` |
-| L18-24 "HARD-GATE exception requires BOTH..." | `grep -qi 'teammate-message'` + テスト名 | `grep -qi '\-\-autopilot'` + テスト名を `--autopilot AND AC Review Round` に変更 |
-| L32 Step 7 conditional | `grep -qi 'teammate-message\|autopilot'` | `grep -qi '\-\-autopilot\|autopilot'` (引き続きマッチするため実質変更不要だが、明示的に `--autopilot` を先頭にすべき) |
-
-#### 変更不要なテスト（11 件）
-
-| Test group | Reason |
-|------------|--------|
-| L28-31 "Step 7 has autopilot-mode conditional branch" | `autopilot` でマッチするため変更不要（`--autopilot` は `autopilot` を含む） |
-| L35-39 "Step 7 outputs draft AC" | `draft` のアサーション — 影響なし |
-| L41-45 "Step 7 skips approval" | `skip` のアサーション — 影響なし |
-| L47-51 "Step 8 has autopilot skip" | `skip\|autopilot` — 引き続きマッチ |
-| L55-71 AC2 Standalone tests | `Approve`, `gh issue comment`, `plan` のアサーション — 影響なし |
-| L75-91 AC4 autopilot tests | autopilot.md の AC Review Round セクションをテスト — 影響なし |
-| L95-111 AC3 Three Amigos tests | autopilot.md をテスト — 影響なし |
-| L115-125 Cross-file consistency | `AC Review Round` と `approval` のアサーション — 影響なし |
-
-#### 新規テスト追加（2 件）
-
-新規 AC に対応するテストを追加:
-
-```bash
-# --- AC5: autopilot.md passes --autopilot flag in Skill calls ---
-
-@test "AC5: autopilot Phase 1 passes --autopilot in discover Skill call" {
-  local phase1
-  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
-  echo "$phase1" | grep -q '\-\-autopilot'
-}
-
-@test "AC5: autopilot Phase 3 passes --autopilot in atdd Skill call" {
-  local phase3
-  phase3=$(sed -n '/## Phase 3/,/## Phase 4/p' "$AUTOPILOT")
-  echo "$phase3" | grep -q '\-\-autopilot'
-}
+```json
+{"id": "C1", "text": "完了基準が検証可能なチェックリスト形式で記述されている（曖昧な表現なし）", "type": "structural"},
+{"id": "C2", "text": "成果物に 'DoD' または 'Definition of Done' セクションが含まれており、'Completion Criteria' という表記は使われていない", "type": "structural"},
 ```
 
-#### AUTOPILOT-GUARD テスト追加（3 件）
+**追加 eval assertions (dev-feature / bug-fix):**
 
-```bash
-# --- AUTOPILOT-GUARD uses --autopilot flag ---
+dev-feature (id=0) に DoD 三層構造の検証アサーションを追加:
 
-@test "discover AUTOPILOT-GUARD uses --autopilot flag for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-
-@test "plan AUTOPILOT-GUARD uses --autopilot flag for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "skills/plan/SKILL.md")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-
-@test "atdd AUTOPILOT-GUARD uses --autopilot flag for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "skills/atdd/SKILL.md")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
+```json
+{"id": "A8", "text": "成果物に 'DoD' または 'Definition of Done' セクションが含まれている", "type": "structural"},
+{"id": "A9", "text": "DoD セクションが User Story セクションより前に配置されている", "type": "structural"}
 ```
 
-#### 残骸チェックテスト追加（1 件）
+bug-fix (id=1) に Bug Flow DoD の検証を追加:
 
-```bash
-# --- No teammate-message residue in autopilot detection ---
-
-@test "No teammate-message references remain in skill AUTOPILOT-GUARDs" {
-  for skill in discover plan atdd; do
-    local guard
-    guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "skills/$skill/SKILL.md")
-    ! echo "$guard" | grep -qi 'teammate-message'
-  done
-}
+```json
+{"id": "B6", "text": "成果物に 'DoD' セクションが含まれており、Root Cause セクションより前に配置されている", "type": "structural"}
 ```
 
-## 3. Implementation Order
+---
+
+### File 4: `tests/test_discover_approach_parity.bats` — 影響なし
+
+Step 2 の equal-detail ルールのみをテスト。Step 番号変更の影響を受けない（ヘッダ名称 `### Step 2: Approach Exploration` は変更しない）。
+
+---
+
+### File 5: `tests/test_discover_autopilot_approval.bats` — 軽微な影響確認が必要
+
+Step 7/Step 8 の sed 抽出は `### Step 7` / `### Step 8` ヘッダに依存している。今回のステップ番号繰り上げ（Step 3-8 → Step 3-9）で Step 7/Step 8 ヘッダが変わる可能性がある。
+
+**確認事項:** DoD ステップ挿入後、Step 7/Step 8 ヘッダが何番になるかを確認し、BATS テストのヘッダ抽出範囲を更新する。
+
+---
+
+### File 6: `CHANGELOG.md` — 必須更新
+
+```markdown
+## [Unreleased]
+### Changed
+- discover: DoD (Definition of Done) derivation step added to all task type flows
+- discover: Documentation/Research flow "Completion Criteria" renamed to "DoD"
+- discover: Code-change tasks (development/bug/refactoring) now produce DoD → User Story → AC three-layer structure
+- plan: Step 1 updated to read new "DoD" heading from discover deliverables
+```
+
+---
+
+### File 7: `.claude-plugin/plugin.json` — バージョンバンプ
+
+`"version": "1.7.0"` → `"version": "1.8.0"` (minor feature addition)
+
+---
+
+## 2. Architecture Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| DoD 導出ステップを Step 2.5 として挿入（Step 3 にしない） | 既存 Step 3（User Story 導出）は DoD に依存しないため、DoD を先に導出してから User Story に進む順序が自然。既存 BATS テストの Step 番号依存箇所への影響を最小化するため中間ステップとして挿入。 |
+| Bug Flow の DoD はコメントテンプレートの先頭に配置（Root Cause の前） | AC6 の Then 条件。Bug タスクでも「何を持って完了とするか」を最初に明示することがフローの一貫性を保つ。 |
+| Refactoring フロー固有の DoD 必須項目をフロー説明に追記 | 既存 Refactoring Flow は Development Flow と同一パターンで動作するため、フロー本体には変更不要。フロー説明セクションに必須項目ルールを追記するだけで済む。 |
+| `plan` SKILL.md は Step 1 テキストのみ変更（State Gate のパターンマッチは変更しない） | plan State Gate (L29) は `startswith("## discover Deliverables")` で Issue コメントを検出する。このヘッダは変更しないため State Gate のコマンドは変更不要。Step 1 の説明テキスト（人間可読）のみ更新する。 |
+| evals.json の documentation eval を更新（新規 eval は追加しない） | 既存 eval で十分なカバレッジが得られる。新規 eval を追加すると baseline.json のリセットが必要になるため、既存 eval の assertion を更新する方針とする。 |
+| Step 番号は繰り上げ（2.5 挿入、3-8 → 3-9）ではなく 3-8 → 3-9 としない | DoD ステップを「Step 2.5」として挿入することで既存 Step 3-8 の番号を保持し、BATS テストへの影響を最小化する。 |
+
+---
+
+## 3. AC Dependencies
 
 ```
-AC3 (plan AUTOPILOT-GUARD)           ← 最小変更、パターン確立
+AC4 (Completion Criteria 廃止 — 用語置換)
   ↓
-AC4 (atdd AUTOPILOT-GUARD)           ← 同一パターン適用
-  ↓
-AC1+AC2 (discover 4箇所 + Standalone 維持) ← 最大変更
-  ↓
-AC5 (autopilot.md 呼び出し側更新)     ← 判定側と呼び出し側を接続
-  ↓
-AC6 (テスト更新 + 全件 PASS)          ← 最終検証
+AC1 (共通フロー DoD 導出ステップ挿入)
+  ├── AC5 (テンプレート先頭配置 — AC1 のテンプレート変更に依存)
+  ├── AC6 (Bug Flow DoD — AC1 と同一パターン)
+  └── AC7 (Refactoring 必須項目 — AC1 のフロー説明追記)
+
+AC3 (非コードタスク DoD のみ — Documentation/Research フロー変更)
+  └── AC4 と連動（Completion Criteria → DoD の名称変更）
+
+AC2 (三層構造 — AC1 + AC3 + AC5 が揃うと検証可能)
+
+AC8 (plan スキル対応 — discover の新ヘッダに依存)
+  └── AC1/AC3/AC4 の完了後に実施
+
+AC9 (Eval regression guard — 全 AC の実装完了後に実施)
 ```
 
-**Rationale:**
-1. **AC3 → AC4:** plan/atdd の AUTOPILOT-GUARD は完全同一パターン。最小変更（1箇所ずつ）から着手してパターンを確立する。
-2. **AC1+AC2:** discover は 4 箇所の変更があり blast radius が最大。AC3/AC4 で確立したパターンを適用する。AC2 は AC1 の変更が Standalone 動作を壊していないことの検証であり、同一コミットに含める。
-3. **AC5:** 判定側（SKILL.md）の変更完了後に、呼び出し側（autopilot.md）を更新して接続を完成させる。
-4. **AC6:** 全変更完了後にテストを更新し、`bats tests/` で全件 PASS を確認する。
+---
+
+## 4. Implementation Order
+
+| Order | AC(s) | 変更対象 | 理由 |
+|-------|-------|---------|------|
+| 1 | AC4 | discover SKILL.md: `Completion Criteria` を全箇所 `DoD` に置換 | 最小変更（用語置換のみ）。後続ステップのベースを作る。BATS negative テスト（AC4）が即座に検証可能。 |
+| 2 | AC3 | discover SKILL.md: Documentation/Research フロー Step 3 を「DoD Derivation」に改名、テンプレート更新 | AC4 で用語を統一した後にフロー内容を変更。eval の documentation テスト (C1/C2) の assertion 更新も同時に行う。 |
+| 3 | AC1 + AC5 | discover SKILL.md: Development フローに Step 2.5 挿入、全フローテンプレート先頭に DoD セクション追加 | Development フロー本体と全テンプレートの変更。AC5 はテンプレート変更の一部なので同一コミットで対応。 |
+| 4 | AC6 | discover SKILL.md: Bug Flow DoD ステップ追加、Bug Flow テンプレート更新 | Bug フロー固有の変更。AC1 で確立したパターンを適用。 |
+| 5 | AC7 | discover SKILL.md: Refactoring フロー説明に DoD 必須項目追記 | 最小変更（フロー説明への追記のみ）。 |
+| 6 | AC2 | evals.json: dev-feature/bug-fix eval に DoD assertion 追加 | AC1/AC6 完了後に eval を拡張して三層構造を検証。 |
+| 7 | AC8 | plan SKILL.md: Step 1 テキスト、description 更新 | discover 側の変更が確定した後に plan 側を更新。 |
+| 8 | AC9 | BATS テスト更新 + bats 実行 + eval 実行 | 全変更完了後に BATS 全件 PASS を確認。auto-eval で pass_rate 検証。 |
+| 9 | — | CHANGELOG.md + plugin.json バンプ | 最後に versioning ルールに従い更新。 |
 
 ### Commit Strategy
 
-| Order | AC | Commit message |
-|-------|-----|---------------|
-| 1 | AC3 | `fix: AC3 -- plan AUTOPILOT-GUARD を --autopilot フラグ検出に移行 (#3)` |
-| 2 | AC4 | `fix: AC4 -- atdd AUTOPILOT-GUARD を --autopilot フラグ検出に移行 (#3)` |
-| 3 | AC1+AC2 | `fix: AC1+AC2 -- discover の全 autopilot 検出を --autopilot フラグに移行 (#3)` |
-| 4 | AC5 | `fix: AC5 -- autopilot.md の Skill 呼び出しに --autopilot フラグ付与 (#3)` |
-| 5 | AC6 | `test: AC6 -- テストを --autopilot フラグベースに更新 (#3)` |
+| Commit | AC(s) | Message |
+|--------|-------|---------|
+| 1 | AC4 | `refactor: AC4 -- discover Completion Criteria を DoD に用語統一 (#36)` |
+| 2 | AC3 | `feat: AC3 -- discover Documentation/Research フローを DoD フォーマットに移行 (#36)` |
+| 3 | AC1 + AC5 | `feat: AC1+AC5 -- discover Development フローに DoD 導出ステップ追加、全テンプレートに先頭 DoD セクション (#36)` |
+| 4 | AC6 | `feat: AC6 -- discover Bug Flow に DoD セクション追加 (#36)` |
+| 5 | AC7 | `feat: AC7 -- discover Refactoring フローに DoD 必須項目追記 (#36)` |
+| 6 | AC2 + eval | `test: AC2 -- evals.json に DoD 三層構造 assertion 追加 (#36)` |
+| 7 | AC8 | `feat: AC8 -- plan スキルを discover の新 DoD ヘッダに対応 (#36)` |
+| 8 | AC9 + BATS | `test: AC9 -- BATS テスト更新、eval regression guard 確認 (#36)` |
+| 9 | — | `chore: v1.8.0 CHANGELOG + plugin.json バンプ (#36)` |
 
-## 4. AC Dependencies
-
-```
-AC3 ──┐
-      ├── 独立（並行実装可能だが順次実装を推奨）
-AC4 ──┘
-      ↓
-AC1 ── AC2（同一変更セット）
-      ↓
-AC5（呼び出し側。AC1/AC3/AC4 の判定条件に依存）
-      ↓
-AC6（全変更の検証。全 AC に依存）
-```
+---
 
 ## 5. Risks and Mitigations
 
 | # | Risk | Impact | Likelihood | Mitigation |
 |---|------|--------|------------|------------|
-| R1 | `teammate-message` の残骸が SKILL.md に残り LLM が旧ロジックに従う | 中 | 低 | 実装後に `grep -r 'teammate-message' skills/{discover,plan,atdd}/SKILL.md` で 0 件確認。AC6 の残骸チェックテストでも検証。 |
-| R2 | テスト更新漏れで BATS FAIL | 低 | 中 | AC6 で `bats tests/` 全件 PASS を確認 |
-| R3 | Bug Flow Step 5 / Docs Flow Step 4 の autopilot 対応漏れ | 低 | 低 | これらは "same as development flow Step 7" と記述。Step 7 の変更が波及。ただし実装時にテキスト確認 |
-| R4 | discover HARD-GATE 内の条件更新漏れ | 高 | 低 | AC1 の変更スコープに L15 を明示的に含めている |
-| R5 | Skill description フィールドに `teammate-message` 残骸 | なし | なし | description は trigger 条件のみで autopilot 検出ロジックを含まない |
+| R1 | eval pass_rate が 10% 以上低下（AC9 violation） | 高 | 中 | 変更前後で eval を実行して比較。evals.json の assertion 更新（C2, A8/A9, B6）と SKILL.md の変更が整合することを確認してから PR 提出。 |
+| R2 | `plan` Step 1 が "DoD" ヘッダを含む doc/research コメントを "User Story + ACs" として誤判定する | 中 | 低 | plan Step 1 は "User Story + ACs (Given/When/Then)" vs "DoD (replaces completion criteria)" を区別するテキストを追加することで対応。AC8 の eval assertion でも検証。 |
+| R3 | BATS の Step 番号依存テストが Step 2.5 挿入で誤検出 | 低 | 中 | `test_discover_autopilot_approval.bats` の sed 抽出は `### Step 7` / `### Step 8` ヘッダ名称に依存。Step 2.5 挿入後も Step 7/Step 8 の番号が変わらないことを確認する（DoD ステップが Step 2.5 なら繰り上げ不要）。 |
+| R4 | Mandatory Checklist 更新漏れ | 低 | 低 | AC1 実装時にチェックリストへの DoD 項目追加を明示的なサブタスクとして含める。 |
+| R5 | Bug Flow / Docs フローの eval が新フォーマットに対応していない | 中 | 低 | AC2/AC6 の eval assertion 更新を実装コミットと同一 PR に含める。 |
+
+---
 
 ## 6. Verification Plan
 
-実装完了後の検証手順:
+実装完了後の検証手順（AC9 対応）:
 
-1. `bats tests/test_discover_autopilot_approval.bats` — 全テスト PASS
-2. `bats tests/` — 全テストスイート PASS（リグレッション確認）
-3. `grep -r 'teammate-message' skills/discover/SKILL.md skills/plan/SKILL.md skills/atdd/SKILL.md` — 0 件（AUTOPILOT-GUARD/HARD-GATE/Step 7/Step 8 に旧ロジック残骸なし）
-4. `grep -r '\-\-autopilot' skills/discover/SKILL.md skills/plan/SKILL.md skills/atdd/SKILL.md commands/autopilot.md` — 全変更箇所がヒット
+1. `bats /Users/o3/github.com/o3-ozono/atdd-kit/.claude/worktrees/autopilot-36/tests/` — 全テスト PASS
+2. `/atdd-kit:auto-eval` — pass_rate が baseline (1.0) から 10% 以上低下しないことを確認
+3. `grep -n "Completion Criteria" skills/discover/SKILL.md` — 0 件（AC4 達成確認）
+4. `grep -n "DoD\|Definition of Done" skills/discover/SKILL.md` — 各フローに DoD 導出ステップが存在することを確認
+
+---
 
 ## 7. Files NOT Changed (with rationale)
 
 | File | Reason |
 |------|--------|
-| `.claude/rules/workflow-overrides.md` | autopilot 検出方式に言及していない |
-| `agents/po.md`, `agents/developer.md`, `agents/qa.md` | Agent 定義は autopilot 検出ロジックを含まない |
-| `CHANGELOG.md` | plan フェーズで扱う（versioning rule に従い PR 内で更新） |
-| `.claude-plugin/plugin.json` | 同上 |
+| `skills/atdd/SKILL.md` | atdd は discover 成果物の「AC リスト」を読むだけ。DoD セクションが追加されても AC Given/When/Then の読み取りには影響しない。 |
+| `skills/verify/SKILL.md` | verify は AC に対する証拠確認を行う。DoD セクションが追加されても verify の動作は変わらない。 |
+| `commands/autopilot.md` | autopilot は discover の成果物フォーマットに依存しない（Issue コメントの読み取りは plan が担当）。 |
+| `tests/test_discover_approach_parity.bats` | Step 2 の equal-detail ルールのみテスト。今回の変更で影響を受けない。 |
+| `.claude/rules/workflow-overrides.md` | DoD 構造変更に言及していない。 |

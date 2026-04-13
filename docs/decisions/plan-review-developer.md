@@ -1,275 +1,141 @@
-# Plan Review -- Developer
+# Plan Review — Developer Perspective
 
-**Issue:** #34 -- タスクタイプ別ワークフロー分岐・エージェント再設計・トークン最適化
+**Issue:** #36 — feat: discover スキルに DoD + AC の二層構造を導入する
 **Reviewer:** Developer
 **Date:** 2026-04-12
-**Reviewed artifact:** Implementation Plan (Issue comment 2026-04-12T09:39:58Z)
+**Reviewed artifact:** `docs/decisions/unified-plan.md`
 
-## Overall Verdict: PASS with Minor concerns
+## File Composition Validity
 
-Plan は 7 つの AC と正確に対応しており、38 ���ァイルの変更対象リストは概ね妥当。AC 依存順序にも論理的な問題はない。ただし旧用語 (`investigation`, `ready-to-implement`) の残存箇所について Target Files に 14 ファイルの漏れがあり、テスト修正にも注意点がある。BLOCKER は 0 件。
+**Target Files（6ファイル）の評価:**
 
----
+| File | 妥当性 |
+|------|--------|
+| `skills/discover/SKILL.md` | OK — 主要変更対象として正しい |
+| `skills/plan/SKILL.md` | OK — AC8 対応として必要 |
+| `skills/discover/evals/evals.json` | OK — AC9 eval assertion 更新として必要 |
+| `tests/test_discover_dod_structure.bats` | OK — 新規 BATS テストとして必要 |
+| `CHANGELOG.md` | OK — versioning rule に従い必須 |
+| `.claude-plugin/plugin.json` | OK — v1.8.0 バンプとして必須 |
 
-## 1. ファイル構成の妥当性（38 ファイル）
+**漏れているファイル（3件）:**
 
-### 1.1 Target Files と旧用語残存箇所の突合
+1. `docs/issue-ready-flow.md` (L45): `"Define completion criteria"` という表記が残存している。AC4（Completion Criteria 廃止）の対象となるはずだが Target Files に含まれていない。
+2. `commands/autopilot.md` (L267): `"completion criteria"` という表記が研究フロー完了確認の文脈で使われている。用語統一の対象。
+3. `commands/maintenance.md` (L94): `### Completion Criteria` というセクションヘッダが存在する。スキル固有の内容ではないため影響は小さいが確認が必要。
 
-`investigation` を含むファイル（24 ファイル 54 箇所）と `ready-to-implement` を含むファイル（19 ファイル 46 箇所）を grep で網羅的に確認し、Plan の Target Files 38 ファ���ルと突合した。
+**過剰追加:** なし。6ファイルはいずれも変更理由を持つ。
 
-#### Plan に含まれているファイル（問題なし）
-
-| File | investigation | ready-to-implement | Plan の Action |
-|------|:---:|:---:|---|
-| agents/researcher.md | 1 | - | Modify |
-| commands/autopilot.md | - | 2 | Modify |
-| commands/setup-github.md | 3 | 1 | Modify |
-| docs/bug-fix-process.md | 1 | - | Modify |
-| docs/error-handling.md | 2 | - | Modify |
-| docs/getting-started.md | - | 1 | Modify |
-| docs/issue-ready-flow.md | 2 | 6 | Modify |
-| docs/workflow-detail.md | - | 5 | Modify |
-| README.md | 1 | 1 | Modify |
-| README.ja.md | - | 1 | Modify |
-| DEVELOPMENT.md | - | 1 | Modify |
-| DEVELOPMENT.ja.md | - | 1 | Modify |
-| rules/atdd-kit.md | - | 1 | Modify |
-| skills/atdd/SKILL.md | - | 4 | Modify |
-| skills/discover/SKILL.md | 7 | - | Modify |
-| skills/issue/SKILL.md | 3 | - | Modify |
-| skills/plan/SKILL.md | 1 | - | Modify |
-| skills/README.md | 1 | 2 | Modify |
-| templates/issue/en/investigation.yml | 2 | - | Rename -> research.yml |
-| templates/issue/ja/investigation.yml | 1 | - | Rename -> research.yml |
-| templates/README.md | 1 | - | Modify |
-| tests/test_label_flow.bats | - | 3 | Modify |
-| tests/test_state_gates.bats | - | 5 | Modify |
-| tests/test_gate_integration.bats | - | 2 | Modify |
-| tests/test_po_dev_qa.bats | - | - | Modify |
-
-#### Plan に含まれていないが旧用語を含むファイル（潜在漏れ 14 件）
-
-| File | investigation | ready-to-implement | 対応要否 |
-|------|:---:|:---:|---|
-| skills/debugging/SKILL.md | 6 | - | **要対応** -- investigation タスクタイプへの言及。research への置換必要 |
-| skills/ui-test-debugging/SKILL.md | 2 | - | **要対応** -- 同上 |
-| skills/session-start/SKILL.md | 1 | - | **要対応** -- investigation テンプレート参照 |
-| skills/bug/SKILL.md | 1 | - | **要対応** -- investigation への言及 |
-| commands/auto-sweep.md | - | 1 | **要対応** -- ready-to-implement ラベル監視 |
-| .github/ISSUE_TEMPLATE/investigation.yml | 2 | - | **要対応** -- rename to research.yml |
-| .github/ISSUE_TEMPLATE/investigation-ja.yml | 1 | - | **要対応** -- rename to research-ja.yml |
-| .github/ISSUE_TEMPLATE/development.yml | 1 | - | **要検討** -- investigation への言及 |
-| tests/test_bilingual_templates.bats | 3 | - | **要対応** -- `investigation` テンプレート名ハードコード |
-| tests/test_skill_adapters.bats | 1 | - | **要検討** -- investigation への間接参照 |
-| tests/test_autonomy_levels.bats | - | 2 | **要対応** -- ready-to-implement チェック x2 |
-| skills/atdd/evals/evals.json | - | 4 | **要対応** -- プロンプト・期待値に ready-to-implement |
-| skills/verify/evals/evals.json | - | 1 | **要対応** -- プロンプトに ready-to-implement |
-| .claude/rules/workflow-overrides.md | - | 2 | **要対応** -- Plan Review フローに直接影響 |
-
-### 1.2 不要なファイルの有無
-
-Target Files に明らかに不��なファイルはない。38 ファイル全てが変更理由を持っている。
-
-### 1.3 まとめ
-
-| 判定 | 内容 |
-|------|------|
-| PASS | 38 ファイルの変更理由は全て妥当 |
-| Minor | **14 ファイルの潜在漏れ**。AC7 の BATS テスト（旧用語 grep チェック）で検出可能だが、事前に Target Files に追加しておくと実装効率が上がる |
+**判定:** MINOR — 3ファイルの漏れあり。AC4 の BATS grep assertion（AC4: `grep` で "Completion Criteria" が 0 件）で実装後に検出可能だが、事前に Target Files に追加することで実装手戻りを防げる。
 
 ---
 
-## 2. 実装順序のリスク評価
+## Implementation Order Risk
 
-Plan の依存順序:
+**Commit 順序と依存関係の評価:**
+
 ```
-AC5(ラベル整備) -> AC4(ready-to-go) -> AC2(タスクタイプ別切り替え)
-AC1(エージェント定義) -> AC2(タスクタイプ別切り替え)
-AC6(autopilot 専用化) -- 独立
-AC3(可変人数ユーザー承認) -- AC2 の後
-AC7(ドキュメント更新) -- 最後
+Commit 1: AC4 (用語置換)
+  ↓ 前提条件なし — 最初に実施するのは正しい
+Commit 2: AC3 (Docs フロー改名)
+  ↓ AC4 の用語統一後に実施 — 依存関係OK
+Commit 3: AC1 + AC5 (Development フロー DoD ステップ挿入 + テンプレート更新)
+  ↓ AC4 の用語統一後 — OK
+Commit 4: AC6 (Bug Flow DoD)
+  ↓ AC1 のパターン確立後 — OK
+Commit 5: AC7 (Refactoring 必須項目)
+  ↓ AC1 のパターン確立後 — OK
+Commit 6: AC2 (evals assertion 追加)
+  ↓ AC1/AC3/AC6 完了後に eval を拡張 — OK
+Commit 7: AC8 (plan SKILL.md 更新)
+  ↓ AC1/AC3/AC4 完了後 — OK
+Commit 8: AC9 (BATS + eval 実行)
+  ↓ 全変更完了後 — OK
+Commit 9: CHANGELOG + version bump
+  ↓ 最後 — versioning rule に従い正しい
 ```
 
-| 順序 | リスク | 評価 |
-|------|--------|------|
-| AC5 を最初に | ラベル名変更は影響範囲が広い（実際には 38+14=52 ファイル）。ただし grep で検出可能な機械的置換 | LOW |
-| AC1 を AC2 の前に | エージェント定義は独立したファイル。先に作成しても他に影響なし | LOW |
-| AC4 を AC2 の前に | ready-to-go ラベルは AC2 のフロー分岐で使用。先に導入するのは正しい依存順序 | LOW |
-| AC6 を独立実施 | discover/plan/atdd は既に warn モードの GUARD あり。verify/ship は新設。2 パターンだが共に単純 | LOW |
-| AC7 を最後に | 旧用語残存チェックが全変更後に実行される安全弁 | LOW |
+**潜在的リスク:**
 
-**依存順序に問題なし。** AC3（可変人数承認）は AC2 の一部として autopilot.md に記述されるため、AC2 と同時実装が自然。
+- Commit 6 (AC2 — evals.json) の前に Commit 8 (BATS テスト) が来ると、新規 BATS テストが evals.json 更新前に実行されて意図しない状態をテストすることになる。現行の順序（Commit 6 が先、Commit 8 が後）は正しい。
+- Commit 3 が AC1 + AC5 を同一コミットに含めている。Development フローへの DoD ステップ挿入（AC1）と全フローテンプレートの先頭 DoD セクション追加（AC5）は相互依存があり、同一コミットとするのは合理的。ただし Commit 3 は `skills/discover/SKILL.md` の複数箇所を大規模に変更するため、レビュアーへの説明コストが高い。
+
+**判定:** OK — 依存関係を満たしている。リスクは低い。
 
 ---
 
-## 3. 技術リスク評価
+## Technical Risk Assessment
 
-### 3.1 autopilot.md の大規模改修（268 行 -> 推定 400-500 行）
+**R1 — eval pass_rate が 10% 以上低下（AC9 violation）: HIGH impact**
 
-| 観点 | リスク | 評価 |
-|------|--------|------|
-| 可読性 | MEDIUM | 分岐テーブル方式で緩和可能。Plan の方針に同意 |
-| Phase 0.5 拡張 | LOW | 既存判定テーブルにタスクタイプラベル読み取りを追加するだけ |
-| Phase 0.9 spawn ロジック | MEDIUM | 最大 7 種のエージェントを条件分岐で spawn。テーブル駆動で複雑度抑制可能 |
-| 5 タイプ x 2 フェ���ズ | MEDIUM | 10 パターンの分岐。テーブル 1 つで管理すべき |
+評価: **適切に識別されている。ただし baseline 比較の有効性に注意が必要。**
 
-**推奨:** autopilot.md 冒頭にエージェント構成テーブルを配置:
+evals.json の assertion 文言を変更した場合（C2 の更新、C5 の追加など）、baseline.json に記録された pass_rate は「旧 assertion でのパス」を意味する。新 assertion で pass_rate が 0.7 になっても baseline との差分は -0.3 であり 10% 超となる。しかし assertion 変更自体が仕様変更であるため、「旧 assertion のベースラインを新 assertion の結果と比較する」ことに意味がない。unified-plan の AC9 手順 Step 5「PASS 後に baseline.json を更新」は正しい方針だが、Commit 8 に `skills/discover/evals/baseline.json` の更新が含まれることを Target Files に明示すべき（現行では `baseline.json` が Target Files に含まれていない）。
 
-```markdown
-| タスクタイプ | Phase 1 エージェント | Phase 2 エージェント |
-|---|---|---|
-| development | PO, Developer, QA | PO, Developer, Reviewer x N |
-| bug | PO, Tester, Developer | Developer, Tester, Reviewer x N |
-| research | PO | PO, Researcher x N |
-| documentation | PO | PO, Writer, Reviewer x N |
-| refactoring | PO | PO, Developer, Reviewer x N |
-```
+**R2 — plan Step 1 の誤判定: MEDIUM impact**
 
-### 3.2 既存テスト修正リスク
+評価: **適切に識別されており、解決策も正しい。** plan SKILL.md Step 1 の検出テキストを `"Documentation/research: DoD"` に更新し、AC8 の BATS で検証する計画は正しい。問題なし。
 
-| テストファイル | 修正内容 | リスク |
-|---------------|---------|--------|
-| test_po_dev_qa.bats L24-28 | `no old role names (implementer/reviewer)` -- reviewer.md 追加で**確実に失敗** | MEDIUM |
-| test_po_dev_qa.bats L30-34, L36-39 | 同上。commands/ と skills/ 内の reviewer チェック | MEDIUM |
-| test_bilingual_templates.bats L9,15,23 | `investigation` テンプレート名ハードコード -> `research` | LOW |
-| test_autonomy_levels.bats L27-28 | `ready-to-implement` x2 | LOW |
-| test_label_flow.bats | `ready-to-implement` x3 | LOW |
-| test_state_gates.bats | `ready-to-implement` x5 | LOW |
-| test_gate_integration.bats | `ready-to-implement` x2 | LOW |
+**R3 — Step 番号依存テストが Step 2.5 挿入で誤検出: LOW impact**
 
-**特記:** test_po_dev_qa.bats の「old role names」テスト (L24-28, L30-34, L36-39) は reviewer が正式エージェントになることで根本的に意図が変わる。対応方針:
-1. `implementer` のみを「旧 role 名」としてチェックするよう変更
-2. `reviewer` は正式 role のため negative test から除外
-3. テスト名を `no old role names (implementer) in agents/` に変更
+評価: **適切に識別されており、解決策も正しい。** Step 2.5 挿入により既存の `### Step 7` / `### Step 8` ヘッダが変わらないため、`test_discover_autopilot_approval.bats` の sed 抽出パターンは継続して機能する。ただし Bug フローと Docs フローにも DoD ステップを挿入する場合（AC6/AC3）、それぞれのフローの内部ステップ番号が増える。Bug フロー（現行 Step 1-6）に DoD ステップを挿入すると内部的に Step 1-7 になる。現行の BATS テストは Development フローの Step 7/8 のみを grep しており Bug フローのステップ番号を参照していないため影響は限定的だが、新規 BATS テスト（`test_discover_dod_structure.bats`）でどのステップ番号を参照するかは実装時に確認が必要。
 
-### 3.3 evals ファイルの修正（Plan から漏れ）
+**R4 — Mandatory Checklist 更新漏れ: LOW impact**
 
-| ファイル | 箇所 | 内容 |
-|---------|------|------|
-| skills/atdd/evals/evals.json | 4 箇所 | `ready-to-implement` がプロンプト・期待値に |
-| skills/verify/evals/evals.json | 1 箇所 | 同上 |
+評価: 適切に識別されている。AC1 コミットにサブタスクとして明示しているため管理可能。
 
-evals は BATS テストとは別系統だが、旧用語が残るとスキル評価結果が不正確になる。
+**未識別リスク R5 — baseline.json が Target Files に含まれていない**
 
-### 3.4 AUTOPILOT-GUARD warn -> block
+Commit 8（AC9）で eval を実行して pass_rate を確認した後、`skills/discover/evals/baseline.json` を新しい pass_rate で更新する必要がある。この更新がコミットに含まれないと、次回の eval 実行時に古い baseline で比較されてしまう。`baseline.json` を Commit 8 または Commit 9 の Target Files に追加することを推奨。
 
-| スキル | 現状 | 変更後 |
-|--------|------|--------|
-| discover | warn (proceed after warning) | block |
-| plan | warn (proceed after warning) | block |
-| atdd | warn (proceed after warning) | block |
-| verify | GUARD なし | block (新設) |
-| ship | GUARD なし | block (新設) |
+**未識別リスク R6 — 「Completion Criteria」が discover 以外のファイルに残存**
 
-block 化により手動実行が完全に不可能になる。Discussion で「warn-only + --force」を却下済みであり妥当。ただし Agent Teams 未設定環境でのフォールバック消失を認識しておくべき。
+`docs/issue-ready-flow.md`, `commands/autopilot.md`, `commands/maintenance.md` に "Completion Criteria" / "completion criteria" の表記が残存しているが Target Files に含まれていない（File Composition Validity セクション参照）。AC4 の BATS assertion が `skills/discover/SKILL.md` のみを対象にしている場合、これらのファイルは検証対象から漏れる。assertion を「SKILL.md 全体」に限定するのか「リポジトリ全体」に広げるのかを明確化すべき。
 
 ---
 
-## 4. エージェント定義の設計評価
+## Architecture Decisions
 
-### 4.1 新規エージェント 3 種の tools/skills 構成提案
+**1. DoD 導出ステップを Step 2.5 として挿入（繰り上げしない）**
 
-Plan では新規 3 エージェントの tools/skills 構成が未定義。以下を提案:
+評価: **妥当。** Step 7/8 に依存する BATS テスト（`test_discover_autopilot_approval.bats`）への影響を最小化できる。"Step 2.5" というラベルは SKILL.md のマークダウン構造として若干の不自然さがあるが、LLM はステップ番号よりも見出し名とコンテンツを読むため動作への影響はない。実装上の問題なし。
 
-**Tester (agents/tester.md)**
-```yaml
-model: sonnet
-effort: high
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - Agent
-skills:
-  - atdd-kit:debugging
-```
-理由: バグ再現スクリプト作成・テスト実行に Write/Edit/Bash が必要。debugging スキルで根本原因調査を支援。
+**2. Bug Flow の DoD をテンプレート先頭（Root Cause の前）に配置**
 
-**Reviewer (agents/reviewer.md)**
-```yaml
-model: sonnet
-effort: high
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Agent
-  - WebSearch
-  - WebFetch
-```
-理由: QA と同等の読み取り専用 tools。コード編集不要。QA との差別化は system_prompt で「コードレビュー専門」として定義。
+評価: **妥当。** AC6 の Then 条件に合致。フローの一貫性（全タスクタイプで DoD が先頭）を保てる。
 
-**Writer (agents/writer.md)**
-```yaml
-model: sonnet
-effort: high
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-```
-理由: ドキュメント作成に Write/Edit が必要。Skill プリロードは不要（ドキュメント作成は汎用的）。
+**3. Refactoring フロー固有の DoD 必須項目はフロー説明に追記（フロー本体は変更しない）**
 
-### 4.2 既存エージェント model/effort 変更
+評価: **妥当だが、追記場所の明確化が必要。** Refactoring フローのセクション説明への追記は最小変更として正しい。ただし unified-plan には「どの見出しの下に何行追記するか」が明示されていない。実装者の判断余地が残っており、追記場所が不一致になるリスクがある。実装コミット時に確認が必要。
 
-| エージェント | 現状 | 変更後 | 評価 |
-|-------------|------|--------|------|
-| PO | model: inherit | model: opus, effort: high | 妥当 -- 判断品質重視 |
-| Developer | model: inherit | model: sonnet, effort: high | 妥当 -- コスト削減 |
-| QA | model: inherit | model: sonnet, effort: high | 妥当 |
-| Researcher | model: inherit | model: sonnet, effort: high | 妥当 |
+**4. plan SKILL.md は Step 1 テキストのみ変更（State Gate は変更しない）**
 
-**注意:** `model: opus` / `model: sonnet` がエイリアスとして解決されるか、フル model ID (`claude-opus-4-6`, `claude-sonnet-4-6`) が必要かは実装時に検証すべき��
+評価: **妥当。** plan の State Gate は `startswith("## discover Deliverables")` でコメントを検出しており、このヘッダは変更しないため State Gate への影響はない。
 
-### 4.3 QA と Reviewer の役割分担
+**5. evals.json の既存 eval を更新（新規 eval は追加しない）**
 
-- **QA:** 開発タスクの Phase 1（plan レビュー）。テスト戦略策定が主務
-- **Reviewer:** Phase 2 のコードレビュー。可変人数
-
-分離は合理的。system_prompt で明確に役割境界を定義する必要あり。
-
-### 4.4 Researcher の活用シーン
-
-research タスク���イプ Phase 2 で「同一テーマ最低 2 名」と定義。Issue #4 の課題に対する回答として適切。development/bug の Phase 1 での活用は将来拡張として検討可能。
+評価: **妥当。** baseline.json のリセット不要。ただし R5 で指摘したとおり、assertion 変更後の baseline.json 更新は Commit 8 または Commit 9 に明示的に含める必要がある。
 
 ---
 
-## 5. 追加リスク
+## Commit Strategy Granularity
 
-### 5.1 .claude/rules/workflow-overrides.md
-
-`ready-to-implement` を 2 箇所で参照。Plan Review Round のフローに直接影響するため、AC4 または AC7 で `ready-to-go` への置換が必須。Target Files に含まれて��ない。
-
-### 5.2 CHANGELOG.md / plugin.json のバージョンバンプ
-
-Target Files に含まれているが、AC 依存順序にタイミング未記載。AC7 の後に実施するのが自然。
-
-### 5.3 grep チェックの拡張子カバレッジ
-
-AC7 の旧���語 grep チェックでは `.md`, `.yml` だけでなく `.bats`, `.json` (evals) も対象に含めるべき。
+| Commit | 粒度評価 |
+|--------|---------|
+| 1 (AC4 — 用語置換のみ) | 適切。単一の機械的変更 |
+| 2 (AC3 — Docs フロー改名) | 適切。単一フローの変更 |
+| 3 (AC1+AC5) | やや大きい。`skills/discover/SKILL.md` の複数箇所を同時変更（Step 2.5 挿入 + 全フローテンプレート更新）。分割するとしたら AC1（Step 2.5 挿入）と AC5（テンプレート先頭配置）を別 commit にする方法があるが、両者は実質的に同一変更セットなので同一 commit でも許容範囲。 |
+| 4 (AC6 — Bug Flow) | 適切。単一フローの変更 |
+| 5 (AC7 — Refactoring) | 適切。最小変更 |
+| 6 (AC2 — evals) | 適切。`test:` プレフィックスが正しい |
+| 7 (AC8 — plan) | 適切。別ファイルの小規模変更 |
+| 8 (AC9 — BATS + eval) | **baseline.json の扱いが不明瞭。** BATS テストファイル新規作成（`test_discover_dod_structure.bats`）は commit に含まれるが、eval 実行後の `baseline.json` 更新が含まれるかどうかが不明。Commit 8 または Commit 9 に `baseline.json` の更新を明示的に含めること。 |
+| 9 (CHANGELOG + バンプ) | 適切。versioning rule に従う |
 
 ---
 
-## Summary
+## Verdict
 
-| # | 観点 | 判定 | 詳細 |
-|---|------|------|------|
-| 1 | ファイル構成 | PASS (Minor) | 38 ファイルは妥当。**14 ファイ���の潜在漏れ** あり |
-| 2 | 実装順序 | PASS | AC 依存順序は正しく、リスクは全て LOW |
-| 3 | autopilot.md 改修 | PASS (Minor) | 268行 -> 推定 400-500行。テーブル駆動設計を推奨 |
-| 4 | 既存テスト修正 | PASS (Minor) | test_po_dev_qa.bats reviewer negative test の意図再設計、test_bilingual_templates/test_autonomy_levels も修正必要 |
-| 5 | evals ファイル | PASS (Minor) | 2 ファイルが Target Files から漏れ |
-| 6 | エー��ェント定義 | PASS (Minor) | 新規 3 エージェントの tools/skills 構成を提案済み |
-| 7 | GUARD block 化 | PASS | Discussion で検討済み。妥当 |
-| 8 | model フロントマター | PASS (Minor) | エイリアス解決は実装時検証 |
+APPROVE WITH CHANGES
 
-**BLOCKER: 0 件。実装着手可能。**
-
-Minor 指摘の多くは AC7 で旧用語 grep チェックにより検出される設計だが、14 ファイルの漏れを事前に Target Files に追加しておくことを推奨する。
+Target Files に `docs/issue-ready-flow.md`、`commands/autopilot.md`、`commands/maintenance.md`（AC4 の Completion Criteria 廃止対象）と `skills/discover/evals/baseline.json`（AC9 の eval 実行後更新対象）が含まれていない。いずれも BLOCKER ではなく実装中に対処可能だが、事前に Target Files へ追加することを推奨する。
