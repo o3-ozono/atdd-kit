@@ -141,11 +141,17 @@ I've considered these approaches:
 - Summary: ...
 - Pros: ...
 - Cons: ...
-
-**Recommended: A** (reason: ...)
-
-Which approach? [A / B / Suggest alternative]
 ```
+
+Then use AskUserQuestion with:
+- header: "Approach?"
+- options:
+  1. "(Recommended) [recommended approach name] — [brief reason]"
+  2. "[alternative approach name]"
+  3. "Suggest alternative"
+- multiSelect: false
+
+Recommended: [recommended approach] — reply 'ok' to accept, or provide alternative
 
 5. Repeat until the user approves
 
@@ -168,9 +174,16 @@ Recommended DoD:
 - [ ] [condition 1]
 - [ ] [condition 2]
 ...
-
-Reply 'ok' to accept, or suggest additions/changes.
 ```
+
+Then use AskUserQuestion with:
+- header: "DoD?"
+- options:
+  1. "(Recommended) Accept DoD as listed"
+  2. "Suggest additions or changes"
+- multiSelect: false
+
+Recommended: Accept DoD — reply 'ok' to accept, or provide alternative
 
 ### Step 3: User Story Derivation
 
@@ -190,9 +203,16 @@ Confirm with the user:
 Does this user story look right?
 
 **As a** [persona], **I want to** [goal], **so that** [reason].
-
-[OK / Suggest revision]
 ```
+
+Then use AskUserQuestion with:
+- header: "User Story?"
+- options:
+  1. "(Recommended) Looks good — proceed"
+  2. "Suggest revision"
+- multiSelect: false
+
+Recommended: Looks good — reply 'ok' to accept, or provide alternative
 
 ### Step 4: Acceptance Criteria Derivation
 
@@ -262,9 +282,16 @@ Please review these ACs:
 [UX check results]
 
 [Interruption scenario check results]
-
-Approve? [Approve / Needs revision]
 ```
+
+Then use AskUserQuestion with:
+- header: "Approve ACs?"
+- options:
+  1. "(Recommended) Approve — proceed to plan"
+  2. "Needs revision"
+- multiSelect: false
+
+Recommended: Approve — reply 'ok' to accept, or provide alternative
 
 - **Needs revision:** Confirm revision details one at a time, update ACs, re-present
 - **Approve:** Proceed to Step 8
@@ -365,9 +392,16 @@ Root cause identified.
 **Classification:** [A / B / C] -- [class name]
 **Cause:** [description]
 **Code:** [file path and line number]
-
-Is this analysis correct? [Yes / Needs correction]
 ```
+
+Then use AskUserQuestion with:
+- header: "Root Cause?"
+- options:
+  1. "(Recommended) Correct — proceed to fix approach"
+  2. "Needs correction"
+- multiSelect: false
+
+Recommended: Correct — reply 'ok' to accept, or provide alternative
 
 ### Step 3: Fix Approach Exploration
 
@@ -472,9 +506,16 @@ Are these DoD items acceptable?
 - [ ] [DoD item 1]
 - [ ] [DoD item 2]
 - ...
-
-[Approve / Needs revision]
 ```
+
+Then use AskUserQuestion with:
+- header: "DoD?"
+- options:
+  1. "(Recommended) Approve DoD"
+  2. "Needs revision"
+- multiSelect: false
+
+Recommended: Approve DoD — reply 'ok' to accept, or provide alternative
 
 ### Step 5: Post to Issue Comment
 
