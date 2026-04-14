@@ -190,10 +190,3 @@
   [ "$status" -ne 0 ]
 }
 
-# --- AC7: commands/autopilot.md must not be modified ---
-
-@test "AC7: commands/autopilot.md has no changes from branch start point" {
-  branch_start=$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD 2>/dev/null) || skip "merge-base unavailable (shallow clone)"
-  run git diff "$branch_start" -- commands/autopilot.md
-  [ -z "$output" ]
-}
