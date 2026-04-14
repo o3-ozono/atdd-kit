@@ -99,9 +99,9 @@
   grep -q '"skill_name": "atdd-kit:discover"' skills/discover/evals/evals.json
 }
 
-@test "discover evals.json has 4 eval cases" {
+@test "discover evals.json has at least 4 eval cases" {
   count=$(grep -c '"name":' skills/discover/evals/evals.json)
-  [ "$count" -eq 4 ]
+  [ "$count" -ge 4 ]
 }
 
 @test "discover evals.json has assertions for each eval" {

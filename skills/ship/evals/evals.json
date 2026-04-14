@@ -23,6 +23,30 @@
         {"id": "B2", "text": "正しいフロー（atdd → verify）を案内している", "type": "structural"},
         {"id": "B3", "text": "PR マージに進んでいない", "type": "structural"}
       ]
+    },
+    {
+      "id": 2,
+      "name": "skill-status-complete-autopilot",
+      "prompt": "Issue #500 の ship を --autopilot モードで実行。PR がマージされ Step 10 のレポートが完了した。",
+      "expected_output": "skill-status block with SKILL_STATUS: COMPLETE and PHASE: ship at the end of output.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "レスポンスの末尾に ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "C2", "text": "SKILL_STATUS: COMPLETE が含まれている", "type": "structural"},
+        {"id": "C3", "text": "PHASE: ship が含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "skill-status-blocked-review-incomplete",
+      "prompt": "Issue #501 の ship を --autopilot モードで実行しようとしたが、PR に ready-for-PR-review ラベルがまだ付いていてレビュー完了確認ができない。",
+      "expected_output": "skill-status block with SKILL_STATUS: BLOCKED and PHASE: ship. Does not merge.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "レスポンスに ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "D2", "text": "SKILL_STATUS: BLOCKED が含まれている", "type": "structural"},
+        {"id": "D3", "text": "PR のマージに進んでいない", "type": "structural"}
+      ]
     }
   ]
 }

@@ -59,6 +59,30 @@
         {"id": "D1", "text": "autopilot 経由での実行を推奨するメッセージを表示している", "type": "structural"},
         {"id": "D2", "text": "スキルの実行をブロックして STOP している（続行しない）", "type": "structural"}
       ]
+    },
+    {
+      "id": 4,
+      "name": "skill-status-complete-autopilot",
+      "prompt": "Issue #100 の discover を --autopilot モードで実行。全フロー完了し、ACs を AC Review Round に返す段階に達した。",
+      "expected_output": "skill-status block with SKILL_STATUS: COMPLETE and PHASE: discover at the end of output.",
+      "files": [],
+      "assertions": [
+        {"id": "E1", "text": "レスポンスの末尾に ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "E2", "text": "SKILL_STATUS: COMPLETE が含まれている", "type": "structural"},
+        {"id": "E3", "text": "PHASE: discover が含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "skill-status-blocked-in-progress-lock",
+      "prompt": "Issue #101 の discover を --autopilot モードで実行しようとしたが、すでに別のプロセスが in-progress ラベルを持っている。",
+      "expected_output": "skill-status block with SKILL_STATUS: BLOCKED and PHASE: discover. Does not proceed.",
+      "files": [],
+      "assertions": [
+        {"id": "F1", "text": "レスポンスに ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "F2", "text": "SKILL_STATUS: BLOCKED が含まれている", "type": "structural"},
+        {"id": "F3", "text": "実装を続行していない（STOP している）", "type": "structural"}
+      ]
     }
   ]
 }
