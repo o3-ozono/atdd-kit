@@ -37,6 +37,30 @@
         {"id": "C1", "text": "autopilot 経由での実行を推奨するメッセージを表示している", "type": "structural"},
         {"id": "C2", "text": "スキルの実行をブロックして STOP している（続行しない）", "type": "structural"}
       ]
+    },
+    {
+      "id": 3,
+      "name": "skill-status-complete-autopilot",
+      "prompt": "Issue #200 の plan を --autopilot モードで実行。Plan をIssueコメントに投稿し ready-for-plan-review ラベルを付けた段階に達した。",
+      "expected_output": "skill-status block with SKILL_STATUS: COMPLETE and PHASE: plan at the end of output.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "レスポンスの末尾に ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "D2", "text": "SKILL_STATUS: COMPLETE が含まれている", "type": "structural"},
+        {"id": "D3", "text": "PHASE: plan が含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "skill-status-blocked-state-gate",
+      "prompt": "Issue #201 の plan を --autopilot モードで実行しようとしたが、discover deliverables コメントがない。",
+      "expected_output": "skill-status block with SKILL_STATUS: BLOCKED and PHASE: plan. Does not proceed.",
+      "files": [],
+      "assertions": [
+        {"id": "E1", "text": "レスポンスに ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "E2", "text": "SKILL_STATUS: BLOCKED が含まれている", "type": "structural"},
+        {"id": "E3", "text": "Plan 作成に進んでいない（STOP している）", "type": "structural"}
+      ]
     }
   ]
 }

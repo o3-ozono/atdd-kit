@@ -46,6 +46,9 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_ship_review_gate.bats | ship skill review gate |
 | test_skill_adapters.bats | Agent skill preloading (agents/*.md frontmatter) |
 | test_skill_staleness.bats | Skill staleness detection |
+| test_skill_status_spec.bats | SKILL_STATUS format specification document (AC1, Issue #58) |
+| test_skill_status_output.bats | SKILL_STATUS Status Output section in core skills (AC2-4, Issue #58) |
+| test_skill_status_autopilot.bats | autopilot SKILL_STATUS transition logic (AC5-7, Issue #58) |
 | test_skill_structure.bats | Skill directory structure validation |
 | test_template_sync.bats | Template and .github/ copy sync verification |
 | test_state_gates.bats | State Gate enforcement |

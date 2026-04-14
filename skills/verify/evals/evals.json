@@ -23,6 +23,30 @@
         {"id": "B2", "text": "正しいフロー（atdd の実行）を案内している", "type": "structural"},
         {"id": "B3", "text": "検証結果の提示に進んでいない", "type": "structural"}
       ]
+    },
+    {
+      "id": 2,
+      "name": "skill-status-complete-autopilot",
+      "prompt": "Issue #400 の verify を --autopilot モードで実行。全 AC が PASS し、ship を呼び出す段階に達した。",
+      "expected_output": "skill-status block with SKILL_STATUS: COMPLETE and PHASE: verify at the end of output.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "レスポンスの末尾に ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "C2", "text": "SKILL_STATUS: COMPLETE が含まれている", "type": "structural"},
+        {"id": "C3", "text": "PHASE: verify が含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "skill-status-failed-ac-failure",
+      "prompt": "Issue #401 の verify を --autopilot モードで実行。AC3 のテストが失敗した。",
+      "expected_output": "skill-status block with SKILL_STATUS: FAILED and PHASE: verify. Does not invoke ship.",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "レスポンスに ```skill-status コードブロックが含まれている", "type": "structural"},
+        {"id": "D2", "text": "SKILL_STATUS: FAILED が含まれている", "type": "structural"},
+        {"id": "D3", "text": "ship を呼び出していない", "type": "structural"}
+      ]
     }
   ]
 }

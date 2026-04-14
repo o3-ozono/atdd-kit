@@ -83,6 +83,47 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
 - Do NOT proceed to ship
 - Go back to `atdd` skill to fix
 
+## Status Output
+
+**Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
+
+Output a `skill-status` fenced code block as the **last element** of your response at every
+terminal point. Terminal points for verify:
+
+- **COMPLETE:** All ACs pass with fresh evidence and ship is about to be invoked.
+- **PENDING:** Waiting for user input at a decision point.
+- **BLOCKED:** State Gate failed (no `in-progress` label, or running on `main` branch).
+- **FAILED:** One or more ACs failed verification — implementation must return to atdd.
+
+```skill-status
+SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
+PHASE: verify
+RECOMMENDATION: <next action or error description in one sentence>
+```
+
+Examples:
+
+```skill-status
+SKILL_STATUS: COMPLETE
+PHASE: verify
+RECOMMENDATION: All ACs verified. Running ship.
+```
+
+```skill-status
+SKILL_STATUS: BLOCKED
+PHASE: verify
+RECOMMENDATION: Issue #N does not have in-progress label. Run atdd first.
+```
+
+```skill-status
+SKILL_STATUS: FAILED
+PHASE: verify
+RECOMMENDATION: AC3 failed: test output shows assertion error. Return to atdd to fix implementation.
+```
+
+See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+autopilot action matrix.
+
 ## If All ACs Pass
 
 - Post verification results as Issue comment

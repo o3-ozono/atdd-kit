@@ -168,6 +168,41 @@ PR is ready. How to proceed?
 - Clean up: `git checkout main && git pull origin main`
 - Delete local branch: `git branch -d <branch>`
 
+## Status Output
+
+**Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
+
+Output a `skill-status` fenced code block as the **last element** of your response at every
+terminal point. Terminal points for ship:
+
+- **COMPLETE:** PR merged successfully (Step 10 complete).
+- **PENDING:** Waiting for user decision (e.g., Merge / Keep / Discard in Step 8).
+- **BLOCKED:** State Gate failed (no `in-progress` label, running on `main` branch, or review not complete).
+- **FAILED:** Unrecoverable error (e.g., merge failed due to persistent conflict, CI broken).
+
+```skill-status
+SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
+PHASE: ship
+RECOMMENDATION: <next action or error description in one sentence>
+```
+
+Examples:
+
+```skill-status
+SKILL_STATUS: COMPLETE
+PHASE: ship
+RECOMMENDATION: PR #60 merged. Issue #58 auto-closed.
+```
+
+```skill-status
+SKILL_STATUS: BLOCKED
+PHASE: ship
+RECOMMENDATION: PR review not yet confirmed. Wait for review PASS comment or ready-for-PR-review label removal.
+```
+
+See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+autopilot action matrix.
+
 ### Step 10: Report
 
 ```

@@ -161,6 +161,41 @@ These thoughts mean you are rationalizing a violation. STOP and return to the co
 - **Type C (Logic Error):** Write a regression test reproducing the bug (RED) -> fix the logic (GREEN)
 - All types: search for the same pattern elsewhere (1-2 hits: fix in same PR; 3+: create a refactoring Issue)
 
+## Status Output
+
+**Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
+
+Output a `skill-status` fenced code block as the **last element** of your response at every
+terminal point. Terminal points for atdd:
+
+- **COMPLETE:** All ACs are GREEN and verify is about to be invoked.
+- **PENDING:** Waiting for user input (e.g., AC gap discovered — user must approve new AC).
+- **BLOCKED:** State Gate failed (no `ready-to-go` label and no valid continuation path).
+- **FAILED:** Unrecoverable error (e.g., build system broken, impossible to write a failing test).
+
+```skill-status
+SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
+PHASE: atdd
+RECOMMENDATION: <next action or error description in one sentence>
+```
+
+Examples:
+
+```skill-status
+SKILL_STATUS: COMPLETE
+PHASE: atdd
+RECOMMENDATION: All ACs GREEN. Running verify.
+```
+
+```skill-status
+SKILL_STATUS: BLOCKED
+PHASE: atdd
+RECOMMENDATION: Issue #N is not ready for implementation. ready-to-go label is missing.
+```
+
+See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+autopilot action matrix.
+
 ## Transition
 
 When all ACs are GREEN:
