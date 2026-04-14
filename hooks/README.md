@@ -41,7 +41,7 @@ git checkout -b fix/recover-hook-issue
 
 **Option 2: Temporarily remove the hook entry from hooks.json**
 
-On a feature branch, edit `hooks/hooks.json` and remove the PreToolUse entry. After recovery, restore it via PR.
+In the atdd-kit repository, on a feature branch, edit `hooks/hooks.json` and remove the PreToolUse entry temporarily. After recovery, restore it via PR.
 
 **Option 3: Override via Claude Code settings (project-level)**
 
