@@ -15,12 +15,12 @@ Ensure governance rules are enforced before Claude begins direct work. This skil
 
 Check if the user's message is an Issue-targeted work instruction:
 
-1. **Match pattern:** The message contains an Issue reference (`#N` or `Issue N`) **AND** a work-start verb (e.g., "進めて", "実装して", "修正して", "再開して", "対応して", "やって", "取りかかって", "implement", "fix", "work on", "start", "resume", "continue").
+1. **Match pattern:** The message contains an Issue reference (`#N` or `Issue N`) **AND** a work-start verb (e.g., "go ahead", "implement", "fix", "resume", "handle", "do it", "get started", "implement", "fix", "work on", "start", "resume", "continue").
 2. **If matched:** Do NOT invoke discover, plan, or any other skill. Instead, guide the user to autopilot:
    ```
    Use `/atdd-kit:autopilot <number>` to work on this Issue.
    ```
-3. **If NOT matched** (e.g., questions like "#16ってどういう Issue？", "#16 の状態を教えて"): Skip this section and proceed to the Governance Rules section below.
+3. **If NOT matched** (e.g., questions like "What is Issue #16 about?", "Tell me the status of #16"): Skip this section and proceed to the Governance Rules section below.
 
 ## Governance Rules
 

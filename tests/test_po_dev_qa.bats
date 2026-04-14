@@ -75,15 +75,15 @@
 # --- AC3: AC Review Round ---
 
 @test "AC3: autopilot.md AC Review Round has PO perspective" {
-  grep -qi 'PO.*要件\|PO.*網羅\|PO.*ビジネス' commands/autopilot.md
+  grep -qi 'PO.*requirement\|PO.*completeness\|PO.*business\|PO.*要件\|PO.*網羅\|PO.*ビジネス' commands/autopilot.md
 }
 
 @test "AC3: autopilot.md AC Review Round has Dev perspective" {
-  grep -qi 'Dev.*アーキテクチャ\|Dev.*技術\|Dev.*エッジケース' commands/autopilot.md
+  grep -qi 'Developer.*architectural\|Developer.*technical\|Developer.*edge cases\|Dev.*アーキテクチャ\|Dev.*技術\|Dev.*エッジケース' commands/autopilot.md
 }
 
 @test "AC3: autopilot.md AC Review Round has QA perspective" {
-  grep -qi 'QA.*テスト\|QA.*境界\|QA.*カバレッジ' commands/autopilot.md
+  grep -qi 'QA.*testability\|QA.*boundary\|QA.*coverage\|QA.*テスト\|QA.*境界\|QA.*カバレッジ' commands/autopilot.md
 }
 
 # --- AC4: Plan Review Round ---
@@ -93,11 +93,11 @@
 }
 
 @test "AC4: autopilot.md Plan Review Round has Dev perspective" {
-  grep -qi 'Dev.*ファイル構成\|Dev.*実装順序\|Dev.*技術リスク' commands/autopilot.md
+  grep -qi 'Developer.*file structure\|Developer.*implementation order\|Developer.*technical risk\|Dev.*ファイル構成\|Dev.*実装順序\|Dev.*技術リスク' commands/autopilot.md
 }
 
 @test "AC4: autopilot.md Plan Review Round has QA perspective" {
-  grep -qi 'QA.*テスト層\|QA.*カバレッジ戦略' commands/autopilot.md
+  grep -qi 'QA.*test layer\|QA.*coverage strategy\|QA.*テスト層\|QA.*カバレッジ戦略' commands/autopilot.md
 }
 
 # --- AC5: PO Cross-Cutting Check ---
