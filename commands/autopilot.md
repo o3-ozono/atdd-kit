@@ -257,6 +257,33 @@ All three — PO, Developer, and QA — review the Plan. Developer and QA agents
 3. PO finalizes Plan (Stakeholder approval is NOT required for Plan)
 4. Post Plan as Issue comment with `gh issue comment`
 5. `gh issue edit <number> --add-label ready-to-go`
+6. **Stop-point: clear or continue (same-session only)**
+   This step runs only when Plan Review Round was executed in the current session. If autopilot reached this point via Phase 0.5 mid-phase resume (ready-to-go label already set at session start), this step is skipped.
+
+   Use `AskUserQuestion` to present the following 2-option prompt:
+   - **Question:** "Plan has been approved and `ready-to-go` label has been set. Context usage may be high. Would you like to clear the session and resume from Phase 3 in a fresh context, or continue to Phase 3 now?"
+   - **Option 1:** "Clear and end — clear this session, then run `/atdd-kit:autopilot <N>` to resume from Phase 3"
+   - **Option 2:** "Continue — proceed to Phase 3 now (existing behavior)"
+
+   If `AskUserQuestion` is not resolvable at runtime, output the 2 options as plain text and STOP until the user responds.
+
+   **Fallback for AskUserQuestion unavailability:**
+   ```
+   Plan approved. Choose how to proceed:
+   1. Clear and end — clear this session, then run `/atdd-kit:autopilot <N>` to resume from Phase 3
+   2. Continue — proceed to Phase 3 now
+   Reply with 1 or 2.
+   ```
+   STOP and wait for user response.
+
+   **On user response:**
+   - **"Clear and end" / Option 1:** Print the following and terminate autopilot entirely (do NOT proceed to Phase 3 or any subsequent phase):
+     ```
+     Session cleared. To resume, run `/atdd-kit:autopilot <N>` in a new session.
+     Phase 0.5 will detect the `ready-to-go` label and start directly from Phase 3.
+     ```
+   - **"Continue" / Option 2:** Proceed to Phase 3 with no additional steps (existing behavior preserved).
+   - **Other / unclassifiable response:** Follow Autonomy Rules failure mode — report "Response could not be classified as clear or continue." → STOP. Do NOT auto-select either option.
 
 ## Phase 3: Implementation (task-type-specific)
 

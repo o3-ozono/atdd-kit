@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-04-15
+
 ### Added
+- `commands/autopilot.md`: Plan Review Round step 6 — clear/continue stop-point fires after `ready-to-go` label is set in the same session. Presents `AskUserQuestion` 2-option prompt (clear and end / continue to Phase 3). Clear selection prints resume guidance (`/atdd-kit:autopilot <N>`) and terminates autopilot. Continue proceeds to Phase 3 unchanged. Mid-phase resume (new session, `ready-to-go` already set) bypasses stop-point via Phase 0.5 determination. Other/unclassifiable response follows Autonomy Rules failure mode — report and STOP. (#54)
+- `agents/po.md`: Added `AskUserQuestion` to PO `tools:` list to support the Plan approval stop-point. (#54)
 - `hooks/main-branch-guard.sh`: PreToolUse hook that denies Edit/Write/MultiEdit/NotebookEdit on `main`/`master` branches. Distributed via `hooks/hooks.json` so all atdd-kit projects receive it automatically. Fail-safe: non-git directories, detached HEAD, and git unavailability all pass through with `{}`. (#38)
 
 ### Removed (BREAKING CHANGE)
