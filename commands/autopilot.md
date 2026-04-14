@@ -180,7 +180,7 @@ The PO and task-type-specific agents review draft ACs. Spawn agents according to
 
 ### research / documentation: PO only
 
-1. PO designs scope, completion criteria, theme breakdown, and agent count independently.
+1. PO designs scope, DoD, theme breakdown, and agent count independently.
 
 ### Common (all task types)
 
