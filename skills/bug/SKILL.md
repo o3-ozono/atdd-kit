@@ -101,9 +101,16 @@ After investigation, present the proposal to the user:
 **Effort:** Small / Medium / Large
 **User Impact:** High / Medium / Low -- <reason>
 **Priority:** P1 / P2 / P3
-
--> Proceed with fix?
 ```
+
+Then use AskUserQuestion with:
+- header: "Fix?"
+- options:
+  1. "(Recommended) Proceed with fix"
+  2. "Revise proposal"
+- multiSelect: false
+
+Recommended: Proceed with fix — reply 'ok' to accept, or provide alternative
 
 ## Next Step
 

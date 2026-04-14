@@ -55,7 +55,7 @@ Follow these **always**. No exceptions.
 
 At every decision point in plan, present a recommended default. The user can accept with "ok" or provide an alternative.
 
-Format: `Recommended: [X] �� reply 'ok' to accept, or provide alternative`
+Format: `Recommended: [X] — reply 'ok' to accept, or provide alternative`
 
 This applies to: execution mode selection, test layer choices, and other decision points.
 
@@ -101,6 +101,15 @@ Decide the test layer for the User Story as a whole:
 |-----------|---------------|
 | **E2E** | Full user flow involving UI interaction |
 | **Integration** | Cross-module flow without UI, or when E2E is impractical |
+
+Then use AskUserQuestion with:
+- header: "Story Test?"
+- options:
+  1. "(Recommended) [recommended layer] — [brief reason]"
+  2. "[alternative layer]"
+- multiSelect: false
+
+Recommended: [recommended layer] — reply 'ok' to accept, or provide alternative
 
 #### Inner Loop (AC Tests)
 
@@ -341,9 +350,16 @@ Consider splitting the Issue:
 
 - Issue A: [scope] -- [N1] ACs
 - Issue B: [scope] -- [N2] ACs
-
-Split? [Split / Continue as-is (document reason)]
 ```
+
+Then use AskUserQuestion with:
+- header: "Split?"
+- options:
+  1. "(Recommended) Split into smaller Issues"
+  2. "Continue as-is (document reason)"
+- multiSelect: false
+
+Recommended: Split — reply 'ok' to accept, or provide alternative
 
 ---
 

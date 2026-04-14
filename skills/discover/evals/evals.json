@@ -16,7 +16,8 @@
         {"id": "A6", "text": "中断シナリオチェック I1-I4 の全4項目が言及されている", "type": "structural"},
         {"id": "A7", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"},
         {"id": "A8", "text": "DoD または Definition of Done セクションが存在し、User Story セクションより前に配置されている", "type": "structural"},
-        {"id": "A9", "text": "DoD セクションに完了条件がチェックリスト形式でリスト化されている", "type": "structural"}
+        {"id": "A9", "text": "DoD セクションに完了条件がチェックリスト形式でリスト化されている", "type": "structural"},
+        {"id": "A10", "text": "アプローチ選択・ユーザーストーリー確認・AC承認など主要な決定点において Recommended（推奨選択肢）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"}
       ]
     },
     {

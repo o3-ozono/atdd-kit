@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-04-13T12:00:00Z",
+  "skill_name": "atdd-kit:ideate",
+  "pass_rate": 1.0,
+  "results": [
+    {"eval_name": "approach-comparison", "pass_rate": 1.0, "passed": 3, "total": 3},
+    {"eval_name": "guides-to-issue-creation", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "post-issue-mode", "pass_rate": 1.0, "passed": 3, "total": 3},
+    {"eval_name": "post-issue-skip", "pass_rate": 1.0, "passed": 2, "total": 2}
+  ]
+}
