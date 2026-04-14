@@ -132,6 +132,40 @@ All agent output flows through two channels — never via repository files:
 
 Writing agent deliverables to `docs/decisions/` or any other repository path is prohibited. Curated knowledge that deserves long-term reference must be graduated into existing docs (`docs/`, `DEVELOPMENT.md`, etc.) by explicit human decision — not by agents automatically.
 
+## Status Evaluation (SKILL_STATUS)
+
+When PO receives a SendMessage reply from Developer, QA, or any agent that ran a skill, evaluate
+the `skill-status` block in the message to determine the next action.
+
+### Extraction Rule
+
+Locate the **last** `skill-status` fenced code block in the received message. Parse the
+`SKILL_STATUS` and `PHASE` fields. `RECOMMENDATION` is informational only — do not use it for
+branching logic.
+
+### Action Matrix
+
+| SKILL_STATUS | Autopilot Next Action |
+|---|---|
+| `COMPLETE` | Proceed to next phase |
+| `PENDING` | Wait for external input (user approval); do not advance to next phase |
+| `BLOCKED` | Stop current phase. Post RECOMMENDATION as Issue comment. STOP and wait for user. |
+| `FAILED` | Stop autopilot entirely. Post RECOMMENDATION as Issue comment. Report to user. |
+| (any other value) | Treat as `PENDING` — do not advance |
+
+### Fallback: No SKILL_STATUS Block Found
+
+If the received message contains no `skill-status` block:
+
+1. Post a warning Issue comment: "Agent returned output without SKILL_STATUS block. Manual verification required."
+2. STOP. Do not advance to the next phase.
+3. Report to user: which agent, which phase, and the raw message received.
+
+Do NOT attempt to infer skill completion from message text. Only `skill-status` blocks are
+authoritative.
+
+See `docs/skill-status-spec.md` for full format specification and field definitions.
+
 ## Autonomy Rules
 
 The following execution patterns are **prohibited**. If any situation would trigger one of these patterns, the correct action is: report the failure to the user → STOP → wait for user decision.
