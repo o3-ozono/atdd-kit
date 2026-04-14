@@ -55,7 +55,7 @@ Follow these **always**. No exceptions.
 
 At every decision point in plan, present a recommended default. The user can accept with "ok" or provide an alternative.
 
-Format: `Recommended: [X] �� reply 'ok' to accept, or provide alternative`
+Format: `Recommended: [X] — reply 'ok' to accept, or provide alternative`
 
 This applies to: execution mode selection, test layer choices, and other decision points.
 

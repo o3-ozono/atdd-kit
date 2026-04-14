@@ -66,16 +66,25 @@ Detect the task type from Issue labels or user description at skill startup.
 | `type:documentation` | Documentation | Docs/research flow |
 | `type:research` | Research | Docs/research flow |
 
-If unclear, ask with AskUserQuestion:
+If unclear, use AskUserQuestion (2-stage split per §(d) exception — 5 types exceed 4-option limit):
 
-```
-What type of task is this?
-1. Development (new feature / enhancement)
-2. Bug fix
-3. Refactoring
-4. Documentation
-5. Investigation
-```
+**Q1** — use AskUserQuestion with:
+- header: "Task Type?"
+- options:
+  1. "(Recommended) Development — new feature or enhancement"
+  2. "Bug fix"
+  3. "Other (refactoring / documentation / investigation)"
+- multiSelect: false
+
+Recommended: Development — reply 'ok' to accept, or provide alternative
+
+**Q2** (only if "Other" selected in Q1) — use AskUserQuestion with:
+- header: "Detail type?"
+- options:
+  1. "Refactoring"
+  2. "Documentation"
+  3. "Investigation"
+- multiSelect: false
 
 ---
 
