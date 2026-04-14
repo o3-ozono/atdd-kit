@@ -340,6 +340,45 @@ STOP here. Do not proceed further.
 
 ---
 
+## Status Output
+
+**Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
+**Inline Mode exception:** When plan is called inline from discover, do NOT output `skill-status`.
+Discover owns the status in that execution path.
+
+Output a `skill-status` fenced code block as the **last element** of your response at every
+terminal point. Terminal points for plan:
+
+- **COMPLETE:** Plan posted as Issue comment and `ready-for-plan-review` label added (Step 8 complete).
+- **PENDING:** Waiting for user input at a decision point.
+- **BLOCKED:** State Gate failed (no `in-progress` label, or no discover deliverables found).
+- **FAILED:** Unrecoverable error (e.g., `gh issue comment` auth failure).
+
+```skill-status
+SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
+PHASE: plan
+RECOMMENDATION: <next action or error description in one sentence>
+```
+
+Examples:
+
+```skill-status
+SKILL_STATUS: COMPLETE
+PHASE: plan
+RECOMMENDATION: Plan posted. Proceed to ATDD implementation.
+```
+
+```skill-status
+SKILL_STATUS: BLOCKED
+PHASE: plan
+RECOMMENDATION: Issue #N has no discover deliverables. Run discover first.
+```
+
+See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+autopilot action matrix.
+
+---
+
 ## Handling Large Plans
 
 If 7 or more ACs are mapped, suggest splitting the Issue:

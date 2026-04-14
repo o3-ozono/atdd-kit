@@ -549,6 +549,51 @@ Format:
 
 ---
 
+## Status Output
+
+**Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
+
+Output a `skill-status` fenced code block as the **last element** of your response at every
+terminal point. Terminal points for discover:
+
+- **COMPLETE:** Autopilot mode — deliverables returned to AC Review Round (Step 7 skipped).
+  Standalone mode — deliverables posted as Issue comment and plan invoked.
+- **PENDING:** Waiting for user approval of AC set (standalone mode mid-flow).
+- **BLOCKED:** HARD-GATE triggered (e.g., `in-progress` lock already held by another process),
+  or existing HARD-GATE / State Gate precondition not met.
+- **FAILED:** Unrecoverable error (e.g., `gh issue comment` auth failure).
+
+```skill-status
+SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
+PHASE: discover
+RECOMMENDATION: <next action or error description in one sentence>
+```
+
+Examples:
+
+```skill-status
+SKILL_STATUS: COMPLETE
+PHASE: discover
+RECOMMENDATION: Proceed to plan with approved ACs
+```
+
+```skill-status
+SKILL_STATUS: BLOCKED
+PHASE: discover
+RECOMMENDATION: Issue is already locked by another in-progress process. Wait or remove the in-progress label to proceed.
+```
+
+```skill-status
+SKILL_STATUS: FAILED
+PHASE: discover
+RECOMMENDATION: gh issue comment failed with authentication error. Check GH_TOKEN configuration.
+```
+
+See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+autopilot action matrix.
+
+---
+
 ## Skill Completion and Transition
 
 After deliverables are posted and approved:
