@@ -15,6 +15,37 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 |------|-------|---------|
 | [hooks.json](hooks.json) | — | Hook definitions — maps events to shell commands |
 | [session-start](session-start) | SessionStart | Checks if workflow-config.yml exists; guides first-time setup |
+| [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit on `main`/`master` branches |
+
+### main-branch-guard.sh
+
+Enforces the Issue-driven workflow rule that direct edits on `main`/`master` are not allowed:
+
+1. Intercepts Edit, Write, MultiEdit, and NotebookEdit tool calls via PreToolUse hook
+2. Reads the current git branch with `git branch --show-current`
+3. If the branch is exactly `main` or `master` (case-sensitive), denies the tool call with a `permissionDecision: "deny"` response
+4. The deny message includes guidance to use `/atdd-kit:issue` and `/atdd-kit:autopilot`
+5. All unexpected conditions (non-git directory, detached HEAD, git unavailable) pass through safely with `{}`
+
+**Fail-safe design:** Any error condition returns `{}` + exit 0. The hook never blocks edits due to unexpected failures — only explicit `main`/`master` branch matches trigger a deny.
+
+#### Emergency Recovery (if the hook misbehaves)
+
+If the hook incorrectly blocks edits (e.g., after a bug is introduced), use one of these methods to restore access:
+
+**Option 1: Switch to a feature branch (recommended)**
+```bash
+git checkout -b fix/recover-hook-issue
+# Edit main-branch-guard.sh on this branch, then open a PR
+```
+
+**Option 2: Temporarily remove the hook entry from hooks.json**
+
+In the atdd-kit repository, on a feature branch, edit `hooks/hooks.json` and remove the PreToolUse entry temporarily. After recovery, restore it via PR.
+
+**Option 3: Override via Claude Code settings (project-level)**
+
+In your project's `.claude/settings.json`, add a hook that returns `{}` for the same matcher before the plugin hook runs.
 
 ## Development-Only Hooks (atdd-kit repo only)
 
