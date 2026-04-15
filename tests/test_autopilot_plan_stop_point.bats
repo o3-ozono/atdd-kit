@@ -3,7 +3,6 @@
 # Tests for Issue #54: autopilot Plan approval clear/continue stop-point
 
 AUTOPILOT_CMD="commands/autopilot.md"
-PO_AGENT="agents/po.md"
 
 # AC1: Stop-point fires after Plan Review Round step 5 in the same session
 @test "AC1: Plan Review Round has step 6 after ready-to-go label assignment" {
@@ -64,9 +63,4 @@ PO_AGENT="agents/po.md"
   plan_review=$(sed -n '/## Plan Review Round/,/## Phase 3/p' "$AUTOPILOT_CMD")
   # The Other/fallback path must STOP
   echo "$plan_review" | grep -qiE 'stop'
-}
-
-# agents/po.md: AskUserQuestion in tools list
-@test "po.md has AskUserQuestion in tools list" {
-  grep -q 'AskUserQuestion' "$PO_AGENT"
 }

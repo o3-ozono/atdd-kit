@@ -45,7 +45,6 @@
 }
 
 @test "AC3: system_prompt is now in agents/ directory" {
-  grep -q 'system_prompt\|You are' agents/po.md
   grep -q 'system_prompt\|You are' agents/developer.md
   grep -q 'system_prompt\|You are' agents/qa.md
 }

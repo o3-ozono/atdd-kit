@@ -2,18 +2,18 @@
 
 # Issue #138 / #34: Agent Teams architecture tests
 # Agent definitions live in agents/*.md
+# Updated for Issue #45: po.md removed — main Claude directly acts as PO orchestrator
 
-# --- AC1 (#34): 7 agent definitions with model/effort ---
+# --- AC1 (#34, updated #45): 6 agent definitions with model/effort ---
 
-@test "AC1: all 7 agent definitions exist" {
-  for agent in po developer qa researcher tester reviewer writer; do
+@test "AC1: all 6 agent definitions exist (po.md removed)" {
+  for agent in developer qa researcher tester reviewer writer; do
     [[ -f "agents/${agent}.md" ]]
   done
 }
 
-@test "AC1: PO agent has model opus and effort high" {
-  grep -q 'model:.*opus' agents/po.md
-  grep -q 'effort:.*high' agents/po.md
+@test "AC1: po.md does not exist (removed in #45)" {
+  [[ ! -f "agents/po.md" ]]
 }
 
 @test "AC1: non-PO agents have model sonnet and effort high" {
