@@ -51,6 +51,7 @@ gh label create "type:documentation" --color "0075CA" --force
 gh label create "type:research" --color "D4C5F9" --force
 gh label create "refactoring" --color "BFDADC" --force
 gh label create "implementing" --color "0E8A16" --force
+gh label create "express-mode" --color "5319E7" --force
 ```
 
 ### Step 4: Summary
@@ -59,5 +60,5 @@ gh label create "implementing" --color "0E8A16" --force
 GitHub setup complete:
 - Issue templates: [count] files
 - PR template: created
-- Labels: 13 created
+- Labels: 14 created
 ```
