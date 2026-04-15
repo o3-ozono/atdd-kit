@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-04-16
+
+### Fixed
+- `skills/atdd/SKILL.md`: Workflow Step 2 の曖昧な "Create branch: `feat/<issue-number>-<slug>`" を明示的な `git switch -c feat/<issue-number>-<slug>` コマンドに置き換え。refspec rewriting 禁止の WARNING を追加。autopilot Phase 5 の `ExitWorktree` が `discard_changes: true` なしに完了できるよう root cause を修正。(#90)
+
 ## [1.15.0] - 2026-04-15
 
 ### Added
