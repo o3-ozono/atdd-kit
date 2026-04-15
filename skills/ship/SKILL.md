@@ -200,7 +200,7 @@ PHASE: ship
 RECOMMENDATION: PR review not yet confirmed. Wait for review PASS comment or ready-for-PR-review label removal.
 ```
 
-See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
 autopilot action matrix.
 
 ### Step 10: Report

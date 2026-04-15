@@ -2,11 +2,11 @@
 
 # Tests for Issue #58: SKILL_STATUS spec document (AC1)
 
-SPEC_DOC="docs/skill-status-spec.md"
+SPEC_DOC="docs/guides/skill-status-spec.md"
 
 # --- AC1: Spec document exists ---
 
-@test "AC1: docs/skill-status-spec.md exists" {
+@test "AC1: docs/guides/skill-status-spec.md exists" {
   [[ -f "$SPEC_DOC" ]]
 }
 

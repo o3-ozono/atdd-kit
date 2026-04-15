@@ -59,16 +59,16 @@
 
 # --- AC4: Document consistency ---
 
-@test "AC4: docs/workflow-detail.md has no polling loop reference" {
-  ! grep -qi 'polling.*loop\|bash.*polling' docs/workflow-detail.md
+@test "AC4: docs/workflow/workflow-detail.md has no polling loop reference" {
+  ! grep -qi 'polling.*loop\|bash.*polling' docs/workflow/workflow-detail.md
 }
 
-@test "AC4: docs/workflow-detail.md has no autopilot.sh reference" {
-  ! grep -q 'autopilot\.sh' docs/workflow-detail.md
+@test "AC4: docs/workflow/workflow-detail.md has no autopilot.sh reference" {
+  ! grep -q 'autopilot\.sh' docs/workflow/workflow-detail.md
 }
 
-@test "AC4: docs/workflow-detail.md references Agent Teams" {
-  grep -qi 'agent.*teams' docs/workflow-detail.md
+@test "AC4: docs/workflow/workflow-detail.md references Agent Teams" {
+  grep -qi 'agent.*teams' docs/workflow/workflow-detail.md
 }
 
 @test "AC4: README.md has no polling loop reference" {
@@ -162,14 +162,14 @@
   grep -qi 'main Claude' README.ja.md
 }
 
-@test "#45-AC6: docs/workflow-detail.md states Six agents" {
-  grep -qi 'six agents' docs/workflow-detail.md
+@test "#45-AC6: docs/workflow/workflow-detail.md states Six agents" {
+  grep -qi 'six agents' docs/workflow/workflow-detail.md
 }
 
-@test "#45-AC6: docs/workflow-detail.md states main Claude as orchestrator" {
-  grep -qi 'main Claude' docs/workflow-detail.md
+@test "#45-AC6: docs/workflow/workflow-detail.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' docs/workflow/workflow-detail.md
 }
 
-@test "#45-AC6: docs/workflow-detail.md Mermaid diagram has no PO node" {
-  ! grep -q 'PO\["PO"\]' docs/workflow-detail.md
+@test "#45-AC6: docs/workflow/workflow-detail.md Mermaid diagram has no PO node" {
+  ! grep -q 'PO\["PO"\]' docs/workflow/workflow-detail.md
 }

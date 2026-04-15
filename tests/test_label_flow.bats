@@ -12,11 +12,11 @@
 
 # AC3: Document consistency -- ready-for-user-approval
 @test "workflow-detail.md contains ready-for-user-approval in Issue flow" {
-  grep -q 'ready-for-user-approval' docs/workflow-detail.md
+  grep -q 'ready-for-user-approval' docs/workflow/workflow-detail.md
 }
 
 @test "workflow-detail.md contains in-progress in Issue labels" {
-  grep -q 'in-progress' docs/workflow-detail.md
+  grep -q 'in-progress' docs/workflow/workflow-detail.md
 }
 
 @test "rules/atdd-kit.md default flow skips ready-for-user-approval" {
@@ -36,7 +36,7 @@
 }
 
 @test "workflow-detail.md references in-progress label" {
-  grep -q 'in-progress' docs/workflow-detail.md
+  grep -q 'in-progress' docs/workflow/workflow-detail.md
 }
 
 @test "auto-sweep.md monitors in-progress Issues" {
@@ -46,7 +46,7 @@
 # (label flow is now managed by PO in autopilot.md end-to-end)
 
 @test "issue-ready-flow.md default flow skips ready-for-user-approval" {
-  ! grep -q 'ready-for-user-approval' docs/issue-ready-flow.md
+  ! grep -q 'ready-for-user-approval' docs/workflow/issue-ready-flow.md
 }
 
 # AC4: plan SKILL.md adds ready-for-plan-review and stops
@@ -73,7 +73,7 @@
 }
 
 @test "workflow-detail PR flow does not mention standalone review-approved" {
-  ! grep -q 'review-approved' docs/workflow-detail.md
+  ! grep -q 'review-approved' docs/workflow/workflow-detail.md
 }
 
 @test "rules/atdd-kit.md PR flow does not mention standalone review-approved" {

@@ -121,7 +121,7 @@ PHASE: verify
 RECOMMENDATION: AC3 failed: test output shows assertion error. Return to atdd to fix implementation.
 ```
 
-See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
 autopilot action matrix.
 
 ## If All ACs Pass

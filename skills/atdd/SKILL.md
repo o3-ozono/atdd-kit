@@ -193,7 +193,7 @@ PHASE: atdd
 RECOMMENDATION: Issue #N is not ready for implementation. ready-to-go label is missing.
 ```
 
-See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
 autopilot action matrix.
 
 ## Transition

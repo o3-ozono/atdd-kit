@@ -16,7 +16,7 @@ Every PR must verify that documentation stays in sync with the changes. Before m
 |------|----------------|
 | Skills table in README updated | New/renamed/removed skill |
 | Commands table in README updated | New/renamed/removed command |
-| `docs/workflow-detail.md` updated | New process, label change, or flow change |
+| `docs/workflow/workflow-detail.md` updated | New process, label change, or flow change |
 | `commands/autopilot.md` updated | New auto-* command |
 
 ## If You Changed Architecture or Rules
@@ -25,7 +25,7 @@ Every PR must verify that documentation stays in sync with the changes. Before m
 |------|----------------|
 | `DEVELOPMENT.md` and `DEVELOPMENT.ja.md` in sync | Architecture decision, new convention, or process change |
 | `rules/atdd-kit.md` updated | New workflow rule (stay under 40 lines) |
-| `docs/review-guide.md` updated | New review criteria |
+| `docs/guides/review-guide.md` updated | New review criteria |
 
 ## If You Changed Eval-Related Files
 

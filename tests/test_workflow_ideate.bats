@@ -2,26 +2,26 @@
 
 # AC6: Workflow documentation includes ideate step between issue and discover
 
-# --- docs/issue-ready-flow.md ---
+# --- docs/workflow/issue-ready-flow.md ---
 
 @test "AC6: issue-ready-flow.md mentions ideate step" {
-  grep -qi 'ideate' docs/issue-ready-flow.md
+  grep -qi 'ideate' docs/workflow/issue-ready-flow.md
 }
 
 @test "AC6: issue-ready-flow.md shows ideate between issue and discover" {
   # ideate should appear in the development task flow
-  run grep -n 'ideate\|discover\|Issue' docs/issue-ready-flow.md
+  run grep -n 'ideate\|discover\|Issue' docs/workflow/issue-ready-flow.md
   [[ "$output" == *"ideate"* ]]
 }
 
-# --- docs/workflow-detail.md ---
+# --- docs/workflow/workflow-detail.md ---
 
 @test "AC6: workflow-detail.md mentions ideate in skill chain" {
-  grep -qi 'ideate' docs/workflow-detail.md
+  grep -qi 'ideate' docs/workflow/workflow-detail.md
 }
 
 @test "AC6: workflow-detail.md Full Workflow includes ideate" {
-  grep -qi 'ideate' docs/workflow-detail.md
+  grep -qi 'ideate' docs/workflow/workflow-detail.md
 }
 
 # --- skills/README.md ---

@@ -31,7 +31,7 @@ Start with `Closes #<issue-number>`. Merge with `--squash`. Add matching `type:`
 - PR: `ready-for-PR-review` -> merge (or `needs-pr-revision` loop)
 
 ## Docs & Errors
-Every change includes doc updates (`${CLAUDE_PLUGIN_ROOT}/docs/doc-sync-checklist.md`). Investigate root cause first -- no workarounds without understanding.
+Every change includes doc updates (`${CLAUDE_PLUGIN_ROOT}/docs/guides/doc-sync-checklist.md`). Investigate root cause first -- no workarounds without understanding.
 
 ## Guides
-`${CLAUDE_PLUGIN_ROOT}/docs/commit-guide.md` | `${CLAUDE_PLUGIN_ROOT}/docs/workflow-detail.md` | `${CLAUDE_PLUGIN_ROOT}/docs/review-guide.md` | Issue Ready: `atdd-kit:discover`
+`${CLAUDE_PLUGIN_ROOT}/docs/guides/commit-guide.md` | `${CLAUDE_PLUGIN_ROOT}/docs/workflow/workflow-detail.md` | `${CLAUDE_PLUGIN_ROOT}/docs/guides/review-guide.md` | Issue Ready: `atdd-kit:discover`

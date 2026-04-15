@@ -6,70 +6,70 @@
 # that old inline selection patterns are removed from key decision points,
 # and that commands/autopilot.md has not been modified.
 
-# --- AC1: docs/skill-authoring-guide.md existence and content ---
+# --- AC1: docs/guides/skill-authoring-guide.md existence and content ---
 
-@test "AC1: docs/skill-authoring-guide.md exists" {
-  [ -f docs/skill-authoring-guide.md ]
+@test "AC1: docs/guides/skill-authoring-guide.md exists" {
+  [ -f docs/guides/skill-authoring-guide.md ]
 }
 
 @test "AC1(a): Closed Question priority principle is documented" {
-  grep -qiE 'closed.question|Recommended.*first|Recommended.*必須' docs/skill-authoring-guide.md
+  grep -qiE 'closed.question|Recommended.*first|Recommended.*必須' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(b): AskUserQuestion 2-4 options constraint is documented" {
-  grep -qiE '2.{0,5}4.{0,10}(option|選択肢)|2 to 4' docs/skill-authoring-guide.md
+  grep -qiE '2.{0,5}4.{0,10}(option|選択肢)|2 to 4' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(b): header length constraint (12) is documented" {
-  grep -qiE 'header.{0,10}12|12.{0,10}(char|文字)' docs/skill-authoring-guide.md
+  grep -qiE 'header.{0,10}12|12.{0,10}(char|文字)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(b): label word limit (5) is documented" {
-  grep -qiE 'label.{0,10}5.{0,10}(word|語)|5.{0,10}word' docs/skill-authoring-guide.md
+  grep -qiE 'label.{0,10}5.{0,10}(word|語)|5.{0,10}word' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(b): multiSelect is documented" {
-  grep -qiE 'multiSelect|multi.select' docs/skill-authoring-guide.md
+  grep -qiE 'multiSelect|multi.select' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(b): Other option auto-inclusion is documented" {
-  grep -qiE 'Other.{0,20}(auto|自動)|auto.{0,20}Other' docs/skill-authoring-guide.md
+  grep -qiE 'Other.{0,20}(auto|自動)|auto.{0,20}Other' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(c): Other fallback behavior is documented" {
-  grep -qiE 'Other.{0,30}(fallback|free.input|自由入力)|fallback.{0,30}Other' docs/skill-authoring-guide.md
+  grep -qiE 'Other.{0,30}(fallback|free.input|自由入力)|fallback.{0,30}Other' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(d): 5+ options exception rule is documented" {
-  grep -qiE '5.{0,20}(option|選択肢).{0,30}(split|分割|exception)|split.{0,20}question' docs/skill-authoring-guide.md
+  grep -qiE '5.{0,20}(option|選択肢).{0,30}(split|分割|exception)|split.{0,20}question' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(e): Free-text field exclusions are documented" {
-  grep -qiE '(free.text|free.form|自由記述|Issue.*title|bug.*symptom)' docs/skill-authoring-guide.md
+  grep -qiE '(free.text|free.form|自由記述|Issue.*title|bug.*symptom)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(f): ideate decision points are listed" {
-  grep -qiE 'ideate.{0,30}(approach|アプローチ)' docs/skill-authoring-guide.md
+  grep -qiE 'ideate.{0,30}(approach|アプローチ)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(f): discover decision points are listed" {
-  grep -qiE 'discover.{0,30}(task.type|タスクタイプ)' docs/skill-authoring-guide.md
+  grep -qiE 'discover.{0,30}(task.type|タスクタイプ)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(f): issue decision points are listed" {
-  grep -qiE 'issue.{0,30}(priority|Priority)' docs/skill-authoring-guide.md
+  grep -qiE 'issue.{0,30}(priority|Priority)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(f): plan decision points are listed" {
-  grep -qiE 'plan.{0,30}(test.layer|テスト層)' docs/skill-authoring-guide.md
+  grep -qiE 'plan.{0,30}(test.layer|テスト層)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(f): bug decision points are listed" {
-  grep -qiE 'bug.{0,30}(fix.proposal|Fix Proposal)' docs/skill-authoring-guide.md
+  grep -qiE 'bug.{0,30}(fix.proposal|Fix Proposal)' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(g): language policy is documented" {
-  grep -qiE 'i18n|DEVELOPMENT\.md|language.policy|English.only' docs/skill-authoring-guide.md
+  grep -qiE 'i18n|DEVELOPMENT\.md|language.policy|English.only' docs/guides/skill-authoring-guide.md
 }
 
 # --- AC2: evals.json new assertion count ---

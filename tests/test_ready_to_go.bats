@@ -23,13 +23,13 @@
 }
 
 @test "AC4: workflow-detail.md uses ready-to-go" {
-  grep -q 'ready-to-go' docs/workflow-detail.md
-  ! grep -Eq 'ready.to.implement' docs/workflow-detail.md
+  grep -q 'ready-to-go' docs/workflow/workflow-detail.md
+  ! grep -Eq 'ready.to.implement' docs/workflow/workflow-detail.md
 }
 
 @test "AC4: issue-ready-flow.md uses ready-to-go" {
-  grep -q 'ready-to-go' docs/issue-ready-flow.md
-  ! grep -Eq 'ready.to.implement' docs/issue-ready-flow.md
+  grep -q 'ready-to-go' docs/workflow/issue-ready-flow.md
+  ! grep -Eq 'ready.to.implement' docs/workflow/issue-ready-flow.md
 }
 
 @test "AC4: skills/README.md uses ready-to-go" {

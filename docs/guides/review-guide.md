@@ -54,7 +54,7 @@
 
 ## Framework-Specific Checks
 
-Concrete check items should be in the project's `docs/process/code-review-checklist.md`.
+Concrete check items should be in the project's review checklist.
 
 Expected sections per framework:
 

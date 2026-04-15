@@ -164,7 +164,7 @@ If the received message contains no `skill-status` block:
 Do NOT attempt to infer skill completion from message text. Only `skill-status` blocks are
 authoritative.
 
-See `docs/skill-status-spec.md` for full format specification and field definitions.
+See `docs/guides/skill-status-spec.md` for full format specification and field definitions.
 
 ## Autonomy Rules
 

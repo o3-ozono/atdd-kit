@@ -40,7 +40,7 @@
 
 ## Autonomy Levels
 
-See `docs/autonomy-levels.md` for full details. Labels `autonomy:0` through `autonomy:3` control approval gate density.
+See `docs/workflow/autonomy-levels.md` for full details. Labels `autonomy:0` through `autonomy:3` control approval gate density.
 
 ### Auto-approval Path (Level 1+)
 
@@ -228,7 +228,7 @@ All work follows this flow. No exceptions.
 
 1. **Create Issue** -- From user request or bug report
 1.5. **Design exploration (optional)** -- `ideate` brainstorms approaches before requirements (skippable)
-2. **Issue Ready flow** -- Execute the flow for the task type, get approval (see `docs/issue-ready-flow.md`)
+2. **Issue Ready flow** -- Execute the flow for the task type, get approval (see `docs/workflow/issue-ready-flow.md`)
 3. **Branch from main -> Create Draft PR immediately**
    - Branch naming: `<prefix>/<issue-number>-<slug>`
    - Empty commit -> push -> `gh pr create --draft` (description: just `Closes #<issue-number>`)
