@@ -61,6 +61,7 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_autopilot_guard_block.bats | Autopilot-only STOP guard enforcement |
 | test_task_type_workflow.bats | Task-type-specific workflow branching |
 | test_legacy_terms.bats | Legacy term elimination verification |
+| test_persona_guide.bats | Persona guide documentation validation (Issue #65) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

@@ -36,6 +36,15 @@ Workflow reference documents for the full Issue lifecycle.
 | [issue-ready-flow.md](workflow/issue-ready-flow.md) | Issue Ready flow (discover + plan) reference |
 | [workflow-detail.md](workflow/workflow-detail.md) | Full workflow detail for session-start and autopilot |
 
+## personas/
+
+Research-based persona files. Personas anchor User Stories to specific characters and prevent the Elastic User Problem.
+
+| Document | Description |
+|----------|-------------|
+| [README.md](personas/README.md) | Directory purpose, template usage, and one-file-per-persona convention |
+| [TEMPLATE.md](personas/TEMPLATE.md) | Blank template for creating new persona files |
+
 ## References
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) -- Always-loaded rules budget, language policy

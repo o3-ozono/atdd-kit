@@ -30,6 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `docs/methodology/atdd-guide.md`: Double-Loop TDD section updated with cross-reference to test-mapping.md and inline AC correspondence annotation. (#67)
 - `docs/README.md`: test-mapping.md entry added to methodology/ table. (#67)
 
+## [1.13.0] - 2026-04-15
+
+### Added
+- `docs/methodology/persona-guide.md`: Comprehensive persona guide covering Cooper's Goal-Directed Design, Elastic User Problem, persona format (Name, Role, Goals, Context, Quote), Primary/Secondary/Negative types, creation process, anti-patterns, and discover skill reference method. (#65)
+- `docs/personas/TEMPLATE.md`: Blank persona template matching the format defined in persona-guide.md. (#65)
+- `docs/personas/README.md`: Directory index with purpose, template usage, and one-file-per-persona convention. (#65)
+- `tests/test_persona_guide.bats`: Static verification tests for all persona guide ACs (AC1-AC7). (#65)
+
+### Changed
+- `docs/README.md`: Added `personas/` category section following existing format. (#65)
+
 ### Removed
 - `agents/po.md` deleted — the PO agent definition was a redundant metadata shell (1-line system_prompt + tools list). main Claude already fulfills the PO role directly in autopilot, so the separate agent definition was misleading. All references updated to reflect main Claude as the orchestrator. (#45)
 
