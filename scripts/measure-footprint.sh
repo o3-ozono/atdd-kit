@@ -1,382 +1,430 @@
 #!/usr/bin/env bash
-# Usage:
-#   measure-footprint.sh measure <name>
-#   measure-footprint.sh --check [<name>]
-#   measure-footprint.sh --update [<name>]
-#   measure-footprint.sh --compute-tokens <bytes>   (internal helper, also used by tests)
+# measure-footprint.sh — static context/token footprint measurement for atdd-kit checkpoints
 #
-# Environment variables (override defaults for testing):
-#   FOOTPRINT_EVALS_DIR    — directory containing <name>.yml files
-#                            (default: evals/footprint relative to repo root)
-#   FOOTPRINT_BASELINE_DIR — directory containing baseline.json
-#                            (default: evals/footprint relative to repo root)
+# Usage:
+#   measure-footprint.sh measure <name>          Measure checkpoint, output JSON
+#   measure-footprint.sh --check [<name>]        Check regression vs baseline (default: all)
+#   measure-footprint.sh --update [<name>]       Update baseline (default: all)
+#   measure-footprint.sh --compute-tokens <n>    Print ceil(n/3.6) — test helper
+#
+# Environment:
+#   FOOTPRINT_EVAL_DIR   Override evals/footprint directory (used by tests)
 #
 # Exit codes:
 #   0 — success / PASS
-#   1 — REGRESSION detected
-#   2 — error (unknown checkpoint, malformed YAML, missing file, missing baseline, etc.)
+#   1 — REGRESSION
+#   2 — error (unknown checkpoint / malformed YAML / missing file / bad baseline)
+#
+# YAML format (pure-bash, no external tools):
+#   files:
+#     - repo/root/relative/path.md
+#   dynamic:                         (optional)
+#     sub_name:
+#       script: scripts/foo.sh
+#       args:
+#         - arg1
+#         - arg2
+#
+# baseline.json format (one entry per line inside top-level object):
+#   {
+#     "checkpoint": {"total_bytes": N, "estimated_tokens": N, "updated_at": "ISO8601"},
+#     ...
+#   }
 set -euo pipefail
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-# Determine repo root (directory containing this script's parent)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Default directories (overridable for tests)
-EVALS_DIR="${FOOTPRINT_EVALS_DIR:-${REPO_ROOT}/evals/footprint}"
-BASELINE_DIR="${FOOTPRINT_BASELINE_DIR:-${REPO_ROOT}/evals/footprint}"
-BASELINE_FILE="${BASELINE_DIR}/baseline.json"
+# Single override env var — tests set FOOTPRINT_EVAL_DIR to a temp path
+EVAL_DIR="${FOOTPRINT_EVAL_DIR:-${REPO_ROOT}/evals/footprint}"
+BASELINE_FILE="${EVAL_DIR}/baseline.json"
 
-# Compute ceil(bytes / 3.6) using awk — POSIX, no bash floating point needed
-# bash 3.2 compatible: no declare -A used anywhere in this script
+# ---------------------------------------------------------------------------
+# Math helper
+# ---------------------------------------------------------------------------
+
 compute_tokens() {
   local bytes="$1"
   awk "BEGIN { x = ${bytes} / 3.6; t = int(x); print (t < x) ? t+1 : t }"
 }
 
-# Pure-bash YAML parser for the flat schema:
-#   files:
-#     - path/to/file
-#   dynamic:
-#     - name: sub_name
-#       cmd: script.sh
-#       fixture: path/to/fixture
-#       cache: path/to/cache
+# ---------------------------------------------------------------------------
+# Pure-bash YAML parser
 #
-# Indentation: exactly 2 spaces for list items, 4 spaces for sub-keys
-# No external YAML tool required.
-parse_yaml() {
-  local yml_file="$1"
-  local section=""
-  local current_name=""
+# Supports:
+#   files:\n  - path          -> files_list array
+#   dynamic:\n  key:\n    script: ...\n    args:\n      - arg
+#
+# Caller must declare arrays before calling parse_yaml:
+#   files_list, dyn_keys, dyn_scripts, dyn_args (parallel arrays)
+# ---------------------------------------------------------------------------
 
-  # Reset output arrays (caller must declare these before calling)
-  # files_list: indexed array of file paths
-  # dynamic_names / dynamic_fixtures / dynamic_caches: parallel arrays
+parse_yaml() {
+  local yml="$1"
+  local section="" dyn_key="" in_args=0
+  local dyn_idx=-1
 
   while IFS= read -r line; do
-    case "$line" in
-      "files:")
-        section="files"
-        ;;
-      "dynamic:")
-        section="dynamic"
-        ;;
-      "  - "*)
-        local val="${line#  - }"
-        if [[ "$section" == "files" ]]; then
-          files_list+=("$val")
+    # Top-level sections
+    if [[ "$line" == "files:" ]]; then
+      section="files"; in_args=0; continue
+    fi
+    if [[ "$line" == "dynamic:" ]]; then
+      section="dynamic"; in_args=0; continue
+    fi
+
+    case "$section" in
+      files)
+        if [[ "$line" =~ ^"  - "(.*) ]]; then
+          files_list+=("${BASH_REMATCH[1]}")
         fi
         ;;
-      "    - "*)
-        # nested list item under dynamic — reset current entry
-        current_name=""
-        ;;
-      "    name: "*)
-        current_name="${line#    name: }"
-        dynamic_names+=("$current_name")
-        dynamic_fixtures+=("")
-        dynamic_caches+=("")
-        dynamic_cmds+=("")
-        ;;
-      "    cmd: "*)
-        if [[ -n "$current_name" && ${#dynamic_names[@]} -gt 0 ]]; then
-          local idx=$(( ${#dynamic_names[@]} - 1 ))
-          dynamic_cmds[$idx]="${line#    cmd: }"
+      dynamic)
+        # Sub-key line: "  key:" (2-space indent, name, colon, nothing else)
+        if [[ "$line" =~ ^"  "([A-Za-z0-9_-]+)":"$ ]]; then
+          dyn_key="${BASH_REMATCH[1]}"
+          dyn_keys+=("$dyn_key")
+          dyn_scripts+=("")
+          dyn_args+=("")
+          dyn_idx=$(( ${#dyn_keys[@]} - 1 ))
+          in_args=0
+          continue
         fi
-        ;;
-      "    fixture: "*)
-        if [[ -n "$current_name" && ${#dynamic_names[@]} -gt 0 ]]; then
-          local idx=$(( ${#dynamic_names[@]} - 1 ))
-          dynamic_fixtures[$idx]="${line#    fixture: }"
+        # script: value
+        if [[ "$line" =~ ^"    script: "(.*) ]]; then
+          dyn_scripts[$dyn_idx]="${BASH_REMATCH[1]}"
+          in_args=0
+          continue
         fi
-        ;;
-      "    cache: "*)
-        if [[ -n "$current_name" && ${#dynamic_names[@]} -gt 0 ]]; then
-          local idx=$(( ${#dynamic_names[@]} - 1 ))
-          dynamic_caches[$idx]="${line#    cache: }"
+        # args: (start of args list)
+        if [[ "$line" == "    args:" ]]; then
+          in_args=1
+          continue
+        fi
+        # arg item
+        if [[ $in_args -eq 1 && "$line" =~ ^"      - "(.*) ]]; then
+          local arg="${BASH_REMATCH[1]}"
+          if [[ -z "${dyn_args[$dyn_idx]}" ]]; then
+            dyn_args[$dyn_idx]="$arg"
+          else
+            # tab-delimited to avoid space ambiguity in paths
+            dyn_args[$dyn_idx]="${dyn_args[$dyn_idx]}	$arg"
+          fi
         fi
         ;;
     esac
-  done < "$yml_file"
+  done < "$yml"
 }
 
-# Build a JSON object for one file entry
-file_json_entry() {
-  local path="$1" bytes="$2" tokens="$3"
-  printf '{"path": "%s", "bytes": %d, "tokens": %d}' "$path" "$bytes" "$tokens"
-}
+# ---------------------------------------------------------------------------
+# Measure a single checkpoint
+# ---------------------------------------------------------------------------
 
-# Measure a single checkpoint and print JSON to stdout
 do_measure() {
   local name="$1"
-  local yml_file="${EVALS_DIR}/${name}.yml"
+  local yml="${EVAL_DIR}/${name}.yml"
 
-  if [[ ! -f "$yml_file" ]]; then
-    echo "ERROR: checkpoint '${name}' not found (expected: ${yml_file})" >&2
+  if [[ ! -f "$yml" ]]; then
+    echo "ERROR: checkpoint '${name}' not found: ${yml}" >&2
     exit 2
   fi
 
-  # Parse YAML
   local files_list=()
-  local dynamic_names=() dynamic_fixtures=() dynamic_caches=() dynamic_cmds=()
-  parse_yaml "$yml_file"
+  local dyn_keys=() dyn_scripts=() dyn_args=()
+  parse_yaml "$yml"
 
-  # Validate: files: section must exist (even if empty is acceptable for dynamic-only checkpoints)
-  # If both files and dynamic are empty, that's malformed
-  if [[ ${#files_list[@]} -eq 0 && ${#dynamic_names[@]} -eq 0 ]]; then
-    echo "ERROR: malformed YAML in '${yml_file}' — no 'files:' or 'dynamic:' section found" >&2
+  # Must have at least files: or dynamic: content
+  if [[ ${#files_list[@]} -eq 0 && ${#dyn_keys[@]} -eq 0 ]]; then
+    echo "ERROR: malformed YAML '${yml}' — no files: or dynamic: section" >&2
     exit 2
   fi
 
-  # Measure files
+  # Measure static files
   local total_bytes=0
-  local files_json_parts=()
+  local files_json="["
+  local first=1
 
   for f in "${files_list[@]}"; do
-    local abs_path="${REPO_ROOT}/${f}"
-    if [[ ! -f "$abs_path" ]]; then
-      echo "ERROR: referenced file not found: ${abs_path}" >&2
+    local abs="${REPO_ROOT}/${f}"
+    if [[ ! -f "$abs" ]]; then
+      echo "ERROR: referenced file not found: ${abs}" >&2
       exit 2
     fi
-    local fbytes
-    fbytes=$(wc -c < "$abs_path" | tr -d ' ')
-    local ftokens
-    ftokens=$(compute_tokens "$fbytes")
-    files_json_parts+=("$(file_json_entry "$f" "$fbytes" "$ftokens")")
-    total_bytes=$(( total_bytes + fbytes ))
+    local b t
+    b=$(wc -c < "$abs" | tr -d ' ')
+    t=$(compute_tokens "$b")
+    if [[ $first -eq 1 ]]; then
+      files_json+="{\"path\": \"${f}\", \"bytes\": ${b}, \"tokens\": ${t}}"
+      first=0
+    else
+      files_json+=", {\"path\": \"${f}\", \"bytes\": ${b}, \"tokens\": ${t}}"
+    fi
+    total_bytes=$(( total_bytes + b ))
   done
+  files_json+="]"
 
   local total_tokens
   total_tokens=$(compute_tokens "$total_bytes")
 
-  # Build files JSON array
-  local files_json="["
-  local first=1
-  for entry in "${files_json_parts[@]}"; do
-    if [[ $first -eq 1 ]]; then
-      files_json+="$entry"
-      first=0
-    else
-      files_json+=", $entry"
-    fi
-  done
-  files_json+="]"
-
   # Measure dynamic sub-checkpoints
-  local dynamic_json=""
-  if [[ ${#dynamic_names[@]} -gt 0 ]]; then
-    dynamic_json=', "dynamic": {'
+  local dyn_json=""
+  if [[ ${#dyn_keys[@]} -gt 0 ]]; then
+    dyn_json=', "dynamic": {'
     local dfirst=1
     local i
-    for (( i=0; i<${#dynamic_names[@]}; i++ )); do
-      local dname="${dynamic_names[$i]}"
-      local dfixture="${dynamic_fixtures[$i]}"
-      local dcache="${dynamic_caches[$i]}"
-      local dcmd="${dynamic_cmds[$i]}"
+    for (( i=0; i<${#dyn_keys[@]}; i++ )); do
+      local dname="${dyn_keys[$i]}"
+      local dscript="${dyn_scripts[$i]}"
+      local dargs_str="${dyn_args[$i]}"
 
-      # Build absolute paths
-      local abs_fixture="${REPO_ROOT}/${dfixture}"
-      local abs_cache="${REPO_ROOT}/${dcache}"
+      # Split tab-delimited args
+      local dargs=()
+      if [[ -n "$dargs_str" ]]; then
+        IFS=$'\t' read -ra dargs <<< "$dargs_str"
+      fi
 
-      # Run the dynamic command against fixture (capture stdout only)
-      local stdout_bytes=0
-      if [[ -n "$dcmd" ]]; then
-        local cmd_path="${REPO_ROOT}/scripts/${dcmd}"
-        if [[ -f "$cmd_path" ]]; then
-          local tmp_out="${BATS_TEST_TMPDIR:-/tmp}/dynamic_out_${dname}_$$"
-          if "${cmd_path}" "${abs_fixture}" "${abs_cache}" > "$tmp_out" 2>/dev/null; then
-            stdout_bytes=$(wc -c < "$tmp_out" | tr -d ' ')
+      local dbytes=0
+      if [[ -n "$dscript" ]]; then
+        local cmd_abs="${REPO_ROOT}/${dscript}"
+        if [[ -f "$cmd_abs" ]]; then
+          local tmp_out
+          tmp_out=$(mktemp)
+          if "${cmd_abs}" "${dargs[@]}" > "$tmp_out" 2>/dev/null; then
+            dbytes=$(wc -c < "$tmp_out" | tr -d ' ')
           fi
           rm -f "$tmp_out"
         fi
       fi
 
       local dtokens
-      dtokens=$(compute_tokens "$stdout_bytes")
+      dtokens=$(compute_tokens "$dbytes")
 
       if [[ $dfirst -eq 1 ]]; then
-        dynamic_json+="\"${dname}\": {\"bytes\": ${stdout_bytes}, \"tokens\": ${dtokens}}"
+        dyn_json+="\"${dname}\": {\"bytes\": ${dbytes}, \"tokens\": ${dtokens}}"
         dfirst=0
       else
-        dynamic_json+=", \"${dname}\": {\"bytes\": ${stdout_bytes}, \"tokens\": ${dtokens}}"
+        dyn_json+=", \"${dname}\": {\"bytes\": ${dbytes}, \"tokens\": ${dtokens}}"
       fi
     done
-    dynamic_json+="}"
+    dyn_json+="}"
   fi
 
-  # Output JSON
   printf '{"checkpoint": "%s", "total_bytes": %d, "estimated_tokens": %d, "files": %s%s}\n' \
-    "$name" "$total_bytes" "$total_tokens" "$files_json" "$dynamic_json"
+    "$name" "$total_bytes" "$total_tokens" "$files_json" "$dyn_json"
 }
 
-# Read a value from baseline.json for a given checkpoint key
-# Returns empty string if not found or file malformed
+# ---------------------------------------------------------------------------
+# Baseline read/write
+# ---------------------------------------------------------------------------
+
+# Extract a numeric (possibly negative) field from baseline.json
+# Supports both single-line and multi-line JSON format.
+# baseline_get <checkpoint> <field>  ->  integer or empty string
 baseline_get() {
-  local checkpoint="$1" key="$2"
-  if [[ ! -f "$BASELINE_FILE" ]]; then
-    return 0
-  fi
-  # Pure-bash extraction: look for "checkpoint": { ... "key": VALUE
-  # Simple single-line grep approach — baseline.json is written by this script
-  # so format is predictable (one JSON object per line would be ideal, but
-  # we write pretty JSON with newlines — use grep + sed)
-  local val
-  # Extract the block for this checkpoint, then get the key
-  # Strategy: find line with "checkpoint_name": { and scan until matching }
-  val=$(awk -v cp="\"${checkpoint}\"" -v k="\"${key}\"" '
-    BEGIN { found=0; depth=0 }
-    found && /"'"${key}"'"/ {
-      match($0, /: ?([0-9]+|"[^"]*")/, arr)
-      gsub(/"/, "", arr[1])
-      print arr[1]
-      exit
-    }
-    $0 ~ cp { found=1 }
-  ' "$BASELINE_FILE" 2>/dev/null || true)
-  echo "$val"
+  local cp="$1" field="$2"
+  [[ -f "$BASELINE_FILE" ]] || return 0
+
+  # Strategy: find the line with "cp": and scan forward until we find "field": N
+  local in_block=0
+  local val=""
+  local depth=0
+
+  while IFS= read -r line; do
+    if [[ $in_block -eq 0 ]]; then
+      # Look for the checkpoint key opening
+      if printf '%s' "$line" | grep -q "\"${cp}\":"; then
+        in_block=1
+        depth=0
+        # Count braces on this line
+        local opens closes
+        opens=$(printf '%s' "$line" | tr -cd '{' | wc -c | tr -d ' ')
+        closes=$(printf '%s' "$line" | tr -cd '}' | wc -c | tr -d ' ')
+        depth=$(( depth + opens - closes ))
+        # Check if field is on same line
+        if printf '%s' "$line" | grep -q "\"${field}\":"; then
+          val=$(printf '%s' "$line" | sed "s/.*\"${field}\": *\(-*[0-9][0-9]*\).*/\1/")
+          if ! printf '%s' "$val" | grep -q '"'; then
+            echo "$val"
+            return 0
+          fi
+        fi
+        # depth=0 means single-line entry
+        [[ $depth -le 0 ]] && in_block=0
+      fi
+    else
+      # Inside the checkpoint block
+      local opens closes
+      opens=$(printf '%s' "$line" | tr -cd '{' | wc -c | tr -d ' ')
+      closes=$(printf '%s' "$line" | tr -cd '}' | wc -c | tr -d ' ')
+      depth=$(( depth + opens - closes ))
+
+      if printf '%s' "$line" | grep -q "\"${field}\":"; then
+        val=$(printf '%s' "$line" | sed "s/.*\"${field}\": *\(-*[0-9][0-9]*\).*/\1/")
+        if ! printf '%s' "$val" | grep -q '"'; then
+          echo "$val"
+          return 0
+        fi
+      fi
+
+      # Exit block when depth goes to 0 or below
+      [[ $depth -le 0 ]] && in_block=0
+    fi
+  done < "$BASELINE_FILE"
+
+  echo ""
 }
 
-# Write/update baseline.json for a checkpoint atomically
+# Write/update baseline.json for one checkpoint atomically (temp + rename, same FS)
+# baseline_write <name> <measure_json>
 baseline_write() {
   local name="$1"
-  local measure_json="$2"
+  local mjson="$2"
 
-  # Read existing baseline or start fresh
-  local existing="{}"
-  if [[ -f "$BASELINE_FILE" ]]; then
-    existing=$(cat "$BASELINE_FILE")
-  fi
+  local tb et
+  tb=$(printf '%s' "$mjson" | grep -o '"total_bytes": [0-9]*' | grep -o '[0-9]*$')
+  et=$(printf '%s' "$mjson" | grep -o '"estimated_tokens": [0-9]*' | grep -o '[0-9]*$')
 
-  # Add updated_at timestamp
   local ts
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-  # Build entry: merge measure_json with updated_at
-  # measure_json ends with } — insert updated_at before closing brace
-  local entry="${measure_json%\}}, \"updated_at\": \"${ts}\"}"
+  # Single-line entry
+  local entry="  \"${name}\": {\"total_bytes\": ${tb}, \"estimated_tokens\": ${et}, \"updated_at\": \"${ts}\"}"
 
-  # Merge into existing JSON
-  # Use awk to inject the new checkpoint entry
-  local new_json
-  new_json=$(awk -v cp="\"${name}\"" -v entry="$entry" '
-    BEGIN { inserted=0 }
-    {
-      if (!inserted && $0 ~ cp) {
-        # Replace existing entry block — skip until matching }
-        depth=0
-        while ((getline line) > 0) {
-          for (i=1; i<=length(line); i++) {
-            c = substr(line,i,1)
-            if (c == "{") depth++
-            if (c == "}") {
-              depth--
-              if (depth < 0) break
-            }
-          }
-          if (depth < 0) break
-        }
-        sub(cp ":", cp ": " entry ",", $0) || 1
-        inserted=1
-        print
-        next
-      }
-      print
-    }
-  ' <<< "$existing" 2>/dev/null || echo "$existing")
-
-  # If checkpoint not found in existing, inject it
-  if ! echo "$new_json" | grep -q "\"${name}\""; then
-    # Insert before last }
-    new_json="${new_json%\}}  \"${name}\": ${entry}\n}"
-    # Handle empty object
-    if [[ "$existing" == "{}" ]]; then
-      new_json="{\"${name}\": ${entry}}"
-    fi
-  fi
-
-  # Atomic write: temp file in same directory + rename
+  mkdir -p "$(dirname "$BASELINE_FILE")"
   local tmp
   tmp=$(mktemp "${BASELINE_FILE}.XXXXXX")
-  printf '%s\n' "$new_json" > "$tmp"
+
+  if [[ ! -f "$BASELINE_FILE" ]]; then
+    printf '{\n%s\n}\n' "$entry" > "$tmp"
+  else
+    # Stream through existing file; replace matching line or append before }
+    local found=0
+    local buf=""
+    while IFS= read -r raw; do
+      if printf '%s' "$raw" | grep -q "\"${name}\":"; then
+        printf '%s\n' "$entry" >> "$tmp"
+        found=1
+      else
+        if [[ "$raw" == "}" && "$found" -eq 0 ]]; then
+          # Append: add comma to previous non-empty line if needed
+          if [[ -n "$buf" && "${buf: -1}" != "," && "$buf" != "{" ]]; then
+            # rewrite last line with comma
+            # truncate tmp by one line and rewrite it
+            local lines
+            lines=$(wc -l < "$tmp" | tr -d ' ')
+            if [[ "$lines" -gt 0 ]]; then
+              # Replace last line in tmp with buf+comma
+              local tmp2
+              tmp2=$(mktemp "${BASELINE_FILE}.XXXXXX")
+              head -n $(( lines - 1 )) "$tmp" > "$tmp2"
+              printf '%s,\n' "$buf" >> "$tmp2"
+              mv "$tmp2" "$tmp"
+            fi
+          fi
+          printf '%s\n' "$entry" >> "$tmp"
+          printf '%s\n' "$raw" >> "$tmp"
+          found=1
+          buf="$raw"
+          continue
+        fi
+        printf '%s\n' "$raw" >> "$tmp"
+        buf="$raw"
+      fi
+    done < "$BASELINE_FILE"
+  fi
+
   mv "$tmp" "$BASELINE_FILE"
 }
 
-# Check regression for a checkpoint
+# ---------------------------------------------------------------------------
+# Check regression
+# ---------------------------------------------------------------------------
+
 do_check() {
   local name="$1"
 
   if [[ ! -f "$BASELINE_FILE" ]]; then
-    echo "ERROR: baseline.json not found at ${BASELINE_FILE}" >&2
+    echo "ERROR: baseline.json not found: ${BASELINE_FILE}" >&2
     exit 2
   fi
 
-  # Validate baseline.json is not corrupted (basic check)
-  if ! grep -q '{' "$BASELINE_FILE" 2>/dev/null; then
-    echo "ERROR: baseline.json appears corrupted" >&2
+  # Basic corruption check: must start with {
+  local first_char
+  first_char=$(head -c1 "$BASELINE_FILE" 2>/dev/null | tr -d '[:space:]')
+  if [[ "$first_char" != "{" ]]; then
+    echo "ERROR: baseline.json corrupted (does not start with {)" >&2
+    exit 2
+  fi
+  if ! grep -q '}' "$BASELINE_FILE" 2>/dev/null; then
+    echo "ERROR: baseline.json corrupted (no closing })" >&2
     exit 2
   fi
 
-  # Get current measurement
-  local current_json
-  current_json=$(do_measure "$name")
+  local cjson
+  cjson=$(do_measure "$name")
 
-  # Extract current values
-  local current_bytes current_tokens
-  current_bytes=$(echo "$current_json" | grep -o '"total_bytes": [0-9]*' | grep -o '[0-9]*$')
-  current_tokens=$(echo "$current_json" | grep -o '"estimated_tokens": [0-9]*' | grep -o '[0-9]*$')
+  local cb ct
+  cb=$(printf '%s' "$cjson" | grep -o '"total_bytes": [0-9]*' | grep -o '[0-9]*$')
+  ct=$(printf '%s' "$cjson" | grep -o '"estimated_tokens": [0-9]*' | grep -o '[0-9]*$')
 
-  # Extract baseline values
-  local baseline_bytes baseline_tokens
-  baseline_bytes=$(baseline_get "$name" "total_bytes")
-  baseline_tokens=$(baseline_get "$name" "estimated_tokens")
+  local bb bt
+  bb=$(baseline_get "$name" "total_bytes")
+  bt=$(baseline_get "$name" "estimated_tokens")
 
-  if [[ -z "$baseline_bytes" || -z "$baseline_tokens" ]]; then
-    echo "ERROR: no baseline entry found for checkpoint '${name}'" >&2
+  if [[ -z "$bb" || -z "$bt" ]]; then
+    echo "ERROR: no baseline entry for checkpoint '${name}'" >&2
     exit 2
   fi
 
-  # Compute regression
   local regression=0
   local reason=""
+  local bytes_delta=$(( cb - bb ))
+  local token_delta=$(( ct - bt ))
 
-  # Percent threshold (skip if baseline_bytes == 0)
-  if [[ "$baseline_bytes" -gt 0 ]]; then
-    # Check: current_bytes > baseline_bytes * 1.10
-    # Use awk for float comparison
-    local over_percent
-    over_percent=$(awk "BEGIN { print (${current_bytes} > ${baseline_bytes} * 1.10) ? 1 : 0 }")
-    if [[ "$over_percent" -eq 1 ]]; then
+  # Percent threshold — skip when baseline_bytes == 0
+  if [[ "$bb" -gt 0 ]]; then
+    local over
+    over=$(awk "BEGIN { print (${cb} > ${bb} * 1.10) ? 1 : 0 }")
+    if [[ "$over" -eq 1 ]]; then
       regression=1
       local pct
-      pct=$(awk "BEGIN { printf \"%.1f\", (${current_bytes} - ${baseline_bytes}) * 100.0 / ${baseline_bytes} }")
-      reason="bytes exceeded +10% threshold (+${pct}%)"
+      pct=$(awk "BEGIN { printf \"%.1f\", (${cb} - ${bb}) * 100.0 / ${bb} }")
+      reason="bytes +${pct}% > 10%"
     fi
   fi
 
-  # Token threshold: current_tokens - baseline_tokens > 500
-  local token_delta=$(( current_tokens - baseline_tokens ))
+  # Token threshold — strictly > 500
   if [[ "$token_delta" -gt 500 ]]; then
     regression=1
-    if [[ -n "$reason" ]]; then
-      reason="${reason}; token delta +${token_delta} > 500"
-    else
-      reason="token delta +${token_delta} > 500"
-    fi
+    reason="${reason:+${reason}; }token_delta +${token_delta} > 500"
   fi
 
   if [[ "$regression" -eq 1 ]]; then
-    echo "REGRESSION: ${name} — ${reason}"
-    echo "  current:  bytes=${current_bytes}, tokens=${current_tokens}"
-    echo "  baseline: bytes=${baseline_bytes}, tokens=${baseline_tokens}"
-    echo "  bytes_delta=$(( current_bytes - baseline_bytes )) tokens_delta=${token_delta}"
+    echo "REGRESSION: ${name}"
+    echo "  current:  bytes=${cb} tokens=${ct}"
+    echo "  baseline: bytes=${bb} tokens=${bt}"
+    echo "  bytes_delta=${bytes_delta} tokens_delta=${token_delta}"
+    echo "  reason: ${reason}"
     exit 1
   else
-    echo "PASS: ${name} — bytes=${current_bytes} tokens=${current_tokens} (baseline: bytes=${baseline_bytes} tokens=${baseline_tokens})"
-    exit 0
+    echo "PASS: ${name} bytes=${cb} tokens=${ct} (baseline bytes=${bb} tokens=${bt})"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# List checkpoints
+# ---------------------------------------------------------------------------
+
+list_checkpoints() {
+  local found=0
+  for yml in "${EVAL_DIR}"/*.yml; do
+    [[ -f "$yml" ]] || continue
+    basename "$yml" .yml
+    found=1
+  done
+  if [[ $found -eq 0 ]]; then
+    echo "ERROR: no checkpoint YAMLs in ${EVAL_DIR}" >&2
+    exit 2
   fi
 }
 
@@ -385,49 +433,49 @@ do_check() {
 # ---------------------------------------------------------------------------
 
 if [[ $# -eq 0 ]]; then
-  echo "Usage: measure-footprint.sh <measure|--check|--update|--compute-tokens> [<name>|<bytes>]" >&2
+  echo "Usage: measure-footprint.sh <measure|--check|--update|--compute-tokens> [args]" >&2
   exit 2
 fi
 
 case "$1" in
   --compute-tokens)
-    if [[ $# -lt 2 ]]; then
-      echo "Usage: measure-footprint.sh --compute-tokens <bytes>" >&2
-      exit 2
-    fi
+    [[ $# -ge 2 ]] || { echo "Usage: --compute-tokens <bytes>" >&2; exit 2; }
     compute_tokens "$2"
-    exit 0
     ;;
 
   measure)
-    if [[ $# -lt 2 ]]; then
-      echo "Usage: measure-footprint.sh measure <name>" >&2
-      exit 2
-    fi
+    [[ $# -ge 2 ]] || { echo "Usage: measure <name>" >&2; exit 2; }
     do_measure "$2"
     ;;
 
   --check)
-    if [[ $# -lt 2 ]]; then
-      echo "Usage: measure-footprint.sh --check <name>" >&2
-      exit 2
+    if [[ $# -ge 2 && -n "${2:-}" ]]; then
+      do_check "$2"
+    else
+      # No name — check all
+      while IFS= read -r cp; do
+        do_check "$cp"
+      done < <(list_checkpoints)
     fi
-    do_check "$2"
     ;;
 
   --update)
-    if [[ $# -lt 2 ]]; then
-      echo "Usage: measure-footprint.sh --update <name>" >&2
-      exit 2
+    if [[ $# -ge 2 && -n "${2:-}" ]]; then
+      mjson=$(do_measure "$2")
+      baseline_write "$2" "$mjson"
+      echo "Updated baseline for '${2}'"
+    else
+      # Update all
+      while IFS= read -r cp; do
+        mjson=$(do_measure "$cp")
+        baseline_write "$cp" "$mjson"
+        echo "Updated baseline for '${cp}'"
+      done < <(list_checkpoints)
     fi
-    measure_json=$(do_measure "$2")
-    baseline_write "$2" "$measure_json"
-    echo "Updated baseline for '${2}'"
     ;;
 
   *)
-    echo "ERROR: unknown command '$1'" >&2
-    echo "Usage: measure-footprint.sh <measure|--check|--update|--compute-tokens> [args]" >&2
+    echo "ERROR: unknown command '${1}'" >&2
     exit 2
     ;;
 esac

@@ -1,0 +1,11 @@
+{
+  "simple": {
+    "checkpoint": "simple",
+    "total_bytes": 0,
+    "estimated_tokens": 0,
+    "files": [
+      {"path": "tests/fixtures/footprint/simple/sample.md", "bytes": 0, "tokens": 0}
+    ],
+    "updated_at": "2026-01-01T00:00:00Z"
+  }
+}
