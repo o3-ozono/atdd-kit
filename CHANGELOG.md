@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.13.1] - 2026-04-15
+
+### Fixed
+- `commands/autopilot.md`: Phase 1 Step 4「PO derives draft ACs through Stakeholder dialogue」を削除し、`SKILL_STATUS: COMPLETE` 受信時の即時 AC Review Round 遷移と中間ユーザーメッセージ禁止を明示。autopilot が discover → AC Review Round 間で不要な停止をするバグを修正。(#83)
+
 ## [1.13.0] - 2026-04-15
 
 ### Changed
