@@ -19,7 +19,7 @@ atdd-kit solves this by enforcing an **Issue-driven, test-first workflow**:
 
 Design principles: zero dependencies, plugin architecture, pure markdown + bash.
 
-**Autopilot mode** takes the wheel. A PO agent orchestrates task-type-specific teams — Developer, QA, Tester, Reviewer, Researcher, Writer — from Issue to merge. You approve key checkpoints; agents handle the rest.
+**Autopilot mode** takes the wheel. main Claude acts as the orchestrator, driving task-type-specific teams — Developer, QA, Tester, Reviewer, Researcher, Writer — from Issue to merge. You approve key checkpoints; agents handle the rest.
 
 ### The ATDD Double Loop
 
@@ -106,7 +106,7 @@ flowchart LR
 
 | Command | What it does |
 |---------|-------------|
-| `/atdd-kit:autopilot` | PO-led Autopilot — task-type-specific Agent Teams for end-to-end Issue completion |
+| `/atdd-kit:autopilot` | Autopilot — main Claude orchestrates task-type-specific Agent Teams for end-to-end Issue completion |
 | `/atdd-kit:auto-sweep` | Sweeper utility (manual, on-demand) |
 | `/atdd-kit:auto-eval` | Skill eval runner (detects regressions in skill quality) |
 | `/atdd-kit:setup-github` | Set up GitHub issue/PR templates and labels |
@@ -120,14 +120,14 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  P1["Phase 1: discover\n(PO leads)"] --> P2["Phase 2: plan\n(PO orchestrates, task-type agents lead)"]
+  P1["Phase 1: discover\n(main Claude leads)"] --> P2["Phase 2: plan\n(main Claude orchestrates, task-type agents lead)"]
   P2 --> P3{"Task type branch"}
   P3 -->|development / bug| P3a["Developer + QA"]
   P3 -->|research| P3b["Researcher x N"]
   P3 -->|documentation| P3c["Writer + Reviewer x N"]
   P3 -->|refactoring| P3d["Developer + Reviewer x N"]
   P3a --> P4["Phase 4: PR Review\n(Reviewer x N)"]
-  P3b --> P5["Phase 5: Merge\n(PO)"]
+  P3b --> P5["Phase 5: Merge\n(main Claude)"]
   P3c --> P4
   P3d --> P4
   P4 --> P5
@@ -135,11 +135,10 @@ flowchart TD
 
 ### Agent Teams
 
-PO orchestrates task-type-specific teams. Seven agents are available:
+main Claude acts as the orchestrator (PO role) and drives task-type-specific teams. Six agents are available:
 
 | Agent | Role | Model |
 |-------|------|-------|
-| **PO** | Team lead — orchestrates workflow, does not edit code | opus |
 | **Developer** | ATDD implementation, cannot self-review | sonnet |
 | **QA** | Test strategy and verification, cannot edit code | sonnet |
 | **Tester** | Bug reproduction and fix verification | sonnet |
@@ -151,11 +150,11 @@ PO orchestrates task-type-specific teams. Seven agents are available:
 
 | Task Type | Phase 1 Agents | Phase 2 Agents |
 |-----------|----------------|----------------|
-| development | PO, Developer, QA | PO, Developer, Reviewer x N |
-| bug | PO, Tester, Developer | PO, Developer, Tester, Reviewer x N |
-| research | PO | PO, Researcher x N (min 2 per theme) |
-| documentation | PO | PO, Writer, Reviewer x N |
-| refactoring | PO | PO, Developer, Reviewer x N |
+| development | main Claude, Developer, QA | main Claude, Developer, Reviewer x N |
+| bug | main Claude, Tester, Developer | main Claude, Developer, Tester, Reviewer x N |
+| research | main Claude | main Claude, Researcher x N (min 2 per theme) |
+| documentation | main Claude | main Claude, Writer, Reviewer x N |
+| refactoring | main Claude | main Claude, Developer, Reviewer x N |
 
 ```bash
 # Auto-detect in-progress Issue, launch Agent Teams

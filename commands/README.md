@@ -8,7 +8,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 
 | Command | Purpose | Invocation |
 |---------|---------|------------|
-| [autopilot](autopilot.md) | PO-led end-to-end workflow; orchestrates discover → plan → implement → review → merge with PO/Dev/QA Agent Teams | `/atdd-kit:autopilot` |
+| [autopilot](autopilot.md) | Autopilot end-to-end workflow; main Claude orchestrates discover → plan → implement → review → merge with task-type-specific Agent Teams | `/atdd-kit:autopilot` |
 | [auto-eval](auto-eval.md) | Runs skill evals for changed skills, compares against baseline, posts results as PR comment | `/atdd-kit:auto-eval` |
 | [auto-sweep](auto-sweep.md) | Detects state transition anomalies and sends notifications | `/atdd-kit:auto-sweep` |
 | [maintenance](maintenance.md) | On-demand rule and documentation health check; creates/updates maintenance Issue | `/atdd-kit:maintenance` |

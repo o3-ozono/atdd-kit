@@ -56,19 +56,19 @@ After plan approval, work proceeds via Agent Teams:
 
 ### Agent Teams Mode
 
-PO orchestrates task-type-specific Agent Teams in the user's session. The team completes the full cycle (plan-review -> implement -> code-review -> merge) and disbands.
+main Claude acts as the orchestrator (PO role) and drives task-type-specific Agent Teams in the user's session. The team completes the full cycle (plan-review -> implement -> code-review -> merge) and disbands.
 
-**Seven agents are available:** PO (opus), Developer, QA, Tester, Reviewer, Researcher, Writer (all sonnet). Agent composition is determined by Issue task type — see [commands/autopilot.md](../commands/autopilot.md) for the full composition table.
+**Six agents are available:** Developer, QA, Tester, Reviewer, Researcher, Writer (all sonnet). main Claude directly fulfills the PO orchestrator role. Agent composition is determined by Issue task type — see [commands/autopilot.md](../commands/autopilot.md) for the full composition table.
 
 **Agent Lifecycle:** Task-type-specific agents are spawned once in AC Review Round with `isolation: "worktree"`. All subsequent phases communicate with the same agents via SendMessage — no new Agent generation occurs. This preserves agent context across the full workflow.
 
 **Output Channels:** Agent deliverables flow through two channels — never repository files.
-- **Inter-agent handoff** (e.g., QA strategy consumed by Developer): returned via `SendMessage` reply to PO.
-- **Human-facing work log** (AC confirmation, Plan conclusion, review results, research reports): PO posts as Issue / PR comments via `gh issue comment` / `gh pr comment`.
+- **Inter-agent handoff** (e.g., QA strategy consumed by Developer): returned via `SendMessage` reply to main Claude.
+- **Human-facing work log** (AC confirmation, Plan conclusion, review results, research reports): main Claude posts as Issue / PR comments via `gh issue comment` / `gh pr comment`.
 
 Agents must not write deliverables to `docs/decisions/` or any other repository path. Knowledge that deserves long-term reference is graduated into existing docs (`docs/`, `DEVELOPMENT.md`, etc.) by explicit human decision.
 
-**Worktree Isolation:** PO enters an isolated worktree (`autopilot-{issue_number}`) at Phase 0.9 via EnterWorktree. Developer and QA agents use `isolation: "worktree"` at spawn time for filesystem-level isolation. This enables safe concurrent autopilot sessions on the same repository. Cleanup happens at Phase 5 via ExitWorktree.
+**Worktree Isolation:** main Claude enters an isolated worktree (`autopilot-{issue_number}`) at Phase 0.9 via EnterWorktree. Developer and QA agents use `isolation: "worktree"` at spawn time for filesystem-level isolation. This enables safe concurrent autopilot sessions on the same repository. Cleanup happens at Phase 5 via ExitWorktree.
 
 **Mid-phase Resume:** When a session restarts at a mid-phase (Phase 2-4), Phase 0.9 re-spawns the required agents (Developer and/or QA depending on the phase), loads prior phase context by reading Issue/PR comments via `gh`, then continues via SendMessage.
 
@@ -77,7 +77,7 @@ Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.js
 Launch with `/atdd-kit:autopilot`:
 
 ```
-/atdd-kit:autopilot              # Agent Teams (PO + Developer + QA)
+/atdd-kit:autopilot              # Agent Teams (main Claude + Developer + QA)
 /atdd-kit:autopilot 123          # Target a specific Issue
 /atdd-kit:autopilot search text  # Search for an Issue by keyword
 ```
@@ -107,7 +107,7 @@ When merge order matters, add `blocked-by: #N` to the Issue/PR body. The Impleme
 ```mermaid
 graph LR
     subgraph "Agent Teams (task-type-specific)"
-        PO["PO"]
+        MC["main Claude\n(orchestrator)"]
         D["Developer"]
         Q["QA"]
         T["Tester"]
@@ -116,18 +116,18 @@ graph LR
         W["Writer"]
     end
 
-    U["User"] -- "request" --> PO
-    PO -- "discover/plan" --> D
-    PO -- "plan-review" --> R
-    PO -- "bug triage" --> T
-    PO -- "research" --> RS
-    PO -- "docs" --> W
+    U["User"] -- "request" --> MC
+    MC -- "discover/plan" --> D
+    MC -- "plan-review" --> R
+    MC -- "bug triage" --> T
+    MC -- "research" --> RS
+    MC -- "docs" --> W
     D -- "atdd/verify/ship" --> R
     T -- "fix verify" --> R
     W -- "docs review" --> R
     R -- "needs-pr-revision" --> D
-    R -- "approved" --> PO
-    PO -- "merge" --> U
+    R -- "approved" --> MC
+    MC -- "merge" --> U
 ```
 
 ## Label State Machine
