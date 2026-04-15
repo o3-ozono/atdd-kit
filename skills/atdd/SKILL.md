@@ -27,6 +27,7 @@ Before starting implementation, verify the Issue state:
    - This is a **session resumption.** Do NOT block. Proceed with implementation from where it left off.
    - Check `git log --oneline main..<branch>` to identify completed ACs from commit messages.
    - Resume from the next incomplete AC.
+   - If `feat/<issue-number>-*` exists locally, run `git switch feat/<issue-number>-<slug>` before this check to ensure you are on the correct branch.
 3. **Neither label present:** STOP. Report: "Issue #N is not ready for implementation. Complete discover → plan → approval first."
 
 ### Additional Prerequisites
@@ -117,7 +118,8 @@ Sunk cost is not an argument. Keeping unverified code is technical debt from min
 ## Workflow
 
 1. Read the test strategy and implementation strategy from the Issue
-2. Create branch: `feat/<issue-number>-<slug>`
+2. Create branch: `git switch -c feat/<issue-number>-<slug>`
+   - **WARNING: Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting.** Always push the feature branch directly.
 3. Empty commit for Draft PR: `git commit --allow-empty -m "chore: start work on #<issue>"`
 4. Push and create Draft PR
 5. For each AC:
