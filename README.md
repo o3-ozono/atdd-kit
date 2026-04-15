@@ -58,11 +58,11 @@ claude plugins marketplace add https://github.com/o3-ozono/atdd-kit.git
 claude plugins install atdd-kit --scope project
 ```
 
-Setup happens automatically on the first session. The `session-start` skill auto-detects your platform (iOS, Web, Other), shows what will be installed, and asks for confirmation. You can also run setup commands manually (`/atdd-kit:setup-github`, `/atdd-kit:setup-ios`, etc.). See [Getting Started — What Each Addon Installs](docs/getting-started.md#what-each-addon-installs) for details.
+Setup happens automatically on the first session. The `session-start` skill auto-detects your platform (iOS, Web, Other), shows what will be installed, and asks for confirmation. You can also run setup commands manually (`/atdd-kit:setup-github`, `/atdd-kit:setup-ios`, etc.). See [Getting Started — What Each Addon Installs](docs/guides/getting-started.md#what-each-addon-installs) for details.
 
 Then describe what you want to build — atdd-kit handles the rest.
 
-See [Getting Started](docs/getting-started.md) for a full end-to-end walkthrough.
+See [Getting Started](docs/guides/getting-started.md) for a full end-to-end walkthrough.
 
 ## How It Works
 
@@ -172,7 +172,7 @@ main Claude acts as the orchestrator (PO role) and drives task-type-specific tea
 [PR]     ready-for-PR-review → needs-pr-revision (loop) → merge
 ```
 
-See [Workflow Detail](docs/workflow-detail.md) for the full label state machine and transition rules.
+See [Workflow Detail](docs/workflow/workflow-detail.md) for the full label state machine and transition rules.
 
 ## Configuration
 

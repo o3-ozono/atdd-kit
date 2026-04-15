@@ -59,19 +59,19 @@
 
 # CC5: docs/ Loaded by metadata updated
 @test "CC5: error-handling.md Loaded by references autopilot (Dev)" {
-  grep -q 'autopilot (Dev)' docs/error-handling.md
+  grep -q 'autopilot (Dev)' docs/guides/error-handling.md
 }
 
 @test "CC5: review-guide.md Loaded by references autopilot (QA)" {
-  grep -q 'autopilot (QA)' docs/review-guide.md
+  grep -q 'autopilot (QA)' docs/guides/review-guide.md
 }
 
 @test "CC5: autonomy-levels.md Loaded by references autopilot (QA)" {
-  grep -q 'autopilot (QA)' docs/autonomy-levels.md
+  grep -q 'autopilot (QA)' docs/workflow/autonomy-levels.md
 }
 
 @test "CC5: workflow-detail.md Loaded by references autopilot" {
-  grep -q 'Loaded by.*autopilot' docs/workflow-detail.md
+  grep -q 'Loaded by.*autopilot' docs/workflow/workflow-detail.md
 }
 
 @test "CC5: docs/*.ja.md files no longer exist (English-only)" {
@@ -82,19 +82,11 @@
 
 # CC6: docs/ body text updated
 @test "CC6: workflow-detail.md does not reference auto-review" {
-  ! grep -q 'auto-review' docs/workflow-detail.md
+  ! grep -q 'auto-review' docs/workflow/workflow-detail.md
 }
 
 @test "CC6: doc-sync-checklist.md references QA (autopilot)" {
-  grep -q 'QA (autopilot)' docs/doc-sync-checklist.md
-}
-
-@test "CC6: superpowers-architecture-learnings.md references autopilot (Dev)" {
-  grep -q 'autopilot (Dev)' docs/superpowers-architecture-learnings.md
-}
-
-@test "CC6: superpowers-architecture-learnings.md references autopilot (QA)" {
-  grep -q 'autopilot (QA)' docs/superpowers-architecture-learnings.md
+  grep -q 'QA (autopilot)' docs/guides/doc-sync-checklist.md
 }
 
 # CC7: SKILL.ja.md no longer exists
@@ -102,18 +94,10 @@
   [[ ! -f skills/ship/SKILL.ja.md ]]
 }
 
-# CC8: stale plans removed (R1-05)
-@test "CC8: docs/plans/ contains no stale plan files" {
-  local count
-  count=$(find docs/plans/ -name '*.md' 2>/dev/null | wc -l)
-  [ "$count" -eq 0 ]
-}
-
-# CC9: global grep — no auto-implement/auto-review outside plans/
-@test "CC9: no auto-implement outside plans/, CHANGELOG, tests, settings.local.json, .tmp" {
+# CC9: global grep — no auto-implement/auto-review outside CHANGELOG, tests, settings.local.json
+@test "CC9: no auto-implement outside CHANGELOG, tests, settings.local.json, .tmp" {
   result=$(grep -rn 'auto-implement' . \
     --include="*.md" --include="*.yml" --include="*.yaml" --include="*.sh" \
-    | grep -v 'docs/plans/' \
     | grep -v 'CHANGELOG.md' \
     | grep -v 'tests/' \
     | grep -v '\.tmp/' \
@@ -123,10 +107,9 @@
   [ -z "$result" ]
 }
 
-@test "CC9: no auto-review outside plans/, CHANGELOG, tests, settings.local.json, skills/ship, .tmp" {
+@test "CC9: no auto-review outside CHANGELOG, tests, settings.local.json, skills/ship, .tmp" {
   result=$(grep -rn 'auto-review' . \
     --include="*.md" --include="*.yml" --include="*.yaml" --include="*.sh" \
-    | grep -v 'docs/plans/' \
     | grep -v 'CHANGELOG.md' \
     | grep -v 'tests/' \
     | grep -v 'skills/ship/' \

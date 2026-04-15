@@ -136,6 +136,9 @@ atdd-kit/
 ├── commands/         # ユーザー明示呼び出しコマンド（/atdd-kit:*）
 ├── rules/            # 常時ロードルール（40行予算、毎ターンロード）
 ├── docs/             # オンデマンド参照ドキュメント（スキルが必要時にロード）
+│   ├── guides/       # ハウツーガイドとリファレンス（commit-guide, review-guide 等）
+│   ├── methodology/  # 方法論詳細（atdd-guide, bug-fix-process）
+│   └── workflow/     # ワークフローリファレンス（workflow-detail, issue-ready-flow, autonomy-levels）
 ├── hooks/            # Claude Code hooks（session-start ブートストラップ）
 ├── scripts/          # Bash/Node ユーティリティ（バージョンチェック）
 ├── templates/        # 静的テンプレート（issue/, pr/, ci/）— テンプレート展開なし

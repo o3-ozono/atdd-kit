@@ -589,7 +589,7 @@ PHASE: discover
 RECOMMENDATION: gh issue comment failed with authentication error. Check GH_TOKEN configuration.
 ```
 
-See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
 autopilot action matrix.
 
 ---

@@ -41,7 +41,6 @@ setup() {
       # Skip project-side output paths (not in plugin)
       [[ "$ref" == .github/* ]] && continue
       [[ "$ref" == .claude/* ]] && continue
-      [[ "$ref" == docs/process/* ]] && continue
       # Skip command-like strings
       [[ "$ref" == git\ * ]] && continue
       [[ "$ref" == gh\ * ]] && continue

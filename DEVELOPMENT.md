@@ -136,6 +136,9 @@ atdd-kit/
 ├── commands/         # User-invoked slash commands (/atdd-kit:*)
 ├── rules/            # Always-loaded rules (40-line budget, loaded every turn)
 ├── docs/             # On-demand reference documents (loaded by skills when needed)
+│   ├── guides/       # How-to guides and reference materials (commit-guide, review-guide, etc.)
+│   ├── methodology/  # Methodology deep-dives (atdd-guide, bug-fix-process)
+│   └── workflow/     # Workflow reference (workflow-detail, issue-ready-flow, autonomy-levels)
 ├── hooks/            # Claude Code hooks (session-start bootstrap)
 ├── scripts/          # Bash/Node utilities (version check)
 ├── templates/        # Static templates (issue/, pr/, ci/) — no template expansion

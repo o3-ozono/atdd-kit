@@ -176,13 +176,13 @@ You: The /users endpoint returns 500 when the email contains a plus sign
 
 ### Customization
 
-- **Autonomy levels**: Configure how much human approval is needed (see `docs/autonomy-levels.md`)
+- **Autonomy levels**: Configure how much human approval is needed (see `docs/workflow/autonomy-levels.md`)
 - **iOS addon**: Platform-specific tooling for iOS projects (auto-detected or via `/atdd-kit:setup-ios`)
 
 ### Reference
 
-- [Workflow Detail](workflow-detail.md) — Label flow, state transitions, and phase details
-- [ATDD Guide](atdd-guide.md) — Deep dive into the ATDD double-loop methodology
+- [Workflow Detail](../workflow/workflow-detail.md) — Label flow, state transitions, and phase details
+- [ATDD Guide](../methodology/atdd-guide.md) — Deep dive into the ATDD double-loop methodology
 - [Review Guide](review-guide.md) — PR review process and criteria
 - [Error Handling](error-handling.md) — Common errors and how to resolve them
 - [Development Guide](../DEVELOPMENT.md) — Contributing to atdd-kit itself

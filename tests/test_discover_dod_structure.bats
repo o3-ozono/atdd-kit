@@ -63,8 +63,8 @@ PLAN_SKILL="skills/plan/SKILL.md"
   ! grep -qi "completion criteria" "$DISCOVER_SKILL"
 }
 
-@test "AC4: docs/issue-ready-flow.md has no 'completion criteria'" {
-  ! grep -qi "completion criteria" docs/issue-ready-flow.md
+@test "AC4: docs/workflow/issue-ready-flow.md has no 'completion criteria'" {
+  ! grep -qi "completion criteria" docs/workflow/issue-ready-flow.md
 }
 
 @test "AC4: commands/autopilot.md has no 'completion criteria'" {

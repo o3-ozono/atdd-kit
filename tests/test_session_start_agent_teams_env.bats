@@ -63,7 +63,7 @@
 }
 
 @test "AC5: workflow-detail.md mentions settings.local.json for env var" {
-  grep -q 'settings\.local\.json' docs/workflow-detail.md
+  grep -q 'settings\.local\.json' docs/workflow/workflow-detail.md
 }
 
 # ---------------------------------------------------------------------------

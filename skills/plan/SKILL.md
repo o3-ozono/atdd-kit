@@ -91,7 +91,7 @@ Execute these steps **in order**. Do not skip any.
 
 ### Step 3: Test Strategy -- Map ACs to Test Layers
 
-Following the Double-Loop TDD model (`docs/atdd-guide.md`):
+Following the Double-Loop TDD model (`docs/methodology/atdd-guide.md`):
 
 #### Outer Loop (Story Test)
 
@@ -374,7 +374,7 @@ PHASE: plan
 RECOMMENDATION: Issue #N has no discover deliverables. Run discover first.
 ```
 
-See `docs/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
 autopilot action matrix.
 
 ---

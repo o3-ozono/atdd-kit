@@ -20,4 +20,4 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 ## References
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) — Skills vs Commands distinction
-- [docs/workflow-detail.md](../docs/workflow-detail.md) — Full workflow documentation
+- [docs/workflow/workflow-detail.md](../docs/workflow/workflow-detail.md) — Full workflow documentation
