@@ -76,7 +76,7 @@ If `.claude/workflow-config.yml` does not exist, run first-time auto-setup:
 - Parse the output:
   - `FIRST_RUN`: First time using the plugin. Show current version in report.
   - `NO_UPDATE`: Version unchanged. No notification needed.
-  - `UPDATED`: Version changed. Show old → new version and CHANGELOG diff in report.
+  - `UPDATED`: Version changed. Output is 5 lines: `UPDATED`, `<old>`, `<new>`, `VERSIONS: <N>`, `BREAKING: <M>`. Parse VERSIONS and BREAKING counts for report.
 
 ### E2. Auto-Sync on Plugin Update (only if UPDATED)
 
@@ -147,8 +147,9 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is configured in `.claude/settin
 
 **Plugin Version:** atdd-kit vX.Y.Z  <-- from check-plugin-version.sh
 **Agent Teams:** Configured           <-- only if settings.local.json was created or updated in Phase 1-G
-**Updated: v0.1.0 → v0.2.0**         <-- only if UPDATED
-> (CHANGELOG diff here)              <-- only if UPDATED
+**Updated: v<old> → v<new> (<N> versions, <M> breaking changes). See CHANGELOG.md for details.**  <-- only if UPDATED
+<!-- if BREAKING > 0: add line below -->
+**⚠ BREAKING CHANGE detected**      <-- only if UPDATED and BREAKING > 0
 
 ### Plugin Sync  <-- only if UPDATED
 | File | Status |
