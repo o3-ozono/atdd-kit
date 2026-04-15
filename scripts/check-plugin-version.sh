@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Usage: check-plugin-version.sh <plugin_root> <cache_dir>
 # Output protocol:
-#   FIRST_RUN\n<current_version>        -- no cache exists
-#   NO_UPDATE                           -- cache matches current
-#   UPDATED\n<old>\n<current>\n<changelog_diff>  -- version changed
+#   FIRST_RUN\n<current_version>              -- no cache exists
+#   NO_UPDATE                                 -- cache matches current
+#   UPDATED\n<old>\n<current>\n
+#     VERSIONS: <count>\nBREAKING: <count>   -- version changed (5 lines total)
 set -euo pipefail
 
 PLUGIN_ROOT="${1:?Usage: check-plugin-version.sh <plugin_root> <cache_dir>}"
@@ -42,18 +43,27 @@ echo "$CACHED"
 echo "$CURRENT"
 
 CHANGELOG="${PLUGIN_ROOT}/CHANGELOG.md"
+VERSIONS=0
+BREAKING=0
+
 if [[ -f "$CHANGELOG" ]]; then
-  # Extract entries newer than cached version, stop at cached version header
-  sed -n '/^## \[/,$ p' "$CHANGELOG" | while IFS= read -r line; do
+  # Process substitution keeps variables in current shell (bash 3.2 compatible)
+  while IFS= read -r line; do
     if [[ "$line" =~ ^##\ \[([0-9]+\.[0-9]+\.[0-9]+)\] ]]; then
       ver="${BASH_REMATCH[1]}"
       if [[ "$ver" == "$CACHED" ]]; then
         break
       fi
+      VERSIONS=$((VERSIONS + 1))
     fi
-    echo "$line"
-  done
+    if [[ "$line" == *"BREAKING CHANGE"* ]]; then
+      BREAKING=$((BREAKING + 1))
+    fi
+  done < <(sed -n '/^## \[/,$ p' "$CHANGELOG")
 fi
+
+echo "VERSIONS: ${VERSIONS}"
+echo "BREAKING: ${BREAKING}"
 
 # Update cache
 echo "$CURRENT" > "$CACHE_FILE"
