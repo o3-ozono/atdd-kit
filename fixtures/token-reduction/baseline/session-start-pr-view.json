@@ -1,0 +1,23 @@
+{
+  "title": "feat: example PR for token reduction baseline",
+  "state": "OPEN",
+  "reviewDecision": "REVIEW_REQUIRED",
+  "statusCheckRollup": [
+    {
+      "context": "CI / build",
+      "state": "SUCCESS",
+      "completedAt": "2026-04-10T12:00:00Z",
+      "startedAt": "2026-04-10T11:55:00Z",
+      "description": "Build passed"
+    },
+    {
+      "context": "CI / test",
+      "state": "SUCCESS",
+      "completedAt": "2026-04-10T12:05:00Z",
+      "startedAt": "2026-04-10T12:00:00Z",
+      "description": "All tests passed"
+    }
+  ],
+  "mergeable": "MERGEABLE",
+  "mergeStateStatus": "CLEAN"
+}
