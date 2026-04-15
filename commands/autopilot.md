@@ -182,13 +182,12 @@ Failure mode: report what failed → STOP → user decides next step.
 
 **Tools:** Bash (gh), Skill
 
-The PO explores requirements through dialogue with the Stakeholder (user) and derives ACs. Common to all task types.
+Discover the requirements for the Issue. Common to all task types.
 
 1. `gh issue edit <number> --add-label in-progress` (exclusive lock)
 2. Read the Issue body and comments for context
 3. Use Skill tool to invoke `atdd-kit:discover` with args `"<number> --autopilot"` for the Issue
-4. PO derives draft ACs through Stakeholder dialogue (one question at a time)
-5. Proceed to AC Review Round
+4. On `SKILL_STATUS: COMPLETE` from discover: **immediately proceed to AC Review Round. Do NOT present draft deliverables to the user or send any intermediate user-facing message.**
 
 ## AC Review Round
 
