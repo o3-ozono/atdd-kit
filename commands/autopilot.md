@@ -418,13 +418,13 @@ Record signals at these points during autopilot execution:
 
 ### Fingerprint Convention
 
-A fingerprint is a short `[a-zA-Z0-9_-]` string identifying a recurring issue. Examples:
+A fingerprint is a short `[a-zA-Z0-9_-]+` string identifying a recurring issue. Examples:
 
 - `missing-tests` — Reviewer consistently flags missing test coverage
 - `type-error-AC3` — same type error recurs on AC3 across iterations
 - `plan-scope-creep` — plan review repeatedly rejects scope creep
 
-Invalid characters (spaces, slashes, etc.) cause `record_error` to exit non-zero — use only `[a-zA-Z0-9_-]`.
+Invalid characters (spaces, slashes, etc.) cause `record_error` to exit non-zero — use only `[a-zA-Z0-9_-]+`.
 
 ### Manual Reset
 

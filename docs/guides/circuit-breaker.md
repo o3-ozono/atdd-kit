@@ -65,7 +65,7 @@ If `check` exits non-zero, autopilot prints the stop message (which includes the
 
 ## Fingerprint Convention
 
-A fingerprint is a short identifier for a recurring issue. Use only `[a-zA-Z0-9_-]` characters.
+A fingerprint is a short identifier for a recurring issue. Use only `[a-zA-Z0-9_-]+` characters (1 or more).
 
 Examples:
 - `missing-tests` — Reviewer consistently flags missing test coverage
