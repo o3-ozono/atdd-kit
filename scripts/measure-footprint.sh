@@ -65,18 +65,19 @@ parse_yaml() {
   local dyn_idx=-1
 
   while IFS= read -r line; do
-    # Top-level sections
-    if [[ "$line" == "files:" ]]; then
+    # Top-level sections (allow optional trailing whitespace)
+    if [[ "$line" =~ ^files:[[:space:]]*$ ]]; then
       section="files"; in_args=0; continue
     fi
-    if [[ "$line" == "dynamic:" ]]; then
+    if [[ "$line" =~ ^dynamic:[[:space:]]*$ ]]; then
       section="dynamic"; in_args=0; continue
     fi
 
     case "$section" in
       files)
         if [[ "$line" =~ ^"  - "(.*) ]]; then
-          files_list+=("${BASH_REMATCH[1]}")
+          # Trim trailing whitespace from path
+          files_list+=("${BASH_REMATCH[1]%% *}")
         fi
         ;;
       dynamic)
@@ -291,8 +292,10 @@ baseline_write() {
   local entry="  \"${name}\": {\"total_bytes\": ${tb}, \"estimated_tokens\": ${et}, \"updated_at\": \"${ts}\"}"
 
   mkdir -p "$(dirname "$BASELINE_FILE")"
-  local tmp
+  local tmp tmp2=""
   tmp=$(mktemp "${BASELINE_FILE}.XXXXXX")
+  # Clean up tmp files on any exit from this function
+  trap 'rm -f "$tmp" "${tmp2:-}"' RETURN
 
   if [[ ! -f "$BASELINE_FILE" ]]; then
     printf '{\n%s\n}\n' "$entry" > "$tmp"
@@ -302,8 +305,8 @@ baseline_write() {
     local buf=""
     while IFS= read -r raw; do
       if printf '%s' "$raw" | grep -q "\"${name}\":"; then
-        # Preserve trailing comma if the original line had one (means more entries follow)
-        if [[ "${raw: -1}" == "," ]]; then
+        # Preserve trailing comma when the original line had one (more entries follow)
+        if printf '%s' "$raw" | grep -q ",$"; then
           printf '%s,\n' "$entry" >> "$tmp"
         else
           printf '%s\n' "$entry" >> "$tmp"
@@ -311,19 +314,16 @@ baseline_write() {
         found=1
       else
         if [[ "$raw" == "}" && "$found" -eq 0 ]]; then
-          # Append: add comma to previous non-empty line if needed
+          # Append new entry before closing brace; add comma to previous line if needed
           if [[ -n "$buf" && "${buf: -1}" != "," && "$buf" != "{" ]]; then
-            # rewrite last line with comma
-            # truncate tmp by one line and rewrite it
             local lines
             lines=$(wc -l < "$tmp" | tr -d ' ')
             if [[ "$lines" -gt 0 ]]; then
-              # Replace last line in tmp with buf+comma
-              local tmp2
               tmp2=$(mktemp "${BASELINE_FILE}.XXXXXX")
               head -n $(( lines - 1 )) "$tmp" > "$tmp2"
               printf '%s,\n' "$buf" >> "$tmp2"
               mv "$tmp2" "$tmp"
+              tmp2=""
             fi
           fi
           printf '%s\n' "$entry" >> "$tmp"
@@ -339,6 +339,7 @@ baseline_write() {
   fi
 
   mv "$tmp" "$BASELINE_FILE"
+  trap - RETURN
 }
 
 # ---------------------------------------------------------------------------
@@ -350,7 +351,7 @@ do_check() {
 
   if [[ ! -f "$BASELINE_FILE" ]]; then
     echo "ERROR: baseline.json not found: ${BASELINE_FILE}" >&2
-    exit 2
+    return 2
   fi
 
   # Basic corruption check: must start with {
@@ -358,11 +359,11 @@ do_check() {
   first_char=$(head -c1 "$BASELINE_FILE" 2>/dev/null | tr -d '[:space:]')
   if [[ "$first_char" != "{" ]]; then
     echo "ERROR: baseline.json corrupted (does not start with {)" >&2
-    exit 2
+    return 2
   fi
   if ! grep -q '}' "$BASELINE_FILE" 2>/dev/null; then
     echo "ERROR: baseline.json corrupted (no closing })" >&2
-    exit 2
+    return 2
   fi
 
   local cjson
@@ -378,7 +379,7 @@ do_check() {
 
   if [[ -z "$bb" || -z "$bt" ]]; then
     echo "ERROR: no baseline entry for checkpoint '${name}'" >&2
-    exit 2
+    return 2
   fi
 
   local regression=0
@@ -410,7 +411,7 @@ do_check() {
     echo "  baseline: bytes=${bb} tokens=${bt}"
     echo "  bytes_delta=${bytes_delta} tokens_delta=${token_delta}"
     echo "  reason: ${reason}"
-    exit 1
+    return 1
   else
     echo "PASS: ${name} bytes=${cb} tokens=${ct} (baseline bytes=${bb} tokens=${bt})"
   fi
@@ -455,12 +456,17 @@ case "$1" in
 
   --check)
     if [[ $# -ge 2 && -n "${2:-}" ]]; then
-      do_check "$2"
+      set +e; do_check "$2"; _rc=$?; set -e
+      [[ $_rc -eq 0 ]] || exit $_rc
     else
-      # No name — check all
+      # No name — check all checkpoints; report all regressions before exiting
+      _any_regression=0
       while IFS= read -r cp; do
-        do_check "$cp"
+        set +e; do_check "$cp"; _rc=$?; set -e
+        if [[ $_rc -eq 2 ]]; then exit 2; fi
+        if [[ $_rc -eq 1 ]]; then _any_regression=1; fi
       done < <(list_checkpoints)
+      [[ "$_any_regression" -eq 0 ]] || exit 1
     fi
     ;;
 

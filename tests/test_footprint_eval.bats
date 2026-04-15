@@ -180,6 +180,22 @@ teardown() {
   python3 -c "import json,sys; json.load(open('$FOOTPRINT_EVAL_DIR/baseline.json'))"
 }
 
+@test "G3: regression -- --update on existing 2-entry baseline yields valid JSON (B1 guard)" {
+  # Seed two entries individually
+  bash "$SCRIPT" --update simple
+  bash "$SCRIPT" --update multi
+  python3 -c "import json,sys; json.load(open('$FOOTPRINT_EVAL_DIR/baseline.json'))"
+  # Now replace the first entry -- this triggered the B1 comma bug
+  bash "$SCRIPT" --update simple
+  python3 -c "import json,sys; json.load(open('$FOOTPRINT_EVAL_DIR/baseline.json'))"
+  # And replace the second entry
+  bash "$SCRIPT" --update multi
+  python3 -c "import json,sys; json.load(open('$FOOTPRINT_EVAL_DIR/baseline.json'))"
+  # Both keys must still be present
+  grep -q '"simple"' "$FOOTPRINT_EVAL_DIR/baseline.json"
+  grep -q '"multi"' "$FOOTPRINT_EVAL_DIR/baseline.json"
+}
+
 # =============================================================================
 # G4: Threshold (AC5) -- +10% and +500 tokens boundaries, OR semantics, baseline=0
 # =============================================================================

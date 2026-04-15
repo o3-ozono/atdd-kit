@@ -70,6 +70,18 @@ When `baseline_bytes == 0`, the percent threshold is skipped (no div-by-zero).
 - Update it in the same PR that changes a checkpoint or adds files.
 - On merge conflict: re-run `scripts/measure-footprint.sh --update` and commit.
 
+### First-time seeding
+
+`baseline.json` is committed to the repo, so this is only needed when adding a brand-new checkpoint or working in a fresh clone with no baseline:
+
+```bash
+# Seed baseline for a new checkpoint
+scripts/measure-footprint.sh --update <name>
+git add evals/footprint/baseline.json
+```
+
+Running `--check` without a baseline exits with code 2 (`ERROR: baseline.json not found`). Always run `--update` first when adding a new checkpoint.
+
 ## Adding and Splitting Checkpoints
 
 Each `.yml` file in this directory represents one **checkpoint** — a logical group of files loaded together in a single context invocation.
