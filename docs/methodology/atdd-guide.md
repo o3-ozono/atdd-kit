@@ -64,10 +64,12 @@ Then:  <expected result>
 
 ## Double-Loop TDD
 
+> For detailed AC-to-test-layer mapping, see [test-mapping.md](test-mapping.md).
+
 ```
-Outer loop: Story Test (E2E / Integration)
+Outer loop: Story Test (E2E / Integration)  <- 1 AC = 1 Outer Loop cycle
   -> RED:  Write an E2E test for the AC -> Confirm failure
-  -> Inner loop: Unit TDD
+  -> Inner loop: Unit TDD                   <- runs N times per AC
       -> RED:   Write a unit test -> Confirm failure
       -> GREEN: Minimal implementation to pass
       -> REFACTOR

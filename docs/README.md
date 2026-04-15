@@ -24,6 +24,7 @@ Deep-dive methodology documents for ATDD and bug fix processes.
 |----------|-------------|
 | [atdd-guide.md](methodology/atdd-guide.md) | ATDD methodology guide for the atdd skill and Issue templates |
 | [bug-fix-process.md](methodology/bug-fix-process.md) | Bug fix workflow and triage process |
+| [test-mapping.md](methodology/test-mapping.md) | AC-to-test-layer mapping and Testing Quadrants reference |
 
 ## workflow/
 
