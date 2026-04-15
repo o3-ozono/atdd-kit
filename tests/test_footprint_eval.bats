@@ -22,7 +22,36 @@ setup() {
   cp "$FIXTURES_DIR/checkpoints/math_3.yml"    "$FOOTPRINT_EVAL_DIR/math_3.yml"
   cp "$FIXTURES_DIR/checkpoints/math_4.yml"    "$FOOTPRINT_EVAL_DIR/math_4.yml"
   cp "$FIXTURES_DIR/checkpoints/math_360.yml"  "$FOOTPRINT_EVAL_DIR/math_360.yml"
-  cp "$FIXTURES_DIR/checkpoints/dynamic.yml"   "$FOOTPRINT_EVAL_DIR/dynamic.yml"
+  # dynamic.yml is generated (not copied) so cache dirs land in BATS_TEST_TMPDIR
+  # This prevents check-plugin-version.sh from writing back into the repo fixtures
+  local dyn_cache_first="$BATS_TEST_TMPDIR/cache-first-run"
+  local dyn_cache_no_update="$BATS_TEST_TMPDIR/cache-no-update"
+  local dyn_cache_updated="$BATS_TEST_TMPDIR/cache-updated"
+  mkdir -p "$dyn_cache_first" "$dyn_cache_no_update" "$dyn_cache_updated"
+  # no-update and updated caches need a pre-existing version file
+  printf '0.1.0\n' > "$dyn_cache_no_update/atdd-kit.version"
+  printf '0.0.9\n' > "$dyn_cache_updated/atdd-kit.version"
+
+  cat > "$FOOTPRINT_EVAL_DIR/dynamic.yml" <<DYNEOF
+files:
+  - tests/fixtures/footprint/simple/sample.md
+dynamic:
+  first_run:
+    script: scripts/check-plugin-version.sh
+    args:
+      - tests/fixtures/footprint/dynamic
+      - ${dyn_cache_first}
+  no_update:
+    script: scripts/check-plugin-version.sh
+    args:
+      - tests/fixtures/footprint/dynamic
+      - ${dyn_cache_no_update}
+  updated:
+    script: scripts/check-plugin-version.sh
+    args:
+      - tests/fixtures/footprint/dynamic
+      - ${dyn_cache_updated}
+DYNEOF
   # Note: malformed.yml and missing_file.yml are NOT copied in setup
   # They are copied individually in G6 error-case tests to avoid breaking --update-all
 }
