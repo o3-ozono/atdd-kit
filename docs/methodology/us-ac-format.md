@@ -101,7 +101,7 @@ Spec files follow the pattern: `<kebab-slug>.md`
 
 The slug is derived from the Issue title's main noun phrase:
 
-- Issue: "docs/specs/ 導入と US/AC format 策定" → `us-ac-format.md`
+- Issue: "Introduce docs/specs/ and define US/AC format" → `us-ac-format.md`
 - Issue: "Add login rate limiting" → `login-rate-limiting.md`
 
 **File name = Spec ID.** The filename is the stable identifier for the spec; do not duplicate the title in an `id` frontmatter field.
