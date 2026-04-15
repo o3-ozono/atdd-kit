@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.2] - 2026-04-15
+
 ### Added
 - `docs/specs/` directory with `README.md` and `TEMPLATE.md` for persisting User Story + Acceptance Criteria spec files beyond Issue closure. (#66)
 - `docs/methodology/us-ac-format.md`: US/AC spec file format definition (frontmatter schema, status transitions, filename convention, TBD persona rule, rename run-book). (#66)
