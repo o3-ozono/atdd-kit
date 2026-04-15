@@ -2,10 +2,10 @@
 title: "US/AC spec file format and docs/specs/ directory introduction"
 persona: "TBD — replace in #69"
 issue: "#66"
-status: implemented
+status: draft
 ---
 
-This spec describes the `docs/specs/` format convention introduced in #66. The User Story and ACs below are the authoritative living record of that format, intended to survive Issue closure.
+This spec describes the `docs/specs/` format convention introduced in #66. The User Story and ACs below are the authoritative living record of that format, intended to survive Issue closure. This sample conforms to the format defined in [`docs/methodology/us-ac-format.md`](../methodology/us-ac-format.md).
 
 *Note: AC5 (bats structural tests) and AC7 (CHANGELOG update) are implementation-level delivery obligations, not part of the format contract itself. They are listed here for traceability.*
 
@@ -64,3 +64,4 @@ This spec describes the `docs/specs/` format convention introduced in #66. The U
 - This file is the self-referencing sample for the format it describes. The circularity is intentional: the format is proven by its own first use.
 - `persona: TBD — replace in #69` is permitted here because personas are being defined in a parallel issue.
 - The filename `us-ac-format.md` is derived from the Issue #66 title's main noun phrase.
+- This sample spec remains in `draft` state until #69 (persona research) closes, at which point the `TBD` persona will be replaced and status will transition `draft → approved → implemented`.

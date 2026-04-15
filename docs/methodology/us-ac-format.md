@@ -128,4 +128,5 @@ docs/specs/
 
 - `docs/specs/README.md` — operational guide for creating and maintaining specs
 - `docs/specs/TEMPLATE.md` — blank template
+- `docs/specs/us-ac-format.md` — sample spec (self-reference) demonstrating this format
 - `docs/personas/` — persona files referenced in `persona:` field
