@@ -14,10 +14,10 @@ setup() {
   export FOOTPRINT_BASELINE_DIR="${BATS_TEST_TMPDIR}/baseline"
   mkdir -p "${FOOTPRINT_BASELINE_DIR}"
 
-  # Copy real checkpoint YAMLs into temp dir so script can find them
+  # Copy checkpoint YAML into temp dir with the name the script expects (<name>.yml)
   export FOOTPRINT_EVALS_DIR="${BATS_TEST_TMPDIR}/evals"
   mkdir -p "${FOOTPRINT_EVALS_DIR}"
-  cp -r "${FIXTURES_DIR}/simple" "${FOOTPRINT_EVALS_DIR}/"
+  cp "${FIXTURES_DIR}/simple/checkpoint.yml" "${FOOTPRINT_EVALS_DIR}/simple.yml"
 
   # Ensure cache-first-run is an empty directory (git doesn't track empty dirs)
   mkdir -p "${FIXTURES_DIR}/dynamic/cache-first-run"
