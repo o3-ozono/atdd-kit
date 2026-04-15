@@ -232,10 +232,10 @@ Developer leads the implementation strategy, QA leads the test strategy, and PO 
 
 > **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
 
-1. Use SendMessage to: "Developer" with implementation strategy instructions. Include Issue number, approved AC set, and reference to the Issue comment containing prior phase context:
+1. Use SendMessage to: "Developer" with implementation strategy instructions. Include Issue number and reference to the Issue comment containing the approved AC set (fetch full text on demand via `gh issue view <number> --json comments`):
    - file structure, implementation order, dependencies, technical risks
    - Developer returns the strategy via SendMessage reply
-2. Use SendMessage to: "QA" with test strategy instructions. Include Issue number, approved AC set, and reference to the Issue comment containing prior phase context:
+2. Use SendMessage to: "QA" with test strategy instructions. Include Issue number and reference to the Issue comment containing the approved AC set (fetch full text on demand via `gh issue view <number> --json comments`):
    - test layer selection per AC (Unit/Integration/E2E), coverage strategy, regression risk analysis
    - QA returns the strategy via SendMessage reply
 3. PO integrates both strategies into a unified Plan
@@ -250,7 +250,7 @@ All three — PO, Developer, and QA — review the Plan. Developer and QA agents
 
 > **Circuit Breaker Check:** At the start of each Plan Review Round iteration (initial and on `needs-plan-revision` re-entry), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not proceed to plan review.
 
-1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number, approved AC set, unified Plan, and reference to the Issue comment containing prior phase context:
+1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number and reference to the Issue comments containing the approved AC set and the unified Plan (fetch full text on demand via `gh issue view <number> --json comments`):
    - **PO:** alignment with ACs, absence of scope creep
    - **Developer:** validity of file structure, risks in implementation order, technical risk assessment, adequacy of Agent Composition (concreteness of count and focus) — returns review via SendMessage reply
    - **QA:** validity of test layers (appropriate use of Unit/Integration/E2E), completeness of coverage strategy — returns review via SendMessage reply
@@ -296,7 +296,7 @@ All three — PO, Developer, and QA — review the Plan. Developer and QA agents
 
 ### development / refactoring: Developer implements
 
-1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and reference to the Issue comments containing prior phase context — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
+1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number and reference to the Issue comments containing the approved AC set and the unified Plan (fetch full text on demand via `gh issue view <number> --json comments`) — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
 2. Developer creates branch, Draft PR, and implements AC by AC
 3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs are complete
 4. Developer marks PR as ready and adds `ready-for-PR-review` label
