@@ -130,13 +130,15 @@ assert m and m.group(1).strip(), 'User Story section is empty'
 }
 
 @test "AC6: docs/specs links do not reference non-existent files" {
-  # Check that cross-references within docs/specs/ to personas/ are valid
-  if grep -r "docs/personas/" docs/specs/ 2>/dev/null | grep -q "."; then
-    for f in $(grep -roh "docs/personas/[^)\"']*" docs/specs/ 2>/dev/null); do
+  # Extract markdown link paths to docs/personas/*.md from docs/specs/ files
+  # and verify each referenced file exists
+  links=$(grep -roh '\](docs/personas/[^)]*\.md)' docs/specs/ 2>/dev/null \
+    | sed 's/^](\(.*\))$/\1/' || true)
+  if [ -n "$links" ]; then
+    echo "$links" | while IFS= read -r f; do
       [ -f "$f" ]
     done
   fi
-  true
 }
 
 # ---------------------------------------------------------------------------
