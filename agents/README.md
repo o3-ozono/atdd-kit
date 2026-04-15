@@ -6,7 +6,6 @@ Role definitions for the autopilot multi-agent workflow. Each agent is a Markdow
 
 | Agent | Role | Model | Effort | Key Constraints |
 |-------|------|-------|--------|-----------------|
-| `po.md` | Product Owner | opus | high | Orchestrates workflow. Does not edit code. |
 | `developer.md` | Developer | sonnet | high | ATDD implementation. Cannot self-review. |
 | `qa.md` | QA | sonnet | high | Test strategy and verification. Cannot edit code. |
 | `tester.md` | Tester | sonnet | high | Bug reproduction and fix verification. Cannot edit production code. |
@@ -28,11 +27,10 @@ Role definitions for the autopilot multi-agent workflow. Each agent is a Markdow
 
 ### Via Autopilot
 
-`/atdd-kit:autopilot` spawns PO as the main thread, which orchestrates task-type-specific agent teams (Developer, QA, Tester, Reviewer, Researcher, Writer) based on the Issue type.
+`/atdd-kit:autopilot` — main Claude acts as the orchestrator (PO role) and drives task-type-specific agent teams (Developer, QA, Tester, Reviewer, Researcher, Writer) based on the Issue type.
 
 ### Standalone
 
 Agents can be invoked directly:
 - `@qa` — QA review outside of autopilot
 - `@developer` — Developer implementation outside of autopilot
-- `claude --agent po` — Start a session with PO as the main agent
