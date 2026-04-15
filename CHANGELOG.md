@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.13.0] - 2026-04-15
+
+### Changed
+- `scripts/check-plugin-version.sh`: UPDATED output changed from raw CHANGELOG diff to 5-line structured summary (`UPDATED`, `<old>`, `<new>`, `VERSIONS: <N>`, `BREAKING: <M>`). Eliminates large CHANGELOG dumps from session-start context. (#75)
+- `skills/session-start/SKILL.md`: Phase 1-E updated to parse VERSIONS/BREAKING counts from new 5-line output. Phase 3 report template updated to show concise `v<old> → v<new> (N versions, M breaking changes). See CHANGELOG.md for details.` format. (#75)
+- `tests/test_check_plugin_version.bats`: AC1-AC5 tests added for structured summary format; legacy CHANGELOG diff inclusion test removed. (#75)
+- `tests/test_session_start_version.bats`: AC6 tests added verifying SKILL.md Phase 1-E and Phase 3 reflect new output protocol. (#75)
+
 ## [1.12.1] - 2026-04-15
 
 ### Added
