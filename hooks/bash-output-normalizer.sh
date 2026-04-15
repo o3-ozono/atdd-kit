@@ -19,7 +19,9 @@ input=$(cat)
 normalized=$(printf '%s' "$input" | python3 -c "
 import sys, json
 
-text = sys.stdin.read()
+# Read as bytes first, then decode with error replacement to handle non-UTF-8 input.
+# Note: null bytes are stripped by bash variable semantics before we get here.
+text = sys.stdin.buffer.read().decode('utf-8', errors='replace')
 
 # Step 1: JSON minify (try-parse; fallback to original on failure)
 try:

@@ -227,3 +227,25 @@ print('OK')
   [ "$status" -eq 0 ]
   [ "$output" -gt 0 ]
 }
+
+@test "AC5: non-UTF-8 input falls back to original output without traceback on stderr" {
+  # Write raw bytes \x80\x81 followed by ASCII text to a temp file
+  local input_file result_file stderr_file
+  input_file=$(mktemp)
+  result_file=$(mktemp)
+  stderr_file=$(mktemp)
+  python3 -c "import sys; sys.stdout.buffer.write(b'\x80\x81 hello\n')" > "$input_file"
+  # Run normalizer capturing stdout and stderr separately
+  "$NORMALIZER" < "$input_file" > "$result_file" 2> "$stderr_file"
+  local exit_code=$?
+  # 1. Exit code must be 0 (fallback, not crash)
+  [ "$exit_code" -eq 0 ]
+  # 2. stderr must not contain Python Traceback
+  run grep -i "traceback\|UnicodeDecodeError" "$stderr_file"
+  [ "$status" -ne 0 ]
+  # 3. stdout must not be empty (some output delivered)
+  local out_size
+  out_size=$(wc -c < "$result_file" | tr -d ' ')
+  [ "$out_size" -gt 0 ]
+  rm -f "$input_file" "$result_file" "$stderr_file"
+}

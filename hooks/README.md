@@ -16,7 +16,7 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 | [hooks.json](hooks.json) | — | Hook definitions — maps events to shell commands |
 | [session-start](session-start) | SessionStart | Checks if workflow-config.yml exists; guides first-time setup |
 | [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit on `main`/`master` branches |
-| [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal |
+| [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal (timeout=10s: balances normalization benefit vs hook overhead; large outputs complete in <1s on typical hardware) |
 
 ### main-branch-guard.sh
 
