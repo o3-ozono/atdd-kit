@@ -248,6 +248,8 @@ All three — PO, Developer, and QA — review the Plan. Developer and QA agents
 
 > **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
 
+> **Circuit Breaker Check:** At the start of each Plan Review Round iteration (initial and on `needs-plan-revision` re-entry), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not proceed to plan review.
+
 1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number, approved AC set, unified Plan, and reference to the Issue comment containing prior phase context:
    - **PO:** alignment with ACs, absence of scope creep
    - **Developer:** validity of file structure, risks in implementation order, technical risk assessment, adequacy of Agent Composition (concreteness of count and focus) — returns review via SendMessage reply
@@ -290,6 +292,8 @@ All three — PO, Developer, and QA — review the Plan. Developer and QA agents
 
 > **Constraint:** New agent creation is prohibited in this phase (except variable-count agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
 
+> **Circuit Breaker Check:** At the start of each implementation iteration (initial `ready-to-go` entry and on `needs-pr-revision` re-entry), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not delegate to Developer.
+
 ### development / refactoring: Developer implements
 
 1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number, approved AC set, unified Plan, and reference to the Issue comments containing prior phase context — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
@@ -319,6 +323,8 @@ All three — PO, Developer, and QA — review the Plan. Developer and QA agents
 **Tools:** SendMessage
 
 > **Constraint:** New agent creation is prohibited in this phase (except variable-count Reviewer agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+
+> **Circuit Breaker Check:** At the start of each PR Review iteration (initial entry and after Developer fixes on `needs-pr-revision`), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not spawn Reviewer agents.
 
 ### development / bug / documentation / refactoring: Reviewer x N
 
@@ -395,3 +401,37 @@ Before launching autopilot, verify the Agent Teams prerequisites:
 1. `git checkout main && git pull origin main` to update
 2. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`
 3. Launch the selected mode
+
+## Circuit Breaker Integration
+
+The circuit breaker (`lib/circuit_breaker.sh`) prevents infinite loops by tracking progress and repeated errors across autopilot iterations. See `docs/guides/circuit-breaker.md` for full state machine specification.
+
+### Trigger Events
+
+Record signals at these points during autopilot execution:
+
+| Event | Signal | Command |
+|-------|--------|---------|
+| Agent returns `SKILL_STATUS: COMPLETE` | Progress | `bash lib/circuit_breaker.sh record_progress` |
+| Iteration ends with same label state (no label transition, e.g. still `needs-plan-revision`) | No progress | `bash lib/circuit_breaker.sh record_no_progress` |
+| Reviewer or QA raises the same issue fingerprint in consecutive rounds | Error | `bash lib/circuit_breaker.sh record_error <fingerprint>` |
+
+### Fingerprint Convention
+
+A fingerprint is a short `[a-zA-Z0-9_-]+` string identifying a recurring issue. Examples:
+
+- `missing-tests` — Reviewer consistently flags missing test coverage
+- `type-error-AC3` — same type error recurs on AC3 across iterations
+- `plan-scope-creep` — plan review repeatedly rejects scope creep
+
+Invalid characters (spaces, slashes, etc.) cause `record_error` to exit non-zero — use only `[a-zA-Z0-9_-]+`.
+
+### Manual Reset
+
+If the circuit breaker trips and you have resolved the underlying cause, reset it with:
+
+```bash
+bash lib/circuit_breaker.sh reset
+```
+
+Then resume autopilot: `/atdd-kit:autopilot <issue-number>`
