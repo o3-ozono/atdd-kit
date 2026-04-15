@@ -350,8 +350,8 @@ The PO performs cross-cutting checks and makes the merge decision.
    - Run: `gh pr view <PR> --json comments --jq '.comments[].body'` and check for review PASS comment
    - If no PASS comment found: STOP. Do NOT proceed to merge. Report: "QA review PASS not confirmed. Returning to Phase 4."
    - If PASS comment confirmed: proceed to Step 2
-2. Check CI status: `gh pr view <PR> --json statusCheckRollup`
-3. **Check merge conflicts:** `gh pr view <PR> --json mergeable`
+2. Check CI status and merge conflicts: `gh pr view <PR> --json statusCheckRollup,mergeable`
+3. **Evaluate merge conflicts from step 2:**
    - If `mergeable == CONFLICTING`:
      - Do NOT propose merge
      - Post warning: "⚠ PR has merge conflicts with main. Rebase required."
