@@ -138,3 +138,37 @@
 @test "#45-AC5d: qa.md does not reference 'Escalate to PO'" {
   ! grep -q 'Escalate to PO' agents/qa.md
 }
+
+# --- Issue #45: AC6 documentation verification ---
+
+@test "#45-AC6: README.md does not list PO as a spawned agent" {
+  ! grep -q '"PO"\|**PO**' README.md
+}
+
+@test "#45-AC6: README.md states Six agents are available" {
+  grep -qi 'six agents' README.md
+}
+
+@test "#45-AC6: README.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' README.md
+}
+
+@test "#45-AC6: README.ja.md states six agents available" {
+  grep -q '6つのエージェント\|Six agents\|six agents' README.ja.md
+}
+
+@test "#45-AC6: README.ja.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' README.ja.md
+}
+
+@test "#45-AC6: docs/workflow-detail.md states Six agents" {
+  grep -qi 'six agents' docs/workflow-detail.md
+}
+
+@test "#45-AC6: docs/workflow-detail.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' docs/workflow-detail.md
+}
+
+@test "#45-AC6: docs/workflow-detail.md Mermaid diagram has no PO node" {
+  ! grep -q 'PO\["PO"\]' docs/workflow-detail.md
+}
