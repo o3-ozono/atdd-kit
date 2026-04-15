@@ -138,6 +138,7 @@ atdd-kit/
 ├── docs/             # On-demand reference documents (loaded by skills when needed)
 │   ├── guides/       # How-to guides and reference materials (commit-guide, review-guide, etc.)
 │   ├── methodology/  # Methodology deep-dives (atdd-guide, bug-fix-process)
+│   ├── specs/        # User Story + AC spec files (Living Documentation, persisted beyond Issue closure)
 │   └── workflow/     # Workflow reference (workflow-detail, issue-ready-flow, autonomy-levels)
 ├── hooks/            # Claude Code hooks (session-start bootstrap)
 ├── scripts/          # Bash/Node utilities (version check)

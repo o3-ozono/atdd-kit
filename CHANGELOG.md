@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [1.13.2] - 2026-04-15
+
+### Added
+- `docs/specs/` directory with `README.md` and `TEMPLATE.md` for persisting User Story + Acceptance Criteria spec files beyond Issue closure. (#66)
+- `docs/methodology/us-ac-format.md`: US/AC spec file format definition (frontmatter schema, status transitions, filename convention, TBD persona rule, rename run-book). (#66)
+- `docs/specs/us-ac-format.md`: self-referencing sample spec for the format introduced in #66. (#66)
+- `tests/test_us_ac_format.bats`: structural bats tests for docs/specs/ and format compliance. (#66)
+
 ## [1.13.1] - 2026-04-15
 
 ### Fixed

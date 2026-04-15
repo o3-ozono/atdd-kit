@@ -25,6 +25,7 @@ Deep-dive methodology documents for ATDD and bug fix processes.
 | [atdd-guide.md](methodology/atdd-guide.md) | ATDD methodology guide for the atdd skill and Issue templates |
 | [bug-fix-process.md](methodology/bug-fix-process.md) | Bug fix workflow and triage process |
 | [test-mapping.md](methodology/test-mapping.md) | AC-to-test-layer mapping and Testing Quadrants reference |
+| [us-ac-format.md](methodology/us-ac-format.md) | US/AC spec file format definition (frontmatter schema, status transitions, filename convention) |
 
 ## workflow/
 
@@ -35,6 +36,16 @@ Workflow reference documents for the full Issue lifecycle.
 | [autonomy-levels.md](workflow/autonomy-levels.md) | Autonomy level definitions and escalation rules |
 | [issue-ready-flow.md](workflow/issue-ready-flow.md) | Issue Ready flow (discover + plan) reference |
 | [workflow-detail.md](workflow/workflow-detail.md) | Full workflow detail for session-start and autopilot |
+
+## specs/
+
+User Story + Acceptance Criteria spec files. Spec files persist ACs beyond Issue closure as Living Documentation.
+
+| Document | Description |
+|----------|-------------|
+| [README.md](specs/README.md) | Directory purpose, naming convention, and operational rules |
+| [TEMPLATE.md](specs/TEMPLATE.md) | Blank template for new spec files |
+| [us-ac-format.md](specs/us-ac-format.md) | Sample spec: US/AC format convention introduced in #66 |
 
 ## personas/
 
