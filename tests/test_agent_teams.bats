@@ -128,3 +128,13 @@
 
 # --- AC6: CHANGELOG updated ---
 # (AC6 CHANGELOG entry test removed -- the entry moved out of [Unreleased] when v0.9.0 was released)
+
+# --- Issue #45: po.md removal — AC5(d) agent escalation target verification ---
+
+@test "#45-AC5d: developer.md does not reference 'report to PO'" {
+  ! grep -q 'report to PO' agents/developer.md
+}
+
+@test "#45-AC5d: qa.md does not reference 'Escalate to PO'" {
+  ! grep -q 'Escalate to PO' agents/qa.md
+}

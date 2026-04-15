@@ -22,7 +22,7 @@ AUTOPILOT="commands/autopilot.md"
 }
 
 @test "AC-7: Prerequisites include agent file references" {
-  grep -A 10 "## Prerequisites" "$AUTOPILOT" | grep -q "po.md\|developer.md\|qa.md"
+  grep -A 10 "## Prerequisites" "$AUTOPILOT" | grep -q "developer.md\|qa.md"
 }
 
 # ---------------------------------------------------------------------------

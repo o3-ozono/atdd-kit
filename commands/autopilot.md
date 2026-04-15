@@ -29,7 +29,7 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 
 ## Prerequisites
 - `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
-- Agent definitions must exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as the PO orchestrator directly — no po.md required.
+- Agent definitions must exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as the PO orchestrator directly.
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` must be set in `.claude/settings.local.json` `env` (auto-configured by session-start)
 
 ## Usage
