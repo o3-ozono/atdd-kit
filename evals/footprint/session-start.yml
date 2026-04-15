@@ -1,0 +1,20 @@
+files:
+  - skills/session-start/SKILL.md
+  - rules/atdd-kit.md
+  - CLAUDE.md
+dynamic:
+  first_run:
+    script: scripts/check-plugin-version.sh
+    args:
+      - tests/fixtures/footprint/dynamic
+      - tests/fixtures/footprint/dynamic/cache-first-run
+  no_update:
+    script: scripts/check-plugin-version.sh
+    args:
+      - tests/fixtures/footprint/dynamic
+      - tests/fixtures/footprint/dynamic/cache-no-update
+  updated:
+    script: scripts/check-plugin-version.sh
+    args:
+      - tests/fixtures/footprint/dynamic
+      - tests/fixtures/footprint/dynamic/cache-updated

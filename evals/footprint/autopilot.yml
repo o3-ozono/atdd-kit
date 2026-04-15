@@ -1,0 +1,7 @@
+files:
+  - commands/autopilot.md
+  - skills/discover/SKILL.md
+  - skills/plan/SKILL.md
+  - skills/atdd/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/ship/SKILL.md
