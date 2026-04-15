@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.12.1] - 2026-04-15
+
+### Added
+- `rules/atdd-kit.md`: EN/JAバリアント存在時のEN優先読み取りルールを追加。`*.ja.md`/`*-ja.yml`はLLMが編集・同期時のみ読む。(#77)
+- `skills/issue/SKILL.md`, `skills/bug/SKILL.md`: ENテンプレートのみを使用する旨と`-ja.yml`バリアントは人間のGitHub Web UI用である旨の注記を追加。(#77)
+- `tests/test_i18n_language_resolution.bats`: EN優先読み取りルールの存在を検証するテストを追加。(#77)
+- `tests/test_bilingual_templates.bats`: SKILL.mdのEN-only注記と-ja.yml除外を検証するテストを追加。(#77)
+
 ## [1.12.0] - 2026-04-15
 
 ### Added

@@ -40,3 +40,21 @@
 @test "PR template exists in en" {
   [[ -f "templates/pr/en/pull_request_template.md" ]]
 }
+
+# --- SKILL.md EN-only template usage notes ---
+
+@test "skills/issue/SKILL.md references EN template path only" {
+  grep -q 'templates/issue/en' skills/issue/SKILL.md
+}
+
+@test "skills/issue/SKILL.md has note that -ja.yml variants are human-only" {
+  grep -q '\-ja\.yml.*human' skills/issue/SKILL.md
+}
+
+@test "skills/bug/SKILL.md references EN template path only" {
+  grep -q 'templates/issue/en' skills/bug/SKILL.md
+}
+
+@test "skills/bug/SKILL.md has note that -ja.yml is human-only" {
+  grep -q '\-ja\.yml.*human' skills/bug/SKILL.md
+}

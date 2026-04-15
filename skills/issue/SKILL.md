@@ -66,7 +66,7 @@ Recommended: [inferred priority] — reply 'ok' to accept, or provide alternativ
 ## Step 3: Create Issue
 
 - Register with `gh issue create`
-- Template: follow `${CLAUDE_PLUGIN_ROOT}/templates/issue/en/<type>.yml` format
+- Template: follow `${CLAUDE_PLUGIN_ROOT}/templates/issue/en/<type>.yml` format (-ja.yml variants are human-only; do not use)
 - Add `type:` label
 - Do NOT add `in-progress` label (it is added when work actually starts, e.g. discover)
 

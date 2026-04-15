@@ -33,7 +33,7 @@ Ask one question at a time (never batch multiple questions):
 
 ## Phase 2: Issue Creation
 
-- Create Issue following the `${CLAUDE_PLUGIN_ROOT}/templates/issue/en/bug-report.yml` format
+- Create Issue following the `${CLAUDE_PLUGIN_ROOT}/templates/issue/en/bug-report.yml` format (-ja.yml is human-only; do not use)
 - Register with `gh issue create`
 - Do NOT add `in-progress` label (it is added when work actually starts, e.g. discover)
 

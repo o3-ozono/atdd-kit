@@ -35,3 +35,5 @@ Every change includes doc updates (`${CLAUDE_PLUGIN_ROOT}/docs/guides/doc-sync-c
 
 ## Guides
 `${CLAUDE_PLUGIN_ROOT}/docs/guides/commit-guide.md` | `${CLAUDE_PLUGIN_ROOT}/docs/workflow/workflow-detail.md` | `${CLAUDE_PLUGIN_ROOT}/docs/guides/review-guide.md` | Issue Ready: `atdd-kit:discover`
+
+When EN/JA variants exist (`*.ja.md`, `*-ja.yml`), read EN only. Read JA only when editing or syncing.

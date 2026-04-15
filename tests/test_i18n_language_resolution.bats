@@ -24,3 +24,7 @@
   lines=$(wc -l < rules/atdd-kit.md)
   [[ "$lines" -le 40 ]]
 }
+
+@test "rules/atdd-kit.md contains EN-first read rule for bilingual variants" {
+  grep -q 'EN.*JA\|EN only\|Read EN\|read EN\|EN variant' rules/atdd-kit.md
+}
