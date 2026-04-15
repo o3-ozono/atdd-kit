@@ -142,7 +142,8 @@
 # --- Issue #45: AC6 documentation verification ---
 
 @test "#45-AC6: README.md does not list PO as a spawned agent" {
-  ! grep -q '"PO"\|**PO**' README.md
+  ! grep -q '"PO"' README.md
+  ! grep -q '\*\*PO\*\*' README.md
 }
 
 @test "#45-AC6: README.md states Six agents are available" {
