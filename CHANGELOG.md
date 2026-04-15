@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+- `agents/po.md` deleted — the PO agent definition was a redundant metadata shell (1-line system_prompt + tools list). main Claude already fulfills the PO role directly in autopilot, so the separate agent definition was misleading. All references updated to reflect main Claude as the orchestrator. (#45)
+
+### Changed (#45)
+- `commands/autopilot.md`: frontmatter description updated from "PO-led" to "Autopilot end-to-end workflow"; po.md file path references removed from Prerequisites, Phase 0.9, and Session Initialization; "main Claude acts as PO directly" added.
+- `agents/developer.md`: "report to PO" → "report to team-lead (the autopilot orchestrator — main Claude)"
+- `agents/qa.md`: "Escalate to PO" → "Escalate to team-lead (team-lead is the autopilot orchestrator — main Claude)"
+- `agents/README.md`: po.md row removed from Available Agents table; Via Autopilot and Standalone sections updated.
+- `README.md`, `README.ja.md`: "PO agent" → "main Claude as orchestrator"; "Seven agents" → "Six agents"; Agent Composition Table PO column → "main Claude"; Mermaid diagram PO node updated.
+- `docs/workflow-detail.md`, `docs/getting-started.md`, `commands/README.md`, `skills/README.md`: PO references updated to reflect main Claude as orchestrator.
+
 ### Added
 - `hooks/main-branch-guard.sh`: PreToolUse hook that denies Edit/Write/MultiEdit/NotebookEdit on `main`/`master` branches. Distributed via `hooks/hooks.json` so all atdd-kit projects receive it automatically. Fail-safe: non-git directories, detached HEAD, and git unavailability all pass through with `{}`. (#38)
 
@@ -33,6 +44,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Rationale
 The original Issue #42 was a one-off bug ("Phase 4 Reviewer Decision Trail file not committed"), but investigation showed the underlying mechanism was over-engineered: auto-generated files were not actually being read, the same information already existed in Issue / PR comments, and the write / commit responsibility was unclear across roles. Removing the mechanism eliminates the bug class entirely and aligns the workflow with where discussion already happens.
+
+## [1.11.1] - 2026-04-15
+
+### Removed
+- `agents/po.md` deleted — the PO agent definition was a redundant metadata shell (1-line system_prompt + tools list). main Claude already fulfills the PO role directly in autopilot. (#45)
+
+### Changed
+- `commands/autopilot.md`: frontmatter description updated; po.md file path references removed from Prerequisites, Phase 0.9, and Session Initialization. (#45)
+- `agents/developer.md`: "report to PO" → "report to team-lead (the autopilot orchestrator — main Claude)". (#45)
+- `agents/qa.md`: "Escalate to PO" → "Escalate to team-lead (team-lead is the autopilot orchestrator — main Claude)". (#45)
+- `agents/README.md`, `README.md`, `README.ja.md`, `docs/workflow-detail.md`, `docs/getting-started.md`, `commands/README.md`, `skills/README.md`: PO references updated; "Seven agents" → "Six agents"; Agent Composition Table PO → "main Claude". (#45)
 
 ## [1.11.0] - 2026-04-15
 

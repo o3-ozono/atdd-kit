@@ -1,7 +1,7 @@
 {
   "name": "atdd-kit",
   "description": "Acceptance Test Driven Development toolkit for Claude Code: discover → plan → ATDD → verify → ship",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "author": {
     "name": "o3-ozono"
   },
