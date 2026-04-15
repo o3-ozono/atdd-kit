@@ -4,6 +4,7 @@ node_modules/
 *.swo
 .claude/settings.local.json
 .claude/worktrees/
+.claude/cb-state.json
 .tmp/
 .env*
 *.pem

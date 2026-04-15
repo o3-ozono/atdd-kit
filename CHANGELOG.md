@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-04-15
+
+### Changed
+- `.gitignore`: Added `.claude/cb-state.json` to prevent accidentally committing circuit breaker runtime state files. (#92)
+
 ## [1.14.0] - 2026-04-15
 
 ### Added
