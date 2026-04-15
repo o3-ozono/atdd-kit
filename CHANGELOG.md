@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `docs/methodology/test-mapping.md`: new AC-to-test-layer mapping guide for the plan skill. Documents 1 AC = 1 Outer Loop cycle rule, Testing Quadrants (Q1-Q4), Double-Loop TDD Mermaid diagram, AC wording → test layer decision table, and usage guide for plan Step 3. (#67)
+
+### Changed
+- `docs/methodology/atdd-guide.md`: Double-Loop TDD section updated with cross-reference to test-mapping.md and inline AC correspondence annotation. (#67)
+- `docs/README.md`: test-mapping.md entry added to methodology/ table. (#67)
+
 ### Removed
 - `agents/po.md` deleted — the PO agent definition was a redundant metadata shell (1-line system_prompt + tools list). main Claude already fulfills the PO role directly in autopilot, so the separate agent definition was misleading. All references updated to reflect main Claude as the orchestrator. (#45)
 
