@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # tests/test_footprint_eval.bats
-# Footprint regression test suite -- 7 groups covering AC1-AC7
+# Footprint regression test suite -- 7 groups (G1-G7) covering AC1-AC7
 # FOOTPRINT_EVAL_DIR env var overrides the evals/footprint directory.
 # All tests use $BATS_TEST_TMPDIR/evals/footprint to avoid polluting real baseline.
 
@@ -173,6 +173,11 @@ teardown() {
   run bash "$SCRIPT" --update
   [ "$status" -eq 0 ]
   [ -f "$FOOTPRINT_EVAL_DIR/baseline.json" ]
+  # Verify multiple entries were written (simple + multi + math_* + dynamic = 6 checkpoints)
+  grep -q '"simple"' "$FOOTPRINT_EVAL_DIR/baseline.json"
+  grep -q '"multi"' "$FOOTPRINT_EVAL_DIR/baseline.json"
+  # JSON must remain valid after multi-entry write
+  python3 -c "import json,sys; json.load(open('$FOOTPRINT_EVAL_DIR/baseline.json'))"
 }
 
 # =============================================================================
@@ -298,11 +303,13 @@ JSON
 }
 
 @test "G6: malformed YAML (missing files: key) exits 2" {
+  cp "$FIXTURES_DIR/checkpoints/malformed.yml" "$FOOTPRINT_EVAL_DIR/malformed.yml"
   run bash "$SCRIPT" measure malformed
   [ "$status" -eq 2 ]
 }
 
 @test "G6: missing referenced file exits 2" {
+  cp "$FIXTURES_DIR/checkpoints/missing_file.yml" "$FOOTPRINT_EVAL_DIR/missing_file.yml"
   run bash "$SCRIPT" measure missing_file
   [ "$status" -eq 2 ]
 }

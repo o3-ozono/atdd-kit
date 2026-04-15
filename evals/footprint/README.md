@@ -70,6 +70,16 @@ When `baseline_bytes == 0`, the percent threshold is skipped (no div-by-zero).
 - Update it in the same PR that changes a checkpoint or adds files.
 - On merge conflict: re-run `scripts/measure-footprint.sh --update` and commit.
 
+## Adding and Splitting Checkpoints
+
+Each `.yml` file in this directory represents one **checkpoint** — a logical group of files loaded together in a single context invocation.
+
+**Naming:** Use the entry-point name (e.g. `session-start.yml`, `autopilot.yml`).
+
+**Split criterion:** When the number of checkpoint files reaches **5 or more**, consider reorganising them into feature-group subdirectories (e.g. `evals/footprint/core/`, `evals/footprint/commands/`). This prevents the baseline.json and YAML listing from becoming hard to scan. Each subdirectory would have its own `baseline.json`.
+
+There is no hard rule — use judgement. The goal is to keep any single directory to fewer than ~5 checkpoints so that a diff of `baseline.json` remains readable in a PR.
+
 ## Token Heuristic
 
 `estimated_tokens = ceil(bytes / 3.6)`

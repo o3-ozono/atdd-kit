@@ -45,7 +45,7 @@ BASELINE_FILE="${EVAL_DIR}/baseline.json"
 
 compute_tokens() {
   local bytes="$1"
-  awk "BEGIN { x = ${bytes} / 3.6; t = int(x); print (t < x) ? t+1 : t }"
+  awk -v b="$bytes" 'BEGIN { x = b / 3.6; t = int(x); print (t < x) ? t+1 : t }'
 }
 
 # ---------------------------------------------------------------------------
@@ -302,7 +302,12 @@ baseline_write() {
     local buf=""
     while IFS= read -r raw; do
       if printf '%s' "$raw" | grep -q "\"${name}\":"; then
-        printf '%s\n' "$entry" >> "$tmp"
+        # Preserve trailing comma if the original line had one (means more entries follow)
+        if [[ "${raw: -1}" == "," ]]; then
+          printf '%s,\n' "$entry" >> "$tmp"
+        else
+          printf '%s\n' "$entry" >> "$tmp"
+        fi
         found=1
       else
         if [[ "$raw" == "}" && "$found" -eq 0 ]]; then
@@ -384,11 +389,11 @@ do_check() {
   # Percent threshold — skip when baseline_bytes == 0
   if [[ "$bb" -gt 0 ]]; then
     local over
-    over=$(awk "BEGIN { print (${cb} > ${bb} * 1.10) ? 1 : 0 }")
+    over=$(awk -v cb="$cb" -v bb="$bb" 'BEGIN { print (cb > bb * 1.10) ? 1 : 0 }')
     if [[ "$over" -eq 1 ]]; then
       regression=1
       local pct
-      pct=$(awk "BEGIN { printf \"%.1f\", (${cb} - ${bb}) * 100.0 / ${bb} }")
+      pct=$(awk -v cb="$cb" -v bb="$bb" 'BEGIN { printf "%.1f", (cb - bb) * 100.0 / bb }')
       reason="bytes +${pct}% > 10%"
     fi
   fi
