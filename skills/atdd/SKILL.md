@@ -119,7 +119,10 @@ Sunk cost is not an argument. Keeping unverified code is technical debt from min
 
 1. Read the test strategy and implementation strategy from the Issue
 2. Create branch: `git switch -c feat/<issue-number>-<slug>`
-   - **WARNING: Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting.** Always push the feature branch directly.
+   - **WARNING: Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting.**
+     This leaves commits on the worktree branch (`worktree-autopilot-{N}`) unreachable from main,
+     causing `ExitWorktree` to fail with "Worktree has N commits" unless `discard_changes: true` is forced.
+     Always push the feature branch directly: `git push origin feat/<issue-number>-<slug>`.
 3. Empty commit for Draft PR: `git commit --allow-empty -m "chore: start work on #<issue>"`
 4. Push and create Draft PR
 5. For each AC:
