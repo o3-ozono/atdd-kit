@@ -62,6 +62,8 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_task_type_workflow.bats | Task-type-specific workflow branching |
 | test_legacy_terms.bats | Legacy term elimination verification |
 | test_persona_guide.bats | Persona guide documentation validation (Issue #65) |
+| test_circuit_breaker.bats | Circuit breaker unit tests — AC1–AC8 (37 cases, Issue #56) |
+| test_autopilot_cb_integration.bats | Circuit breaker autopilot.md integration — AC9 (8 cases, Issue #56) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

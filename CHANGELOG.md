@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-04-15
+
+### Added
+- `lib/circuit_breaker.sh`: Three-state circuit breaker (CLOSED/HALF\_OPEN/OPEN) for autopilot infinite-loop prevention. Tracks `no_progress` (threshold 3) and repeated error fingerprints (threshold 5 consecutive). State persisted to `.claude/cb-state.json` (cwd-relative, worktree-scoped). No external dependencies (pure bash). (#56)
+- `lib/README.md`: Directory README for the new `lib/` directory. (#56)
+- `docs/guides/circuit-breaker.md`: Full specification — states, thresholds, subcommand reference, trigger events, fingerprint convention, and reset procedure. (#56)
+- `tests/test_circuit_breaker.bats`: Unit tests for AC1–AC8 (37 cases). (#56)
+- `tests/test_autopilot_cb_integration.bats`: Integration tests verifying CB check insertion in `commands/autopilot.md` at all 3 iteration entry points (AC9, 8 cases). (#56)
+- `commands/autopilot.md`: Circuit Breaker Check blockquotes at Plan Review Round, Phase 3, and Phase 4 entry points. Circuit Breaker Integration section with trigger event table and fingerprint convention. (#56)
+
 ## [1.13.2] - 2026-04-15
 
 ### Added
