@@ -17,10 +17,6 @@
   grep -q 'atdd-kit:verify' agents/developer.md
 }
 
-@test "agents/po.md has name field in frontmatter" {
-  grep -q 'name:' agents/po.md
-}
-
 @test "agents/qa.md has name field in frontmatter" {
   grep -q 'name:' agents/qa.md
 }

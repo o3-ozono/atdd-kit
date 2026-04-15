@@ -1,5 +1,5 @@
 ---
-description: "PO-led end-to-end workflow. Orchestrates discover → plan → implement → review → merge with task-type-specific Agent Teams."
+description: "Autopilot end-to-end workflow. main Claude acts as orchestrator, driving discover → plan → implement → review → merge with task-type-specific Agent Teams."
 ---
 
 # Autopilot — PO-Led End-to-End Workflow
@@ -29,7 +29,7 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 
 ## Prerequisites
 - `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
-- Agent definitions must exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (po.md, developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md)
+- Agent definitions must exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as the PO orchestrator directly.
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` must be set in `.claude/settings.local.json` `env` (auto-configured by session-start)
 
 ## Usage
@@ -113,7 +113,7 @@ Bootstrap the Agent Teams infrastructure before any phase execution. This phase 
 
 1. Use ToolSearch to fetch full schemas for `TeamCreate`, `TeamDelete`, `SendMessage`, and `EnterWorktree` (deferred tools require explicit schema resolution before use)
 2. Use TeamCreate to create team `autopilot-{issue_number}` — record the returned team_name for all subsequent Agent tool calls
-3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`. Available agents: po.md, developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md. The system_prompt is the markdown body; the `tools` and `skills` fields in frontmatter control agent capabilities.
+3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`. Available agents: developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md. main Claude acts as the PO orchestrator directly. The system_prompt is the markdown body; the `tools` and `skills` fields in frontmatter control agent capabilities.
 4. Use EnterWorktree with name `autopilot-{issue_number}` to enter an isolated worktree — all subsequent phases (1–5) execute inside this worktree
 5. **Mid-phase resume:** If Phase 0.5 determined a start phase beyond AC Review Round, re-spawn the required agents for the task type before proceeding. Use the Agent Composition Table to determine which agents are needed for the current phase and task type. Load prior phase context by reading Issue/PR comments via `gh issue view` / `gh pr view`.
    - Phase 1 (discover) or AC Review Round: no re-spawn needed — agents are created in AC Review Round.
@@ -387,7 +387,7 @@ Before launching autopilot, verify the Agent Teams prerequisites:
 
 1. `.claude/workflow-config.yml` exists
    - If missing: suggest starting a new session to trigger auto-setup
-2. Verify agent definitions exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (po.md, developer.md, qa.md)
+2. Verify agent definitions exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md)
 3. Verify Agent Teams tools are available: use ToolSearch to confirm `TeamCreate` and `SendMessage` are resolvable
    - If unavailable: STOP — "Agent Teams tools (TeamCreate, SendMessage) not found. Verify that `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set in `.claude/settings.local.json` `env`, then restart the session."
 

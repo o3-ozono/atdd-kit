@@ -164,7 +164,7 @@ Once you're comfortable with the manual workflow, try **autopilot** for hands-of
 /atdd-kit:autopilot 42
 ```
 
-Autopilot runs PO, Dev, and QA as Agent Teams teammates. The PO orchestrates, Dev implements, and QA reviews — all coordinated automatically.
+Autopilot runs main Claude as orchestrator with Dev and QA as Agent Teams teammates. main Claude orchestrates, Dev implements, and QA reviews — all coordinated automatically.
 
 ### Bug Reports
 

@@ -45,7 +45,6 @@
 }
 
 @test "AC3: system_prompt is now in agents/ directory" {
-  grep -q 'system_prompt\|You are' agents/po.md
   grep -q 'system_prompt\|You are' agents/developer.md
   grep -q 'system_prompt\|You are' agents/qa.md
 }
@@ -129,3 +128,48 @@
 
 # --- AC6: CHANGELOG updated ---
 # (AC6 CHANGELOG entry test removed -- the entry moved out of [Unreleased] when v0.9.0 was released)
+
+# --- Issue #45: po.md removal — AC5(d) agent escalation target verification ---
+
+@test "#45-AC5d: developer.md does not reference 'report to PO'" {
+  ! grep -q 'report to PO' agents/developer.md
+}
+
+@test "#45-AC5d: qa.md does not reference 'Escalate to PO'" {
+  ! grep -q 'Escalate to PO' agents/qa.md
+}
+
+# --- Issue #45: AC6 documentation verification ---
+
+@test "#45-AC6: README.md does not list PO as a spawned agent" {
+  ! grep -q '"PO"' README.md
+  ! grep -q '\*\*PO\*\*' README.md
+}
+
+@test "#45-AC6: README.md states Six agents are available" {
+  grep -qi 'six agents' README.md
+}
+
+@test "#45-AC6: README.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' README.md
+}
+
+@test "#45-AC6: README.ja.md states six agents available" {
+  grep -q '6つのエージェント\|Six agents\|six agents' README.ja.md
+}
+
+@test "#45-AC6: README.ja.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' README.ja.md
+}
+
+@test "#45-AC6: docs/workflow-detail.md states Six agents" {
+  grep -qi 'six agents' docs/workflow-detail.md
+}
+
+@test "#45-AC6: docs/workflow-detail.md states main Claude as orchestrator" {
+  grep -qi 'main Claude' docs/workflow-detail.md
+}
+
+@test "#45-AC6: docs/workflow-detail.md Mermaid diagram has no PO node" {
+  ! grep -q 'PO\["PO"\]' docs/workflow-detail.md
+}
