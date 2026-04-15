@@ -28,6 +28,7 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_discover_autopilot_approval.bats | discover autopilot approval flow |
 | test_doc_agent_teams_sync.bats | Documentation and Agent Teams sync |
 | test_eval_framework.bats | Skill eval framework |
+| test_footprint_eval.bats | Static context/token footprint regression tests (AC1-AC7) |
 | test_gate_integration.bats | Skill gate integration |
 | test_global_content_migration.bats | Global content migration validation |
 | test_i18n_language_resolution.bats | Language resolution removal verification |

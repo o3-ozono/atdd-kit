@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-04-15
+
+### Added
+- `scripts/measure-footprint.sh`: New script for static context/token footprint measurement. Supports `measure`, `--check`, and `--update` operations with JSON output and regression detection (+10% bytes OR +500 tokens threshold). (#76)
+- `evals/footprint/session-start.yml`, `evals/footprint/autopilot.yml`: Checkpoint definitions for high-frequency entry points. (#76)
+- `evals/footprint/baseline.json`: Initial baseline for session-start and autopilot checkpoints. (#76)
+- `evals/footprint/README.md`: Schema documentation distinguishing footprint eval from behavioral pass_rate eval. (#76)
+- `tests/test_footprint_eval.bats`: 48 BATS tests covering all 7 groups (happy path / math / lifecycle / threshold / dynamic / errors / E2E) + B1 guard. (#76)
+- `.github/workflows/pr.yml`: `evals/**` added to `config` paths-filter so footprint CI runs on checkpoint/baseline changes. (#76)
+
 ## [1.14.1] - 2026-04-15
 
 ### Changed

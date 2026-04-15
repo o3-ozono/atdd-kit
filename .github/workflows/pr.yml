@@ -46,6 +46,7 @@ jobs:
               - 'agents/**'
               - 'hooks/**'
               - '.claude-plugin/**'
+              - 'evals/**'
 
   build-and-test:
     needs: changes

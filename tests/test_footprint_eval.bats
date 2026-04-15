@@ -4,6 +4,8 @@
 # FOOTPRINT_EVAL_DIR env var overrides the evals/footprint directory.
 # All tests use $BATS_TEST_TMPDIR/evals/footprint to avoid polluting real baseline.
 
+bats_require_minimum_version 1.5.0
+
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/measure-footprint.sh"
 FIXTURES_DIR="$REPO_ROOT/tests/fixtures/footprint"
@@ -288,10 +290,11 @@ JSON
 }
 
 @test "G6: error messages go to stderr not stdout" {
-  run bash "$SCRIPT" measure nonexistent_checkpoint_xyz_abc 2>/dev/null
+  run --separate-stderr bash "$SCRIPT" measure nonexistent_checkpoint_xyz_abc
   [ "$status" -eq 2 ]
-  # stdout should be empty on error
+  # stdout should be empty on error; error text must be on stderr
   [ -z "$output" ]
+  echo "$stderr" | grep -qi 'error\|not found'
 }
 
 @test "G6: --check without checkpoint name and missing baseline exits 2" {
