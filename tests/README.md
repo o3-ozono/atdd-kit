@@ -64,6 +64,11 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_persona_guide.bats | Persona guide documentation validation (Issue #65) |
 | test_circuit_breaker.bats | Circuit breaker unit tests — AC1–AC8 (37 cases, Issue #56) |
 | test_autopilot_cb_integration.bats | Circuit breaker autopilot.md integration — AC9 (8 cases, Issue #56) |
+| test_gh_field_audit.bats | gh --json field minimization validation (AC1, Issue #85) |
+| test_bash_output_normalizer.bats | Bash PostToolUse output normalizer (AC3a/b/c + AC5, Issue #85) |
+| test_autopilot_context_reference.bats | Agent spawn reference-only context validation (AC2, Issue #85) |
+| test_hook_distribution.bats | PostToolUse hook plugin distribution (AC6, Issue #85) |
+| test_token_measurement_tooling.bats | Token reduction measurement tooling (AC4a, Issue #85) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

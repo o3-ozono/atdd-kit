@@ -10,6 +10,7 @@ Utility scripts used by commands, skills, and CI. All scripts are pure bash (or 
 | [start-session.sh](start-session.sh) | Starts Claude Code session | Run manually to start a session |
 | [pr-screenshot-table.sh](pr-screenshot-table.sh) | Adds before/after screenshot comparison tables to PR descriptions | Called during PR creation |
 | [upload-image-to-github.mjs](upload-image-to-github.mjs) | Uploads images to GitHub via PR comment and retrieves URLs | Called by `pr-screenshot-table.sh` |
+| [measure-token-reduction.sh](measure-token-reduction.sh) | Measures token reduction between before/after log files using byte-count proxy | Run manually for AC4 verification |
 
 iOS-specific scripts are in `addons/ios/scripts/`. See [addons/ios/README.md](../addons/ios/README.md).
 
