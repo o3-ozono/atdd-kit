@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_circuit_breaker.bats`: Unit tests for AC1–AC8 (37 cases). (#56)
 - `tests/test_autopilot_cb_integration.bats`: Integration tests verifying CB check insertion in `commands/autopilot.md` at all 3 iteration entry points (AC9, 8 cases). (#56)
 - `commands/autopilot.md`: Circuit Breaker Check blockquotes at Plan Review Round, Phase 3, and Phase 4 entry points. Circuit Breaker Integration section with trigger event table and fingerprint convention. (#56)
+- `hooks/bash-output-normalizer.sh`: New PostToolUse hook that normalizes Bash tool output — JSON minify, 3+ consecutive blank line collapse to 2, trailing whitespace removal per line. Reduces token consumption from gh/Bash tool outputs. (#85)
+- `hooks/hooks.json`: PostToolUse section added with Bash-only matcher and 10s timeout, distributing `bash-output-normalizer.sh` via plugin mechanism. (#85)
+- `scripts/measure-token-reduction.sh`: New script for measuring token reduction between before/after log files using byte-count proxy. (#85)
+- `fixtures/token-reduction/`: Fixed mock log fixtures for reproducible AC4b measurement (baseline/ and after/ directories). (#85)
+- `docs/guides/token-reduction-results.md`: Token reduction measurement results: AC1 25.8%, AC2 75.3%, AC3 23.9% — all exceed baseline targets. (#85)
+
+### Changed
+- `skills/session-start/SKILL.md`: Phase 1-B `gh pr view` call removes unused `mergeStateStatus` field, reducing fetched data by ~3%. (#85)
+- `commands/autopilot.md`: Phase 5 merges separate `--json statusCheckRollup` and `--json mergeable` calls into one `--json statusCheckRollup,mergeable` call. Phase 2, Plan Review Round, and Phase 3 SendMessage/spawn instructions updated to use reference-based context (Issue number + comment reference) instead of full-text injection. (#85)
 
 ## [1.13.2] - 2026-04-15
 

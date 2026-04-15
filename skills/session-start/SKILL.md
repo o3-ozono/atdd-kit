@@ -36,7 +36,7 @@ For speed, run independent information-gathering steps **in parallel**. However,
 
 ### B. Open PRs and CI
 1. `gh pr list --author @me --state open` to list open PRs
-2. For open PRs -> `gh pr view <number> --json title,state,reviewDecision,statusCheckRollup,mergeable,mergeStateStatus` for CI results and conflict status
+2. For open PRs -> `gh pr view <number> --json title,state,reviewDecision,statusCheckRollup,mergeable` for CI results and conflict status
 
 ### C. GitHub Issues
 - `gh issue list --state open --limit 20` to list open Issues

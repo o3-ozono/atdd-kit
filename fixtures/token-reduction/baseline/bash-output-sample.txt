@@ -1,0 +1,21 @@
+{
+    "number": 85,
+    "title": "feat: Tamp-inspired token reduction in atdd-kit plugin",
+    "state": "OPEN",
+    "labels": [
+        {
+            "name": "in-progress"
+        },
+        {
+            "name": "type:development"
+        }
+    ],
+    "body": "## User Story\n\nAs an atdd-kit user...",
+    "comments": []
+}
+
+
+Cloning into '/tmp/test-repo'...
+remote: Enumerating objects: 1234, done.
+remote: Counting objects: 100% (1234/1234), done.
+
