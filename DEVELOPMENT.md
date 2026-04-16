@@ -34,7 +34,7 @@ When editing LLM-facing files, apply tight English style to minimize token count
 6. Convert polite instructions ("You MUST/should/need to") to imperatives ("Verify X", "Run Y").
 7. Compress error handling to 1 sentence.
 
-Protected elements (never modify): YAML frontmatter fields, code block contents, XML guard tag blocks (`<HARD-GATE>`, `<AUTOPILOT-GUARD>`, `<SUBAGENT-STOP>`), step numbers, and `If X:` conditional structures.
+Protected elements: YAML frontmatter fields, code block contents, XML guard tag blocks (`<HARD-GATE>`, `<AUTOPILOT-GUARD>`, `<SUBAGENT-STOP>`) — structure preserved and text inside may be tightened provided BATS-verified strings are not altered, step numbers, and `If X:` conditional structures.
 
 ### Zero Dependencies
 
