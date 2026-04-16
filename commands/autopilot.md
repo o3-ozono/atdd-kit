@@ -367,9 +367,14 @@ The PO performs cross-cutting checks and makes the merge decision.
    - If `mergeable == MERGEABLE`: proceed to merge
 4. Merge with squash: `gh pr merge <PR> --squash`
 5. Remove `in-progress` label from Issue
-6. Exit worktree: use ExitWorktree with action: "remove" to delete the worktree and return to the repository root
-7. Delete team: use TeamDelete to remove the `autopilot-{issue_number}` team and its task list
-8. Cleanup: `git checkout main && git pull origin main`
+6. Switch back to the worktree base branch before exiting:
+   ```bash
+   git switch worktree-autopilot-{issue_number}
+   ```
+   This ensures ExitWorktree sees no divergent commits on the base branch and can remove the worktree without `discard_changes: true`.
+7. Exit worktree: use ExitWorktree with action: "remove" to delete the worktree and return to the repository root
+8. Delete team: use TeamDelete to remove the `autopilot-{issue_number}` team and its task list
+9. Cleanup: `git checkout main && git pull origin main`
 
 ## Utility Mode
 

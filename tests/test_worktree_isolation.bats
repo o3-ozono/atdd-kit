@@ -88,3 +88,23 @@ SESSION_START="skills/session-start/SKILL.md"
 @test "AC5: EnterWorktree name includes issue_number for uniqueness" {
   grep -A 30 "## Phase 0.9" "$AUTOPILOT" | grep "EnterWorktree" | grep -q "issue_number\|{issue_number}"
 }
+
+# ---------------------------------------------------------------------------
+# Issue #97: Phase 5 に元ブランチ switch 手順が存在する
+# ---------------------------------------------------------------------------
+
+@test "Issue97-AC1: Phase 5 contains git switch worktree-autopilot- pattern" {
+  grep -A 40 "## Phase 5" "$AUTOPILOT" | grep -q 'git switch worktree-autopilot-'
+}
+
+@test "Issue97-AC2: git switch appears before ExitWorktree in Phase 5" {
+  start=$(grep -n "^## Phase 5" "$AUTOPILOT" | head -1 | cut -d: -f1)
+  end=$(awk "NR>$start && /^## /" "$AUTOPILOT" | head -1)
+  end_line=$(grep -n "^## " "$AUTOPILOT" | awk -F: -v s="$start" '$1>s {print $1; exit}')
+  phase5=$(sed -n "${start},${end_line}p" "$AUTOPILOT")
+  switch_line=$(echo "$phase5" | grep -n 'git switch worktree-autopilot-' | head -1 | cut -d: -f1)
+  exit_line=$(echo "$phase5" | grep -n 'ExitWorktree.*remove\|ExitWorktree.*action.*remove' | head -1 | cut -d: -f1)
+  [ -n "$switch_line" ]
+  [ -n "$exit_line" ]
+  [ "$switch_line" -lt "$exit_line" ]
+}
