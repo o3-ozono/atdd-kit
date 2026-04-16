@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-04-16
+
+### Added
+- `docs/methodology/us-quality-standard.md`: New User Story quality standard document with MUST/SHOULD/Anti-pattern/LLM guidelines sections. MUST criteria enforce existing format rules (persona reference, 3+ AC count, independent verifiability). SHOULD criteria apply QUS-derived quality goals (well-formed, atomic, minimal, problem-oriented, unambiguous). Anti-pattern reference covers 3 smell categories with 9 bad examples and suggested rewrites. LLM guidelines scope overview with defer note linking to Issue #69. (#68)
+- `docs/methodology/README.md`: New directory index listing all methodology documents with one-line descriptions. (#68)
+- `tests/test_us_quality_standard.bats`: 29 BATS tests covering all 6 ACs and language policy for the new quality standard. (#68)
+
 ## [1.16.1] - 2026-04-16
 
 ### Fixed
