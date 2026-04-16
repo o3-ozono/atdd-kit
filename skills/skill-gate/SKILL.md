@@ -9,44 +9,38 @@ If you were dispatched as a subagent to execute a specific task, skip this skill
 
 # Skill Gate
 
-Ensure governance rules are enforced before Claude begins direct work. This skill must check rules before any action, including clarifying questions.
+Enforce governance rules before any action, including clarifying questions.
 
 ## Pre-check: Issue Work Routing
 
-Check if the user's message is an Issue-targeted work instruction:
-
-1. **Match pattern:** The message contains an Issue reference (`#N` or `Issue N`) **AND** a work-start verb (e.g., "go ahead", "implement", "fix", "resume", "handle", "do it", "get started", "implement", "fix", "work on", "start", "resume", "continue").
-2. **If matched:** Do NOT invoke discover, plan, or any other skill. Instead, guide the user to autopilot:
+1. **Match:** Message contains Issue reference (`#N` or `Issue N`) **AND** a work-start verb ("go ahead", "implement", "fix", "resume", "handle", "do it", "get started", "work on", "start", "continue").
+2. **Matched:** Do NOT invoke discover, plan, or any skill. Guide to autopilot:
    ```
    Use `/atdd-kit:autopilot <number>` to work on this Issue.
    ```
-3. **If NOT matched** (e.g., questions like "What is Issue #16 about?", "Tell me the status of #16"): Skip this section and proceed to the Governance Rules section below.
+3. **Not matched** (e.g., "What is Issue #16 about?"): Proceed to Governance Rules.
 
 ## Governance Rules
 
 ### Iron Law #1: No Code Without an Issue
 
-If the user asks for code edits (implement, fix, modify, refactor, add, change, update code) and there is no Issue associated with the work:
+If the user requests code edits with no associated Issue:
 
-1. **Do NOT edit code directly.** Do not propose code changes.
-2. **Guide to Issue creation:** Suggest creating an Issue first, or invoke the appropriate skill (issue/bug/discover).
-3. **No exceptions** for "quick fixes", "one-liners", or "obvious changes."
+1. Do NOT edit code. Do not propose changes.
+2. Guide to Issue creation: suggest creating an Issue or invoke issue/bug/discover.
+3. No exceptions for "quick fixes", "one-liners", or "obvious changes."
 
 ### The 1% Rule
 
-If you think there is even a 1% chance a skill might apply to what you are doing, you ABSOLUTELY MUST invoke the skill. This is not negotiable. This is not optional. You cannot rationalize your way out of this.
+If there is even a 1% chance a skill applies, invoke it. Non-negotiable.
 
 ### Announcement Obligation
 
-When invoking a skill, always announce it before execution:
+Announce every skill before invoking:
 
 > Using [skill-name] for [purpose].
 
-Never invoke a skill silently. The user must know which skill is active and why.
-
 ## Red Flags
-
-These thoughts mean STOP -- you are rationalizing skipping skills:
 
 | Thought | Reality |
 |---------|---------|
@@ -56,9 +50,9 @@ These thoughts mean STOP -- you are rationalizing skipping skills:
 | "This doesn't need a formal skill" | If a skill exists, use it. The 1% rule applies. |
 | "I'll just do this one thing first" | Check BEFORE doing anything. |
 | "This is too simple for a skill" | Simple tasks break. Skills take seconds. No exceptions. |
-| "I remember what this skill does" | Skills evolve. Read the current version. Always invoke, never recall. |
+| "I remember what this skill does" | Skills evolve. Always invoke, never recall. |
 | "Let me gather information first" | Skills tell you HOW to gather information. Invoke first. |
-| "The user didn't ask for a skill" | Skill invocation is your job, not the user's. The 1% rule decides. |
-| "It's just a quick fix, no Issue needed" | Iron Law #1: No code without an Issue. Create the Issue first. |
+| "The user didn't ask for a skill" | Skill invocation is your job. The 1% rule decides. |
+| "It's just a quick fix, no Issue needed" | Iron Law #1: No code without an Issue. |
 | "I'll create the Issue after the fix" | Issue comes BEFORE code. Not after. Not during. Before. |
 | "This is too trivial for an Issue" | Trivial changes break. Issues take 30 seconds. No exceptions. |
