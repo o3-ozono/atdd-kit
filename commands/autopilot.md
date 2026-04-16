@@ -155,7 +155,7 @@ Prohibited patterns. Trigger: report failure → STOP → wait for user.
 
 1. `gh issue edit <number> --add-label in-progress` (exclusive lock)
 2. Read the Issue body and comments
-3. Invoke `atdd-kit:discover` via Skill tool with `"<number> --autopilot"`
+3. Use Skill tool to invoke `atdd-kit:discover` with `"<number> --autopilot"`
 4. `SKILL_STATUS: COMPLETE` → immediately proceed to AC Review Round. Do NOT present draft deliverables or send intermediate messages.
 
 ## AC Review Round
@@ -253,9 +253,9 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 ### development / refactoring: Developer implements
 
-1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer invokes `atdd-kit:atdd "<number> --autopilot"`.
+1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer uses Skill tool to invoke `atdd-kit:atdd` with `"<number> --autopilot"`.
 2. Developer creates branch, Draft PR, implements AC by AC
-3. Developer invokes `atdd-kit:verify` after all ACs complete
+3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs complete
 4. Developer marks PR ready and adds `ready-for-PR-review`
 
 ### bug: Developer fixes + Tester verifies

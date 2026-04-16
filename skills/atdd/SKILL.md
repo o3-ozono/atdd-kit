@@ -23,6 +23,7 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
    - Missing: check Continuation Path
 2. **Continuation Path:** If `ready-to-go` absent but `in-progress` present AND branch matches `<prefix>/<issue-number>-*`:
    - Session resumption. Do NOT block.
+   - If `feat/<issue-number>-*` exists locally, run `git switch feat/<issue-number>-<slug>` before this check.
    - `git log --oneline main..<branch>` to identify completed ACs.
    - Resume from next incomplete AC.
 3. **Neither label:** STOP. "Issue #N is not ready. Complete discover → plan → approval first."
