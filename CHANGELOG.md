@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-04-16
+
+### Fixed
+- `commands/autopilot.md`: Phase 5 Step 6 の ExitWorktree 呼び出し前に `git switch worktree-autopilot-{issue_number}` を追加。worktree の HEAD が feature ブランチに移動した状態でも ExitWorktree が `discard_changes: true` なしで完了できるよう修正。(#97)
+- `tests/test_worktree_isolation.bats`: Phase 5 内で `git switch worktree-autopilot-` パターンが ExitWorktree より前に出現することを機械検証するテスト 2 件を追加。(#97)
+
 ## [1.16.0] - 2026-04-16
 
 ### Added
