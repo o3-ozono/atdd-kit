@@ -6,9 +6,17 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 
 ## Workflow Chain
 
+**Full chain (default for all non-trivial changes):**
 ```
 bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
 ```
+
+**Express path (trivial changes only, explicit user approval required):**
+```
+express (explicit /atdd-kit:express <issue>) → implement → CI gate → squash merge
+```
+
+Express mode bypasses discover/plan/Three Amigos/review. Issue-driven development, CI gate, and DEVELOPMENT.md mandatory processes (version bump, CHANGELOG) are maintained. See `docs/guides/express-mode.md` for OK/NG applicability criteria.
 
 ## State Gate
 
@@ -28,6 +36,7 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 | Skill | Trigger | Workflow Position |
 |-------|---------|-------------------|
 | [atdd](atdd/) | Manually invoked on ready-to-go Issues | Core chain: implementation |
+| [express](express/) | Explicitly invoked via `/atdd-kit:express` for trivial changes | Express path: fast implementation → CI → merge |
 | [bug](bug/) | Auto-triggers on bug/error keywords | Entry point → chains to discover |
 | [debugging](debugging/) | Auto-triggers on bug reports, errors, crashes | Pre-fix root cause investigation |
 | [discover](discover/) | First step of Issue Ready flow | Core chain: requirements → ACs |

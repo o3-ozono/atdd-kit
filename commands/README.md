@@ -9,6 +9,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 | Command | Purpose | Invocation |
 |---------|---------|------------|
 | [autopilot](autopilot.md) | Autopilot end-to-end workflow; main Claude orchestrates discover → plan → implement → review → merge with task-type-specific Agent Teams | `/atdd-kit:autopilot` |
+| [express](express.md) | Fast path for trivial, low-risk changes; bypasses discover/plan/review, maintains Issue-driven + CI gate + DEVELOPMENT.md rules | `/atdd-kit:express` |
 | [auto-eval](auto-eval.md) | Runs skill evals for changed skills, compares against baseline, posts results as PR comment | `/atdd-kit:auto-eval` |
 | [auto-sweep](auto-sweep.md) | Detects state transition anomalies and sends notifications | `/atdd-kit:auto-sweep` |
 | [maintenance](maintenance.md) | On-demand rule and documentation health check; creates/updates maintenance Issue | `/atdd-kit:maintenance` |

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-04-16
+
+### Added
+- `skills/express/SKILL.md`: New Express skill providing a fast path for trivial, low-risk changes (typo fixes, `.gitignore` additions, one-line comments). Bypasses discover/plan/Three Amigos/review while maintaining Issue-driven development, CI gate, version bump, and CHANGELOG requirements. Requires explicit user approval and rationale before execution. (#94)
+- `commands/express.md`: New `/atdd-kit:express <issue>` command that delegates to the Express skill. (#94)
+- `docs/guides/express-mode.md`: OK/NG applicability criteria for Express mode with concrete examples, governance table, and escalation guidance. (#94)
+- `commands/setup-github.md`: Added `express-mode` label (color `5319E7`) to the repository label setup. Label count updated 13 → 14. (#94)
+
+### Changed
+- `skills/README.md`: Added Express skill entry and Express path documentation in Workflow Chain section. (#94)
+- `commands/README.md`: Added Express command entry. (#94)
+- `tests/test_skill_structure.bats`: Added `express` to `ALL_SKILLS` list. (#94)
+
 ## [1.15.1] - 2026-04-16
 
 ### Fixed
