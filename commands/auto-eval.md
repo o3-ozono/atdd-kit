@@ -4,16 +4,15 @@ description: "Eval process -- runs skill evals for changed skills, compares agai
 
 # Skill Eval Process
 
-Run evals for skills whose `SKILL.md` has changed since the last baseline, compare results against baseline, and report regressions.
+Run evals for skills with changed `SKILL.md` since last baseline, compare against baseline, report regressions.
 
 ## Prerequisites
 
-- **skill-creator plugin required:** Check that the `skill-creator:skill-creator` skill is available. If not, stop and tell the user: "skill-creator plugin is required. Install it with: `claude plugins add anthropics/skill-creator --scope project`"
-- `skills/*/evals/evals.json` must exist for a skill to be evaluated
+- `skill-creator:skill-creator` available (if not: "Install with `claude plugins add anthropics/skill-creator --scope project`" → STOP)
+- `skills/*/evals/evals.json` must exist
 
 ## Constraints
-- **No code edits** -- eval and report only
-- **No label changes** -- notification only
+- No code edits; no label changes
 
 ## Arguments
 
@@ -24,44 +23,21 @@ Run evals for skills whose `SKILL.md` has changed since the last baseline, compa
 
 ## Phase 1: Detect Changed Skills
 
-1. List all skill directories: `ls skills/`
-2. For each skill directory, check if `skills/<skill>/evals/evals.json` exists
-3. If `--all` flag is NOT set:
-   - For each skill with evals, check if `SKILL.md` has changed:
-     - If `skills/<skill>/evals/baseline.json` exists, read its `timestamp`
-     - Run `git log --since="<timestamp>" --oneline -- skills/<skill>/SKILL.md`
-     - If no commits found, skip this skill (unchanged)
-   - If no skills have changes, output "No skill changes detected. Nothing to evaluate." and exit
-4. If `--all` flag IS set: include all skills that have `evals/evals.json`
+1. `ls skills/`; for each dir check if `evals/evals.json` exists
+2. Without `--all`: for each skill with evals, read `baseline.json` timestamp and run `git log --since="<timestamp>" -- skills/<skill>/SKILL.md`. Skip if unchanged. If no changes → "Nothing to evaluate." exit.
+3. With `--all`: include all skills with `evals/evals.json`
 
 ## Phase 2: Run Evals
 
-For each changed skill:
-
-1. Read `skills/<skill>/evals/evals.json`
-2. For each eval in the `evals` array:
-   - Use skill-creator's eval mechanism to run the skill against the eval prompt
-   - The skill under test is `atdd-kit:<skill>` (from `evals.json` `skill_name` field)
-   - Collect the output for grading
-3. Grade each output against the eval's `assertions` array
-   - Each assertion is PASS or FAIL
-   - Calculate `pass_rate` per eval: `passed / total`
-   - Calculate overall `pass_rate` for the skill: `total_passed / total_assertions`
+For each changed skill: read `evals.json`; run each eval via skill-creator against `atdd-kit:<skill>`; grade against `assertions` (PASS/FAIL); calculate `pass_rate` per eval and overall.
 
 ## Phase 3: Compare with Baseline
 
-For each evaluated skill:
-
-1. Read `skills/<skill>/evals/baseline.json` (if it exists)
-2. Compare current `pass_rate` with baseline `pass_rate`
-3. Calculate delta: `current - baseline`
-4. **Regression threshold: 10% drop** -- if delta <= -0.10, flag as regression
+Read `baseline.json`; calculate delta (`current - baseline`). **Regression threshold: 10% drop** (delta <= -0.10).
 
 ## Phase 4: Report Results
 
 ### Console Output
-
-Print a summary table:
 
 ```
 Skill Eval Results
@@ -72,9 +48,9 @@ Skill Eval Results
 | plan | 80% | 60% | -20% | REGRESSION |
 ```
 
-### PR Comment (when running in PR context)
+### PR Comment (in PR context)
 
-If a PR number is available (from environment or autopilot (QA) caller), post results as PR comment using `gh pr comment`:
+If PR number available (from environment or autopilot caller), post as PR comment via `gh pr comment`:
 
 ```markdown
 ## Skill Eval Results
@@ -93,8 +69,6 @@ If a PR number is available (from environment or autopilot (QA) caller), post re
 
 ### Per-eval Breakdown (on regression)
 
-When regression is detected, include per-eval details:
-
 ```markdown
 #### plan -- Eval Breakdown
 
@@ -106,8 +80,7 @@ When regression is detected, include per-eval details:
 
 ## Phase 5: Update Baseline
 
-- **If no regression detected:** Update `skills/<skill>/evals/baseline.json` with current results
-- **If regression detected:** Do NOT update baseline. Output warning and exit with regression flag
+No regression: update `baseline.json`. Regression: do NOT update; warn and exit with regression flag.
 
 ### baseline.json Format
 
@@ -126,13 +99,13 @@ When regression is detected, include per-eval details:
 
 ## Timeout Guidance
 
-- Each eval prompt execution: allow up to 3 minutes
-- Total eval run per skill: allow up to 15 minutes
-- If a single eval times out, mark it as FAIL and continue with remaining evals
+- Per eval: up to 3 minutes
+- Per skill total: up to 15 minutes
+- Single eval timeout: mark FAIL, continue with remaining
 
 ## Phase 6: Create Eval Evidence Marker
 
-After eval completes (regardless of pass/fail), create an evidence marker so the `eval-guard` hook allows `git push`:
+After eval completes (pass or fail), create marker so `eval-guard` hook allows `git push`:
 
 ```bash
 BRANCH=$(git branch --show-current | tr '/' '-')

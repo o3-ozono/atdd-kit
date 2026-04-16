@@ -9,124 +9,61 @@ description: "Auto-triggers on CI UI Test failures in PRs. Fires on keywords lik
 Do NOT write fix code until diagnosis is complete (all steps finished and report posted). This skill is for diagnosis and reporting ONLY. Fixes go through the normal atdd workflow after diagnosis.
 </HARD-GATE>
 
-Diagnose CI UI Test failures through structured analysis: CI log retrieval, error classification, local reproduction, evidence collection, root cause analysis, and structured PR comment reporting.
+Diagnose CI UI Test failures: CI log retrieval, error classification, local reproduction, evidence collection, root cause analysis, PR comment report.
 
 ## When to Use
 
-- CI UI Test (XCUITest, XCTest UI) has failed on a PR
-- User reports a UI test failure or test crash in CI
-- PR checks show test failures that need investigation
+- CI UI Test (XCUITest, XCTest UI) failed on a PR
+- User reports UI test failure or test crash in CI
 
 ## Step 1: CI Failure Log Retrieval and Failed Test Identification
 
-Retrieve CI failure information and identify which tests failed.
+1. `gh run view <run-id> --log-failed` (auto-detect latest failed run if no ID provided)
+2. Check for Allure `summary.json` and `data/test-results/*.json`: extract failed test names, error messages, step hierarchy
+3. No Allure report: continue with CI logs only. State: "No Allure report available — diagnosing from CI logs only."
 
-1. **Get the PR's failed CI run:**
-   ```
-   gh run view <run-id> --log-failed
-   ```
-   If no run ID is provided, auto-detect the latest failed run for the current PR.
+**Output:** List of failed tests with error messages (and step hierarchy if Allure available).
 
-2. **Check for Allure report JSON:**
-   - Look for `summary.json` in the Allure report directory
-   - Look for `data/test-results/*.json` files for detailed failure information
-   - Extract: failed test names, error messages, failure step hierarchy
+## Step 2: Error Classification
 
-3. **Allure report absent fallback:**
-   If Allure report JSON does not exist (e.g., build failed before tests ran), continue diagnosis with CI logs only. Explicitly state: "No Allure report available — diagnosing from CI logs only."
-
-**Output:** List of failed tests with error messages. If Allure is available, include step hierarchy.
-
-## Step 2: CI-Specific Error Classification and Retry Proposal
-
-Analyze error patterns to classify failures as CI-specific (infrastructure) or code-related.
-
-### CI-Specific Error Pattern Table
-
-| Pattern | Error Message Example | Action |
-|---------|----------------------|--------|
+| Pattern | Example | Action |
+|---------|---------|--------|
 | Simulator boot failure | `Failed to boot simulator` | CI retry |
 | Timeout | `Test exceeded time allowance of 300 seconds` | CI retry or test review |
 | Signal term crash | `Test crashed with signal term.` | Local reproduction |
 | Assertion failure | `XCTAssertTrue failed` | Local reproduction |
-| Memory pressure | `Terminated due to memory pressure` | CI retry + infrastructure investigation |
+| Memory pressure | `Terminated due to memory pressure` | CI retry + infra investigation |
 
-### Classification Logic
-
-- **CI-specific errors** (simulator boot failure, timeout, memory pressure): Propose retry with `gh run rerun --failed`. Report classification.
-- **Code-related errors** (assertion failure, signal term crash): Proceed to Step 3 (local reproduction).
-- **Unclassified errors** (no pattern match): Default to local reproduction (safe-side fallback). Do not assume CI-specific without evidence.
+- CI-specific (boot failure, timeout, memory): propose `gh run rerun --failed`
+- Code-related (assertion failure, crash): proceed to Step 3
+- Unclassified: default to local reproduction. Do not assume CI-specific without evidence.
 
 ## Step 3: Local Reproduction (sim-pool Integration)
 
-Attempt to reproduce the failure locally using the exact failing tests.
+If sim-pool is not configured: skip local reproduction, complete diagnosis with CI logs/Allure only. Include: "Run `/atdd-kit:setup-ios` to enable local reproduction."
 
-### Prerequisites Check
-
-Check if sim-pool is configured (iOS project with sim-pool hook):
-- If sim-pool is **not configured** (non-iOS project, or sim-pool not set up): **Skip local reproduction entirely.** Complete diagnosis using CI logs and Allure data only. Include guidance: "sim-pool is not configured. To enable local reproduction, run `/atdd-kit:setup-ios`."
-- If sim-pool is configured: Proceed with local reproduction.
-
-### Reproduction Steps
-
-1. Extract failing test identifiers from Step 1 (format: `TestTarget/TestClass/testMethod`)
-2. Run failing tests using XcodeBuildMCP `test` tool with `-only-testing` in extraArgs:
-   - If multiple tests failed, run them all together in a single invocation
-   - sim-pool hook automatically assigns an ephemeral simulator clone
-3. **Maximum 3 attempts.** Record pass/fail for each attempt.
-4. Based on results:
-   - **Any failure reproduced:** Proceed to Step 5 (evidence collection)
-   - **All 3 attempts pass:** Proceed to Step 4 (flaky detection)
+If sim-pool configured:
+1. Extract failing test IDs (`TestTarget/TestClass/testMethod`)
+2. Run with XcodeBuildMCP `test` tool and `-only-testing` extraArgs (all failing tests in one invocation; sim-pool auto-assigns clone)
+3. **Max 3 attempts.** Any failure reproduced → Step 5. All 3 pass → Step 4 (flaky detection).
 
 ## Step 4: Flaky Detection
 
-If local reproduction ran 3 times and all 3 passed (failure not reproduced):
-
-1. **Classify as flaky.** The test is intermittently failing — not a consistent code bug.
-2. **Propose CI retry:** `gh run rerun --failed`
-3. **Provide CI log-based analysis:** Even though the failure didn't reproduce locally, analyze the CI logs and Allure data to identify potential flaky causes (timing dependencies, race conditions, environment differences).
-4. **Report:** Include flaky classification and CI retry recommendation in the diagnostic report (Step 6).
+3 attempts all passed: classify as flaky. Propose CI retry (`gh run rerun --failed`). Analyze CI logs/Allure for flaky causes (timing, race conditions, env differences). Include flaky classification in Step 6 report.
 
 ## Step 5: Evidence Collection and Multimodal Analysis
 
-When a failure is reproduced locally, collect structured evidence for root cause analysis.
-
-### Primary: xcresulttool Extraction
-
+Extract with xcresulttool:
 ```bash
-# Get structured test results summary
 xcrun xcresulttool get test-results summary --path <path-to-xcresult>
-
-# Export failure attachments (screenshots, logs)
 xcrun xcresulttool export attachments --only-failures --path <path-to-xcresult> --output-path <output-dir>
 ```
 
-Extract:
-- Error messages and stack traces
-- Failure step hierarchy (which action failed within the test)
-- Failure screenshots (`.png` files)
+Read screenshots via the Read tool. Analyze: UI state at failure, expected vs. actual state, unexpected alerts/loading states.
 
-### Multimodal Analysis
+Fallback (xcresulttool unavailable): use Allure JSON (`data/test-results/*.json`) and attachments (`data/attachments/*.png`). State: "xcresulttool unavailable — using Allure data."
 
-Use the Read tool to view extracted screenshot images. Analyze the UI state at the moment of failure:
-- What is visible on screen?
-- Does the UI state match the expected state described in the test?
-- Are there unexpected alerts, loading states, or layout issues?
-
-### Fallback: xcresulttool Unavailable
-
-If `xcresulttool` is not available (older Xcode, non-standard setup), fall back to Allure report data only:
-- Use Allure JSON (`data/test-results/*.json`) for error messages and step hierarchy
-- Use Allure attachments (`data/attachments/*.png`) for screenshots via Read tool multimodal viewing
-- Explicitly state: "xcresulttool unavailable — using Allure report data for analysis."
-
-### Root Cause Analysis
-
-Synthesize all evidence (error messages, step hierarchy, screenshots) to determine the root cause:
-- **Code bug:** A genuine defect in application or test code
-- **Flaky (timing):** Race condition or timing dependency
-- **Flaky (environment):** CI-specific environment difference
-- **Infrastructure:** CI runner or simulator infrastructure issue
+Root cause classification: Code bug / Flaky (timing) / Flaky (environment) / Infrastructure.
 
 ## Step 6: Structured Diagnostic Report — PR Comment
 
@@ -167,12 +104,10 @@ Post a structured diagnostic report as a PR comment using `gh pr comment`.
 
 ## Red Flags (STOP)
 
-These thoughts mean you are skipping diagnosis. STOP and return to Step 1.
-
 | Thought | Reality |
 |---------|---------|
-| "I can see the fix from the error message" | Diagnosis first. No fix code until report is posted. |
-| "Let me just fix this quickly" | This skill is for DIAGNOSIS ONLY. Fixes go through atdd. |
-| "The test is probably flaky" | "Probably" is not evidence. Run local reproduction (Step 3). |
-| "I'll skip local reproduction" | Only skip if sim-pool is not configured. Otherwise, reproduce. |
-| "The screenshot isn't needed" | Visual evidence is critical for UI test failures. Collect it. |
+| "I can see the fix from the error message" | Diagnosis first. No fix code until report posted. |
+| "Let me just fix this quickly" | DIAGNOSIS ONLY. Fixes go through atdd. |
+| "The test is probably flaky" | "Probably" is not evidence. Run local reproduction. |
+| "I'll skip local reproduction" | Only skip if sim-pool not configured. Otherwise reproduce. |
+| "The screenshot isn't needed" | Visual evidence is critical. Collect it. |

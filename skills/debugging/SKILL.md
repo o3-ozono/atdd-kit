@@ -6,47 +6,35 @@ description: "Root cause investigation before bug fixes. Auto-triggers on bug re
 # debugging -- Root Cause Investigation
 
 <HARD-GATE>
-Do NOT write fix code until root cause is classified with evidence (Step 5 complete). Do NOT skip from symptoms to fixes. "I think I know the issue" is not investigation. Only evidence counts.
+Do NOT write fix code until root cause is classified with evidence (Step 5 complete). Do NOT skip from symptoms to fixes. Only evidence counts.
 </HARD-GATE>
-
-Investigate before fixing. No fix code without understanding the root cause first.
 
 ## Iron Law
 
-**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.**
-
-"I think I know the issue" is not investigation. Only evidence counts.
+**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION.** "I think I know the issue" is not evidence.
 
 ## When to Use
 
-- User reports a bug, error, crash, or unexpected behavior
-- A test fails unexpectedly
-- Something "used to work" but doesn't anymore
+- Bug, error, crash, or unexpected behavior
+- Test fails unexpectedly
+- Something stopped working
 
-## Prohibition During Investigation
+## Prohibitions During Investigation
 
-- Do not write fix code until root cause is classified
-- Do not guess at fixes ("let me try this")
-- Diagnostic instrumentation only (minimal logging to gather evidence)
+- No fix code until root cause is classified
+- No guessing ("let me try this")
+- Diagnostic instrumentation only
 
 ## Flow
 
 ### Step 1: Symptom Confirmation
 
-Understand what is happening:
-- **What:** Exact error message, behavior, or output
-- **When:** Steps to reproduce
-- **Where:** File, line, component involved
-- **Since when:** Last known working state (git log, recent changes)
-
-Ask one question at a time if information is missing.
+Identify: What (exact error/behavior), When (steps), Where (file/line/component), Since when (`git log`). Ask one question at a time.
 
 ### Step 2: Hypothesis Formation
 
-Form 2-3 hypotheses about the root cause:
-
 ```
-Based on the symptoms, possible causes:
+Based on symptoms, possible causes:
 
 1. [Hypothesis A] -- [reasoning]
 2. [Hypothesis B] -- [reasoning]
@@ -57,31 +45,19 @@ Investigating hypothesis 1 first because [reason].
 
 ### Step 3: Diagnostic Instrumentation
 
-Add **minimal** diagnostic code to gather evidence:
-- Log statements at key points
-- Assertions to narrow down the failure path
-- Print intermediate values
-
-This is the **only** code change allowed during investigation.
+Add **minimal** diagnostic code only: log statements, assertions, print values. The **only** code change allowed during investigation.
 
 ### Step 4: Evidence Collection
 
-Run the reproduction steps with diagnostics in place. Record:
-- Actual output/behavior
-- Expected output/behavior
-- Where the divergence occurs
+Run reproduction steps with diagnostics. Record: actual vs. expected, where divergence occurs.
 
 ### Step 5: Root Cause Classification
 
-Classify the root cause:
-
 | Class | Description | Next Step |
 |-------|-------------|-----------|
-| **A: AC Gap** | Not covered by any AC -- undefined behavior | Add AC via `discover`, then fix |
-| **B: Test Gap** | AC exists but tests are insufficient | Write missing test, then fix |
-| **C: Logic Error** | Tests exist but implementation is wrong | Write regression test, then fix |
-
-Present findings:
+| **A: AC Gap** | Not covered by any AC | Add AC via `discover`, then fix |
+| **B: Test Gap** | AC exists, tests insufficient | Write missing test, then fix |
+| **C: Logic Error** | Tests exist, implementation wrong | Write regression test, then fix |
 
 ```
 ## Root Cause Analysis
@@ -96,39 +72,29 @@ Proceed to fix? [Yes / Need more investigation]
 
 ### Step 6: Transition to Fix
 
-When root cause is confirmed:
-
-> Root cause identified. Proceeding to bug fix workflow.
-
-- **Type A:** Chain to `atdd-kit:discover` to add the missing AC
-- **Type B/C:** Chain to `atdd-kit:atdd` with a regression test for the bug
+- **Type A:** Chain to `atdd-kit:discover` to add missing AC
+- **Type B/C:** Chain to `atdd-kit:atdd` with regression test
 
 ## 3-Failure Escalation Rule
 
-If you have attempted 3 or more fixes and the bug persists:
+After 3 failed fixes: **STOP. Do NOT attempt fix #4.**
 
-**STOP. Do NOT attempt fix #4.**
-
-This is NOT a failed hypothesis -- this is a wrong architecture. Escalate:
-
-1. Report the 3 attempted fixes and their results
-2. Question the underlying architecture or assumptions
-3. Present the pattern to the user for architectural discussion
-4. Only proceed after the user confirms a new direction
+1. Report 3 attempted fixes and results
+2. Question underlying architecture or assumptions
+3. Present pattern to user for architectural discussion
+4. Proceed only after user confirms new direction
 
 ## Red Flags (STOP)
-
-These thoughts mean you are rationalizing skipping investigation. STOP and return to Step 1.
 
 | Thought | Reality |
 |---------|---------|
 | "I think it's this" | Thinking is not evidence. Investigate. |
 | "Quick fix for now, investigate later" | "Later" never comes. Investigate NOW. |
-| "Just try changing X and see if it works" | Guessing wastes time. Form a hypothesis with evidence. |
-| "This is obviously the cause" | "Obviously" is a red flag word. Prove it with evidence. |
+| "Just try changing X" | Guessing wastes time. Form a hypothesis. |
+| "This is obviously the cause" | "Obviously" is a red flag. Prove with evidence. |
 | "Let me just try this fix" | NO. Complete Step 5 first. |
 | "I've seen this before" | Past experience informs hypotheses, not conclusions. Verify. |
-| "It's probably a race condition" | "Probably" requires evidence. Add diagnostic instrumentation. |
+| "It's probably a race condition" | "Probably" requires evidence. |
 
 ## Prohibition Checklist
 
@@ -136,4 +102,4 @@ These thoughts mean you are rationalizing skipping investigation. STOP and retur
 - [ ] Hypotheses formed before diving into code
 - [ ] Evidence collected before classification
 - [ ] Root cause classified (A/B/C) with evidence
-- [ ] User confirmed root cause before proceeding to fix
+- [ ] User confirmed root cause before proceeding
