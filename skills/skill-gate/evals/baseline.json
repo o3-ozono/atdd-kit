@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-04-16T00:00:00Z",
+  "skill_name": "atdd-kit:skill-gate",
+  "pass_rate": 1.0,
+  "results": [
+    {"eval_name": "iron-law-1-no-issue", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "iron-law-1-feature-request-no-issue", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "issue-work-routing-to-autopilot", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "issue-mention-question-no-routing", "pass_rate": 1.0, "passed": 2, "total": 2},
+    {"eval_name": "issue-work-routing-implement-variant", "pass_rate": 1.0, "passed": 2, "total": 2}
+  ]
+}

@@ -5,23 +5,21 @@ description: "Pre-Issue design exploration. Auto-triggers on exploratory request
 
 # ideate -- Design Exploration
 
-Explore ideas, compare approaches, and reach a design decision. This is the brainstorming phase -- no commitments yet.
+Explore ideas, compare approaches, reach a design decision. No commitments yet.
 
 ## Mode Detection
 
-ideate operates in two modes, detected automatically:
-
 | Mode | Condition | Chain |
 |------|-----------|-------|
-| **Pre-Issue mode** | No Issue exists (auto-triggered by exploratory request) | ideate → `atdd-kit:issue` → discover |
-| **Post-Issue mode** | Issue number is provided (chained from `issue` skill) | ideate → `atdd-kit:discover` |
+| **Pre-Issue** | No Issue (auto-triggered) | ideate → `atdd-kit:issue` → discover |
+| **Post-Issue** | Issue number provided (from `issue` skill) | ideate → `atdd-kit:discover` |
 
-**How to detect:** If an Issue number argument is provided (e.g., from `issue` skill chain), this is **post-Issue mode**. Otherwise, **pre-Issue mode**.
+**Detect:** Issue number argument present → post-Issue mode. Otherwise → pre-Issue mode.
 
 ## When to Use
 
-- User has a vague idea but no Issue yet (pre-Issue mode, auto-triggered)
-- Issue just created and user wants to brainstorm before requirements (post-Issue mode, chained from `issue`)
+- Vague idea, no Issue yet (pre-Issue, auto-triggered)
+- Issue just created, user wants to brainstorm (post-Issue, from `issue`)
 
 ## Principles
 
@@ -36,86 +34,36 @@ ideate operates in two modes, detected automatically:
 
 ## Post-Issue Mode
 
-When an Issue number is provided (chained from `issue` skill):
-
 ### Step 0: Offer Skip
 
-Use AskUserQuestion with:
-- header: "Brainstorm?"
-- options:
-  1. "(Recommended) Skip to discover — requirements are clear"
-  2. "Yes, brainstorm first"
-- multiSelect: false
+AskUserQuestion — header: "Brainstorm?", options: "(Recommended) Skip to discover — requirements are clear", "Yes, brainstorm first"
 
 Recommended: Skip to discover — reply 'ok' to accept, or provide alternative
 
-- If **Skip to discover** (Recommended): Chain directly to `atdd-kit:discover` (skip Steps 1-3, go to Step 4)
-- If **Yes, brainstorm first**: Continue to Step 1
+- Skip: chain to `atdd-kit:discover` (go to Step 4)
+- Brainstorm: continue to Step 1
 
 ### Step 1: Understand the Idea
 
-Ask the user what they want to achieve. Understand:
-- **Goal:** What problem are they solving?
-- **Context:** What exists today?
-- **Constraints:** Time, tech, scope limitations?
-
-One question at a time. Do not assume.
+Ask one question at a time: Goal (what problem?), Context (what exists today?), Constraints?
 
 ### Step 2: Explore Approaches
 
-Present 2-3 approaches:
+Present 2-3 approaches with Summary, Pros, Cons, Impact, Risks.
 
-```
-**A: [Approach name]**
-- Summary: [1-2 sentences]
-- Pros: [bullet list]
-- Cons: [bullet list]
-- Impact: [files/modules affected]
-- Risks: [anticipated risks]
-
-**B: [Approach name]**
-- Summary: ...
-- Pros: ...
-- Cons: ...
-```
-
-Then use AskUserQuestion with:
-- header: "Approach?"
-- options:
-  1. "(Recommended) [recommended approach name] — [brief reason]"
-  2. "[alternative approach name]"
-  3. "Suggest alternative"
-- multiSelect: false
+AskUserQuestion — header: "Approach?", options: "(Recommended) [approach] — [reason]", "[alternative]", "Suggest alternative"
 
 Recommended: [recommended approach] — reply 'ok' to accept, or provide alternative
 
-Iterate until the user is satisfied with an approach.
-
 ### Step 3: Summarize Decision
 
-Present a concise summary of what was decided:
+Present concise summary (Goal, Chosen approach, Key tradeoffs, Scope).
 
-```
-## Design Decision
-
-**Goal:** [what we're solving]
-**Chosen approach:** [name and summary]
-**Key tradeoffs:** [what we accepted]
-**Scope:** [what's in and out]
-```
-
-Then use AskUserQuestion with:
-- header: "Proceed?"
-- options:
-  1. "(Recommended) Yes, proceed to requirements"
-  2. "Not yet, revise"
-- multiSelect: false
-
-Recommended: Yes, proceed — reply 'ok' to accept, or provide alternative
+AskUserQuestion — header: "Proceed?", options: "(Recommended) Yes, proceed to requirements", "Not yet, revise"
 
 ### Step 4: Transition to discover
 
-Post a Context Block as an Issue comment to pass design context to discover:
+When the user approves, post Context Block as Issue comment:
 
 ```markdown
 ## Context Block
@@ -128,74 +76,29 @@ Post a Context Block as an Issue comment to pass design context to discover:
 | collected_info | [design decision, tradeoffs, scope] |
 ```
 
-Use `gh issue comment <number> --body "..."` to post the Context Block. Then:
-
-> Design exploration complete. Running `atdd-kit:discover` to explore requirements.
-
-Invoke `atdd-kit:discover` via the Skill tool.
+Show "Design exploration complete." and invoke `atdd-kit:discover` via the Skill tool.
 
 ---
 
 ## Pre-Issue Mode
 
-When no Issue exists (auto-triggered by exploratory request):
+### Step 1: Understand the Idea (same as post-Issue Step 1)
 
-### Step 1: Understand the Idea
-
-(Same as post-Issue Step 1)
-
-### Step 2: Explore Approaches
-
-(Same as post-Issue Step 2)
+### Step 2: Explore Approaches (same as post-Issue Step 2)
 
 ### Step 3: Summarize Decision
 
-Present a concise summary of what was decided:
-
-```
-## Design Decision
-
-**Goal:** [what we're solving]
-**Chosen approach:** [name and summary]
-**Key tradeoffs:** [what we accepted]
-**Scope:** [what's in and out]
-```
-
-Then use AskUserQuestion with:
-- header: "Create Issue?"
-- options:
-  1. "(Recommended) Yes, create Issue"
-  2. "Not yet, revise"
-- multiSelect: false
-
-Recommended: Yes, create Issue — reply 'ok' to accept, or provide alternative
+AskUserQuestion — header: "Create Issue?", options: "(Recommended) Yes, create Issue", "Not yet, revise"
 
 ### Step 4: Transition to issue
 
-When the user approves:
-
-> Design exploration complete. Creating an Issue with `atdd-kit:issue`.
-
-Post a Context Block as an Issue comment (after issue creation) to pass design context to discover:
-
-```markdown
-## Context Block
-
-| Field | Value |
-|-------|-------|
-| task_type | [derived from design decision] |
-| requirements | [goal and chosen approach summary] |
-| environment | [any constraints identified] |
-| collected_info | [design decision, tradeoffs, scope] |
-```
-
-Invoke `atdd-kit:issue` via the Skill tool, passing the design context.
+Show "Design exploration complete." and invoke `atdd-kit:issue` via the Skill tool. Post Context Block as Issue comment after creation.
 
 ---
 
 ## Prohibition Checklist
 
 - [ ] Not editing code or files
-- [ ] Not creating Issues directly (pre-Issue mode chains to `issue` skill)
-- [ ] Not skipping approach comparison (unless user chooses Skip in post-Issue mode)
+- [ ] Not creating Issues directly (pre-Issue chains to `issue`)
+- [ ] Not skipping approach comparison (unless user chooses Skip in post-Issue)
 - [ ] Asking one question at a time

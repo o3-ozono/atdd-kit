@@ -1,4 +1,4 @@
 {
-  "autopilot": {"total_bytes": 79418, "estimated_tokens": 22061, "updated_at": "2026-04-15T13:05:13Z"},
-  "session-start": {"total_bytes": 11050, "estimated_tokens": 3070, "updated_at": "2026-04-15T13:05:13Z"}
+  "autopilot": {"total_bytes": 62660, "estimated_tokens": 17406, "updated_at": "2026-04-16T07:56:16Z"},
+  "session-start": {"total_bytes": 9143, "estimated_tokens": 2540, "updated_at": "2026-04-16T07:56:16Z"}
 }

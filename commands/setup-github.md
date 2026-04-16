@@ -4,13 +4,7 @@ description: "Set up GitHub issue templates, PR template, and labels for the pro
 
 # setup-github — GitHub Project Setup
 
-Sets up GitHub issue templates, PR template, and workflow labels.
-
-## What This Command Does
-
-1. Copy issue templates from plugin to `.github/ISSUE_TEMPLATE/`
-2. Copy PR template to `.github/pull_request_template.md`
-3. Create GitHub labels for the workflow state machine
+Sets up issue templates, PR template, and workflow labels.
 
 ## Steps
 

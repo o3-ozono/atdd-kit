@@ -4,47 +4,14 @@ description: "On-demand rule and documentation health check. Creates or updates 
 
 # Maintenance Command
 
-Run an on-demand health check of CLAUDE.md, rules, and documentation freshness. Always creates or updates a maintenance Issue with the results.
+On-demand health check of CLAUDE.md, rules, and documentation freshness. Creates or updates a maintenance Issue.
 
 ## Step 1: Gather Metrics
 
-### 1-1: CLAUDE.md Line Count
-
-Count the number of lines in `CLAUDE.md`:
-
-```bash
-wc -l < CLAUDE.md
-```
-
-- If over 150 lines: status = "⚠ Over limit"
-- Otherwise: status = "OK"
-
-### 1-2: Rules Line Count
-
-Count total lines across all `.md` files in `.claude/rules/`:
-
-```bash
-find .claude/rules -name "*.md" -exec cat {} + 2>/dev/null | wc -l
-```
-
-### 1-3: Total Line Count
-
-Sum of CLAUDE.md + rules lines.
-
-- If over 300 lines: status = "⚠ Over limit"
-- Otherwise: status = "OK"
-
-### 1-4: Staleness Detection (90+ days)
-
-For each `.md` file in `docs/`, `CLAUDE.md`, and `.claude/rules/`:
-
-1. Get the last commit date: `git log -1 --format="%cs" -- <file>`
-2. Calculate age in days
-3. If age > 90 days: add to stale list
-
-### 1-5: MEMORY.md Staleness Check
-
-Read `MEMORY.md` (if it exists in `.claude/` or the project memory directory) and list entries that may be outdated based on current project state.
+1. `wc -l < CLAUDE.md` → warn if > 150 lines
+2. `find .claude/rules -name "*.md" -exec cat {} + 2>/dev/null | wc -l` → warn if total > 300 lines
+3. For each `.md` in `docs/`, `CLAUDE.md`, `.claude/rules/`: `git log -1 --format="%cs" -- <file>`. Age > 90 days → stale list.
+4. Read `MEMORY.md` (if exists), list potentially outdated entries.
 
 ## Step 2: Generate Issue Body
 
@@ -99,24 +66,11 @@ If changes were made, commit before closing.
 
 ## Step 3: Create or Update Issue
 
-1. Search for an existing open maintenance Issue:
+`gh issue list --label "automated" --search "[Maintenance]" --state open --json number -q '.[0].number'`
 
-```bash
-gh issue list --label "automated" --search "[Maintenance]" --state open --json number -q '.[0].number'
-```
-
-2. If found: update the existing Issue body with `gh issue edit <number> --body-file`
-3. If not found: create a new Issue with `gh issue create --title "[Maintenance] Rule and documentation health check" --label "automated,type:documentation" --body-file`
+- Found: `gh issue edit <number> --body-file`
+- Not found: `gh issue create --title "[Maintenance] Rule and documentation health check" --label "automated,type:documentation" --body-file`
 
 ## Step 4: Report
 
-Show the results in the terminal and report the Issue number:
-
-```
-Maintenance check complete.
-- CLAUDE.md: [count] lines ([status])
-- Rules total: [count] lines
-- Total: [total] lines ([status])
-- Stale files: [count]
-- Issue: #[number] (created/updated)
-```
+Show summary (CLAUDE.md lines, rules total, stale file count, Issue number) in terminal.

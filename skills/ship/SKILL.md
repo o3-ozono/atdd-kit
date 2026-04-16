@@ -25,30 +25,26 @@ Merging without confirmed review completion is prohibited regardless of perceive
 
 ## State Gate (required)
 
-Before starting the ship flow, check the Issue state:
-
 1. **Check `in-progress` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("in-progress")'`
-   - If present: proceed to ship Flow.
-   - If missing: STOP. Report: "Issue #N does not have `in-progress` label. Complete `atdd` → `verify` first."
-2. **Check implementation branch:** Verify the current branch is not `main`. Ship must run on the implementation branch.
-   - If on `main`: STOP. Report: "Cannot ship from main. Check out the implementation branch first."
+   - Present: proceed.
+   - Missing: STOP. "Issue #N does not have `in-progress` label. Complete `atdd` → `verify` first."
+2. **Check implementation branch:** Verify current branch is not `main`.
+   - On `main`: STOP. "Cannot ship from main. Check out the implementation branch first."
 
 ## Prerequisites
 
-- All ACs verified (`verify` skill completed)
-- Working branch with Draft PR already created (from `atdd` skill)
+- All ACs verified (`verify` complete)
+- Working branch with Draft PR created (from `atdd`)
 - All tests passing, build clean
 
 ## Flow
 
 ### Step 1: Convert Draft PR to Ready
 
-- Push all commits if not already pushed: `git push`
-- Update PR from draft to ready: `gh pr ready`
+- `git push` (if not already pushed)
+- `gh pr ready`
 
 ### Step 2: Generate PR Description
-
-Generate PR description:
 
 ```markdown
 Closes #<issue-number>
@@ -86,10 +82,7 @@ Update PR body: `gh pr edit --body "..."`
 
 ### Step 3: Add Inline Comments
 
-Use `gh api` to post PR review comments:
-- File header comments explaining role/purpose for non-obvious files
-- Language-specific features explained for non-specialists
-- Skip auto-generated files
+Use `gh api` to post PR review comments: file header comments for non-obvious files, language-specific feature explanations for non-specialists. Skip auto-generated files.
 
 ### Step 4: Add Labels
 
@@ -99,28 +92,25 @@ Use `gh api` to post PR review comments:
 
 ### Step 5: CI Check
 
-- Wait for CI: `gh pr checks --watch`
-- If CI fails: diagnose, fix, push, wait again
-- If CI passes: proceed
+- `gh pr checks --watch`
+- CI fails: diagnose, fix, push, wait again
+- CI passes: proceed
 
 ### Step 6: UI Change Detection (if applicable)
 
-- Run: `git diff origin/main --name-only | grep '__Snapshots__/.*\.png'`
-- If snapshot diffs exist: this is a UI change PR
+- `git diff origin/main --name-only | grep '__Snapshots__/.*\.png'`
+- Snapshot diffs present: this is a UI change PR
 
 ### Step 7: Review Cycle
 
 After `ready-for-PR-review` label is set:
 
-1. **Wait for review:** After setting `ready-for-PR-review` label, wait for the review process (autopilot QA or human) to complete
-2. **Check review result:** Periodically check label state with `gh pr view <PR> --json labels`:
-   - If `needs-pr-revision` label added: read review comments, fix issues, push, remove `needs-pr-revision`, re-add `ready-for-PR-review`, return to step 1
-   - If `ready-for-PR-review` label removed: review complete, proceed to Step 8
-   - If review PASS comment posted on the PR: review complete, proceed to Step 8
-3. **Prohibited actions during Step 7:**
-   - Do NOT use AskUserQuestion to offer "Merge", "Skip review", or any option that bypasses the review cycle
-   - Do NOT proceed to Step 8 until one of the review completion signals above is confirmed
-   - The only permitted user interaction is asking for help resolving review comments
+1. Wait for review (autopilot QA or human) to complete
+2. Check label state with `gh pr view <PR> --json labels`:
+   - `needs-pr-revision` added: fix issues, push, remove `needs-pr-revision`, re-add `ready-for-PR-review`, return to step 1
+   - `ready-for-PR-review` removed: review complete → Step 8
+   - Review PASS comment on PR: review complete → Step 8
+3. Prohibited: do NOT offer "Merge" or "Skip review" via AskUserQuestion; do NOT proceed to Step 8 until a completion signal is confirmed.
 
 ### Step 8: Completion Decision
 
@@ -147,38 +137,24 @@ PR is ready. How to proceed?
 
 ### Step 9: Merge
 
-- Check for merge conflicts: `gh pr view <PR> --json mergeable,mergeStateStatus`
-  - If `mergeable == CONFLICTING`:
-    - Do NOT merge
-    - Ask user for approval to rebase:
-      ```
-      ⚠ Conflict detected. Cannot merge.
-
-      May I run the following rebase?
-        git fetch origin main
-        git rebase origin/main
-        # After resolving conflicts
-        git push --force-with-lease
-      ```
-    - User approves → execute rebase, resolve conflicts interactively if needed, re-check CI, continue merge flow
-    - User declines → stop skill
-- Verify CI is green: `gh pr checks`
-- Check `blocked-by: #N` in Issue/PR body -- if present, verify dependency is closed
-- Merge with squash: `gh pr merge --squash`
-- Clean up: `git checkout main && git pull origin main`
-- Delete local branch: `git branch -d <branch>`
+- Check conflicts: `gh pr view <PR> --json mergeable,mergeStateStatus`
+  - `mergeable == CONFLICTING`: do NOT merge. Ask user to approve rebase (fetch + rebase + force-with-lease). User declines → stop.
+- Verify CI: `gh pr checks`
+- Check `blocked-by: #N` — verify dependency is closed
+- Merge: `gh pr merge --squash`
+- Cleanup: `git checkout main && git pull origin main && git branch -d <branch>`
 
 ## Status Output
 
 **Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
 
-Output a `skill-status` fenced code block as the **last element** of your response at every
-terminal point. Terminal points for ship:
+Output a `skill-status` fenced code block as the **last element** of your response at every terminal point.
 
-- **COMPLETE:** PR merged successfully (Step 10 complete).
-- **PENDING:** Waiting for user decision (e.g., Merge / Keep / Discard in Step 8).
-- **BLOCKED:** State Gate failed (no `in-progress` label, running on `main` branch, or review not complete).
-- **FAILED:** Unrecoverable error (e.g., merge failed due to persistent conflict, CI broken).
+Terminal points:
+- **COMPLETE:** PR merged successfully.
+- **PENDING:** Waiting for user decision (Merge / Keep / Discard in Step 8).
+- **BLOCKED:** State Gate failed or review not complete.
+- **FAILED:** Unrecoverable error (e.g., persistent conflict, CI broken).
 
 ```skill-status
 SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
@@ -200,8 +176,7 @@ PHASE: ship
 RECOMMENDATION: PR review not yet confirmed. Wait for review PASS comment or ready-for-PR-review label removal.
 ```
 
-See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
-autopilot action matrix.
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and autopilot action matrix.
 
 ### Step 10: Report
 
@@ -226,8 +201,8 @@ PR #XX merged.
 
 ## Constraints
 
-- Always use `--squash` for merge (keeps main history clean: 1 PR = 1 commit)
+- Always `--squash` merge (1 PR = 1 commit)
 - Never skip CI check
-- Never skip review cycle (even if you are the only developer -- the QA process handles this)
+- Never skip review cycle -- QA process handles this even for solo developers
 - Never force push without explicit user approval
-- When merging your own PR, do not announce that you cannot approve it. Just merge directly without explanation.
+- When merging your own PR, merge directly without explanation.

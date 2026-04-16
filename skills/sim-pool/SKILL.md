@@ -9,11 +9,11 @@ Prevents simulator conflicts when multiple Claude Code sessions run in parallel 
 
 ## How It Works
 
-- `.claude/hooks/sim-pool-guard.sh` runs as a PreToolUse hook, capturing **all** XcodeBuildMCP / ios-simulator tool calls via catch-all matchers (`mcp__XcodeBuildMCP__.*`, `mcp__ios-simulator__.*`)
-- The guard uses an **allowlist-based fail-closed** design: tools not explicitly listed are DENIED
-- Each session gets an **ephemeral simulator clone** via `xcrun simctl clone` from a golden image (APFS CoW — fast and disk-efficient)
-- For `ios-simulator` tools, the clone's UDID is auto-injected via `updatedInput`
-- For `XcodeBuildMCP` build/test/run, the first call is DENIED with instructions to run `session_set_defaults` pointing at the clone
+- `.claude/hooks/sim-pool-guard.sh` runs as PreToolUse hook, capturing all XcodeBuildMCP / ios-simulator tool calls (`mcp__XcodeBuildMCP__.*`, `mcp__ios-simulator__.*`)
+- Allowlist-based fail-closed: tools not explicitly listed are DENIED
+- Each session gets an ephemeral simulator clone via `xcrun simctl clone` from a golden image (APFS CoW)
+- For `ios-simulator` tools: clone UDID auto-injected via `updatedInput`
+- For `XcodeBuildMCP` build/test/run: first call DENIED with instructions to run `session_set_defaults` pointing at clone
 
 ## Guard Behavior
 
@@ -26,29 +26,23 @@ Prevents simulator conflicts when multiple Claude Code sessions run in parallel 
 
 ## Golden Image Device Set Isolation
 
-By default, the golden image lives in the default Device Set alongside user simulators. This risks accidental use by Xcode, Fastlane, or manual `simctl` operations.
+By default, golden image is in the default Device Set (risks accidental use by Xcode, Fastlane, `simctl`).
 
-When `SIM_GOLDEN_SET` is configured, the guard isolates the golden image in a separate Device Set:
-
-1. All golden operations (`find_golden`, `ensure_golden`) use `xcrun simctl --set "$SIM_GOLDEN_SET"`
-2. The golden image is invisible to default `simctl list` and Xcode device lists
-3. Clones are created via cross-set clone with a destination argument: the clone lands in the default Device Set for MCP tool compatibility
-4. If `SIM_GOLDEN_SET` is unset or empty, the guard falls back to default Device Set behavior (backward compatible)
+When `SIM_GOLDEN_SET` is configured:
+1. Golden operations use `xcrun simctl --set "$SIM_GOLDEN_SET"` — invisible to default `simctl list`
+2. Clones via cross-set clone land in default Device Set for MCP compatibility
+3. Unset/empty: falls back to default Device Set
 
 ## Ephemeral Clone Lifecycle
 
-1. **Golden image lazy init**: First request boots the golden simulator (`SIM_GOLDEN_NAME`), waits for boot completion, shuts down, and creates a runtime-versioned marker file
-2. **Clone creation**: `xcrun simctl clone` creates a per-session clone named `atdd-kit-YYYYMMDDTHHMMSS-SESSION8`. When `SIM_GOLDEN_SET` is configured, uses cross-set clone to place the clone in the default Device Set
-3. **Session lock**: Clone UDID and name stored in `$SESSION_DIR/$session_id`
-4. **Orphan cleanup**: Before creating a new clone, stale clones (past TTL) are automatically deleted
+1. **Golden lazy init**: First request boots `SIM_GOLDEN_NAME`, waits for boot, shuts down, creates marker
+2. **Clone creation**: `xcrun simctl clone` creates `atdd-kit-YYYYMMDDTHHMMSS-SESSION8`. With `SIM_GOLDEN_SET`: cross-set clone to default Device Set
+3. **Session lock**: UDID and name stored in `$SESSION_DIR/$session_id`
+4. **Orphan cleanup**: Stale clones (past TTL) auto-deleted before new clone creation
 
 ## Setup
 
-Auto-configured when iOS platform is detected at first session, or via `/atdd-kit:setup-ios`:
-- `addons/ios/scripts/sim-pool-guard.sh` -> project's `.claude/hooks/sim-pool-guard.sh`
-- PreToolUse hook definition added to `.claude/settings.json`
-
-See `${CLAUDE_PLUGIN_ROOT}/addons/ios/addon.yml` for the full addon manifest.
+Auto-configured on first iOS session or via `/atdd-kit:setup-ios`. See `${CLAUDE_PLUGIN_ROOT}/addons/ios/addon.yml`.
 
 ## Environment Overrides (Testing)
 
@@ -65,7 +59,7 @@ See `${CLAUDE_PLUGIN_ROOT}/addons/ios/addon.yml` for the full addon manifest.
 
 ## Troubleshooting
 
-- **Clone not created**: Check that the golden image exists — `xcrun simctl list devices available` should show `SIM_GOLDEN_NAME`. If `SIM_GOLDEN_SET` is configured, use `xcrun simctl --set "$SIM_GOLDEN_SET" list devices` instead
-- **Stale clones accumulating**: Cleanup runs automatically on each clone creation; manual cleanup: `xcrun simctl delete <udid>`
-- **Tool DENIED unexpectedly**: Check if the tool is in `READONLY_TOOLS` or `CLONE_REQUIRED_TOOLS` in `sim-pool-guard.sh`
-- **Golden visible in default device list**: Ensure `SIM_GOLDEN_SET` is set to a non-empty path. The golden should only appear in `xcrun simctl --set "$SIM_GOLDEN_SET" list devices`
+- **Clone not created**: verify golden image exists (`xcrun simctl list devices available` or with `--set "$SIM_GOLDEN_SET"`)
+- **Stale clones**: auto-cleaned on each new clone; manual: `xcrun simctl delete <udid>`
+- **Tool DENIED**: check `READONLY_TOOLS`/`CLONE_REQUIRED_TOOLS` in `sim-pool-guard.sh`
+- **Golden in default list**: set `SIM_GOLDEN_SET` to a non-empty path

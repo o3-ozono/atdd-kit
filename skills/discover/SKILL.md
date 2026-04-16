@@ -10,9 +10,9 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 # discover Skill -- Requirements Exploration and AC Derivation
 
 <HARD-GATE>
-Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (DoD, ACs, or both) produced by this skill. This applies to EVERY task regardless of perceived simplicity. "Too simple to need discovery" is a rationalization -- all tasks start here.
+Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (DoD, ACs, or both). No exceptions regardless of perceived simplicity.
 
-**Autopilot exception:** When discover is invoked via autopilot (ARGUMENTS contains `--autopilot`), the approval gate in Step 7 is satisfied by the AC Review Round that follows. The user approves the final AC set after Three Amigos review — not during discover's Step 7. This is NOT a bypass of the approval requirement; it is a relocation of when approval occurs. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) the AC Review Round completes with user approval.
+**Autopilot exception:** When invoked with `--autopilot`, Step 7 approval is satisfied by the AC Review Round. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) AC Review Round completes with user approval.
 </HARD-GATE>
 
 <AUTOPILOT-GUARD>
@@ -22,41 +22,35 @@ If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash com
 If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
-The first step of the Issue Ready flow. Through dialogue, understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks).
-
-> **Used for all task types.** Development, bug, refactoring, documentation, research -- all start here.
+First step of the Issue Ready flow. Understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks).
 
 ---
 
 ## Core Principles
 
-Follow these **always**. No exceptions.
-
 | # | Principle | Detail |
 |---|-----------|--------|
-| D1 | **One question at a time** | Do not bundle multiple questions in one message |
-| D2 | **Offer choices** | Present 2-3 options when possible to reduce user effort |
-| D3 | **Explore 2-3 approaches** | Do not rush into one approach. Show tradeoffs and recommend one |
-| D4 | **Respect the approval gate** | Do not advance to the next skill until the user approves the deliverables |
-| D5 | **Post deliverables as Issue comments** | No repository file commits. Use `gh issue comment`. |
-| D6 | **No code edits** | This skill edits no code and no repository source files. **Documentation artifact exception:** Writing to `docs/personas/` (new persona files) and `docs/specs/` (spec files) is permitted. These are the only two exceptions. |
+| D1 | **One question at a time** | Do not bundle multiple questions |
+| D2 | **Offer choices** | Present 2-3 options to reduce user effort |
+| D3 | **Explore 2-3 approaches** | Show tradeoffs and recommend one |
+| D4 | **Respect the approval gate** | Do not advance until user approves deliverables |
+| D5 | **Post deliverables as Issue comments** | Use `gh issue comment`. No repository commits. |
+| D6 | **No code edits** | No code or repository source file edits. **Documentation artifact exception:** Writing to `docs/personas/` (new persona files) and `docs/specs/` (spec files) is permitted. These are the only two exceptions. |
 | D7 | **Split Issues/PRs by user flow** | Not by technical layer |
 
 ---
 
 ## Exclusive Lock Acquisition
 
-Before starting any work, acquire the `in-progress` lock on the Issue:
-
 ```bash
 gh issue edit <number> --add-label "in-progress"
 ```
 
-If the Issue already has `in-progress`, another process is working on it. **Do not proceed.** Report to the user and exit.
+If `in-progress` already exists, another process owns it. Report and exit.
 
 ## Task Type Detection
 
-Detect the task type from Issue labels or user description at skill startup.
+Detect task type from Issue labels or user description at startup.
 
 | Label | Task Type | Flow |
 |-------|-----------|------|
@@ -66,77 +60,59 @@ Detect the task type from Issue labels or user description at skill startup.
 | `type:documentation` | Documentation | Docs/research flow |
 | `type:research` | Research | Docs/research flow |
 
-If unclear, use AskUserQuestion (2-stage split per §(d) exception — 5 types exceed 4-option limit):
+If unclear, use AskUserQuestion (2-stage split — 5 types exceed 4-option limit):
 
-**Q1** — use AskUserQuestion with:
+**Q1:**
 - header: "Task Type?"
-- options:
-  1. "(Recommended) Development — new feature or enhancement"
-  2. "Bug fix"
-  3. "Other (refactoring / documentation / investigation)"
+- options: "(Recommended) Development", "Bug fix", "Other (refactoring / documentation / investigation)"
 - multiSelect: false
 
-Recommended: Development — reply 'ok' to accept, or provide alternative
-
-**Q2** (only if "Other" selected in Q1) — use AskUserQuestion with:
+**Q2** (only if "Other"):
 - header: "Detail type?"
-- options:
-  1. "Refactoring"
-  2. "Documentation"
-  3. "Investigation"
+- options: "Refactoring", "Documentation", "Investigation"
 - multiSelect: false
 
 ---
 
 ## Default Recommendation Pattern
 
-At every decision point in discover, present a recommended default. The user can accept with "ok" or provide an alternative.
+At every decision point, present a recommended default. Accept with "ok" or provide alternative.
 
 Format: `Recommended: [X] — reply 'ok' to accept, or provide alternative`
-
-This applies to: approach selection, user story confirmation, AC approval, and all other decision points.
 
 ---
 
 ## Context Block Reading
 
-Before starting the task-type-specific flow, check the Issue comments for a `## Context Block` section posted by issue/bug/ideate skills. If found:
+Before the task-type-specific flow, check Issue comments for `## Context Block` (posted by issue/bug/ideate skills). If found:
 
-1. Read the Context Block fields (task_type, requirements, environment, collected_info)
-2. Skip redundant questions that are already answered in the Context Block
-3. Use the collected information as starting context for the flow
-
-This prevents re-asking questions that the user already answered during Issue creation or bug intake.
+1. Read task_type, requirements, environment, collected_info
+2. Skip questions already answered
+3. Use as starting context
 
 ---
 
 ## Development Flow (type:development)
 
-Execute these steps **in order**. Do not skip any.
+Execute in order.
 
 ### Step 1: Understand the Requirements
 
-1. Read the Issue to understand what (What), why (Why), and who (Who)
-2. Ask questions **one at a time** if information is missing
-3. Explore the codebase for existing implementations and design patterns
-4. Check `docs/` for technical documentation to avoid contradicting established designs
+1. Read the Issue: What, Why, Who
+2. Ask questions one at a time if missing
+3. Explore codebase for existing patterns
+4. Check `docs/` for design constraints
 
 ### Step 2: Approach Exploration
 
-> **Equal-detail rule:** All approaches must be described with the same level of detail for Summary, Pros, Cons, Impact, and Risks. Do not give the recommended approach more detail than alternatives.
->
-> **Minimum detail guard:** Each Pros and Cons section must contain at least 2 bullet items per approach. Single-item lists indicate insufficient analysis.
+> **Equal-detail rule:** All approaches get the same depth: Summary, Pros, Cons, Impact, Risks.
+> **Minimum detail guard:** At least 2 bullets per Pros/Cons.
 
 1. Consider 2-3 approaches
-2. **For Complex classification only:** Use the Agent tool to launch parallel subagents (2-3) to investigate each approach's feasibility simultaneously. Each agent explores one approach and reports back. Collect results into a comparison table.
-3. For each approach:
-   - **Summary:** 1-2 sentence description
-   - **Pros:** bullet list
-   - **Cons:** bullet list
-   - **Impact:** files/modules that need changes
-   - **Risks:** anticipated risks
-4. **Recommend** one approach and explain why
-5. Ask the user to choose (as a single question):
+2. **Complex only:** Agent tool — 2-3 parallel subagents, one per approach; collect into comparison table.
+3. For each: Summary, Pros, Cons, Impact, Risks
+4. Recommend one and explain why
+5. Ask the user to choose:
 
 ```
 I've considered these approaches:
@@ -166,17 +142,11 @@ Recommended: [recommended approach] — reply 'ok' to accept, or provide alterna
 
 ### Step 2.5: DoD Derivation
 
-Based on the approved approach, derive the **Definition of Done** for this task.
+Derive the **Definition of Done** — delivery conditions (when complete, not how it behaves).
 
-DoD items describe *when the task is complete* (delivery conditions), not *how* the feature behaves.
+Typical DoD items: all ACs satisfied, tests at appropriate layer, no regressions, PR merged.
 
-Typical DoD items:
-- Implementation satisfies all ACs
-- All new code has tests at the appropriate layer
-- No regression in existing tests
-- PR reviewed and merged
-
-Confirm with the user or proceed with defaults:
+Confirm or proceed with defaults:
 
 ```
 Recommended DoD:
@@ -185,12 +155,7 @@ Recommended DoD:
 ...
 ```
 
-Then use AskUserQuestion with:
-- header: "DoD?"
-- options:
-  1. "(Recommended) Accept DoD as listed"
-  2. "Suggest additions or changes"
-- multiSelect: false
+AskUserQuestion — header: "DoD?", options: "(Recommended) Accept DoD as listed", "Suggest additions or changes"
 
 Recommended: Accept DoD — reply 'ok' to accept, or provide alternative
 
@@ -255,7 +220,7 @@ After collecting all fields, create `docs/personas/` directory if it does not ex
 
 Based on the approved approach and the selected (or newly created) persona, derive a user story.
 
-Format:
+Format: `**As a** [persona], **I want to** [goal], **so that** [reason].`
 
 ```
 **As a** [persona name],
@@ -271,12 +236,7 @@ Does this user story look right?
 **As a** [persona], **I want to** [goal], **so that** [reason].
 ```
 
-Then use AskUserQuestion with:
-- header: "User Story?"
-- options:
-  1. "(Recommended) Looks good — proceed"
-  2. "Suggest revision"
-- multiSelect: false
+AskUserQuestion — header: "User Story?", options: "(Recommended) Looks good — proceed", "Suggest revision"
 
 Recommended: Looks good — reply 'ok' to accept, or provide alternative
 
@@ -348,9 +308,7 @@ Check the following 5 items for AC coverage. Add ACs where gaps exist.
 | U4 | **Error Prevention** | Are there safeguards against mistakes? |
 | U5 | **Efficiency of Use** | Can frequent actions be performed efficiently? |
 
-For each item:
-- **Applicable:** Describe specifics. Add an AC if coverage is missing.
-- **Not applicable:** State why (briefly).
+Applicable: describe specifics, add AC if missing. Not applicable: state why.
 
 ### Step 6: Interruption Scenario Check
 
@@ -365,32 +323,15 @@ Check the following 4 items. Add ACs where gaps exist.
 | I3 | **Background resume** | Does the app work correctly after returning from background? |
 | I4 | **Modal escape** | Can modals/dialogs be dismissed (including gestures)? |
 
-For each item:
-- **Applicable:** Describe specifics. Add an AC if coverage is missing.
-- **Not applicable:** State why (briefly).
+Applicable: describe specifics, add AC if missing. Not applicable: state why.
 
 ### Step 7: Present Deliverables and Get Approval
 
-**Autopilot mode** (ARGUMENTS contains `--autopilot`): Skip the approval request. Output the draft AC set and return to the caller. The AC Review Round in autopilot will handle user approval. Do NOT proceed to Step 8.
+**Autopilot mode** (`--autopilot`): Skip approval. Output draft AC set and return to caller. AC Review Round handles approval. Do NOT proceed to Step 8.
 
-**Standalone mode** (ARGUMENTS does not contain `--autopilot` — user invoked discover directly): Present the full AC set to the user:
+**Standalone mode:** Present AC set, UX check results, and interruption check results.
 
-```
-Please review these ACs:
-
-[AC list]
-
-[UX check results]
-
-[Interruption scenario check results]
-```
-
-Then use AskUserQuestion with:
-- header: "Approve ACs?"
-- options:
-  1. "(Recommended) Approve — proceed to plan"
-  2. "Needs revision"
-- multiSelect: false
+AskUserQuestion — header: "Approve ACs?", options: "(Recommended) Approve — proceed to plan", "Needs revision"
 
 Recommended: Approve — reply 'ok' to accept, or provide alternative
 
@@ -399,9 +340,9 @@ Recommended: Approve — reply 'ok' to accept, or provide alternative
 
 ### Step 8: Post to Issue Comment, Spec File Creation, and Inline Plan Execution
 
-> **Autopilot mode skip:** When ARGUMENTS contains `--autopilot`, this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
+> **Autopilot mode:** Skip entirely. AC Review Round handles posting and plan.
 
-Post the approved deliverables with `gh issue comment`.
+Post approved deliverables with `gh issue comment`.
 
 **Spec file creation (standalone mode only — D6 exception: documentation artifact creation in `docs/specs/` is permitted):**
 
@@ -447,7 +388,7 @@ status: approved
 
 The `status` field is set to `approved` because Step 8 is reached only after user approval (discover phase complete).
 
-**Inline plan mode (AC9 — approval gate integration):** After posting ACs, automatically execute plan's Core Flow (Steps 2-5) inline. Produce a combined comment containing both AC set and implementation plan, so the user can approve both in a single review.
+**Inline plan mode:** After posting ACs, execute plan's Core Flow (Steps 2-5) inline. Produce a combined comment with AC set + implementation plan, so the user can approve both in a single review.
 
 Format:
 
@@ -511,17 +452,13 @@ Format:
 
 ### Step 1: Understand the Bug
 
-1. From the Issue or user report, identify:
-   - **Symptom:** What is happening
-   - **Reproduction steps:** How to reproduce
-   - **Environment:** OS, device, version
-   - **Expected behavior:** What should happen
-2. Ask questions **one at a time** if information is missing
+1. Identify: Symptom, Reproduction steps, Environment (OS/device/version), Expected behavior
+2. Ask questions one at a time if missing
 
 ### Step 2: Root Cause Investigation
 
-1. Investigate the codebase to identify the root cause
-2. Classify the root cause:
+1. Investigate the codebase
+2. Classify:
 
 | Class | Description | Example |
 |-------|-------------|---------|
@@ -550,24 +487,23 @@ Recommended: Correct — reply 'ok' to accept, or provide alternative
 
 ### Step 3: Fix Approach Exploration
 
-Same as development flow Step 2: explore 2-3 approaches and get approval.
+Same as development flow Step 2.
 
 ### Step 3.5: DoD Derivation
 
-Same as development flow Step 2.5: derive DoD items for this bug fix. Always include:
-- The bug no longer reproduces under the original reproduction steps
+Same as development flow Step 2.5. Always include:
+- Bug no longer reproduces under original reproduction steps
 - Regression test passes
 
 ### Step 4: Fix AC Derivation
 
-Based on the approved approach, derive fix ACs in Given/When/Then format.
-
-- **Regression test AC:** Describe the bug's reproduction condition as an AC (must pass after fix)
-- **Normal behavior AC:** Verify correct behavior after the fix
+Derive fix ACs in Given/When/Then format:
+- **Regression test AC:** Bug's reproduction condition (must pass after fix)
+- **Normal behavior AC:** Correct behavior after fix
 
 ### Step 5: Present Deliverables and Get Approval
 
-Present the full AC set (same as development flow Step 7).
+Same as development flow Step 7.
 
 ### Step 6: Post to Issue Comment
 
@@ -610,12 +546,11 @@ Format:
 
 ## Refactoring Flow (type:development + refactoring)
 
-Same steps as development flow, with these differences:
-
-- **DoD required item:** Always include a DoD item stating that externally observable behavior is unchanged (e.g., "externally observable behavior is unchanged — verified by regression test suite").
-- **User story perspective:** The subject is a developer or team (e.g., "As a developer, I want X to be easier to test")
-- **AC focus:** Always include an AC verifying that externally observable behavior is unchanged
-- **UX / Interruption checks:** Mark as not applicable for pure internal refactoring (don't skip -- explicitly state not applicable with a reason)
+Same as development flow, with these differences:
+- **DoD:** Always include "externally observable behavior is unchanged — verified by regression test suite"
+- **User story:** Subject is developer or team (e.g., "As a developer, I want X to be easier to test")
+- **ACs:** Always include an AC verifying unchanged external behavior
+- **UX / Interruption checks:** Mark not applicable for pure internal refactoring — explicitly state reason
 
 ---
 
@@ -623,17 +558,15 @@ Same steps as development flow, with these differences:
 
 ### Step 1: Understand the Scope
 
-1. Read the Issue to understand the scope of the research/documentation
-2. Ask questions **one at a time** if information is missing
+Read the Issue. Ask questions one at a time.
 
 ### Step 2: Approach Exploration
 
-1. Consider 2-3 approaches, present to user
-2. Get approval
+Consider 2-3 approaches, present, get approval.
 
 ### Step 3: DoD Derivation
 
-Define the **Definition of Done** — verifiable completion conditions. Vague criteria are not allowed.
+Define the **Definition of Done** — verifiable completion conditions only. Vague criteria are not allowed.
 
 | Bad | Good |
 |-----|------|
@@ -643,22 +576,7 @@ Define the **Definition of Done** — verifiable completion conditions. Vague cr
 
 ### Step 4: Present Deliverables and Get Approval
 
-Present DoD items:
-
-```
-Are these DoD items acceptable?
-
-- [ ] [DoD item 1]
-- [ ] [DoD item 2]
-- ...
-```
-
-Then use AskUserQuestion with:
-- header: "DoD?"
-- options:
-  1. "(Recommended) Approve DoD"
-  2. "Needs revision"
-- multiSelect: false
+AskUserQuestion — header: "DoD?", options: "(Recommended) Approve DoD", "Needs revision"
 
 Recommended: Approve DoD — reply 'ok' to accept, or provide alternative
 
@@ -689,14 +607,12 @@ Format:
 
 **Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
 
-Output a `skill-status` fenced code block as the **last element** of your response at every
-terminal point. Terminal points for discover:
+Output a `skill-status` fenced code block as the **last element** of your response at every terminal point.
 
-- **COMPLETE:** Autopilot mode — deliverables returned to AC Review Round (Step 7 skipped).
-  Standalone mode — deliverables posted as Issue comment and plan invoked.
-- **PENDING:** Waiting for user approval of AC set (standalone mode mid-flow).
-- **BLOCKED:** HARD-GATE triggered (e.g., `in-progress` lock already held by another process),
-  or existing HARD-GATE / State Gate precondition not met.
+Terminal points:
+- **COMPLETE:** Deliverables returned to AC Review Round (autopilot) or posted as Issue comment (standalone).
+- **PENDING:** Waiting for user approval (standalone mid-flow).
+- **BLOCKED:** HARD-GATE triggered or precondition not met.
 - **FAILED:** Unrecoverable error (e.g., `gh issue comment` auth failure).
 
 ```skill-status
@@ -725,20 +641,13 @@ PHASE: discover
 RECOMMENDATION: gh issue comment failed with authentication error. Check GH_TOKEN configuration.
 ```
 
-See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
-autopilot action matrix.
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and autopilot action matrix.
 
 ---
 
 ## Skill Completion and Transition
 
-After deliverables are posted and approved:
-
-1. Show:
-   ```
-   discover complete. Next: `atdd-kit:plan` to create the implementation plan.
-   ```
-2. Invoke `atdd-kit:plan` via the Skill tool.
+After deliverables are posted and approved, show `"discover complete. Next: atdd-kit:plan"` and invoke `atdd-kit:plan` via the Skill tool.
 
 ---
 
@@ -749,15 +658,15 @@ Do not skip any item.
 - [ ] Not editing code or repository source files (D6: only docs/personas/ and docs/specs/ exceptions permitted)
 - [ ] Not bundling multiple questions in one message
 - [ ] Approach exploration done (2-3 approaches presented)
-- [ ] DoD derivation step completed (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
-- [ ] DoD section is at the top of the Issue comment
+- [ ] DoD derivation done (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
+- [ ] DoD section at top of Issue comment
 - [ ] Persona selected or created from docs/personas/ — Step 3a complete (development flow)
-- [ ] Not skipping UX check (U1-U5) for development tasks
-- [ ] Not skipping interruption scenario check (I1-I4) for development tasks
-- [ ] ACs are in Given/When/Then format
-- [ ] If ACs are 7 or more, the split self-check has been performed
+- [ ] UX check (U1-U5) not skipped for development tasks
+- [ ] Interruption scenario check (I1-I4) not skipped for development tasks
+- [ ] ACs in Given/When/Then format
+- [ ] Split self-check done if ACs ≥ 7
 - [ ] Step 4.5 quality validation executed — MUST-1/2/3 checked (development flow only)
 - [ ] SHOULD advisory reviewed — SHOULD-1 through SHOULD-5 (development flow only)
-- [ ] User approved the deliverables
+- [ ] User approved deliverables
 - [ ] Deliverables posted as Issue comment
 - [ ] Spec file created at docs/specs/<kebab-slug>.md with status: approved (standalone mode, development flow only)
