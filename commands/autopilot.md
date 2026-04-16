@@ -156,7 +156,7 @@ Prohibited patterns. Failure mode: report what failed → STOP → wait for user
 1. `gh issue edit <number> --add-label in-progress` (exclusive lock)
 2. Read the Issue body and comments
 3. Use Skill tool to invoke `atdd-kit:discover` with `"<number> --autopilot"`
-4. `SKILL_STATUS: COMPLETE` → immediately proceed to AC Review Round. Do NOT present draft deliverables or send intermediate messages.
+4. On `SKILL_STATUS: COMPLETE` from discover: immediately issue Agent tool calls to spawn AC Review Round agents. **Phase 1 is not complete until AC Review Round agents have been spawned. Receiving SKILL_STATUS: COMPLETE from discover alone does not complete Phase 1.** Do NOT present draft deliverables to the user or send any intermediate messages before the Agent tool calls.
 
 ## AC Review Round
 
