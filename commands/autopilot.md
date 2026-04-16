@@ -141,7 +141,7 @@ See `docs/guides/skill-status-spec.md` for full specification.
 
 ## Autonomy Rules
 
-Prohibited patterns. Trigger: report failure → STOP → wait for user.
+Prohibited patterns. Failure mode: report what failed → STOP → wait for user.
 
 1. **Solo execution** — PO must not execute Developer or QA responsibilities. Implementation requires a Developer agent; review requires a QA agent.
 2. **Explore subagent substitution** — Do not use Explore subagents instead of Developer/QA. Explore is for codebase research only.
@@ -197,21 +197,21 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 **Tools:** SendMessage, Skill
 
-> **Constraint:** No new agents. Use SendMessage to existing Developer/QA (see Autonomy Rule 5).
+> **Constraint:** No new agents. Use SendMessage only to existing Developer/QA (see Autonomy Rule 5).
 
-1. SendMessage to Developer: implementation strategy — file structure, order, dependencies, risks. Include Issue number and AC set comment reference (`gh issue view <number> --json comments` on demand).
-2. SendMessage to QA: test strategy — layer selection per AC, coverage, regression risk. Include Issue number and AC set reference.
+1. SendMessage to Developer: implementation strategy — file structure, order, dependencies, risks. Include Issue number and reference to Issue comments containing the AC set (`gh issue view <number> --json comments` on demand).
+2. SendMessage to QA: test strategy — layer selection per AC, coverage, regression risk. Include Issue number and reference to Issue comments containing the AC set.
 3. PO integrates both into a unified Plan.
 
 ## Plan Review Round
 
 **Tools:** SendMessage
 
-> **Constraint:** No new agents. Use SendMessage to existing Developer/QA (see Autonomy Rule 5).
+> **Constraint:** No new agents. Use SendMessage only to existing Developer/QA (see Autonomy Rule 5).
 
 > **Circuit Breaker Check:** At the start of each iteration (initial and `needs-plan-revision` re-entry), run `bash lib/circuit_breaker.sh check`. OPEN → halt autopilot.
 
-1. SendMessage to Developer and QA in parallel. Include Issue number, AC set and Plan comment references (`gh issue view <number> --json comments` on demand):
+1. SendMessage to Developer and QA in parallel. Include Issue number and reference to Issue comments containing the AC set and the unified Plan (`gh issue view <number> --json comments` on demand):
    - **PO:** AC alignment, no scope creep
    - **Developer:** file structure validity, implementation order risks, Agent Composition concreteness
    - **QA:** test layer validity, coverage completeness
@@ -219,7 +219,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 3. Finalize Plan (no Stakeholder approval required)
 4. `gh issue comment` with Plan
 5. `gh issue edit <number> --add-label ready-to-go`
-6. **Stop-point (same-session only):** Skip if reached via Phase 0.5 resume (label already set).
+6. **Stop-point (same-session only, skip if mid-phase resume):** Fires only when Plan Review Round ran in the current session. Skip if reached via Phase 0.5 resume (label already set).
 
    AskUserQuestion:
    - **Option 1:** "Clear and end — clear this session, then run `/atdd-kit:autopilot <N>` to resume from Phase 3"
@@ -247,7 +247,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 **Tools:** SendMessage, Skill
 
-> **Constraint:** No new agents except variable-count agents per plan. Use SendMessage (see Autonomy Rule 5).
+> **Constraint:** No new agents except variable-count agents per plan. Use SendMessage only (see Autonomy Rule 5).
 
 > **Circuit Breaker Check:** At each iteration start (`ready-to-go` entry and `needs-pr-revision` re-entry), run `bash lib/circuit_breaker.sh check`. OPEN → halt. Do not delegate to Developer.
 
@@ -279,7 +279,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 **Tools:** SendMessage
 
-> **Constraint:** No new agents except variable-count Reviewers per plan. Use SendMessage (see Autonomy Rule 5).
+> **Constraint:** No new agents except variable-count Reviewers per plan. Use SendMessage only (see Autonomy Rule 5).
 
 > **Circuit Breaker Check:** At each iteration start (initial and `needs-pr-revision` re-entry), run `bash lib/circuit_breaker.sh check`. OPEN → halt. Do not spawn Reviewers.
 
@@ -299,7 +299,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 **Tools:** Bash (gh), ExitWorktree, TeamDelete
 
 1. **Verify review PASS:** `gh pr view <PR> --json comments --jq '.comments[].body'`
-   - No PASS comment → STOP. "QA review PASS not confirmed. Returning to Phase 4."
+   - No PASS comment → STOP. Do NOT proceed to merge. "QA review PASS not confirmed. Returning to Phase 4."
    - PASS confirmed → Step 2
 2. `gh pr view <PR> --json statusCheckRollup,mergeable`
 3. `mergeable == CONFLICTING`:

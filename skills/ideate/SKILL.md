@@ -63,7 +63,7 @@ AskUserQuestion — header: "Proceed?", options: "(Recommended) Yes, proceed to 
 
 ### Step 4: Transition to discover
 
-Post Context Block as Issue comment:
+When the user approves, post Context Block as Issue comment:
 
 ```markdown
 ## Context Block
