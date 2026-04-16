@@ -4,7 +4,7 @@ description: "Autopilot end-to-end workflow. main Claude acts as orchestrator, d
 
 # Autopilot — PO-Led End-to-End Workflow
 
-The PO (Product Owner) acts as team-lead throughout, driving Issues end-to-end from discover through merge. Agent composition switches based on task type.
+PO drives Issues end-to-end from discover through merge. Agent composition switches by task type.
 
 ## Agent Composition Table
 
@@ -18,19 +18,17 @@ The PO (Product Owner) acts as team-lead throughout, driving Issues end-to-end f
 
 ### Variable-Count Agents (Reviewer, Researcher)
 
-Reviewer and Researcher agents have variable count (x N). The composition (count and focus/themes)
-is determined during plan and approved as part of the `### Agent Composition` section in the plan comment.
+Count and focus/themes are determined during plan in the `### Agent Composition` section.
 
 When spawning Variable-Count Agents in Phase 3 or Phase 4:
-1. Read the `### Agent Composition` section from the `## Implementation Plan` comment in the Issue
-2. Spawn agents according to the approved composition directly — no additional user approval required
-3. If the plan comment does not contain a `### Agent Composition` section: report error and STOP
-   (see Autonomy Rules — failure mode: report what failed → STOP → user decides next step)
+1. Read `### Agent Composition` from the `## Implementation Plan` Issue comment
+2. Spawn per approved composition — no additional user approval required
+3. If `### Agent Composition` is absent: report error and STOP (see Autonomy Rules)
 
 ## Prerequisites
 - `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
-- Agent definitions must exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as the PO orchestrator directly.
-- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` must be set in `.claude/settings.local.json` `env` (auto-configured by session-start)
+- Agent definitions in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as PO.
+- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start)
 
 ## Usage
 
@@ -46,51 +44,32 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 
 **Tools:** Bash (gh)
 
-Resolve which Issue to work on based on the argument.
-
 ### No argument (auto-detect)
 
-When no argument is given, auto-detect the target Issue:
-
 1. `gh issue list --label in-progress --state open --json number,title --jq '.[]'`
-2. **0 results:** Error — "No in-progress Issue found. Specify an Issue number or keyword."  STOP.
-3. **1 result:** Use that Issue automatically.
-4. **Multiple results:** Present a numbered candidate list and ask the user to select:
-   ```
-   Multiple in-progress Issues found:
-   1. #80 — feat: ...
-   2. #87 — feat: ...
-   Choose [1-N]:
-   ```
+2. **0 results:** Error — "No in-progress Issue found." STOP.
+3. **1 result:** Use it.
+4. **Multiple results:** Present numbered list, ask user to select.
 
 ### Numeric argument (Issue number)
 
-When the argument is a number (e.g., `autopilot 123`):
-
 1. `gh issue view <number> --json number,title,state`
-2. If the Issue exists and is open: use it.
-3. If not found or closed: error and STOP.
+2. Open → use it. Not found or closed → error and STOP.
 
 ### Text argument (partial match search)
 
-When the argument is not a number and not a subcommand (sweep/eval):
-
 1. `gh issue list --state open --search "<text>" --json number,title --jq '.[]'`
 2. **0 results:** Error — "No Issue found matching '<text>'." STOP.
-3. **1 result:** Use that Issue automatically.
-4. **Multiple results:** Present a numbered candidate list and ask the user to select.
+3. **1 result:** Use it.
+4. **Multiple results:** Present numbered list, ask user to select.
 
 ## Phase 0.5: Phase and Task Type Determination
 
 **Tools:** Bash (gh)
 
-After resolving the target Issue, determine (a) which phase to start from and (b) the task type, based on the Issue's labels:
-
 1. `gh issue view <number> --json labels --jq '[.labels[].name]'`
-
-2. **Task type detection:** Extract the task type from labels (`type:development`, `type:bug`, `type:research`, `type:documentation`, `type:refactoring`). If no type label exists, default to `development`. The task type determines which agents to spawn (see Agent Composition Table above).
-
-3. **Phase determination:** Match against the phase determination table (most advanced phase wins if multiple labels exist):
+2. **Task type:** Extract from labels (`type:development`, `type:bug`, `type:research`, `type:documentation`, `type:refactoring`). Default: `development`.
+3. **Phase determination** (most advanced label wins):
 
 | Label State | Start Phase |
 |-------------|-------------|
@@ -103,278 +82,246 @@ After resolving the target Issue, determine (a) which phase to start from and (b
 | `in-progress` only (no phase label) | Phase 1: discover |
 | No `in-progress` label | Phase 1: discover (will acquire lock) |
 
-4. Skip to the determined phase. Do not re-execute earlier phases that are already complete.
+4. Skip to the determined phase.
 
 ## Phase 0.9: Agent Teams Setup
 
 **Tools:** ToolSearch, TeamCreate, TeamDelete, EnterWorktree
 
-Bootstrap the Agent Teams infrastructure before any phase execution. This phase must succeed — solo execution fallback is prohibited. Spawn agents based on the task type detected in Phase 0.5 (see Agent Composition Table).
+Bootstrap Agent Teams before any phase. Solo execution fallback is prohibited. Spawn agents per task type from Phase 0.5 (see Agent Composition Table).
 
-1. Use ToolSearch to fetch full schemas for `TeamCreate`, `TeamDelete`, `SendMessage`, and `EnterWorktree` (deferred tools require explicit schema resolution before use)
-2. Use TeamCreate to create team `autopilot-{issue_number}` — record the returned team_name for all subsequent Agent tool calls
-3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`. Available agents: developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md. main Claude acts as the PO orchestrator directly. The system_prompt is the markdown body; the `tools` and `skills` fields in frontmatter control agent capabilities.
-4. Use EnterWorktree with name `autopilot-{issue_number}` to enter an isolated worktree — all subsequent phases (1–5) execute inside this worktree
-5. **Mid-phase resume:** If Phase 0.5 determined a start phase beyond AC Review Round, re-spawn the required agents for the task type before proceeding. Use the Agent Composition Table to determine which agents are needed for the current phase and task type. Load prior phase context by reading Issue/PR comments via `gh issue view` / `gh pr view`.
-   - Phase 1 (discover) or AC Review Round: no re-spawn needed — agents are created in AC Review Round.
-   - Phase 2+ : spawn agents required by the task type's Phase 1/2 composition.
-   - **Phase 3 or Phase 4 resume:** Before proceeding, verify that the plan comment (containing `## Implementation Plan` with a `### Agent Composition` section) exists in the Issue. If the plan comment is absent, report: "plan is incomplete. Please re-run from Phase 2." and STOP. Do not proceed without an approved Agent Composition.
-   Then proceed to the determined phase using SendMessage.
-   Note: This mid-phase resume is the sole exception to Autonomy Rule 5 (Agent re-generation prohibition). It applies only when agents do not exist in the current session due to a session restart.
-6. On failure at any step: report the error → STOP. Do NOT fall back to solo execution. See Autonomy Rules below.
+1. ToolSearch: fetch schemas for `TeamCreate`, `TeamDelete`, `SendMessage`, `EnterWorktree`
+2. TeamCreate: create `autopilot-{issue_number}` — record team_name for all Agent calls
+3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`. system_prompt is the markdown body; `tools` and `skills` frontmatter fields control capabilities.
+4. EnterWorktree `autopilot-{issue_number}` — all phases (1–5) run inside this worktree
+5. **Mid-phase resume:** If Phase 0.5 start phase is beyond AC Review Round:
+   - Phase 1 or AC Review Round: no re-spawn needed.
+   - Phase 2+: spawn Phase 1/2 agents for the task type.
+   - Phase 3 or 4: verify plan comment (`## Implementation Plan` with `### Agent Composition`) exists. If absent: STOP — "plan is incomplete. Re-run from Phase 2."
+   Then proceed via SendMessage.
+   Note: This is the sole exception to Autonomy Rule 5 — applies only on session restart.
+6. On failure: report the error → STOP. Do NOT fall back to solo execution.
 
 ## Output Channels (applies to all phases)
 
-All agent output flows through two channels — never via repository files:
+Two channels only — never via repository files:
 
-- **Inter-agent handoff** (e.g., QA strategy consumed by Developer): use `SendMessage`. Do not persist to files.
-- **Human-facing work log** (AC confirmation, Plan conclusion, review results, research reports): post as Issue / PR comments via `gh issue comment` / `gh pr comment`.
+- **Inter-agent handoff**: use `SendMessage`. Do not persist to files.
+- **Human-facing work log** (AC confirmation, plan, review results, reports): post as Issue/PR comments via `gh issue comment` / `gh pr comment`.
 
-Writing agent deliverables to `docs/decisions/` or any other repository path is prohibited. Curated knowledge that deserves long-term reference must be graduated into existing docs (`docs/`, `DEVELOPMENT.md`, etc.) by explicit human decision — not by agents automatically.
+Writing to `docs/decisions/` or any repository path is prohibited. Curated knowledge graduates into `docs/` or `DEVELOPMENT.md` by explicit human decision only.
 
 ## Status Evaluation (SKILL_STATUS)
 
-When PO receives a SendMessage reply from Developer, QA, or any agent that ran a skill, evaluate
-the `skill-status` block in the message to determine the next action.
+Evaluate the `skill-status` block in each agent reply to determine the next action.
 
 ### Extraction Rule
 
-Locate the **last** `skill-status` fenced code block in the received message. Parse the
-`SKILL_STATUS` and `PHASE` fields. `RECOMMENDATION` is informational only — do not use it for
-branching logic.
+Locate the **last** `skill-status` block. Parse `SKILL_STATUS` and `PHASE`. `RECOMMENDATION` is informational only — do not use it for branching.
 
 ### Action Matrix
 
 | SKILL_STATUS | Autopilot Next Action |
 |---|---|
 | `COMPLETE` | Proceed to next phase |
-| `PENDING` | Wait for external input (user approval); do not advance to next phase |
-| `BLOCKED` | Stop current phase. Post RECOMMENDATION as Issue comment. STOP and wait for user. |
-| `FAILED` | Stop autopilot entirely. Post RECOMMENDATION as Issue comment. Report to user. |
-| (any other value) | Treat as `PENDING` — do not advance |
+| `PENDING` | Wait for user input; do not advance |
+| `BLOCKED` | Post RECOMMENDATION as Issue comment. STOP and wait for user. |
+| `FAILED` | Stop autopilot. Post RECOMMENDATION. Report to user. |
+| (any other) | Treat as `PENDING` |
 
 ### Fallback: No SKILL_STATUS Block Found
 
-If the received message contains no `skill-status` block:
+1. Post Issue comment: "Agent returned output without SKILL_STATUS block. Manual verification required."
+2. STOP. Do not advance.
+3. Report: which agent, which phase, raw message.
 
-1. Post a warning Issue comment: "Agent returned output without SKILL_STATUS block. Manual verification required."
-2. STOP. Do not advance to the next phase.
-3. Report to user: which agent, which phase, and the raw message received.
+Do NOT infer skill completion from message text. Only `skill-status` blocks are authoritative.
 
-Do NOT attempt to infer skill completion from message text. Only `skill-status` blocks are
-authoritative.
-
-See `docs/guides/skill-status-spec.md` for full format specification and field definitions.
+See `docs/guides/skill-status-spec.md` for full specification.
 
 ## Autonomy Rules
 
-The following execution patterns are **prohibited**. If any situation would trigger one of these patterns, the correct action is: report the failure to the user → STOP → wait for user decision.
+Prohibited patterns. Trigger: report failure → STOP → wait for user.
 
-1. **Solo execution** — PO must not execute Developer or QA responsibilities alone. All implementation requires a Developer agent; all review requires a QA agent.
-2. **Explore subagent substitution** — Do not use Explore subagents as a replacement for Developer or QA agents. Explore subagents are for codebase research only, not for implementation or review.
-3. **Self-executing skill steps** — When a skill is delegated to Developer or QA via Agent tool, PO must not execute that skill's steps directly. The skill must run inside the spawned agent.
-4. **Context-priority execution** — Do not skip spawning an agent because "the context from a prior skill is already available." Each role must run in its own agent with its own system_prompt.
-5. **Agent re-generation** — Once Developer and QA are spawned in AC Review Round, do not create new instances of these agents in Phase 2, Plan Review Round, Phase 3, or Phase 4. Communicate with existing agents exclusively via SendMessage. Exception: Phase 0.9 Mid-phase resume handles session-restart re-creation only.
-
-Failure mode: report what failed → STOP → user decides next step.
+1. **Solo execution** — PO must not execute Developer or QA responsibilities. Implementation requires a Developer agent; review requires a QA agent.
+2. **Explore subagent substitution** — Do not use Explore subagents instead of Developer/QA. Explore is for codebase research only.
+3. **Self-executing skill steps** — Skills delegated via Agent tool must run inside the spawned agent, not by PO directly.
+4. **Context-priority execution** — Do not skip spawning an agent because prior skill context is available. Each role requires its own agent.
+5. **Agent re-generation** — Once spawned in AC Review Round, do not create new Developer/QA instances in Phase 2, Plan Review Round, Phase 3, or Phase 4. Use SendMessage only. Exception: Phase 0.9 mid-phase resume on session restart.
 
 ## Phase 1: discover (PO leads)
 
 **Tools:** Bash (gh), Skill
 
-Discover the requirements for the Issue. Common to all task types.
-
 1. `gh issue edit <number> --add-label in-progress` (exclusive lock)
-2. Read the Issue body and comments for context
-3. Use Skill tool to invoke `atdd-kit:discover` with args `"<number> --autopilot"` for the Issue
-4. On `SKILL_STATUS: COMPLETE` from discover: **immediately proceed to AC Review Round. Do NOT present draft deliverables to the user or send any intermediate user-facing message.**
+2. Read the Issue body and comments
+3. Invoke `atdd-kit:discover` via Skill tool with `"<number> --autopilot"`
+4. `SKILL_STATUS: COMPLETE` → immediately proceed to AC Review Round. Do NOT present draft deliverables or send intermediate messages.
 
 ## AC Review Round
 
 **Tools:** Agent, SendMessage
 
-The PO and task-type-specific agents review draft ACs. Spawn agents according to the Phase 1 column of the Agent Composition Table.
+Spawn agents per Phase 1 column of the Agent Composition Table and review draft ACs.
 
 ### development / refactoring: Three Amigos (PO + Developer + QA)
 
-1. Spawn Developer and QA in parallel for AC review (team_name: `autopilot-{issue_number}`, isolation: "worktree"):
-   - **PO:** requirement completeness, alignment with user story, business value
-   - **Developer:** architectural consistency, technical feasibility, edge cases, implementation complexity
-   - **QA:** testability, boundary condition coverage, error cases, coverage gaps
-   Each agent returns their review via `SendMessage` reply to PO.
+1. Spawn Developer and QA in parallel (team_name: `autopilot-{issue_number}`, isolation: "worktree"):
+   - **PO:** requirement completeness, user story alignment, business value
+   - **Developer:** architecture, feasibility, edge cases, implementation complexity
+   - **QA:** testability, boundary conditions, error cases
+   Each agent returns review via SendMessage reply.
 
 ### bug: PO + Tester + Developer (bug-triage)
 
-1. Spawn Tester and Developer in parallel for bug triage:
-   - **PO:** impact scope, priority determination
-   - **Tester:** reproduction confirmation, test environment information
+1. Spawn Tester and Developer in parallel:
+   - **PO:** impact scope, priority
+   - **Tester:** reproduction confirmation, test environment
    - **Developer:** root cause hypothesis, fix approach
-   Each agent returns their triage via `SendMessage` reply to PO.
+   Each agent returns triage via SendMessage reply.
 
 ### research / documentation: PO only
 
-1. PO designs scope, DoD, theme breakdown, and agent count independently.
+1. PO designs scope, DoD, theme breakdown, and agent count.
 
 ### Common (all task types)
 
-2. PO collects review results from agents (via SendMessage replies)
-3. PO integrates feedback and modifies ACs accordingly
-4. Present final AC set to Stakeholder for approval with the message: "This is the final AC set incorporating all Three Amigos review results." This is the single approval point — discover's Step 7 approval was skipped in autopilot mode.
+2. Collect review results via SendMessage replies
+3. Integrate feedback and modify ACs
+4. Present final AC set: "This is the final AC set incorporating all Three Amigos review results." Single approval point (discover Step 7 was skipped in autopilot mode).
    - **Approve:** Proceed to step 5
-   - **Reject:** PO modifies ACs based on user feedback and re-presents (do NOT restart the AC Review Round — PO corrects directly)
-5. On approval: post final ACs as Issue comment with `gh issue comment` (this is the authoritative posting — discover did not post in autopilot mode)
+   - **Reject:** PO modifies ACs and re-presents (do NOT restart the round)
+5. On approval: `gh issue comment` with final ACs (authoritative posting)
 
 ## Phase 2: plan (PO orchestrates, Developer + QA lead their domains)
 
 **Tools:** SendMessage, Skill
 
-Developer leads the implementation strategy, QA leads the test strategy, and PO integrates both. Developer and QA agents were already spawned in AC Review Round — continue via SendMessage.
+> **Constraint:** No new agents. Use SendMessage to existing Developer/QA (see Autonomy Rule 5).
 
-> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
-
-1. Use SendMessage to: "Developer" with implementation strategy instructions. Include Issue number and reference to the Issue comment containing the approved AC set (fetch full text on demand via `gh issue view <number> --json comments`):
-   - file structure, implementation order, dependencies, technical risks
-   - Developer returns the strategy via SendMessage reply
-2. Use SendMessage to: "QA" with test strategy instructions. Include Issue number and reference to the Issue comment containing the approved AC set (fetch full text on demand via `gh issue view <number> --json comments`):
-   - test layer selection per AC (Unit/Integration/E2E), coverage strategy, regression risk analysis
-   - QA returns the strategy via SendMessage reply
-3. PO integrates both strategies into a unified Plan
+1. SendMessage to Developer: implementation strategy — file structure, order, dependencies, risks. Include Issue number and AC set comment reference (`gh issue view <number> --json comments` on demand).
+2. SendMessage to QA: test strategy — layer selection per AC, coverage, regression risk. Include Issue number and AC set reference.
+3. PO integrates both into a unified Plan.
 
 ## Plan Review Round
 
 **Tools:** SendMessage
 
-All three — PO, Developer, and QA — review the Plan. Developer and QA agents continue via SendMessage.
+> **Constraint:** No new agents. Use SendMessage to existing Developer/QA (see Autonomy Rule 5).
 
-> **Constraint:** New agent creation is prohibited in this phase. Communicate with existing Developer/QA agents via SendMessage only (see Autonomy Rule 5).
+> **Circuit Breaker Check:** At the start of each iteration (initial and `needs-plan-revision` re-entry), run `bash lib/circuit_breaker.sh check`. OPEN → halt autopilot.
 
-> **Circuit Breaker Check:** At the start of each Plan Review Round iteration (initial and on `needs-plan-revision` re-entry), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not proceed to plan review.
-
-1. Use SendMessage to: "Developer" and SendMessage to: "QA" in parallel for Plan review. Include Issue number and reference to the Issue comments containing the approved AC set and the unified Plan (fetch full text on demand via `gh issue view <number> --json comments`):
-   - **PO:** alignment with ACs, absence of scope creep
-   - **Developer:** validity of file structure, risks in implementation order, technical risk assessment, adequacy of Agent Composition (concreteness of count and focus) — returns review via SendMessage reply
-   - **QA:** validity of test layers (appropriate use of Unit/Integration/E2E), completeness of coverage strategy — returns review via SendMessage reply
-2. PO collects and integrates review results (via SendMessage replies)
-3. PO finalizes Plan (Stakeholder approval is NOT required for Plan)
-4. Post Plan as Issue comment with `gh issue comment`
+1. SendMessage to Developer and QA in parallel. Include Issue number, AC set and Plan comment references (`gh issue view <number> --json comments` on demand):
+   - **PO:** AC alignment, no scope creep
+   - **Developer:** file structure validity, implementation order risks, Agent Composition concreteness
+   - **QA:** test layer validity, coverage completeness
+2. Collect and integrate results
+3. Finalize Plan (no Stakeholder approval required)
+4. `gh issue comment` with Plan
 5. `gh issue edit <number> --add-label ready-to-go`
-6. **Stop-point: clear or continue (same-session only)**
-   This step runs only when Plan Review Round was executed in the current session. If autopilot reached this point via Phase 0.5 mid-phase resume (ready-to-go label already set at session start), this step is skipped.
+6. **Stop-point (same-session only):** Skip if reached via Phase 0.5 resume (label already set).
 
-   Use `AskUserQuestion` to present the following 2-option prompt:
-   - **Question:** "Plan has been approved and `ready-to-go` label has been set. Context usage may be high. Would you like to clear the session and resume from Phase 3 in a fresh context, or continue to Phase 3 now?"
+   AskUserQuestion:
    - **Option 1:** "Clear and end — clear this session, then run `/atdd-kit:autopilot <N>` to resume from Phase 3"
-   - **Option 2:** "Continue — proceed to Phase 3 now (existing behavior)"
+   - **Option 2:** "Continue — proceed to Phase 3 now"
 
-   If `AskUserQuestion` is not resolvable at runtime, output the 2 options as plain text and STOP until the user responds.
-
-   **Fallback for AskUserQuestion unavailability:**
+   **Fallback (AskUserQuestion unavailable):**
    ```
    Plan approved. Choose how to proceed:
    1. Clear and end — clear this session, then run `/atdd-kit:autopilot <N>` to resume from Phase 3
    2. Continue — proceed to Phase 3 now
    Reply with 1 or 2.
    ```
-   STOP and wait for user response.
+   STOP and wait.
 
-   **On user response:**
-   - **"Clear and end" / Option 1:** Print the following and terminate autopilot entirely (do NOT proceed to Phase 3 or any subsequent phase):
+   **On response:**
+   - **Option 1:** Print and terminate:
      ```
      Session cleared. To resume, run `/atdd-kit:autopilot <N>` in a new session.
      Phase 0.5 will detect the `ready-to-go` label and start directly from Phase 3.
      ```
-   - **"Continue" / Option 2:** Proceed to Phase 3 with no additional steps (existing behavior preserved).
-   - **Other / unclassifiable response:** Follow Autonomy Rules failure mode — report "Response could not be classified as clear or continue." → STOP. Do NOT auto-select either option.
+   - **Option 2:** Proceed to Phase 3.
+   - **Other:** Report "Response could not be classified as clear or continue." → STOP. Do NOT auto-select.
 
 ## Phase 3: Implementation (task-type-specific)
 
 **Tools:** SendMessage, Skill
 
-> **Constraint:** New agent creation is prohibited in this phase (except variable-count agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+> **Constraint:** No new agents except variable-count agents per plan. Use SendMessage (see Autonomy Rule 5).
 
-> **Circuit Breaker Check:** At the start of each implementation iteration (initial `ready-to-go` entry and on `needs-pr-revision` re-entry), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not delegate to Developer.
+> **Circuit Breaker Check:** At each iteration start (`ready-to-go` entry and `needs-pr-revision` re-entry), run `bash lib/circuit_breaker.sh check`. OPEN → halt. Do not delegate to Developer.
 
 ### development / refactoring: Developer implements
 
-1. Use SendMessage to: "Developer" with ATDD implementation instructions. Include Issue number and reference to the Issue comments containing the approved AC set and the unified Plan (fetch full text on demand via `gh issue view <number> --json comments`) — Developer uses Skill tool to invoke `atdd-kit:atdd` with args `"<number> --autopilot"`
-2. Developer creates branch, Draft PR, and implements AC by AC
-3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs are complete
-4. Developer marks PR as ready and adds `ready-for-PR-review` label
+1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer invokes `atdd-kit:atdd "<number> --autopilot"`.
+2. Developer creates branch, Draft PR, implements AC by AC
+3. Developer invokes `atdd-kit:verify` after all ACs complete
+4. Developer marks PR ready and adds `ready-for-PR-review`
 
 ### bug: Developer fixes + Tester verifies
 
-1. Developer implements fix using ATDD (same as development)
-2. Tester verifies the fix by reproducing the original bug and confirming it no longer occurs
-3. Developer marks PR as ready and adds `ready-for-PR-review` label
+1. Developer implements fix using ATDD
+2. Tester verifies fix by reproducing original bug
+3. Developer marks PR ready and adds `ready-for-PR-review`
 
-### research: Researcher x N investigates (min 2 per theme)
+### research: Researcher x N (min 2 per theme)
 
-1. PO spawns Researcher agents (variable count, per plan-approved Agent Composition)
-2. Each Researcher investigates their assigned theme and returns findings via SendMessage reply to PO
-3. PO synthesizes findings into a unified research report and posts it as an Issue / PR comment
+1. PO spawns Researchers (per plan-approved Agent Composition)
+2. Each Researcher returns findings via SendMessage
+3. PO synthesizes into a report, posts as Issue/PR comment
 
 ### documentation: Writer creates
 
-1. Writer creates/updates documentation based on approved plan
-2. Writer marks PR as ready and adds `ready-for-PR-review` label
+1. Writer creates/updates documentation per approved plan
+2. Writer marks PR ready and adds `ready-for-PR-review`
 
 ## Phase 4: PR Review (task-type-specific)
 
 **Tools:** SendMessage
 
-> **Constraint:** New agent creation is prohibited in this phase (except variable-count Reviewer agents per plan-approved Agent Composition). Communicate with existing agents via SendMessage only (see Autonomy Rule 5).
+> **Constraint:** No new agents except variable-count Reviewers per plan. Use SendMessage (see Autonomy Rule 5).
 
-> **Circuit Breaker Check:** At the start of each PR Review iteration (initial entry and after Developer fixes on `needs-pr-revision`), run `bash lib/circuit_breaker.sh check`. If exit is non-zero (state is OPEN), output the stop message from the command and halt autopilot. Do not spawn Reviewer agents.
+> **Circuit Breaker Check:** At each iteration start (initial and `needs-pr-revision` re-entry), run `bash lib/circuit_breaker.sh check`. OPEN → halt. Do not spawn Reviewers.
 
 ### development / bug / documentation / refactoring: Reviewer x N
 
-1. PO spawns Reviewer agents (variable count, per plan-approved Agent Composition — see Variable-Count Agents section)
-2. Each Reviewer reviews from their assigned perspective and returns results via SendMessage reply to PO. PO then posts the consolidated review as a PR comment.
-3. PO collects results:
-   - If issues found: PO adds `needs-pr-revision`, Developer/Writer fixes
-   - If no issues: PO posts review PASS comment
+1. PO spawns Reviewers (per plan-approved Agent Composition)
+2. Each Reviewer returns results via SendMessage. PO posts consolidated review as PR comment.
+3. Issues found → `needs-pr-revision`, Developer/Writer fixes. No issues → review PASS comment.
 
 ### research: PO reviews
 
-1. PO reviews the synthesized research report for completeness against DoD items
-2. If gaps found: PO sends Researchers back to investigate
-3. If complete: PO posts review PASS comment
+1. PO reviews report against DoD
+2. Gaps → send Researchers back. Complete → review PASS comment.
 
 ## Phase 5: PO Cross-Cutting Checks and Merge Decision
 
 **Tools:** Bash (gh), ExitWorktree, TeamDelete
 
-The PO performs cross-cutting checks and makes the merge decision.
-
-1. **Verify QA review PASS:**
-   - Run: `gh pr view <PR> --json comments --jq '.comments[].body'` and check for review PASS comment
-   - If no PASS comment found: STOP. Do NOT proceed to merge. Report: "QA review PASS not confirmed. Returning to Phase 4."
-   - If PASS comment confirmed: proceed to Step 2
-2. Check CI status and merge conflicts: `gh pr view <PR> --json statusCheckRollup,mergeable`
-3. **Evaluate merge conflicts from step 2:**
-   - If `mergeable == CONFLICTING`:
-     - Do NOT propose merge
-     - Post warning: "⚠ PR has merge conflicts with main. Rebase required."
-     - Guide rebase steps:
-       ```bash
-       git fetch origin main
-       git checkout <branch>
-       git rebase origin/main
-       # After resolving conflicts
-       git push --force-with-lease
-       ```
-     - After rebase: return to Phase 4 (QA re-review)
-   - If `mergeable == MERGEABLE`: proceed to merge
-4. Merge with squash: `gh pr merge <PR> --squash`
-5. Remove `in-progress` label from Issue
-6. Switch back to the worktree base branch before exiting:
+1. **Verify review PASS:** `gh pr view <PR> --json comments --jq '.comments[].body'`
+   - No PASS comment → STOP. "QA review PASS not confirmed. Returning to Phase 4."
+   - PASS confirmed → Step 2
+2. `gh pr view <PR> --json statusCheckRollup,mergeable`
+3. `mergeable == CONFLICTING`:
+   - Do NOT merge. Post: "⚠ PR has merge conflicts. Rebase required."
+     ```bash
+     git fetch origin main
+     git checkout <branch>
+     git rebase origin/main
+     # After resolving conflicts
+     git push --force-with-lease
+     ```
+   - After rebase: return to Phase 4
+   `mergeable == MERGEABLE`: proceed to merge
+4. `gh pr merge <PR> --squash`
+5. Remove `in-progress` label
+6. Switch back to the worktree base branch:
    ```bash
    git switch worktree-autopilot-{issue_number}
    ```
-   This ensures ExitWorktree sees no divergent commits on the base branch and can remove the worktree without `discard_changes: true`.
-7. Exit worktree: use ExitWorktree with action: "remove" to delete the worktree and return to the repository root
-8. Delete team: use TeamDelete to remove the `autopilot-{issue_number}` team and its task list
-9. Cleanup: `git checkout main && git pull origin main`
+7. ExitWorktree with action: "remove"
+8. TeamDelete `autopilot-{issue_number}`
+9. `git checkout main && git pull origin main`
 
 ## Utility Mode
 
@@ -393,50 +340,37 @@ For running one-shot utilities directly:
 
 **Tools:** ToolSearch, Read
 
-Before launching autopilot, verify the Agent Teams prerequisites:
-
-1. `.claude/workflow-config.yml` exists
-   - If missing: suggest starting a new session to trigger auto-setup
-2. Verify agent definitions exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md)
-3. Verify Agent Teams tools are available: use ToolSearch to confirm `TeamCreate` and `SendMessage` are resolvable
-   - If unavailable: STOP — "Agent Teams tools (TeamCreate, SendMessage) not found. Verify that `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set in `.claude/settings.local.json` `env`, then restart the session."
+1. `.claude/workflow-config.yml` exists (if missing, start a new session to trigger auto-setup)
+2. Agent definitions exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md)
+3. ToolSearch: confirm `TeamCreate` and `SendMessage` are resolvable
+   - Unavailable → STOP: "Agent Teams tools not found. Verify `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env`, then restart."
 
 ### Initialization
 
-1. `git checkout main && git pull origin main` to update
+1. `git checkout main && git pull origin main`
 2. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`
 3. Launch the selected mode
 
 ## Circuit Breaker Integration
 
-The circuit breaker (`lib/circuit_breaker.sh`) prevents infinite loops by tracking progress and repeated errors across autopilot iterations. See `docs/guides/circuit-breaker.md` for full state machine specification.
+Prevents infinite loops by tracking progress and errors. See `docs/guides/circuit-breaker.md`.
 
 ### Trigger Events
 
-Record signals at these points during autopilot execution:
-
 | Event | Signal | Command |
 |-------|--------|---------|
-| Agent returns `SKILL_STATUS: COMPLETE` | Progress | `bash lib/circuit_breaker.sh record_progress` |
-| Iteration ends with same label state (no label transition, e.g. still `needs-plan-revision`) | No progress | `bash lib/circuit_breaker.sh record_no_progress` |
-| Reviewer or QA raises the same issue fingerprint in consecutive rounds | Error | `bash lib/circuit_breaker.sh record_error <fingerprint>` |
+| `SKILL_STATUS: COMPLETE` | Progress | `bash lib/circuit_breaker.sh record_progress` |
+| Same label state at iteration end | No progress | `bash lib/circuit_breaker.sh record_no_progress` |
+| Same issue fingerprint in consecutive rounds | Error | `bash lib/circuit_breaker.sh record_error <fingerprint>` |
 
 ### Fingerprint Convention
 
-A fingerprint is a short `[a-zA-Z0-9_-]+` string identifying a recurring issue. Examples:
-
-- `missing-tests` — Reviewer consistently flags missing test coverage
-- `type-error-AC3` — same type error recurs on AC3 across iterations
-- `plan-scope-creep` — plan review repeatedly rejects scope creep
-
-Invalid characters (spaces, slashes, etc.) cause `record_error` to exit non-zero — use only `[a-zA-Z0-9_-]+`.
+Short `[a-zA-Z0-9_-]+` string. Examples: `missing-tests`, `type-error-AC3`, `plan-scope-creep`. Invalid characters cause non-zero exit.
 
 ### Manual Reset
-
-If the circuit breaker trips and you have resolved the underlying cause, reset it with:
 
 ```bash
 bash lib/circuit_breaker.sh reset
 ```
 
-Then resume autopilot: `/atdd-kit:autopilot <issue-number>`
+Then: `/atdd-kit:autopilot <issue-number>`

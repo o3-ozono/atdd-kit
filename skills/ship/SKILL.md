@@ -86,10 +86,7 @@ Update PR body: `gh pr edit --body "..."`
 
 ### Step 3: Add Inline Comments
 
-Use `gh api` to post PR review comments:
-- File header comments explaining role/purpose for non-obvious files
-- Language-specific features explained for non-specialists
-- Skip auto-generated files
+Use `gh api` to post PR review comments: file header comments for non-obvious files, language-specific feature explanations for non-specialists. Skip auto-generated files.
 
 ### Step 4: Add Labels
 
@@ -112,15 +109,12 @@ Use `gh api` to post PR review comments:
 
 After `ready-for-PR-review` label is set:
 
-1. **Wait for review:** After setting `ready-for-PR-review` label, wait for the review process (autopilot QA or human) to complete
-2. **Check review result:** Periodically check label state with `gh pr view <PR> --json labels`:
-   - If `needs-pr-revision` label added: read review comments, fix issues, push, remove `needs-pr-revision`, re-add `ready-for-PR-review`, return to step 1
-   - If `ready-for-PR-review` label removed: review complete, proceed to Step 8
-   - If review PASS comment posted on the PR: review complete, proceed to Step 8
-3. **Prohibited actions during Step 7:**
-   - Do NOT use AskUserQuestion to offer "Merge", "Skip review", or any option that bypasses the review cycle
-   - Do NOT proceed to Step 8 until one of the review completion signals above is confirmed
-   - The only permitted user interaction is asking for help resolving review comments
+1. Wait for review (autopilot QA or human) to complete
+2. Check label state with `gh pr view <PR> --json labels`:
+   - `needs-pr-revision` added: fix issues, push, remove `needs-pr-revision`, re-add `ready-for-PR-review`, return to step 1
+   - `ready-for-PR-review` removed: review complete → Step 8
+   - Review PASS comment on PR: review complete → Step 8
+3. Prohibited: do NOT offer "Merge" or "Skip review" via AskUserQuestion; do NOT proceed to Step 8 until a completion signal is confirmed.
 
 ### Step 8: Completion Decision
 
@@ -147,26 +141,12 @@ PR is ready. How to proceed?
 
 ### Step 9: Merge
 
-- Check for merge conflicts: `gh pr view <PR> --json mergeable,mergeStateStatus`
-  - If `mergeable == CONFLICTING`:
-    - Do NOT merge
-    - Ask user for approval to rebase:
-      ```
-      ⚠ Conflict detected. Cannot merge.
-
-      May I run the following rebase?
-        git fetch origin main
-        git rebase origin/main
-        # After resolving conflicts
-        git push --force-with-lease
-      ```
-    - User approves → execute rebase, resolve conflicts interactively if needed, re-check CI, continue merge flow
-    - User declines → stop skill
-- Verify CI is green: `gh pr checks`
-- Check `blocked-by: #N` in Issue/PR body -- if present, verify dependency is closed
-- Merge with squash: `gh pr merge --squash`
-- Clean up: `git checkout main && git pull origin main`
-- Delete local branch: `git branch -d <branch>`
+- Check conflicts: `gh pr view <PR> --json mergeable,mergeStateStatus`
+  - `mergeable == CONFLICTING`: do NOT merge. Ask user to approve rebase (fetch + rebase + force-with-lease). User declines → stop.
+- Verify CI: `gh pr checks`
+- Check `blocked-by: #N` — verify dependency is closed
+- Merge: `gh pr merge --squash`
+- Cleanup: `git checkout main && git pull origin main && git branch -d <branch>`
 
 ## Status Output
 

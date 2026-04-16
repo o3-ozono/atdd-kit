@@ -32,23 +32,17 @@ Before running verification, check the Issue state:
 
 ## Iron Law
 
-NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
+NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE. "Should work" / "looks correct" are NOT evidence. Only command output is evidence.
 
-"should work", "looks correct", "probably passes" are NOT evidence. Only command output is evidence.
-
-**FRESH means NOW:** Execute verification commands in this session, in this message. Do not use cached results, previous session output, or sub-agent reports. Run the command yourself and read the output.
+**FRESH means NOW:** Run verification commands in this session. No cached results, previous session output, or sub-agent reports.
 
 ## Verification Flow
 
-1. **Read ACs from Issue** -- Get the complete AC list
-2. **For each AC, identify the verification command:**
-   - Unit test AC -> run specific test: `[test command] [test file/class]`
-   - Snapshot test AC -> run snapshot tests
-   - E2E test AC -> run E2E test suite
-   - Build AC -> run build command
-3. **Execute each command** -- Run it NOW, in this session
-4. **Read the output** -- Actually read the full output, not just the exit code
-5. **Map output to AC** -- For each AC, record: PASS with evidence or FAIL with reason
+1. Read ACs from Issue
+2. For each AC, identify the verification command (unit/snapshot/E2E/build)
+3. Execute each command NOW, in this session
+4. Read the full output (not just exit code)
+5. Map output to AC: PASS with evidence or FAIL with reason
 
 ## Verification Checklist
 
@@ -69,13 +63,8 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
 
 ## What Counts as Evidence
 
-- Command output showing PASS with test count
-- Build log showing "Build Succeeded" with 0 warnings
-- Lint output showing 0 violations
-- NOT: "I ran the tests and they passed" (no output shown)
-- NOT: "Should be fine" / "looks good"
-- NOT: Previous session's test results (must be FRESH)
-- NOT: Partial test run (must run ALL tests)
+Valid: command output with PASS+count, "Build Succeeded" with 0 warnings, lint showing 0 violations.
+Not valid: "I ran the tests", "should be fine", previous session results, partial test runs.
 
 ## If Any AC Fails
 
@@ -126,9 +115,7 @@ autopilot action matrix.
 
 ## If All ACs Pass
 
-- Post verification results as Issue comment
-- Transition: "All verification items passed. Running `atdd-kit:ship` to finalize the PR."
-- Invoke `atdd-kit:ship` via the Skill tool.
+Post verification results as Issue comment. Show "All verification items passed." and invoke `atdd-kit:ship` via the Skill tool.
 
 ## Red Flags (STOP)
 

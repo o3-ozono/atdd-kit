@@ -18,93 +18,74 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
 
 ## State Gate (required)
 
-Before starting implementation, verify the Issue state:
-
 1. **Check `ready-to-go` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("ready-to-go")'`
-   - If present: **New implementation.** Remove `ready-to-go`, add `in-progress`: `gh issue edit <number> --remove-label ready-to-go --add-label in-progress`
-   - If missing: check Continuation Path (below)
-2. **Continuation Path:** If `ready-to-go` is absent but `in-progress` is present AND the current branch matches `<prefix>/<issue-number>-*`:
-   - This is a **session resumption.** Do NOT block. Proceed with implementation from where it left off.
-   - Check `git log --oneline main..<branch>` to identify completed ACs from commit messages.
-   - Resume from the next incomplete AC.
-   - If `feat/<issue-number>-*` exists locally, run `git switch feat/<issue-number>-<slug>` before this check to ensure you are on the correct branch.
-3. **Neither label present:** STOP. Report: "Issue #N is not ready for implementation. Complete discover → plan → approval first."
+   - Present: **New implementation.** `gh issue edit <number> --remove-label ready-to-go --add-label in-progress`
+   - Missing: check Continuation Path
+2. **Continuation Path:** If `ready-to-go` absent but `in-progress` present AND branch matches `<prefix>/<issue-number>-*`:
+   - Session resumption. Do NOT block.
+   - `git log --oneline main..<branch>` to identify completed ACs.
+   - Resume from next incomplete AC.
+3. **Neither label:** STOP. "Issue #N is not ready. Complete discover → plan → approval first."
 
 ### Additional Prerequisites
 
-After State Gate passes, also verify:
-
-- [ ] Issue has approved ACs (output of `discover`)
-- [ ] Issue has test strategy and implementation strategy (output of `plan`)
-- [ ] Work branch is cut from main (or already exists for continuation)
-- [ ] Draft PR is created (or already exists for continuation)
+- [ ] Issue has approved ACs (from `discover`)
+- [ ] Issue has test and implementation strategy (from `plan`)
+- [ ] Work branch cut from main (or exists for continuation)
+- [ ] Draft PR created (or exists for continuation)
 
 ## The Double Loop
 
 ### Outer Loop (per AC)
 
-For each AC, run this cycle:
-
-1. **Read the AC from the Issue** -- Understand the acceptance criteria precisely
-2. **Write an E2E / Integration test (RED)** -- A story test that verifies the AC
-3. **Confirm it fails for the right reason** -- "function not defined" is right; "timeout" or "syntax error" is not
-4. **Enter the Inner Loop** -- Write unit tests and implementation to make the E2E test pass
-5. **Confirm the Outer test is GREEN** -- Run all tests
-6. **Refactor** -- Improve structure as needed (no behavior changes)
-7. **Commit** -- `feat: AC[N] -- [AC name] (#issue)`
-8. **Next AC**
+1. Read the AC -- understand precisely
+2. Write E2E / Integration test (RED) -- story test verifying the AC
+3. Confirm failure for right reason -- "function not defined" is right; "timeout" is not
+4. Enter Inner Loop -- unit tests + implementation to make outer test pass
+5. Confirm Outer test GREEN -- run all tests
+6. Refactor -- improve structure, no behavior changes
+7. Commit -- `feat: AC[N] -- [AC name] (#issue)`
+8. Next AC
 
 ### Inner Loop (per implementation unit)
 
-Repeat in small increments to make the Outer test GREEN:
-
-1. **Write a Unit / Snapshot test (RED)** -- Test the smallest needed piece
-2. **Confirm failure** -- Test runs and fails for the right reason
-3. **Write minimal implementation (GREEN)** -- Only the code needed to pass the test
-4. **Confirm all tests pass** -- Run all tests, not just the new one
-5. **Refactor** -- Only while GREEN
-6. **Repeat until Outer test passes**
+1. Write Unit / Snapshot test (RED) -- smallest needed piece
+2. Confirm failure for right reason
+3. Write minimal implementation (GREEN) -- only code to pass the test
+4. Confirm all tests pass -- run ALL, not just new one
+5. Refactor -- only while GREEN
+6. Repeat until Outer test passes
 
 ## Iron Laws (never violate)
 
-1. **No production code without a failing test** -- If you catch yourself writing implementation first, STOP and write a test
-2. **Never weaken a test to make it pass** -- If a test fails, fix the implementation, not the test
+1. **No production code without a failing test** -- write the test first
+2. **Never weaken a test to make it pass** -- fix the implementation, not the test
 3. **Tests must fail for the right reason** -- "function not defined" is right; "timeout" is not
-4. **1 AC = 1 commit** -- Each AC completion is one atomic commit
-5. **If you discover a missing AC during implementation, STOP** -- Go back to `discover`, add the AC, get approval, then continue
+4. **1 AC = 1 commit** -- each AC completion is one atomic commit
+5. **Missing AC discovered during implementation: STOP** -- go back to `discover`, add the AC, get approval, then continue
 
 ### Violation Recovery: Wrote Code Before Test?
 
-**Delete it. Start over.** No exceptions:
-- Do not keep it as "reference"
-- Do not "adapt" it while writing tests
-- Do not look at it
-- Delete means delete
-
-Sunk cost is not an argument. Keeping unverified code is technical debt from minute one.
+**Delete it. Start over.** No exceptions. Sunk cost is not an argument.
 
 ## RED Phase
 
 - Write the smallest failing test
-- Name tests by behavior: `test_[action]_[condition]_[expected]`
+- Name tests: `test_[action]_[condition]_[expected]`
 - Use real code, not mocks, unless the dependency is external
-- Confirm the test actually runs and fails
-- Check the failure message -- it should indicate missing functionality, not typos or import errors
+- Confirm the test runs and fails; failure message must indicate missing functionality
 
 ## GREEN Phase
 
-- Write the minimal code to pass the test
-- Do not add functionality beyond what the test requires
-- Do not refactor during GREEN -- pass first
-- Run all tests, not just the new one, to catch regressions
+- Write minimal code to pass the test
+- No extra functionality; no refactoring during GREEN
+- Run ALL tests, not just the new one
 
 ## REFACTOR Phase
 
-- Only after GREEN
-- Improve structure without changing behavior
-- Run tests after every change
-- Common refactors: extract method, rename, remove duplication
-- Extract when a pattern appears 3+ times (not before)
+- Only after GREEN. Improve structure without changing behavior.
+- Run tests after every change.
+- Extract when a pattern appears 3+ times (not before).
 
 ## Test Layer Selection
 
@@ -117,19 +98,13 @@ Sunk cost is not an argument. Keeping unverified code is technical debt from min
 
 ## Workflow
 
-1. Read the test strategy and implementation strategy from the Issue
+1. Read test strategy and implementation strategy from the Issue
 2. Create branch: `git switch -c feat/<issue-number>-<slug>`
-   - **WARNING: Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting.**
-     This leaves commits on the worktree branch (`worktree-autopilot-{N}`) unreachable from main,
-     causing `ExitWorktree` to fail with "Worktree has N commits" unless `discard_changes: true` is forced.
-     Always push the feature branch directly: `git push origin feat/<issue-number>-<slug>`.
+   - **WARNING:** Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting — leaves commits unreachable, causing `ExitWorktree` to fail. Always push: `git push origin feat/<issue-number>-<slug>`.
 3. Empty commit for Draft PR: `git commit --allow-empty -m "chore: start work on #<issue>"`
 4. Push and create Draft PR
-5. For each AC:
-   a. Run Outer Loop (AC test)
-   b. Run Inner Loop (Unit test + implementation)
-   c. Commit
-6. After all ACs are done -> invoke `atdd-kit:verify`
+5. For each AC: Outer Loop → Inner Loop → Commit
+6. After all ACs done → invoke `atdd-kit:verify`
 
 ## Mandatory Checklist (after each AC)
 
@@ -161,10 +136,10 @@ These thoughts mean you are rationalizing a violation. STOP and return to the co
 
 ## Bug Fix Variant (A/B/C Classification)
 
-- **Type A (AC Gap):** Add the missing AC -> write test (RED) -> implement (GREEN)
-- **Type B (Test Gap):** Write the missing test for an existing AC (RED) -> fix implementation (GREEN)
-- **Type C (Logic Error):** Write a regression test reproducing the bug (RED) -> fix the logic (GREEN)
-- All types: search for the same pattern elsewhere (1-2 hits: fix in same PR; 3+: create a refactoring Issue)
+- **Type A (AC Gap):** Add missing AC → RED → GREEN
+- **Type B (Test Gap):** Write missing test for existing AC (RED) → fix implementation (GREEN)
+- **Type C (Logic Error):** Write regression test reproducing the bug (RED) → fix logic (GREEN)
+- All types: search for same pattern elsewhere (1-2 hits: fix in same PR; 3+: create a refactoring Issue)
 
 ## Status Output
 
