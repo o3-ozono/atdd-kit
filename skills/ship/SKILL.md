@@ -25,30 +25,26 @@ Merging without confirmed review completion is prohibited regardless of perceive
 
 ## State Gate (required)
 
-Before starting the ship flow, check the Issue state:
-
 1. **Check `in-progress` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("in-progress")'`
-   - If present: proceed to ship Flow.
-   - If missing: STOP. Report: "Issue #N does not have `in-progress` label. Complete `atdd` → `verify` first."
-2. **Check implementation branch:** Verify the current branch is not `main`. Ship must run on the implementation branch.
-   - If on `main`: STOP. Report: "Cannot ship from main. Check out the implementation branch first."
+   - Present: proceed.
+   - Missing: STOP. "Issue #N does not have `in-progress` label. Complete `atdd` → `verify` first."
+2. **Check implementation branch:** Verify current branch is not `main`.
+   - On `main`: STOP. "Cannot ship from main. Check out the implementation branch first."
 
 ## Prerequisites
 
-- All ACs verified (`verify` skill completed)
-- Working branch with Draft PR already created (from `atdd` skill)
+- All ACs verified (`verify` complete)
+- Working branch with Draft PR created (from `atdd`)
 - All tests passing, build clean
 
 ## Flow
 
 ### Step 1: Convert Draft PR to Ready
 
-- Push all commits if not already pushed: `git push`
-- Update PR from draft to ready: `gh pr ready`
+- `git push` (if not already pushed)
+- `gh pr ready`
 
 ### Step 2: Generate PR Description
-
-Generate PR description:
 
 ```markdown
 Closes #<issue-number>
@@ -96,14 +92,14 @@ Use `gh api` to post PR review comments: file header comments for non-obvious fi
 
 ### Step 5: CI Check
 
-- Wait for CI: `gh pr checks --watch`
-- If CI fails: diagnose, fix, push, wait again
-- If CI passes: proceed
+- `gh pr checks --watch`
+- CI fails: diagnose, fix, push, wait again
+- CI passes: proceed
 
 ### Step 6: UI Change Detection (if applicable)
 
-- Run: `git diff origin/main --name-only | grep '__Snapshots__/.*\.png'`
-- If snapshot diffs exist: this is a UI change PR
+- `git diff origin/main --name-only | grep '__Snapshots__/.*\.png'`
+- Snapshot diffs present: this is a UI change PR
 
 ### Step 7: Review Cycle
 
@@ -152,13 +148,13 @@ PR is ready. How to proceed?
 
 **Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
 
-Output a `skill-status` fenced code block as the **last element** of your response at every
-terminal point. Terminal points for ship:
+Output a `skill-status` fenced code block as the **last element** of your response at every terminal point.
 
-- **COMPLETE:** PR merged successfully (Step 10 complete).
-- **PENDING:** Waiting for user decision (e.g., Merge / Keep / Discard in Step 8).
-- **BLOCKED:** State Gate failed (no `in-progress` label, running on `main` branch, or review not complete).
-- **FAILED:** Unrecoverable error (e.g., merge failed due to persistent conflict, CI broken).
+Terminal points:
+- **COMPLETE:** PR merged successfully.
+- **PENDING:** Waiting for user decision (Merge / Keep / Discard in Step 8).
+- **BLOCKED:** State Gate failed or review not complete.
+- **FAILED:** Unrecoverable error (e.g., persistent conflict, CI broken).
 
 ```skill-status
 SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
@@ -180,8 +176,7 @@ PHASE: ship
 RECOMMENDATION: PR review not yet confirmed. Wait for review PASS comment or ready-for-PR-review label removal.
 ```
 
-See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
-autopilot action matrix.
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and autopilot action matrix.
 
 ### Step 10: Report
 
@@ -206,8 +201,8 @@ PR #XX merged.
 
 ## Constraints
 
-- Always use `--squash` for merge (keeps main history clean: 1 PR = 1 commit)
+- Always `--squash` merge (1 PR = 1 commit)
 - Never skip CI check
-- Never skip review cycle (even if you are the only developer -- the QA process handles this)
+- Never skip review cycle -- QA process handles this even for solo developers
 - Never force push without explicit user approval
-- When merging your own PR, do not announce that you cannot approve it. Just merge directly without explanation.
+- When merging your own PR, merge directly without explanation.

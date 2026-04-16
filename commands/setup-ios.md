@@ -4,20 +4,13 @@ description: "Manually set up the iOS addon for this project."
 
 # setup-ios — iOS Addon Setup
 
-Reads `addons/ios/addon.yml` from the plugin and applies all iOS-specific configuration to the current project.
-
-## What This Command Does
-
-1. Register MCP servers (XcodeBuildMCP, ios-simulator, apple-docs, xcode)
-2. Deploy scripts (sim-pool-guard.sh, lint-xcstrings.sh)
-3. Add PreToolUse hooks for simulator exclusion
-4. Display guidance for Golden Image Device Set isolation
+Reads `addons/ios/addon.yml` and applies iOS-specific configuration to the project.
 
 ## Steps
 
 ### Step 1: Read Addon Manifest
 
-Read `${CLAUDE_PLUGIN_ROOT}/addons/ios/addon.yml` to get the full addon configuration.
+Read `${CLAUDE_PLUGIN_ROOT}/addons/ios/addon.yml`.
 
 ### Step 2: Register MCP Servers
 
@@ -56,7 +49,7 @@ Add PreToolUse hooks to `.claude/settings.json`:
 
 ### Step 5: Display Guidance
 
-Print the addon guidance from `addon.yml` (Golden Image Device Set isolation instructions).
+Print addon guidance from `addon.yml` (Golden Image Device Set isolation).
 
 ### Step 6: Summary
 

@@ -58,34 +58,34 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
 
 ## Iron Laws (never violate)
 
-1. **No production code without a failing test** -- write the test first
-2. **Never weaken a test to make it pass** -- fix the implementation, not the test
+1. **No production code without a failing test** -- write test first
+2. **Never weaken a test to make it pass** -- fix implementation, not test
 3. **Tests must fail for the right reason** -- "function not defined" is right; "timeout" is not
-4. **1 AC = 1 commit** -- each AC completion is one atomic commit
-5. **Missing AC discovered during implementation: STOP** -- go back to `discover`, add the AC, get approval, then continue
+4. **1 AC = 1 commit** -- each AC is one atomic commit
+5. **Missing AC discovered during implementation: STOP** -- go back to `discover`, add AC, get approval, continue
 
 ### Violation Recovery: Wrote Code Before Test?
 
-**Delete it. Start over.** No exceptions. Sunk cost is not an argument.
+**Delete it. Start over.** No exceptions.
 
 ## RED Phase
 
 - Write the smallest failing test
-- Name tests: `test_[action]_[condition]_[expected]`
-- Use real code, not mocks, unless the dependency is external
-- Confirm the test runs and fails; failure message must indicate missing functionality
+- Name: `test_[action]_[condition]_[expected]`
+- Use real code, not mocks, unless dependency is external
+- Confirm failure message indicates missing functionality
 
 ## GREEN Phase
 
-- Write minimal code to pass the test
+- Write minimal code to pass
 - No extra functionality; no refactoring during GREEN
 - Run ALL tests, not just the new one
 
 ## REFACTOR Phase
 
-- Only after GREEN. Improve structure without changing behavior.
+- Only after GREEN. Improve structure, no behavior changes.
 - Run tests after every change.
-- Extract when a pattern appears 3+ times (not before).
+- Extract when pattern appears 3+ times.
 
 ## Test Layer Selection
 
@@ -98,41 +98,37 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
 
 ## Workflow
 
-1. Read test strategy and implementation strategy from the Issue
+1. Read test and implementation strategy from Issue
 2. Create branch: `git switch -c feat/<issue-number>-<slug>`
-   - **WARNING:** Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting — leaves commits unreachable, causing `ExitWorktree` to fail. Always push: `git push origin feat/<issue-number>-<slug>`.
+   - **WARNING:** Do NOT use `git push origin HEAD:<other-branch>` refspec rewriting -- leaves commits unreachable, causing `ExitWorktree` to fail. Always: `git push origin feat/<issue-number>-<slug>`.
 3. Empty commit for Draft PR: `git commit --allow-empty -m "chore: start work on #<issue>"`
 4. Push and create Draft PR
 5. For each AC: Outer Loop → Inner Loop → Commit
-6. After all ACs done → invoke `atdd-kit:verify`
+6. After all ACs done: invoke `atdd-kit:verify`
 
 ## Mandatory Checklist (after each AC)
 
-Do not skip any item.
-
-- [ ] Test was written before implementation
-- [ ] Test failed before implementation was written
+- [ ] Test written before implementation
+- [ ] Test failed before implementation
 - [ ] Test failed for the right reason
 - [ ] Implementation is minimal (no extra features)
-- [ ] All existing tests pass (run ALL, not just new)
+- [ ] All existing tests pass (run ALL)
 - [ ] Commit message follows conventions
-- [ ] If `skills/*/SKILL.md` was edited: `bats tests/` run and all tests PASS
-- [ ] If `skills/*/SKILL.md` was edited and `skills/<name>/evals/` exists: skill-creator eval run with no regression
+- [ ] If `skills/*/SKILL.md` edited: `bats tests/` run and all PASS
+- [ ] If `skills/*/SKILL.md` edited and `skills/<name>/evals/` exists: eval run with no regression
 
 ## Red Flags (STOP immediately)
 
-These thoughts mean you are rationalizing a violation. STOP and return to the correct phase.
-
 | Thought | Reality |
 |---------|---------|
-| "I'll write tests later" | Tests-after are biased by implementation. Write tests FIRST. |
-| "This is too simple to test" | Simple code breaks. A test takes 30 seconds. No exceptions. |
-| "Just this small piece of code first" | Delete it. Write the test. Then rewrite the code. |
-| "TDD is dogmatic, being pragmatic means adapting" | TDD IS pragmatic: it finds bugs before commit. |
-| "The test passes on first run, that's fine" | If it didn't fail first, you don't know if it tests the right thing. |
-| "I'll weaken this assertion temporarily" | Fix the implementation, not the test. Never weaken. |
-| "This feature isn't in the AC but it's needed" | STOP. Go back to discover. Add the AC. Get approval. |
-| "I'll skip the Outer Loop E2E test" | The Outer Loop proves the AC works end-to-end. Never skip. |
+| "I'll write tests later" | Tests-after are biased. Write FIRST. |
+| "This is too simple to test" | Simple code breaks. No exceptions. |
+| "Just this small piece of code first" | Delete it. Write the test. Then rewrite. |
+| "TDD is dogmatic, pragmatism means adapting" | TDD IS pragmatic: finds bugs before commit. |
+| "Test passes on first run, that's fine" | If it didn't fail first, you don't know it tests the right thing. |
+| "I'll weaken this assertion temporarily" | Fix implementation, not test. Never weaken. |
+| "This feature isn't in AC but it's needed" | STOP. Go back to discover. Add AC. Get approval. |
+| "I'll skip the Outer Loop E2E test" | Outer Loop proves AC end-to-end. Never skip. |
 
 ## Bug Fix Variant (A/B/C Classification)
 
@@ -145,13 +141,13 @@ These thoughts mean you are rationalizing a violation. STOP and return to the co
 
 **Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
 
-Output a `skill-status` fenced code block as the **last element** of your response at every
-terminal point. Terminal points for atdd:
+Output a `skill-status` fenced code block as the **last element** of your response at every terminal point.
 
-- **COMPLETE:** All ACs are GREEN and verify is about to be invoked.
-- **PENDING:** Waiting for user input (e.g., AC gap discovered — user must approve new AC).
-- **BLOCKED:** State Gate failed (no `ready-to-go` label and no valid continuation path).
-- **FAILED:** Unrecoverable error (e.g., build system broken, impossible to write a failing test).
+Terminal points:
+- **COMPLETE:** All ACs GREEN and verify about to be invoked.
+- **PENDING:** Waiting for user input (e.g., AC gap — user must approve new AC).
+- **BLOCKED:** State Gate failed (no `ready-to-go` and no valid continuation path).
+- **FAILED:** Unrecoverable error (e.g., build system broken).
 
 ```skill-status
 SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
@@ -173,8 +169,7 @@ PHASE: atdd
 RECOMMENDATION: Issue #N is not ready for implementation. ready-to-go label is missing.
 ```
 
-See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
-autopilot action matrix.
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and autopilot action matrix.
 
 ## Transition
 
@@ -182,4 +177,4 @@ When all ACs are GREEN:
 
 > All ACs are GREEN. Running `atdd-kit:verify` for completion verification.
 
-Invoke `atdd-kit:verify` via the Skill tool. atdd acts as the chain driver: verify -> ship.
+Invoke `atdd-kit:verify` via the Skill tool.

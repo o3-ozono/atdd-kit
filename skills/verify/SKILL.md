@@ -17,31 +17,35 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
 </AUTOPILOT-GUARD>
 
 <HARD-GATE>
-Do NOT invoke ship or claim work is complete until ALL ACs have FRESH verification evidence from commands executed in THIS session. No exceptions regardless of confidence level.
+Do NOT invoke ship or claim work is complete until ALL ACs have FRESH verification evidence from commands executed in THIS session. No exceptions.
 </HARD-GATE>
 
 ## State Gate (required)
 
-Before running verification, check the Issue state:
-
 1. **Check `in-progress` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("in-progress")'`
-   - If present: proceed to Verification Flow.
-   - If missing: STOP. Report: "Issue #N does not have `in-progress` label. Run `atdd` first to implement the Issue."
-2. **Check implementation branch:** Verify the current branch is not `main`. Verification must run on the implementation branch.
-   - If on `main`: STOP. Report: "Cannot verify on main. Check out the implementation branch first."
+   - Present: proceed.
+   - Missing: STOP. "Issue #N does not have `in-progress` label. Run `atdd` first."
+2. **Check implementation branch:** Verify current branch is not `main`.
+   - On `main`: STOP. "Cannot verify on main. Check out the implementation branch first."
 
 ## Iron Law
 
-NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE. "Should work" / "looks correct" are NOT evidence. Only command output is evidence.
+NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
 
-**FRESH means NOW:** Run verification commands in this session. No cached results, previous session output, or sub-agent reports.
+"should work", "looks correct", "probably passes" are NOT evidence. Only command output is evidence.
+
+**FRESH means NOW:** Execute in this session, in this message. Do not use cached results, previous session output, or sub-agent reports.
 
 ## Verification Flow
 
 1. Read ACs from Issue
-2. For each AC, identify the verification command (unit/snapshot/E2E/build)
-3. Execute each command NOW, in this session
-4. Read the full output (not just exit code)
+2. For each AC, identify the verification command:
+   - Unit test AC → run specific test: `[test command] [test file/class]`
+   - Snapshot test AC → run snapshot tests
+   - E2E test AC → run E2E suite
+   - Build AC → run build command
+3. Execute each command
+4. Read the full output
 5. Map output to AC: PASS with evidence or FAIL with reason
 
 ## Verification Checklist
@@ -63,26 +67,31 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE. "Should work" / "looks
 
 ## What Counts as Evidence
 
-Valid: command output with PASS+count, "Build Succeeded" with 0 warnings, lint showing 0 violations.
-Not valid: "I ran the tests", "should be fine", previous session results, partial test runs.
+- Command output showing PASS with test count
+- Build log showing "Build Succeeded" with 0 warnings
+- Lint output showing 0 violations
+- NOT: "I ran the tests and they passed" (no output shown)
+- NOT: "Should be fine" / "looks good"
+- NOT: Previous session's test results (must be FRESH)
+- NOT: Partial test run (must run ALL tests)
 
 ## If Any AC Fails
 
 - Report which AC failed and why
 - Do NOT proceed to ship
-- Go back to `atdd` skill to fix
+- Return to `atdd` skill to fix
 
 ## Status Output
 
 **Autopilot mode only** (ARGUMENTS contains `--autopilot`). Skip in standalone mode.
 
-Output a `skill-status` fenced code block as the **last element** of your response at every
-terminal point. Terminal points for verify:
+Output a `skill-status` fenced code block as the **last element** of your response at every terminal point.
 
-- **COMPLETE:** All ACs pass with fresh evidence and ship is about to be invoked.
-- **PENDING:** Waiting for user input at a decision point.
-- **BLOCKED:** State Gate failed (no `in-progress` label, or running on `main` branch).
-- **FAILED:** One or more ACs failed verification — implementation must return to atdd.
+Terminal points:
+- **COMPLETE:** All ACs pass with fresh evidence and ship about to be invoked.
+- **PENDING:** Waiting for user input.
+- **BLOCKED:** State Gate failed.
+- **FAILED:** One or more ACs failed -- return to atdd.
 
 ```skill-status
 SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED
@@ -110,16 +119,15 @@ PHASE: verify
 RECOMMENDATION: AC3 failed: test output shows assertion error. Return to atdd to fix implementation.
 ```
 
-See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and
-autopilot action matrix.
+See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FAILED distinction, and autopilot action matrix.
 
 ## If All ACs Pass
 
-Post verification results as Issue comment. Show "All verification items passed." and invoke `atdd-kit:ship` via the Skill tool.
+- Post verification results as Issue comment
+- "All verification items passed. Running `atdd-kit:ship` to finalize the PR."
+- Invoke `atdd-kit:ship` via the Skill tool.
 
 ## Red Flags (STOP)
-
-These thoughts mean you are rationalizing skipping verification. STOP.
 
 | Thought | Reality |
 |---------|---------|
@@ -127,7 +135,7 @@ These thoughts mean you are rationalizing skipping verification. STOP.
 | "I'm confident this works" | Confidence is not evidence. Run the command. |
 | "Just this once I'll skip lint" | No exceptions. Run every check. |
 | "The sub-agent said it passed" | Verify independently. Trust no report without fresh output. |
-| "I already ran these tests earlier" | Earlier is not now. Results expire. Run them FRESH. |
+| "I already ran these tests earlier" | Earlier is not now. Run FRESH. |
 | "Partial test run is enough" | Must run ALL tests. Partial results hide regressions. |
 | "The build is obviously fine" | Run the build command. "Obviously" is a red flag word. |
 
