@@ -21,6 +21,8 @@
 
 > "As a [persona], I want to [goal], so that [reason]."
 
+> **MUST-1:** The `As a` field must reference a named persona from `docs/personas/`. Generic placeholders like "As a user" are prohibited. See [us-quality-standard.md](us-quality-standard.md#must-1-persona-reference) for details and examples.
+
 ### Constraint Stories
 
 Stories that define quality standards. No Story Test needed.
@@ -41,7 +43,7 @@ Then:  <expected result>
 
 - 3 or more ACs per story (if 7+, consider splitting the story; document the reason if splitting is inappropriate)
 - Derive boundary values and edge cases from the happy path
-- Each AC must be independently verifiable
+- Each AC must be independently verifiable — see [us-quality-standard.md](us-quality-standard.md#must-3-independent-verifiability) for pass/fail examples (MUST-3)
 
 ## UX Heuristic Checklist
 

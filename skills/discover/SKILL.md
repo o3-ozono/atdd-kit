@@ -39,7 +39,7 @@ Follow these **always**. No exceptions.
 | D3 | **Explore 2-3 approaches** | Do not rush into one approach. Show tradeoffs and recommend one |
 | D4 | **Respect the approval gate** | Do not advance to the next skill until the user approves the deliverables |
 | D5 | **Post deliverables as Issue comments** | No repository file commits. Use `gh issue comment`. |
-| D6 | **No code edits** | This skill edits no code and no files (Issue comments only) |
+| D6 | **No code edits** | This skill edits no code and no repository source files. **Documentation artifact exception:** Writing to `docs/personas/` (new persona files) and `docs/specs/` (spec files) is permitted. These are the only two exceptions. |
 | D7 | **Split Issues/PRs by user flow** | Not by technical layer |
 
 ---
@@ -196,12 +196,69 @@ Recommended: Accept DoD — reply 'ok' to accept, or provide alternative
 
 ### Step 3: User Story Derivation
 
-Based on the approved approach, derive a user story.
+#### Step 3a: Persona Selection
+
+Before drafting the user story, identify the persona for the `As a` field.
+
+**Persona lookup:**
+
+Check `docs/personas/` for available persona files (list all `.md` files, excluding `README.md` and `TEMPLATE.md`).
+
+```
+IF docs/personas/ does not exist
+   OR (no .md files found after excluding README.md and TEMPLATE.md):
+  → Persona bootstrap flow (Step 3a-bootstrap)
+ELSE:
+  → Persona listing flow (Step 3a-listing)
+```
+
+**Step 3a-listing** (personas exist):
+
+List the available persona files and present them as options:
+
+```
+Available personas:
+- [PersonaA] (docs/personas/personaA.md)
+- [PersonaB] (docs/personas/personaB.md)
+```
+
+Then use AskUserQuestion with:
+- header: "Select persona for the User Story:"
+- options:
+  1. "(Recommended) [most relevant persona name] — [one-line description]"
+  2. "[other persona names, one per option]"
+  3. "Create a new persona"
+- multiSelect: false
+
+Recommended: [most relevant persona] — reply 'ok' to accept, or select another
+
+If only one persona exists, present it as the sole recommended option with "Create new" as the alternative.
+
+**Step 3a-bootstrap** (no personas available — D6 exception: documentation artifact creation in `docs/personas/` is permitted):
+
+Prompt the user to define a new persona:
+
+```
+No personas found in docs/personas/. Let's create one.
+```
+
+Then collect the following fields **one at a time** (D1):
+1. **Name** — fictional name (consistent with target locale)
+2. **Role / Job Title** — job and organizational context
+3. **Goals** — primary goal and secondary goal
+4. **Context** — technical level, environment, constraints
+5. **Quote** — one-sentence quote in the persona's voice
+
+After collecting all fields, create `docs/personas/` directory if it does not exist, then save `docs/personas/<name>.md` following `docs/personas/TEMPLATE.md` format. Confirm the saved persona to the user.
+
+#### Step 3b: User Story Draft
+
+Based on the approved approach and the selected (or newly created) persona, derive a user story.
 
 Format:
 
 ```
-**As a** [persona],
+**As a** [persona name],
 **I want to** [goal],
 **so that** [reason].
 ```
@@ -241,6 +298,41 @@ Format:
 - **When:** [action]
 - **Then:** [expected result]
 ```
+
+### Step 4.5: US/AC Quality Validation (development flow only)
+
+**Scope:** This step applies to **development flow only**. Skip entirely for bug, refactoring, documentation, and research flows.
+
+Load `docs/methodology/us-quality-standard.md` and run the following checks.
+
+#### MUST Criteria (blocking)
+
+Validate all three MUST criteria. Any failure blocks progression.
+
+| Criterion | Check |
+|-----------|-------|
+| **MUST-1** | `As a` field references a named persona from `docs/personas/` (not a generic placeholder like "user" or "developer" without a persona file). The persona selected or created in Step 3a satisfies this automatically. |
+| **MUST-2** | AC count ≥ 3 |
+| **MUST-3** | Each AC has a verifiable `Then` clause. Fail markers: vague phrases like "works correctly", "handles it", "is satisfied", or any subjective/unmeasurable outcome. Pass examples: "CSV downloads within 2 seconds", "returns HTTP 400 with error message". |
+
+**On MUST failure:**
+1. Report the specific criterion violated with a rewrite suggestion.
+2. Ask the user to revise (one revision round).
+3. Re-validate after revision.
+4. If still failing after 2 revision rounds, escalate to the user with full details and pause for manual resolution.
+
+**In autopilot mode:** Include MUST violation details in the draft deliverables returned to the AC Review Round rather than blocking inline.
+
+#### SHOULD Criteria (non-blocking)
+
+After all MUST criteria pass, check SHOULD-1 through SHOULD-5 and the anti-pattern categories. Report each violation **individually** with:
+- Criterion ID (e.g., "SHOULD-2 violation")
+- Explanation of the violation
+- Specific rewrite suggestion
+
+If all SHOULD criteria pass, report: "All SHOULD criteria pass."
+
+Flow proceeds regardless of SHOULD violations.
 
 ### Step 5: UX Heuristic Check
 
@@ -305,11 +397,55 @@ Recommended: Approve — reply 'ok' to accept, or provide alternative
 - **Needs revision:** Confirm revision details one at a time, update ACs, re-present
 - **Approve:** Proceed to Step 8
 
-### Step 8: Post to Issue Comment and Inline Plan Execution
+### Step 8: Post to Issue Comment, Spec File Creation, and Inline Plan Execution
 
 > **Autopilot mode skip:** When ARGUMENTS contains `--autopilot`, this step is skipped entirely. Issue comment posting and plan execution are handled by the autopilot AC Review Round after user approval.
 
 Post the approved deliverables with `gh issue comment`.
+
+**Spec file creation (standalone mode only — D6 exception: documentation artifact creation in `docs/specs/` is permitted):**
+
+After posting the Issue comment, create a spec file:
+
+1. Derive the `<kebab-slug>` from the Issue title's main noun phrase:
+   - Strip conventional prefixes (`feat:`, `fix:`, `chore:`, etc.)
+   - English title: convert main noun phrase to kebab-case (e.g., `feat: Add login rate limiting` → `login-rate-limiting`)
+   - Japanese title: translate the main concept to English, then kebab-case (e.g., `feat: discover スキルへのペルソナ統合` → `discover-persona-integration`)
+2. Create `docs/specs/` directory if it does not exist.
+3. Create `docs/specs/<kebab-slug>.md` with the following structure:
+
+```markdown
+---
+title: "[Issue title]"
+persona: "[selected persona name]"
+issue: "#[issue number]"
+status: approved
+---
+
+## User Story
+
+**As a** [persona],
+**I want to** [goal],
+**so that** [benefit].
+
+## Acceptance Criteria
+
+### AC1: [short name]
+
+- **Given:** [precondition]
+- **When:** [action]
+- **Then:** [expected outcome]
+
+### AC2: [short name]
+
+...
+
+## Notes
+
+[Optional: design decisions, risks, deferred work, references]
+```
+
+The `status` field is set to `approved` because Step 8 is reached only after user approval (discover phase complete).
 
 **Inline plan mode (AC9 — approval gate integration):** After posting ACs, automatically execute plan's Core Flow (Steps 2-5) inline. Produce a combined comment containing both AC set and implementation plan, so the user can approve both in a single review.
 
@@ -610,14 +746,18 @@ After deliverables are posted and approved:
 
 Do not skip any item.
 
-- [ ] Not editing code or files (Issue comments only)
+- [ ] Not editing code or repository source files (D6: only docs/personas/ and docs/specs/ exceptions permitted)
 - [ ] Not bundling multiple questions in one message
 - [ ] Approach exploration done (2-3 approaches presented)
 - [ ] DoD derivation step completed (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
 - [ ] DoD section is at the top of the Issue comment
+- [ ] Persona selected or created from docs/personas/ — Step 3a complete (development flow)
 - [ ] Not skipping UX check (U1-U5) for development tasks
 - [ ] Not skipping interruption scenario check (I1-I4) for development tasks
 - [ ] ACs are in Given/When/Then format
 - [ ] If ACs are 7 or more, the split self-check has been performed
+- [ ] Step 4.5 quality validation executed — MUST-1/2/3 checked (development flow only)
+- [ ] SHOULD advisory reviewed — SHOULD-1 through SHOULD-5 (development flow only)
 - [ ] User approved the deliverables
 - [ ] Deliverables posted as Issue comment
+- [ ] Spec file created at docs/specs/<kebab-slug>.md with status: approved (standalone mode, development flow only)

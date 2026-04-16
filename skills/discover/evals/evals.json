@@ -4,12 +4,12 @@
     {
       "id": 0,
       "name": "dev-feature",
-      "prompt": "Issue #100 の作業を始めたい。ダッシュボードにグラフのエクスポート機能（PNG/SVG）を追加する。ユーザーからの要望が多い。",
-      "expected_output": "DoD list at top, then 2-3 approaches with tradeoffs, user story, 3+ ACs in Given/When/Then, UX heuristic check (U1-U5), interruption scenario check (I1-I4)",
-      "files": [],
+      "prompt": "Issue #100 の作業を始めたい。ダッシュボードにグラフのエクスポート機能（PNG/SVG）を追加する。ユーザーからの要望が多い。docs/personas/kenji-analyst.md が存在する。",
+      "expected_output": "DoD list at top, then 2-3 approaches with tradeoffs, persona selection from docs/personas/, user story with named persona reference, 3+ ACs in Given/When/Then, Step 4.5 quality validation, UX heuristic check (U1-U5), interruption scenario check (I1-I4)",
+      "files": ["docs/personas/kenji-analyst.md"],
       "assertions": [
         {"id": "A1", "text": "2つ以上のアプローチがPros/Cons付きで比較されている", "type": "structural"},
-        {"id": "A2", "text": "ユーザーストーリーが 'As a ... I want ... so that ...' 形式で記述されている", "type": "structural"},
+        {"id": "A2", "text": "ユーザーストーリーが 'As a [named persona from docs/personas/] I want ... so that ...' 形式で記述されており、generic な 'user' ではなくペルソナファイル由来の名前が使用されている", "type": "structural"},
         {"id": "A3", "text": "全ACが Given/When/Then 形式で記述されている", "type": "structural"},
         {"id": "A4", "text": "ACの数が3以上である", "type": "structural"},
         {"id": "A5", "text": "UXヒューリスティックチェック U1-U5 の全5項目が言及されている", "type": "structural"},
@@ -17,7 +17,8 @@
         {"id": "A7", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"},
         {"id": "A8", "text": "DoD または Definition of Done セクションが存在し、User Story セクションより前に配置されている", "type": "structural"},
         {"id": "A9", "text": "DoD セクションに完了条件がチェックリスト形式でリスト化されている", "type": "structural"},
-        {"id": "A10", "text": "アプローチ選択・ユーザーストーリー確認・AC承認など主要な決定点において Recommended（推奨選択肢）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"}
+        {"id": "A10", "text": "アプローチ選択・ユーザーストーリー確認・AC承認など主要な決定点において Recommended（推奨選択肢）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"},
+        {"id": "A11", "text": "Step 4.5 品質バリデーション（MUST-1/2/3）が実行され、その結果が出力に含まれている", "type": "structural"}
       ]
     },
     {
@@ -82,6 +83,105 @@
         {"id": "F1", "text": "レスポンスに ```skill-status コードブロックが含まれている", "type": "structural"},
         {"id": "F2", "text": "SKILL_STATUS: BLOCKED が含まれている", "type": "structural"},
         {"id": "F3", "text": "実装を続行していない（STOP している）", "type": "structural"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "persona-lookup-existing",
+      "prompt": "Issue #100 の development flow で Step 3 に到達した。docs/personas/ に kenji-analyst.md と sarah-manager.md が存在する。",
+      "expected_output": "Skill lists available persona files (kenji-analyst, sarah-manager), presents them as AskUserQuestion options with a recommended persona, and uses the selected persona in the User Story As a field.",
+      "files": ["docs/personas/kenji-analyst.md", "docs/personas/sarah-manager.md"],
+      "assertions": [
+        {"id": "G1", "text": "docs/personas/ のペルソナファイル（kenji-analyst, sarah-manager）が一覧として表示されている", "type": "structural"},
+        {"id": "G2", "text": "AskUserQuestion でペルソナ選択肢が提示されており、推奨選択肢が含まれている", "type": "structural"},
+        {"id": "G3", "text": "選択されたペルソナがユーザーストーリーの 'As a' フィールドに使用されている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "persona-bootstrap-empty",
+      "prompt": "Issue #102 の development flow で Step 3 に到達した。docs/personas/ ディレクトリには README.md と TEMPLATE.md のみ存在する（ペルソナファイルなし）。",
+      "expected_output": "Skill detects no persona files, prompts user to create a new persona by collecting name/role/goals/context/quote one at a time, saves docs/personas/<name>.md, and uses the created persona.",
+      "files": [],
+      "assertions": [
+        {"id": "H1", "text": "ペルソナファイルが存在しないことを検出し、新規ペルソナ作成フローに入っている", "type": "structural"},
+        {"id": "H2", "text": "ペルソナの各フィールド（名前・役職・ゴール・コンテキスト・クォートなど）を一度に一つずつ収集している（D1 原則準拠）", "type": "structural"},
+        {"id": "H3", "text": "docs/personas/<name>.md へのファイル作成が行われることが示されている（またはファイル作成ステップが明示されている）", "type": "structural"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "must-gate-must1-blocked",
+      "prompt": "Issue #103 の development flow の Step 4.5。ユーザーストーリーの 'As a' フィールドが 'As a user' となっており、docs/personas/ のペルソナファイルを参照していない。",
+      "expected_output": "Step 4.5 detects MUST-1 violation (generic 'user' without persona file reference), blocks progression, reports the specific violation with rewrite guidance, and requests revision.",
+      "files": [],
+      "assertions": [
+        {"id": "I1", "text": "MUST-1 違反が検出されており、'As a user' のような generic ペルソナが拒否されている", "type": "structural"},
+        {"id": "I2", "text": "違反の詳細と修正ガイダンス（docs/personas/ からペルソナを選択または作成するよう）が報告されている", "type": "structural"},
+        {"id": "I3", "text": "フローが先に進まず、リビジョンを要求している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "must-gate-must2-blocked",
+      "prompt": "Issue #104 の development flow の Step 4.5。ペルソナは docs/personas/kenji-analyst.md を参照しているが、ACが2件しかない（MUST-2 違反）。",
+      "expected_output": "Step 4.5 passes MUST-1, detects MUST-2 violation (fewer than 3 ACs), blocks progression, reports violation with guidance to add at least one more AC covering edge case or error path.",
+      "files": ["docs/personas/kenji-analyst.md"],
+      "assertions": [
+        {"id": "J1", "text": "MUST-2 違反が検出されており、ACが3件未満であることが報告されている", "type": "structural"},
+        {"id": "J2", "text": "少なくとも1件のAC追加（エッジケースまたはエラーパスなど）を求めるガイダンスが含まれている", "type": "structural"},
+        {"id": "J3", "text": "フローが先に進まず、リビジョンを要求している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "must-gate-must3-blocked",
+      "prompt": "Issue #105 の development flow の Step 4.5。ペルソナ参照・AC3件はOKだが、AC1の Then 節が 'Then: the system works correctly' という曖昧な記述になっている（MUST-3 違反）。",
+      "expected_output": "Step 4.5 passes MUST-1 and MUST-2, detects MUST-3 violation in AC1 ('works correctly' is not independently verifiable), blocks progression, reports specific AC and Then clause, provides rewrite suggestion.",
+      "files": ["docs/personas/kenji-analyst.md"],
+      "assertions": [
+        {"id": "K1", "text": "MUST-3 違反が検出されており、'works correctly' などの曖昧な Then 節が特定されている", "type": "structural"},
+        {"id": "K2", "text": "違反している AC 番号と Then 節の内容が明示されている", "type": "structural"},
+        {"id": "K3", "text": "具体的な書き換え提案（測定可能な結果の例示）が含まれている", "type": "structural"},
+        {"id": "K4", "text": "フローが先に進まず、リビジョンを要求している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "must-gate-pass-should-advisory",
+      "prompt": "Issue #106 の development flow の Step 4.5。MUST-1/2/3 は全て通過。ただしユーザーストーリーが 'I want a button that uses the XYZ library to export CSV' という solution-oriented な記述になっている（SHOULD-4 違反）。",
+      "expected_output": "Step 4.5 reports all MUST criteria pass, then reports SHOULD-4 violation individually with criterion ID, explanation, and rewrite suggestion. Flow proceeds (non-blocking). Reports each SHOULD check result individually.",
+      "files": ["docs/personas/kenji-analyst.md"],
+      "assertions": [
+        {"id": "L1", "text": "全 MUST 基準のパスが明示されている", "type": "structural"},
+        {"id": "L2", "text": "SHOULD-4 違反が個別の ID 付きで報告されている（例: 'SHOULD-4 violation' または 'SHOULD-4 違反'）", "type": "structural"},
+        {"id": "L3", "text": "SHOULD-4 違反の説明と具体的な書き換え提案が含まれている", "type": "structural"},
+        {"id": "L4", "text": "SHOULD 違反にもかかわらずフローが続行されている（非ブロッキング）", "type": "structural"}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "spec-file-created-standalone",
+      "prompt": "Issue #107 の development flow の standalone mode。Step 8 に到達し、Issue コメントの投稿が完了した。Issue タイトルは 'feat: Add CSV export for dashboard'. ペルソナは Kenji を使用。",
+      "expected_output": "After posting Issue comment, creates docs/specs/csv-export-for-dashboard.md with YAML frontmatter (title, persona: Kenji, issue: #107, status: approved) and body containing User Story and ACs.",
+      "files": [],
+      "assertions": [
+        {"id": "M1", "text": "docs/specs/<kebab-slug>.md へのファイル作成が行われることが示されている（スラッグは Issue タイトルから導出）", "type": "structural"},
+        {"id": "M2", "text": "spec ファイルのフロントマターに title, persona, issue, status の4フィールドが含まれている", "type": "structural"},
+        {"id": "M3", "text": "status が 'approved' に設定されている（'draft' ではない）", "type": "structural"},
+        {"id": "M4", "text": "spec ファイルの body に User Story と Acceptance Criteria セクションが含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 13,
+      "name": "spec-file-skipped-autopilot",
+      "prompt": "Issue #108 の discover を --autopilot モードで実行。全フロー完了し Step 7 で deliverables を返す段階に達した（autopilot モード）。",
+      "expected_output": "In autopilot mode, Step 8 is skipped entirely. No spec file is created. skill-status COMPLETE is output. Spec file creation is deferred.",
+      "files": [],
+      "assertions": [
+        {"id": "N1", "text": "autopilot モードのため Step 8 がスキップされており、spec ファイル作成が行われていない", "type": "structural"},
+        {"id": "N2", "text": "skill-status COMPLETE が出力されている", "type": "structural"},
+        {"id": "N3", "text": "spec ファイルの作成や docs/specs/ への言及がない（または明示的にスキップと記載されている）", "type": "structural"}
       ]
     }
   ]

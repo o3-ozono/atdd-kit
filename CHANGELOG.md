@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-04-16
+
+### Added
+- `skills/discover/SKILL.md`: Step 3 persona lookup and bootstrap flow — lists available personas from `docs/personas/` (excluding README.md/TEMPLATE.md) and presents them as AskUserQuestion options; if no personas exist, prompts user to create one following `docs/personas/TEMPLATE.md` format and saves to `docs/personas/<name>.md` (D6 documentation artifact exception). (#69)
+- `skills/discover/SKILL.md`: Step 4.5 US/AC Quality Validation gate (development flow only) — validates MUST-1 (named persona reference), MUST-2 (≥3 ACs), and MUST-3 (independently verifiable Then clauses) with blocking enforcement and max-2-revision escalation; checks SHOULD-1 through SHOULD-5 and anti-pattern categories with individual ID-tagged non-blocking advisory. (#69)
+- `skills/discover/SKILL.md`: Step 8 spec file creation (standalone mode only) — creates `docs/specs/<kebab-slug>.md` per `docs/methodology/us-ac-format.md` format with `status: approved` frontmatter after Issue comment posting (D6 documentation artifact exception). (#69)
+- `skills/discover/evals/evals.json`: 8 new eval cases (id 6-13) covering persona listing, persona bootstrap, MUST-1/2/3 individual violation blocking, SHOULD advisory non-blocking reporting, spec file creation in standalone mode, and spec file skip in autopilot mode. (#69)
+
+### Changed
+- `skills/discover/SKILL.md`: D6 principle updated to explicitly list documentation artifact exceptions (`docs/personas/` and `docs/specs/` only). (#69)
+- `skills/discover/SKILL.md`: Mandatory Checklist updated to include Step 3a persona selection, Step 4.5 quality validation, SHOULD advisory, D6 exception guard, and spec file creation items. (#69)
+- `skills/discover/evals/evals.json`: id:0 (dev-feature) updated — `files` fixture adds `docs/personas/kenji-analyst.md`, assertion A2 extended to require named persona reference from `docs/personas/`. (#69)
+- `docs/methodology/atdd-guide.md`: User Story section adds MUST-1 cross-reference to `us-quality-standard.md`; AC Rules section adds MUST-3 independent verifiability link. (#69)
+
 ## [1.17.0] - 2026-04-16
 
 ### Added
