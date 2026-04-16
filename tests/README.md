@@ -70,6 +70,7 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_autopilot_context_reference.bats | Agent spawn reference-only context validation (AC2, Issue #85) |
 | test_hook_distribution.bats | PostToolUse hook plugin distribution (AC6, Issue #85) |
 | test_token_measurement_tooling.bats | Token reduction measurement tooling (AC4a, Issue #85) |
+| test_autopilot_phase1_transition.bats | discover autopilot output control and Phase 1 completion condition (AC1-AC3, Issue #101) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

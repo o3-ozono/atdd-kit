@@ -327,7 +327,7 @@ Applicable: describe specifics, add AC if missing. Not applicable: state why.
 
 ### Step 7: Present Deliverables and Get Approval
 
-**Autopilot mode** (`--autopilot`): Skip approval. Output draft AC set and return to caller. AC Review Round handles approval. Do NOT proceed to Step 8.
+**Autopilot mode** (`--autopilot`): Skip approval. Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft AC listings, UX check results, Interruption check results, or Discussion Summary in terminal output. Do NOT proceed to Step 8.
 
 **Standalone mode:** Present AC set, UX check results, and interruption check results.
 
@@ -503,7 +503,9 @@ Derive fix ACs in Given/When/Then format:
 
 ### Step 5: Present Deliverables and Get Approval
 
-Same as development flow Step 7.
+**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 6.
+
+**Standalone mode:** Present the full AC set to the user (same approval flow as development flow Step 7 standalone mode).
 
 ### Step 6: Post to Issue Comment
 

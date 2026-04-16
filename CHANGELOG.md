@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-04-16
+
+### Fixed
+- `skills/discover/SKILL.md`: Step 7 autopilot mode now outputs `skill-status` block only — explicitly excludes draft AC listings, UX check results, Interruption check results, and Discussion Summary from terminal output. (#101)
+- `skills/discover/SKILL.md`: Bug Flow Step 5 now has independent autopilot/standalone mode branches instead of implicit reference to development flow Step 7. (#101)
+- `commands/autopilot.md`: Phase 1 now explicitly states Phase 1 is not complete until AC Review Round agents have been spawned; receiving SKILL_STATUS: COMPLETE from discover alone does not complete Phase 1. (#101)
+
+### Added
+- `tests/test_autopilot_phase1_transition.bats`: 14 BATS tests covering AC1 (discover output control), AC2 (Phase 1 completion condition), and AC3 (immediate transition regression). (#101)
+
 ## [1.18.0] - 2026-04-16
 
 ### Added

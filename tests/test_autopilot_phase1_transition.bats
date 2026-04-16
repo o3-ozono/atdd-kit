@@ -1,0 +1,108 @@
+#!/usr/bin/env bats
+
+# Issue #101: discover COMPLETE 後の AC Review Round 即時遷移が再発停止する (#83 リグレッション)
+# Tests verify:
+#   AC1: discover autopilot terminal output is skill-status only
+#   AC2: autopilot Phase 1 completion requires Agent tool calls
+#   AC3: Regression -- discover COMPLETE triggers immediate AC Review Round transition
+
+DISCOVER="skills/discover/SKILL.md"
+AUTOPILOT="commands/autopilot.md"
+
+# ===================================================================
+# AC1: discover autopilot terminal output is skill-status only
+# ===================================================================
+
+@test "AC1: Step 7 autopilot mode outputs skill-status block only" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  # Must say "only" output is skill-status block in autopilot mode
+  echo "$step7" | grep -qi 'only.*output\|output.*only\|skill-status.*only\|only.*skill-status'
+}
+
+@test "AC1: Step 7 autopilot mode explicitly excludes draft AC listings from output" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -qi 'Do NOT include.*draft\|draft.*not.*output\|exclude.*draft\|no.*draft'
+}
+
+@test "AC1: Step 7 autopilot mode excludes UX check results from output" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -qi 'UX check\|ux.*result\|not.*ux\|exclude.*ux'
+}
+
+@test "AC1: Step 7 autopilot mode excludes Interruption check results from output" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -qi 'Interruption check\|interruption.*result\|not.*interruption\|exclude.*interruption'
+}
+
+@test "AC1: Step 7 autopilot mode excludes Discussion Summary from output" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -qi 'Discussion Summary\|discussion.*summary\|not.*discussion\|exclude.*discussion'
+}
+
+@test "AC1: Bug Flow Step 5 has independent autopilot mode instruction (not implicit reference)" {
+  local step5
+  step5=$(sed -n '/### Step 5: Present Deliverables/,/### Step 6/p' "$DISCOVER")
+  # Must NOT rely solely on "same as Step 7" -- must have explicit autopilot branch
+  echo "$step5" | grep -qi '\-\-autopilot\|autopilot mode'
+}
+
+@test "AC1: Bug Flow Step 5 autopilot mode outputs skill-status only" {
+  local step5
+  step5=$(sed -n '/### Step 5: Present Deliverables/,/### Step 6/p' "$DISCOVER")
+  echo "$step5" | grep -qi 'skill-status\|SKILL_STATUS'
+}
+
+@test "AC1: Bug Flow Step 5 has explicit standalone mode branch" {
+  local step5
+  step5=$(sed -n '/### Step 5: Present Deliverables/,/### Step 6/p' "$DISCOVER")
+  echo "$step5" | grep -qi 'standalone'
+}
+
+# ===================================================================
+# AC2: autopilot Phase 1 completion requires Agent tool calls
+# ===================================================================
+
+@test "AC2: Phase 1 definition states AC Review Round agents must be spawned before Phase 1 is complete" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -qi 'not complete\|incomplete\|not.*complet\|Phase 1.*complete.*AC Review\|AC Review.*complet'
+}
+
+@test "AC2: Phase 1 states receiving SKILL_STATUS COMPLETE alone does not complete Phase 1" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -qi 'alone.*not\|not.*alone\|COMPLETE.*alone\|alone.*complete'
+}
+
+@test "AC2: Phase 1 instructs to issue Agent tool calls before any user-facing text" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -qi 'Agent tool\|spawn.*agent\|agent.*spawn\|immediately.*agent\|agent.*immediately'
+}
+
+# ===================================================================
+# AC3: Regression -- discover COMPLETE triggers immediate AC Review Round
+# ===================================================================
+
+@test "AC3: Phase 1 prohibits presenting draft deliverables to user" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -qi 'Do NOT.*draft\|not.*present.*draft\|draft.*not.*present'
+}
+
+@test "AC3: Phase 1 prohibits intermediate user-facing messages before Agent tool calls" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -qi 'Do NOT.*intermediate\|no.*intermediate\|intermediate.*message.*not'
+}
+
+@test "AC3: Phase 1 requires Agent tool calls in the same response as COMPLETE" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -qi 'same.*response\|same.*turn\|immediately.*agent\|agent.*immediately'
+}
