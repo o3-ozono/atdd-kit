@@ -22,6 +22,20 @@ Failure to follow this will break the plugin update notification system (`script
 - **User-facing files** (README, DEVELOPMENT): Maintain both `.md` and `.ja.md` in sync.
 - **Issue/PR templates**: Maintain `en/` and `ja/` variants in `templates/`.
 
+#### Tightening Guidelines
+
+When editing LLM-facing files, apply tight English style to minimize token count without losing instructional content:
+
+1. Remove self-evident command purpose descriptions (e.g., `` `git status` to check status `` → `` `git status` ``).
+2. Shorten verbose heading parentheticals (e.g., "Update Repository (highest priority, run alone)" → "Update repo (run alone)").
+3. Remove repeated statements already expressed by the surrounding structure.
+4. Keep articles ("the", "a") — no extreme stripping that harms readability.
+5. Convert prose to lists or tables where applicable.
+6. Convert polite instructions ("You MUST/should/need to") to imperatives ("Verify X", "Run Y").
+7. Compress error handling to 1 sentence.
+
+Protected elements (never modify): YAML frontmatter fields, code block contents, XML guard tag blocks (`<HARD-GATE>`, `<AUTOPILOT-GUARD>`, `<SUBAGENT-STOP>`), step numbers, and `If X:` conditional structures.
+
 ### Zero Dependencies
 
 atdd-kit has **zero external dependencies** by design. No npm packages, no external services. Pure markdown + bash scripts only. This ensures the plugin is self-contained, shareable via source control, and works without dependency installation on any platform.
