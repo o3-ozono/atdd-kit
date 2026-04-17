@@ -18,22 +18,25 @@
         {"id": "A8", "text": "DoD または Definition of Done セクションが存在し、User Story セクションより前に配置されている", "type": "structural"},
         {"id": "A9", "text": "DoD セクションに完了条件がチェックリスト形式でリスト化されている", "type": "structural"},
         {"id": "A10", "text": "アプローチ選択・ユーザーストーリー確認・AC承認など主要な決定点において Recommended（推奨選択肢）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"},
-        {"id": "A11", "text": "Step 4.5 品質バリデーション（MUST-1/2/3）が実行され、その結果が出力に含まれている", "type": "structural"}
+        {"id": "A11", "text": "Step 4.5 品質バリデーション（MUST-1/2/3）が実行され、その結果が出力に含まれている", "type": "structural"},
+        {"id": "A12", "text": "新規ペルソナ作成（bootstrap）フローに入ったことを示す文言（例: 'Let\\'s create one', 'bootstrap', '新規ペルソナ作成'）が出力に含まれていない — 有効 persona が存在するため listing flow のみが実行されるべき", "type": "structural"}
       ]
     },
     {
       "id": 1,
       "name": "bug-fix",
-      "prompt": "本番でログインボタンを連打するとエラー500が返る。Issue #201 に報告が来ている。iOS Safari で再現確認済み。",
-      "expected_output": "DoD list at top, then root cause classification (AC Gap/Test Gap/Logic Error), fix approaches, regression test AC, fix ACs in Given/When/Then",
-      "files": [],
+      "prompt": "本番でログインボタンを連打するとエラー500が返る。Issue #201 に報告が来ている。iOS Safari で再現確認済み。docs/personas/kenji-analyst.md が存在する。",
+      "expected_output": "DoD list at top, then root cause classification (AC Gap/Test Gap/Logic Error), fix approaches, persona selection from docs/personas/, User Story referencing affected persona, regression test AC, fix ACs in Given/When/Then",
+      "files": ["docs/personas/kenji-analyst.md"],
       "assertions": [
         {"id": "B1", "text": "根本原因が AC Gap / Test Gap / Logic Error のいずれかに分類されている", "type": "structural"},
         {"id": "B2", "text": "リグレッションテストACが含まれている（バグ再現条件をACとして記述）", "type": "structural"},
         {"id": "B3", "text": "全ACが Given/When/Then 形式で記述されている", "type": "structural"},
         {"id": "B4", "text": "2つ以上の修正アプローチがPros/Cons付きで比較されている", "type": "structural"},
         {"id": "B5", "text": "最終成果物がスキル指定のIssueコメント形式（discover Deliverables ヘッダ付き）になっている", "type": "structural"},
-        {"id": "B6", "text": "DoD または Definition of Done セクションが存在し、Root Cause セクションより前に配置されている", "type": "structural"}
+        {"id": "B6", "text": "DoD または Definition of Done セクションが存在し、Root Cause セクションより前に配置されている", "type": "structural"},
+        {"id": "B7", "text": "docs/personas/kenji-analyst.md が persona として選択され、development flow Step 3a と対称的な persona selection step が bug flow でも実行されている", "type": "structural"},
+        {"id": "B8", "text": "User Story が導出されており、被害を受ける persona と発生状況が明示されている", "type": "llm_judge"}
       ]
     },
     {
@@ -173,9 +176,48 @@
       ]
     },
     {
+      "id": 14,
+      "name": "regression-issue-108-no-bootstrap",
+      "prompt": "Issue #108 の discover を --autopilot モードで実行。Issue は type:development ラベルで persona 必要フロー。docs/personas/ には README.md と TEMPLATE.md しか存在しない（0 valid personas）。",
+      "expected_output": "discover detects autopilot mode + persona-required flow + 0 valid personas, runs Step 3a-precheck, outputs skill-status block with SKILL_STATUS: BLOCKED and PHASE: discover, does NOT create a new persona file, references docs/methodology/persona-guide.md with Anti-Pattern 1 and Anti-Pattern 2 guidance.",
+      "files": [],
+      "assertions": [
+        {"id": "R1", "text": "skill-status ブロックが出力され SKILL_STATUS: BLOCKED と PHASE: discover が含まれている", "type": "structural"},
+        {"id": "R2", "text": "docs/methodology/persona-guide.md への参照と Anti-Pattern 1 / Anti-Pattern 2 の言及が BLOCKED guidance に含まれている", "type": "structural"},
+        {"id": "R3", "text": "新規 persona ファイル（docs/personas/<name>.md）の作成が行われていない — bootstrap フローに入っていない", "type": "structural"},
+        {"id": "R4", "text": "Step 3a-precheck で STOP しており、Step 3b（User Story）・Step 4（AC 導出）に進んでいない", "type": "structural"},
+        {"id": "R5", "text": "ガイダンスに 'Create at least one persona in docs/personas/ before running autopilot' 相当の案内が含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 15,
+      "name": "autopilot-happy-path-auto-select",
+      "prompt": "Issue #200 の discover を --autopilot モードで実行。type:development で persona 必要フロー。docs/personas/kenji-analyst.md と docs/personas/sarah-manager.md が存在する（2 valid personas）。",
+      "expected_output": "Step 3a-listing runs in autopilot mode and auto-selects the most relevant persona (no AskUserQuestion). The selected persona is used in the User Story 'As a' field. No new persona is created. SKILL_STATUS: COMPLETE at the end.",
+      "files": ["docs/personas/kenji-analyst.md", "docs/personas/sarah-manager.md"],
+      "assertions": [
+        {"id": "S1", "text": "有効 persona のうち最も関連性の高い 1 件が自動選択され User Story の 'As a' に使用されている（AskUserQuestion での対話なし）", "type": "structural"},
+        {"id": "S2", "text": "新規 persona ファイルの作成が行われていない（bootstrap フローに入っていない）", "type": "structural"},
+        {"id": "S3", "text": "skill-status ブロックが出力され SKILL_STATUS: COMPLETE が含まれている", "type": "structural"},
+        {"id": "S4", "text": "Step 3a-listing から Step 3b（User Story）へ遷移している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 16,
+      "name": "refactoring-skip-persona-check",
+      "prompt": "Issue #300 の discover を --autopilot モードで実行。ラベルは type:development + refactoring。docs/personas/ は存在しない（0 valid personas）。外部振る舞いを変えずに内部構造を改善する。",
+      "expected_output": "Refactoring flow skips persona check entirely. Step 3a never runs. No BLOCKED on persona count. SKILL_STATUS: COMPLETE.",
+      "files": [],
+      "assertions": [
+        {"id": "T1", "text": "refactoring フローのため Step 3a（Persona Selection）が実行されていない", "type": "structural"},
+        {"id": "T2", "text": "persona 不在にもかかわらず BLOCKED になっていない", "type": "structural"},
+        {"id": "T3", "text": "skill-status ブロックが出力され SKILL_STATUS: COMPLETE が含まれている", "type": "structural"}
+      ]
+    },
+    {
       "id": 13,
       "name": "spec-file-skipped-autopilot",
-      "prompt": "Issue #108 の discover を --autopilot モードで実行。全フロー完了し Step 7 で deliverables を返す段階に達した（autopilot モード）。",
+      "prompt": "Issue #109 の discover を --autopilot モードで実行。全フロー完了し Step 7 で deliverables を返す段階に達した（autopilot モード）。",
       "expected_output": "In autopilot mode, Step 8 is skipped entirely. No spec file is created. skill-status COMPLETE is output. Spec file creation is deferred.",
       "files": [],
       "assertions": [
