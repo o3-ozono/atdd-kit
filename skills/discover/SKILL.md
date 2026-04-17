@@ -527,29 +527,48 @@ Then use AskUserQuestion with:
 
 Recommended: Correct — reply 'ok' to accept, or provide alternative
 
-### Step 3: Fix Approach Exploration
+### Step 3: Persona Selection and User Story Derivation
+
+Bug flow requires a persona because "is this a bug?" is a judgement about user impact. Without a named user, the same behaviour can be read as a bug for one audience and working-as-intended for another. Run the same Persona Selection logic as the development flow.
+
+**Persona Selection:** Apply development flow **Step 3a** verbatim — the precheck / listing / bootstrap branches, the valid-persona definition, and the autopilot auto-selection rule all apply identically. When the precheck BLOCKs, emit the shared guidance from `lib/persona_check.sh get_persona_guidance_message` and STOP.
+
+**User Story Derivation (bug context):** Once a persona is selected, derive a bug-focused User Story that names both the impacted persona and the failure condition:
+
+```
+**As** [persona],
+**when I** [action that triggers the bug],
+**I expect** [correct behaviour],
+**but** [observed buggy behaviour].
+```
+
+The mandatory elements are: the selected persona from Step 3a, the action/state that reproduces the bug, and the gap between expected and observed behaviour. This story feeds Step 5 (Fix AC Derivation) — the Regression test AC should correspond to "when I ... I observed ..." and the Normal behavior AC to "I expect ...".
+
+### Step 4: Fix Approach Exploration
 
 Same as development flow Step 2.
 
-### Step 3.5: DoD Derivation
+### Step 4.5: DoD Derivation
 
 Same as development flow Step 2.5. Always include:
 - Bug no longer reproduces under original reproduction steps
 - Regression test passes
 
-### Step 4: Fix AC Derivation
+### Step 5: Fix AC Derivation
 
 Derive fix ACs in Given/When/Then format:
 - **Regression test AC:** Bug's reproduction condition (must pass after fix)
 - **Normal behavior AC:** Correct behavior after fix
 
-### Step 5: Present Deliverables and Get Approval
+Each AC's `Given`/`When`/`Then` should reference the persona selected in Step 3 (e.g., "Given [persona] is on [state], When they [action], Then [result]").
 
-**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 6.
+### Step 6: Present Deliverables and Get Approval
+
+**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 7.
 
 **Standalone mode:** Present the full AC set to the user (same approval flow as development flow Step 7 standalone mode).
 
-### Step 6: Post to Issue Comment
+### Step 7: Post to Issue Comment
 
 Post approved deliverables with `gh issue comment`.
 

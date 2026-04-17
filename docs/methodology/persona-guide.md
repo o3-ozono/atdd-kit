@@ -143,3 +143,35 @@ During the `discover` skill's User Story Derivation step (Development Flow, Step
 4. If a new persona is needed, prompt creation following this guide's format
 
 > **Note:** SKILL.md integration (adding the persona lookup step to `skills/discover/SKILL.md`) is deferred to Issue F. This section documents the intended convention only. The current discover skill does not yet perform the lookup automatically.
+
+---
+
+## Autopilot Requirements
+
+Autopilot (`/atdd-kit:autopilot`) has no interactive dialogue, so it cannot ask the user to supply the fields needed to create a persona. If it were allowed to bootstrap one on its own, it would have to synthesise the persona from the Issue body, producing an Issue-specific persona invented without user research — the exact failure mode described in Anti-Pattern 1 (Persona Without Research) and, when repeated, Anti-Pattern 2 (Persona Proliferation).
+
+To prevent this, persona bootstrap is disabled under autopilot. The rule is enforced in two layers that share the same valid-persona definition via `lib/persona_check.sh`:
+
+| Layer | Where | Behaviour when `docs/personas/` has 0 valid personas |
+|-------|-------|------------------------------------------------------|
+| Phase 0.9 prerequisite check | `commands/autopilot.md` | Fail-fast: emit guidance, STOP before TeamCreate / EnterWorktree |
+| Step 3a-precheck (defense-in-depth) | `skills/discover/SKILL.md` | Emit the same guidance and return `SKILL_STATUS: BLOCKED` |
+
+The check applies to flows that require a persona — `development` and `bug`. `refactoring`, `research`, and `documentation` skip the check because they do not derive a User Story.
+
+### Valid Persona Definition
+
+A file counts as a valid persona when all of the following hold:
+
+- Located directly under `docs/personas/` (not in a subdirectory)
+- File name ends with `.md`
+- Not a hidden file (does not start with `.`)
+- Not `README.md` or `TEMPLATE.md`
+- Non-empty
+- The `TEMPLATE.md` placeholder `[Persona Name]` has been replaced
+
+Symlinks are followed. A missing `docs/personas/` directory counts as zero valid personas.
+
+### Creating a Persona Before Running Autopilot
+
+The failure mode tells you what to do: do the user research, then write the persona. Start from `docs/personas/TEMPLATE.md`, ground each field in evidence, and commit the file before invoking autopilot. One persona is enough for autopilot to proceed — add more only when a genuinely distinct user group surfaces (see "Creation Process" above).

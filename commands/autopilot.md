@@ -87,6 +87,44 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 
 4. Skip to the determined phase.
 
+## Phase 0.8: Persona Prerequisite Check
+
+**Tools:** Bash
+
+Runs **before** Phase 0.9 (TeamCreate / EnterWorktree) so we fail fast without leaking Teams or worktrees when `docs/personas/` is empty. See `docs/methodology/persona-guide.md` "Autopilot Requirements" for rationale.
+
+Applicability (persona-required flows only):
+
+| Task type (from Phase 0.5) | Check applies? |
+|----------------------------|----------------|
+| `development` | Yes |
+| `bug` | Yes |
+| `refactoring` | No (external behavior unchanged — no persona required) |
+| `research` | No (not user-facing) |
+| `documentation` | No (not user-facing) |
+
+**Mid-phase resume skip:** Skip this check when Phase 0.5 determined the start phase to be `ready-to-go`, `implementing`, `needs-plan-revision`, `ready-for-PR-review`, or `needs-pr-revision` — persona selection already happened during Phase 1 and cannot be retro-actively required.
+
+Procedure:
+
+1. If task type is not persona-required, skip and continue to Phase 0.9.
+2. If Phase 0.5 start phase matches the mid-phase resume list above, skip and continue.
+3. Otherwise, run the valid-persona count using the shared helper:
+
+   ```bash
+   count=$(bash lib/persona_check.sh count_valid_personas docs/personas)
+   if [ "$count" -eq 0 ]; then
+     guidance=$(bash lib/persona_check.sh get_persona_guidance_message)
+     gh issue comment <number> --body "$guidance"
+     printf '%s\n' "$guidance"   # 全チャネル内容同期 — terminal にも同じ guidance
+     exit                        # Do NOT call TeamCreate / EnterWorktree
+   fi
+   ```
+
+4. On `count >= 1`: continue to Phase 0.9.
+
+The BLOCKED guidance is the canonical text emitted by `lib/persona_check.sh get_persona_guidance_message`. discover Step 3a-precheck emits the same message so the two layers agree on when and why persona bootstrap is disallowed.
+
 ## Phase 0.9: Agent Teams Setup
 
 **Tools:** ToolSearch, TeamCreate, TeamDelete, EnterWorktree

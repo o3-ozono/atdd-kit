@@ -44,23 +44,25 @@ AUTOPILOT="commands/autopilot.md"
   echo "$step7" | grep -qi 'Discussion Summary\|discussion.*summary\|not.*discussion\|exclude.*discussion'
 }
 
-@test "AC1: Bug Flow Step 5 has independent autopilot mode instruction (not implicit reference)" {
-  local step5
-  step5=$(sed -n '/### Step 5: Present Deliverables/,/### Step 6/p' "$DISCOVER")
+@test "AC1: Bug Flow Present Deliverables has independent autopilot mode instruction (not implicit reference)" {
+  # Issue #108: bug flow に Persona Selection が追加され Step 番号が +1 シフト
+  # Present Deliverables は現在 Step 6 (元 Step 5)
+  local step
+  step=$(sed -n '/### Step 6: Present Deliverables/,/### Step 7/p' "$DISCOVER")
   # Must NOT rely solely on "same as Step 7" -- must have explicit autopilot branch
-  echo "$step5" | grep -qi '\-\-autopilot\|autopilot mode'
+  echo "$step" | grep -qi '\-\-autopilot\|autopilot mode'
 }
 
-@test "AC1: Bug Flow Step 5 autopilot mode outputs skill-status only" {
-  local step5
-  step5=$(sed -n '/### Step 5: Present Deliverables/,/### Step 6/p' "$DISCOVER")
-  echo "$step5" | grep -qi 'skill-status\|SKILL_STATUS'
+@test "AC1: Bug Flow Present Deliverables autopilot mode outputs skill-status only" {
+  local step
+  step=$(sed -n '/### Step 6: Present Deliverables/,/### Step 7/p' "$DISCOVER")
+  echo "$step" | grep -qi 'skill-status\|SKILL_STATUS'
 }
 
-@test "AC1: Bug Flow Step 5 has explicit standalone mode branch" {
-  local step5
-  step5=$(sed -n '/### Step 5: Present Deliverables/,/### Step 6/p' "$DISCOVER")
-  echo "$step5" | grep -qi 'standalone'
+@test "AC1: Bug Flow Present Deliverables has explicit standalone mode branch" {
+  local step
+  step=$(sed -n '/### Step 6: Present Deliverables/,/### Step 7/p' "$DISCOVER")
+  echo "$step" | grep -qi 'standalone'
 }
 
 # ===================================================================
