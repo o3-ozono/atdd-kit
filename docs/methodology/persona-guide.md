@@ -175,3 +175,10 @@ Symlinks are followed. A missing `docs/personas/` directory counts as zero valid
 ### Creating a Persona Before Running Autopilot
 
 The failure mode tells you what to do: do the user research, then write the persona. Start from `docs/personas/TEMPLATE.md`, ground each field in evidence, and commit the file before invoking autopilot. One persona is enough for autopilot to proceed — add more only when a genuinely distinct user group surfaces (see "Creation Process" above).
+
+### Example: atdd-kit's Own Persona Library
+
+atdd-kit itself follows this guide. See [`docs/personas/`](../personas/) for worked examples grounded in observable evidence (commit history, Issue patterns, README audience, Quick Start assumptions):
+
+- [`hiro-solo-dev.md`](../personas/hiro-solo-dev.md) — Primary persona derived from the repository's actual single-maintainer pattern
+- [`rin-freeform-coder.md`](../personas/rin-freeform-coder.md) — Negative persona used to keep scope decisions coherent when a request would dilute Issue-driven / AC-first guardrails

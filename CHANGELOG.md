@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.21.1] - 2026-04-17
+
+### Added
+- `docs/personas/hiro-solo-dev.md`: Primary persona for atdd-kit itself — a solo developer running atdd-kit on personal projects. Grounded in the repository's actual single-maintainer commit pattern, project-scope Quick Start, and autopilot's PO-solo design. (#110)
+- `docs/personas/rin-freeform-coder.md`: Negative persona — a freeform coder who rejects Issue-driven / AC-first process. Documents the scope boundary so future design decisions do not dilute guardrails under "freeform" pressure. (#110)
+
+### Changed
+- `docs/personas/README.md`: Convention table extended with `hiro-solo-dev.md` (Primary) and `rin-freeform-coder.md` (Negative) entries. (#110)
+- `docs/methodology/persona-guide.md`: "Creating a Persona Before Running Autopilot" section appended with an "Example: atdd-kit's Own Persona Library" subsection linking to the two persona files above. (#110)
+
 ## [1.21.0] - 2026-04-17
 
 ### Added

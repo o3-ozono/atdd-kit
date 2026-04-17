@@ -25,3 +25,5 @@ File naming: `<first-name>-<role>.md` (lowercase, hyphen-separated)
 | File | Description |
 |------|-------------|
 | [TEMPLATE.md](TEMPLATE.md) | Blank template for new personas |
+| [hiro-solo-dev.md](hiro-solo-dev.md) | **Primary** — solo developer running atdd-kit on personal projects as the sole maintainer |
+| [rin-freeform-coder.md](rin-freeform-coder.md) | **Negative** — freeform coder who rejects Issue-driven and AC-first process (explicitly out of scope) |
