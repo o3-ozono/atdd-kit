@@ -40,6 +40,35 @@ First step of the Issue Ready flow. Understand requirements, explore approaches,
 
 ---
 
+## Persona Requirement by Flow
+
+Persona selection and User Story derivation are required only for flows that target user-facing outcomes. Refactoring and docs/research flows are internal or informational and do not require a persona.
+
+| Flow | Persona Required | User Story Required | Reason |
+|------|------------------|---------------------|--------|
+| development (`type:development`) | Yes | Yes | `As a [persona]` anchors the goal |
+| bug (`type:bug`) | Yes | Yes | Impacted user context is needed to judge "what is a bug" |
+| refactoring (`type:development` + `refactoring`) | No | No | Externally observable behavior unchanged; subject is developer/team |
+| research (`type:research`) | No | No | Not a user-facing deliverable |
+| documentation (`type:documentation`) | No | No | Not a user-facing deliverable |
+
+For flows marked "Yes", Step 3a (Persona Selection) runs and the autopilot prerequisite check applies. For flows marked "No", Step 3a is skipped entirely.
+
+## Valid Persona Definition
+
+A persona file is considered **valid** when all of the following hold. The authoritative check lives in `lib/persona_check.sh` and is shared by autopilot Phase 0.9 prerequisite check and Step 3a precheck so both locations agree.
+
+- Located directly under `docs/personas/` (not a subdirectory)
+- File name ends with `.md`
+- Not a hidden file (does not start with `.`)
+- Not `README.md` or `TEMPLATE.md`
+- Non-empty
+- `TEMPLATE.md` placeholder `[Persona Name]` has been replaced
+
+`count_valid_personas` treats a missing `docs/personas/` directory as zero. Symlinks are followed.
+
+---
+
 ## Exclusive Lock Acquisition
 
 ```bash
@@ -163,23 +192,32 @@ Recommended: Accept DoD — reply 'ok' to accept, or provide alternative
 
 #### Step 3a: Persona Selection
 
-Before drafting the user story, identify the persona for the `As a` field.
+Before drafting the user story, identify the persona for the `As a` field. Step 3a runs only for persona-required flows — see "Persona Requirement by Flow" above.
 
 **Persona lookup:**
 
-Check `docs/personas/` for available persona files (list all `.md` files, excluding `README.md` and `TEMPLATE.md`).
+Count valid persona files under `docs/personas/` using `lib/persona_check.sh count_valid_personas` (see "Valid Persona Definition").
 
 ```
-IF docs/personas/ does not exist
-   OR (no .md files found after excluding README.md and TEMPLATE.md):
-  → Persona bootstrap flow (Step 3a-bootstrap)
-ELSE:
+IF --autopilot AND valid_persona_count == 0:
+  → Persona precheck BLOCKED (Step 3a-precheck)
+ELSE IF valid_persona_count >= 1:
   → Persona listing flow (Step 3a-listing)
+ELSE (standalone AND valid_persona_count == 0):
+  → Persona bootstrap flow (Step 3a-bootstrap)
 ```
 
-**Step 3a-listing** (personas exist):
+**Step 3a-precheck** (autopilot mode with no valid personas):
 
-List the available persona files and present them as options:
+Do **not** create a new persona. Autopilot has no user dialogue, so bootstrapping would synthesize an Issue-specific persona from the Issue body and violate `docs/methodology/persona-guide.md` ("Creation Process" / Anti-Pattern 1 / Anti-Pattern 2).
+
+1. Emit the guidance from `bash lib/persona_check.sh get_persona_guidance_message`.
+2. Output a `skill-status` block with `SKILL_STATUS: BLOCKED` and `PHASE: discover`.
+3. STOP. Do not proceed to Step 3b.
+
+**Step 3a-listing** (valid personas exist):
+
+List the valid persona files and present them as options:
 
 ```
 Available personas:
@@ -199,7 +237,11 @@ Recommended: [most relevant persona] — reply 'ok' to accept, or select another
 
 If only one persona exists, present it as the sole recommended option with "Create new" as the alternative.
 
-**Step 3a-bootstrap** (no personas available — D6 exception: documentation artifact creation in `docs/personas/` is permitted):
+**Autopilot auto-selection:** In autopilot mode, do not use AskUserQuestion. Pick the most relevant valid persona (highest-affinity match to the Issue body) and use it as the `As a` subject. Do **not** create a new persona even if affinity is low — the listing flow never creates new personas in autopilot.
+
+**Step 3a-bootstrap** (standalone only — D6 exception: documentation artifact creation in `docs/personas/` is permitted):
+
+> **Autopilot prohibited.** 3a-bootstrap never runs under `--autopilot`. Step 3a-precheck BLOCKs instead.
 
 Prompt the user to define a new persona:
 
@@ -485,29 +527,48 @@ Then use AskUserQuestion with:
 
 Recommended: Correct — reply 'ok' to accept, or provide alternative
 
-### Step 3: Fix Approach Exploration
+### Step 3: Persona Selection and User Story Derivation
+
+Bug flow requires a persona because "is this a bug?" is a judgement about user impact. Without a named user, the same behaviour can be read as a bug for one audience and working-as-intended for another. Run the same Persona Selection logic as the development flow.
+
+**Persona Selection:** Apply development flow **Step 3a** verbatim — the precheck / listing / bootstrap branches, the valid-persona definition, and the autopilot auto-selection rule all apply identically. When the precheck BLOCKs, emit the shared guidance from `lib/persona_check.sh get_persona_guidance_message` and STOP.
+
+**User Story Derivation (bug context):** Once a persona is selected, derive a bug-focused User Story that names both the impacted persona and the failure condition:
+
+```
+**As** [persona],
+**when I** [action that triggers the bug],
+**I expect** [correct behaviour],
+**but** [observed buggy behaviour].
+```
+
+The mandatory elements are: the selected persona from Step 3a, the action/state that reproduces the bug, and the gap between expected and observed behaviour. This story feeds Step 5 (Fix AC Derivation) — the Regression test AC should correspond to "when I ... I observed ..." and the Normal behavior AC to "I expect ...".
+
+### Step 4: Fix Approach Exploration
 
 Same as development flow Step 2.
 
-### Step 3.5: DoD Derivation
+### Step 4.5: DoD Derivation
 
 Same as development flow Step 2.5. Always include:
 - Bug no longer reproduces under original reproduction steps
 - Regression test passes
 
-### Step 4: Fix AC Derivation
+### Step 5: Fix AC Derivation
 
 Derive fix ACs in Given/When/Then format:
 - **Regression test AC:** Bug's reproduction condition (must pass after fix)
 - **Normal behavior AC:** Correct behavior after fix
 
-### Step 5: Present Deliverables and Get Approval
+Each AC's `Given`/`When`/`Then` should reference the persona selected in Step 3 (e.g., "Given [persona] is on [state], When they [action], Then [result]").
 
-**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 6.
+### Step 6: Present Deliverables and Get Approval
+
+**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 7.
 
 **Standalone mode:** Present the full AC set to the user (same approval flow as development flow Step 7 standalone mode).
 
-### Step 6: Post to Issue Comment
+### Step 7: Post to Issue Comment
 
 Post approved deliverables with `gh issue comment`.
 
@@ -638,6 +699,12 @@ RECOMMENDATION: Issue is already locked by another in-progress process. Wait or 
 ```
 
 ```skill-status
+SKILL_STATUS: BLOCKED
+PHASE: discover
+RECOMMENDATION: No valid personas in docs/personas/. Create at least one persona file before running autopilot. See docs/methodology/persona-guide.md.
+```
+
+```skill-status
 SKILL_STATUS: FAILED
 PHASE: discover
 RECOMMENDATION: gh issue comment failed with authentication error. Check GH_TOKEN configuration.
@@ -662,7 +729,8 @@ Do not skip any item.
 - [ ] Approach exploration done (2-3 approaches presented)
 - [ ] DoD derivation done (Step 2.5 for dev/bug/refactoring; Step 3 for docs/research)
 - [ ] DoD section at top of Issue comment
-- [ ] Persona selected or created from docs/personas/ — Step 3a complete (development flow)
+- [ ] Persona selected from docs/personas/ — Step 3a complete (persona-required flows: development and bug)
+- [ ] Autopilot mode + 0 valid personas → Step 3a-precheck BLOCKED (no bootstrap, see persona-guide.md)
 - [ ] UX check (U1-U5) not skipped for development tasks
 - [ ] Interruption scenario check (I1-I4) not skipped for development tasks
 - [ ] ACs in Given/When/Then format

@@ -34,3 +34,11 @@ dynamic:
     script: scripts/check-phase5-section.sh
     args:
       - ### research
+  persona-prerequisite-check-present:
+    script: scripts/check-phase5-section.sh
+    args:
+      - Persona Prerequisite Check
+  persona-prerequisite-check-before-teamcreate:
+    script: scripts/check-persona-check-order.sh
+    args:
+      - commands/autopilot.md
