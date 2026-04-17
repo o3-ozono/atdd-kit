@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_autopilot_research_phase5.bats`: AC1-AC9 全件の BATS テスト 30 ケース。(#104)
 
 ### Changed
-- `tests/test_autopilot_review_gate.bats`: sed パターンを `/## /` → `/^## [^#]/` に修正（H3 挿入後も Phase 5 範囲が正しく抽出されるよう対応）。(#104)
+- `tests/test_autopilot_review_gate.bats`: sed 範囲パターンを H2 限定に修正（H3 挿入後も Phase 5 範囲が正しく抽出されるよう対応）。(#104)
 - `evals/footprint/baseline.json`: autopilot checkpoint baseline を再測定（commands/autopilot.md +15.7%、plan R2 で想定済み）。(#104)
 
 ## [1.20.0] - 2026-04-17
