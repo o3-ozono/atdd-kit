@@ -1,8 +1,6 @@
 ---
 name: developer
 description: "Developer agent for ATDD implementation. Spawned by autopilot for coding tasks."
-model: sonnet
-effort: high
 tools:
   - Read
   - Write

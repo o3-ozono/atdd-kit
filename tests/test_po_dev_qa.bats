@@ -4,7 +4,7 @@
 # Agent definitions live in agents/*.md
 # Updated for Issue #45: po.md removed — main Claude directly acts as PO orchestrator
 
-# --- AC1 (#34, updated #45): 6 agent definitions with model/effort ---
+# --- AC1 (#34, updated #45): 6 agent definitions ---
 
 @test "AC1: all 6 agent definitions exist (po.md removed)" {
   for agent in developer qa researcher tester reviewer writer; do
@@ -14,13 +14,6 @@
 
 @test "AC1: po.md does not exist (removed in #45)" {
   [[ ! -f "agents/po.md" ]]
-}
-
-@test "AC1: non-PO agents have model sonnet and effort high" {
-  for agent in developer qa researcher tester reviewer writer; do
-    grep -q 'model:.*sonnet' "agents/${agent}.md"
-    grep -q 'effort:.*high' "agents/${agent}.md"
-  done
 }
 
 @test "AC1: tester agent has verify skill" {

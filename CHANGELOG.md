@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-04-17
+
+### Changed
+- `agents/{developer,qa,tester,reviewer,researcher,writer}.md`: removed pinned `model: sonnet` and `effort: high` frontmatter fields. Agents now inherit model and effort from session-level Claude Code settings (`/model`, `/effort`), allowing users to select Opus 4.7 or other models without editing plugin files. (#105)
+- `agents/README.md`: removed `Model` and `Effort` columns from Agent table; removed `model` row from Frontmatter Reference; added session-inheritance note.
+
+### Added
+- `tests/test_issue_105_frontmatter_session_inheritance.bats`: regression guard (4 tests) verifying no pinned model/effort fields and README session-inheritance documentation. (#105)
+
 ## [1.19.0] - 2026-04-16
 
 ### Fixed

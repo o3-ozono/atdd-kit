@@ -1,8 +1,6 @@
 ---
 name: tester
 description: "Tester agent for bug reproduction and verification. Spawned by autopilot for bug task types."
-model: sonnet
-effort: high
 tools:
   - Read
   - Grep

@@ -1,8 +1,6 @@
 ---
 name: writer
 description: "Writer agent for documentation tasks. Spawned by autopilot for documentation task types."
-model: sonnet
-effort: high
 tools:
   - Read
   - Write
