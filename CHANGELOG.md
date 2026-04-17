@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-04-17
+
+### Added
+- `commands/autopilot.md`: Phase 5 を `### development / bug / documentation / refactoring` と `### research` の二段 H3 に分割。research タスクは PR verify/merge をスキップし、deliverable 分類 → Issue 起票/コメント → クロージングコメント → 元 Issue クローズ → label 削除 → ExitWorktree/TeamDelete へルーティングされる。(#104)
+- `commands/autopilot.md`: Agent Composition Table 直下に Phase 5 note 追加（research は PR verify/merge スキップを明示）。(#104)
+- `commands/autopilot.md`: research H3 に classification heuristic 追加（`new_issue` / `existing_comment` / `no_action`、迷ったら `existing_comment` 優先）。(#104)
+- `tests/test_autopilot_research_phase5.bats`: AC1-AC9 全件の BATS テスト 30 ケース。(#104)
+
+### Changed
+- `tests/test_autopilot_review_gate.bats`: sed パターンを `/## /` → `/^## [^#]/` に修正（H3 挿入後も Phase 5 範囲が正しく抽出されるよう対応）。(#104)
+- `evals/footprint/baseline.json`: autopilot checkpoint baseline を再測定（commands/autopilot.md +15.7%、plan R2 で想定済み）。(#104)
+
 ## [1.20.0] - 2026-04-17
 
 ### Changed

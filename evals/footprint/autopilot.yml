@@ -5,3 +5,32 @@ files:
   - skills/atdd/SKILL.md
   - skills/verify/SKILL.md
   - skills/ship/SKILL.md
+dynamic:
+  research-phase5-new-issues:
+    script: scripts/check-phase5-section.sh
+    args:
+      - gh issue create
+  research-phase5-existing-comment:
+    script: scripts/check-phase5-section.sh
+    args:
+      - existing_comment
+  research-phase5-no-action:
+    script: scripts/check-phase5-section.sh
+    args:
+      - no_action
+  research-phase5-zero-findings:
+    script: scripts/check-phase5-section.sh
+    args:
+      - findings.*0\|zero.*find\|発見なし
+  research-phase5-mixed:
+    script: scripts/check-phase5-section.sh
+    args:
+      - Classification heuristic
+  autopilot-dev-phase5-regression:
+    script: scripts/check-phase5-section.sh
+    args:
+      - development / bug / documentation / refactoring
+  autopilot-research-phase5-new-sections:
+    script: scripts/check-phase5-section.sh
+    args:
+      - ### research
