@@ -1,8 +1,6 @@
 ---
 name: reviewer
 description: "Reviewer agent for code review. Spawned by autopilot for PR review across task types."
-model: sonnet
-effort: high
 tools:
   - Read
   - Grep

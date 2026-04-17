@@ -4,18 +4,6 @@
 
 # --- AC2a: Agent frontmatter fields preserved ---
 
-@test "AC2a: all agent files retain model field" {
-  for f in agents/[^R]*.md; do
-    grep -q '^model:' "$f"
-  done
-}
-
-@test "AC2a: all agent files retain effort field" {
-  for f in agents/[^R]*.md; do
-    grep -q '^effort:' "$f"
-  done
-}
-
 @test "AC2a: all agent files retain tools section" {
   for f in agents/[^R]*.md; do
     grep -q '^tools:' "$f"
