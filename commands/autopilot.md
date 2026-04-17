@@ -25,6 +25,9 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 2. Spawn per approved composition — no additional user approval required
 3. If `### Agent Composition` is absent: report error and STOP (see Autonomy Rules)
 
+> **Phase 5 note:** research tasks skip PR verify/merge steps. Phase 5 routes directly to
+> deliverable classification → issue create/comment → closing comment → issue close → label removal → ExitWorktree/TeamDelete.
+
 ## Prerequisites
 - `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
 - Agent definitions in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as PO.
@@ -298,6 +301,8 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 **Tools:** Bash (gh), ExitWorktree, TeamDelete
 
+### development / bug / documentation / refactoring
+
 1. **Verify review PASS:** `gh pr view <PR> --json comments --jq '.comments[].body'`
    - No PASS comment → STOP. Do NOT proceed to merge. "QA review PASS not confirmed. Returning to Phase 4."
    - PASS confirmed → Step 2
@@ -322,6 +327,51 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 7. ExitWorktree with action: "remove"
 8. TeamDelete `autopilot-{issue_number}`
 9. `git checkout main && git pull origin main`
+
+### research
+
+PR verify/merge steps do not apply to research tasks. Phase 5 processes deliverables into next actions.
+Do NOT add `ready-for-PR-review` label for research tasks. Phase 5 triggers on Review PASS comment only.
+
+1. **Idempotency guard:** `gh issue view <n> --json state --jq '.state'`
+   - state == `CLOSED` → post "Phase 5 skipped: Issue already closed. Manual review required." as Issue comment, return SKILL_STATUS: BLOCKED, STOP.
+   - state == `OPEN` → proceed.
+
+2. **Deliverable Classification:** Classify each research finding:
+   - `new_issue`: the finding can be acted on independently as a development/bug/refactoring task → create new Issue
+   - `existing_comment`: the finding supplements an existing open Issue without requiring a new one → comment on existing Issue
+   - `no_action`: the finding is informational only (confirmation, negative result, context) → record reason
+
+   **Classification heuristic:** When in doubt between `new_issue` and `existing_comment`, prefer `existing_comment` to avoid Issue sprawl.
+
+   If findings total 0, skip to Step 4 ("発見なし" explanation).
+
+3. **Execute Actions:**
+   - **3a. `new_issue` items:** If no `new_issue` items exist, skip to Step 3b.
+     - `gh issue create --title "<title>" --body "<body includes link to source #<n>>"` — record created Issue number.
+     - 1+ successes then failure → best-effort continue, record failed items.
+     - All items fail → post failure report, return SKILL_STATUS: BLOCKED, STOP.
+   - **3b. `existing_comment` items:** `gh issue comment <existing-n> --body "<content>"` — record commented Issue numbers.
+   - **3c. `no_action` items:** Record reason for each.
+
+4. **Closing Comment:** Post `gh issue comment <source> --body` with the following structure.
+   **Omit any section with 0 items** (do not leave empty headings).
+   If all sections are empty (発見なし), include explanation instead:
+   - `### 起票した新規 Issue` — `new_issue` results (including any failures)
+   - `### コメントした既存 Issue` — `existing_comment` results
+   - `### アクション不要項目` — `no_action` reasons
+
+5. Close source Issue: `gh issue close <source>`
+
+6. Remove `in-progress` label: `gh issue edit <source> --remove-label in-progress`
+
+7. Switch back to the worktree base branch:
+   ```bash
+   git switch worktree-autopilot-{issue_number}
+   ```
+8. ExitWorktree with action: "remove"
+9. TeamDelete `autopilot-{issue_number}`
+10. `git checkout main && git pull origin main`
 
 ## Utility Mode
 
