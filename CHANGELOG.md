@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-04-18
+
+### Added
+- `hooks/autopilot-worktree-guard.sh` + `hooks/autopilot_worktree_guard.py`: PreToolUse hook enforcing that autopilot sessions cannot Edit/Write/MultiEdit/NotebookEdit or Bash-mutate files outside the active worktree. Gated by `ATDD_AUTOPILOT_WORKTREE` env var — no-op for normal (non-autopilot) sessions. Allow-list: `/tmp`, `/var/folders`, `/private/var/folders`, `/private/tmp`, `/dev/null`, and `<W>/.git`. Bash tokenization uses `shlex` (quoted literals and `2>&1` are not misdetected). Blocks exit 2 with `worktree=<W>\nviolating=<path>` on stderr. (#111)
+- `hooks/hooks.json`: PreToolUse matchers extended — `Edit|Write|MultiEdit|NotebookEdit` now chains the new guard after `main-branch-guard.sh`, and a new `Bash` matcher invokes the guard. (#111)
+- `commands/autopilot.md` Phase 0.9 Step 4: autopilot sessions must export `ATDD_AUTOPILOT_WORKTREE=$(realpath <worktree>)` immediately after `EnterWorktree`. (#111)
+- `tests/test_autopilot_worktree_guard.bats`: 38 cases covering AC1-AC6 including 9 Bash-parsing edge cases (quoted `>`, `2>&1`, chained `&&`, pipe `|`, relative paths, `/dev/null`). (#111)
+
+### Known Limitations (intentional deferrals, #111)
+- heredoc file targets (`cat <<EOF > /etc/x`) — not detected; deferred.
+- Nested subshell mutations (`$(cmd > path)`) — only outer is inspected.
+- `eval "cmd > path"` / `bash -c "cmd > path"` — command strings are opaque to the guard.
+- `exec >path` redirects — not detected.
+- Interpreter-level file IO (`python -c "open('/p','w')..."`) — target is a Python string literal, unreachable for shlex.
+- All of the above are partly mitigated by the `/tmp` allow-list and by Edit/Write/MultiEdit/NotebookEdit being covered separately.
+- Requires `python3` in `$PATH` (used for JSON parsing + shlex tokenization). Standard on macOS and CI; unavailability falls back to no-op.
+
 ## [1.21.1] - 2026-04-17
 
 ### Added
