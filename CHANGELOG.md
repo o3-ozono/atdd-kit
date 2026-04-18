@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `hooks/autopilot-worktree-guard.sh` + `hooks/autopilot_worktree_guard.py`: PreToolUse hook enforcing that autopilot sessions cannot Edit/Write/MultiEdit/NotebookEdit or Bash-mutate files outside the active worktree. Gated by `ATDD_AUTOPILOT_WORKTREE` env var — no-op for normal (non-autopilot) sessions. Allow-list: `/tmp`, `/var/folders`, `/private/var/folders`, `/private/tmp`, `/dev/null`, and `<W>/.git`. Bash tokenization uses `shlex` (quoted literals and `2>&1` are not misdetected). Blocks exit 2 with `worktree=<W>\nviolating=<path>` on stderr. (#111)
 - `hooks/hooks.json`: PreToolUse matchers extended — `Edit|Write|MultiEdit|NotebookEdit` now chains the new guard after `main-branch-guard.sh`, and a new `Bash` matcher invokes the guard. (#111)
 - `commands/autopilot.md` Phase 0.9 Step 4: autopilot sessions must export `ATDD_AUTOPILOT_WORKTREE=$(realpath <worktree>)` immediately after `EnterWorktree`. (#111)
-- `tests/test_autopilot_worktree_guard.bats`: 38 cases covering AC1-AC6 including 9 Bash-parsing edge cases (quoted `>`, `2>&1`, chained `&&`, pipe `|`, relative paths, `/dev/null`). (#111)
+- `tests/test_autopilot_worktree_guard.bats`: 46 cases covering AC1-AC6 including Bash-parsing edges (quoted `>`, `2>&1`, `>|`, `&>`, `&>>`, `;` separator, `$()` outer redirect, `~` expansion, heredoc outer redirect, symlink escape, chained `&&`, pipe `|`, `/dev/null`). (#111)
+- `tests/test_autopilot_phase09_env_export.bats`: drift-resistant assertion on the `commands/autopilot.md` Phase 0.9 section containing `ATDD_AUTOPILOT_WORKTREE`, `export`, and `realpath` tokens (AC1 regression guard). (#111)
+- `hooks/README.md`: section documenting the new hook's behavior, allow-list, block contract, and Known Limitations (mirrors CHANGELOG). (#111)
 
 ### Known Limitations (intentional deferrals, #111)
 - heredoc file targets (`cat <<EOF > /etc/x`) — not detected; deferred.

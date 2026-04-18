@@ -318,6 +318,67 @@ print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]},"cwd":
   [ "$status" -eq 0 ]
 }
 
+@test "AC3-F10: >| (noclobber override) outside W -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_bash 'echo x >| /etc/out')"
+  [ "$status" -eq 2 ]
+}
+
+@test "AC3-F11: &> (all streams) outside W -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_bash 'echo hi &> /etc/out')"
+  [ "$status" -eq 2 ]
+}
+
+@test "AC3-F12: &>> (append all streams) outside W -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_bash 'echo log &>> /etc/log')"
+  [ "$status" -eq 2 ]
+}
+
+@test "AC3-F13: ; separator with outside redirect -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_bash 'ls ; echo x > /etc/a')"
+  [ "$status" -eq 2 ]
+}
+
+@test "AC3-F14: heredoc with outer redirect outside W -> block (outer > detected)" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  # heredoc body extraction is a Known Limitation, but the outer
+  # "> /etc/badfile" redirect should still be detected by shlex tokenization.
+  run invoke_hook "$(json_bash $'cat <<EOF > /etc/badfile\ncontent\nEOF')"
+  [ "$status" -eq 2 ]
+}
+
+@test "AC3-F15: \$() subshell outer redirect outside W -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  # shlex treats \$(date) as a literal token; the outer "> /etc/out" is a
+  # separate redirect that MUST block. Inner-subshell content detection is
+  # an intentional Known Limitation.
+  run invoke_hook "$(json_bash 'echo $(date) > /etc/out')"
+  [ "$status" -eq 2 ]
+}
+
+@test "AC3-F16: ~ expansion to outside W -> block (python os.path.expanduser)" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  # Literal "~/..." is expanded by canonicalize() via os.path.expanduser,
+  # landing outside W (and outside allow-list).
+  run invoke_hook "$(json_bash 'echo x > ~/evil.txt')"
+  [ "$status" -eq 2 ]
+}
+
+# --- Group C': AC4 symlink canonicalization (prevents silent false negative) ---
+
+@test "AC4-C-symlink: ln -s /etc <W>/link; write via link -> block (canonicalize)" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  # Create a symlink inside W that escapes to /etc; write via the link must
+  # resolve to /etc/foo and be blocked. Guards against Plan Risk #3
+  # (symlink-based silent false negative).
+  ln -s /etc "$W/link"
+  run invoke_hook "$(json_write "$W/link/escape-me")"
+  [ "$status" -eq 2 ]
+}
+
 # ============================================================
 # AC1 covered separately via docs assertion
 # ============================================================

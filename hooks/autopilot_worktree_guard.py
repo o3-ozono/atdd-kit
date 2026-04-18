@@ -115,33 +115,38 @@ def extract_bash_targets(command: str):
             continue
 
         # Redirect detection.
+        # Forms recognized as "mutating with file target" (next token is path):
+        #   >  >>  >|  &>  &>>  2>  2>>  N>  N>>  N>|
+        # Forms recognized as "stream merge only" (no file target):
+        #   >&N  N>&M  N>&-  (e.g. "2>&1", ">&2")
         i = 0
         while i < len(sub):
             tok = sub[i]
-            if tok in (">", ">>"):
+            if tok in (">", ">>", ">|", "&>", "&>>"):
                 if i + 1 < len(sub):
                     targets.append(sub[i + 1])
                 i += 2
                 continue
-            # Numbered redirect like "2>", "2>>", "2>&1", "2>file"
+            # Numbered redirect like "2>", "2>>", "2>|", "2>&1", "2>file"
             if len(tok) >= 2 and tok[0].isdigit():
                 rest = tok[1:]
-                if rest in (">", ">>"):
+                if rest in (">", ">>", ">|"):
                     if i + 1 < len(sub):
                         targets.append(sub[i + 1])
                     i += 2
                     continue
                 if rest.startswith(">&"):
-                    # stream merge, no path target
+                    # stream merge (2>&1 etc.), no file target
                     i += 1
                     continue
                 if rest.startswith(">"):
-                    possible = rest.lstrip(">")
+                    possible = rest.lstrip(">").lstrip("|")
                     if possible:
                         targets.append(possible)
                     i += 1
                     continue
             if tok.startswith(">&"):
+                # bare ">&N" stream merge -> no file target
                 i += 1
                 continue
             i += 1
