@@ -45,6 +45,15 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   grep -qi 'Divergence Matrix\|divergence' "$REPO_ROOT/skills/verify/SKILL.md"
 }
 
+@test "Group 1 / bug: SKILL.md has spec-cite step invoking lib/spec_check.sh" {
+  grep -q 'bash lib/spec_check.sh' "$REPO_ROOT/skills/bug/SKILL.md"
+}
+
+@test "Group 1 / bug: SKILL.md Classification cites spec AC or reports missing" {
+  local f="$REPO_ROOT/skills/bug/SKILL.md"
+  grep -qi 'classification.*spec\|spec.*classification\|no spec found' "$f"
+}
+
 # =============================================================================
 # Group 3 — rules/atdd-kit.md invariant
 # =============================================================================

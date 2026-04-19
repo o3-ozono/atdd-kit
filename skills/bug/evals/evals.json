@@ -23,6 +23,28 @@
         {"id": "B1", "text": "コードを直接編集していない", "type": "structural"},
         {"id": "B2", "text": "discover スキルへのチェーン（要件探索→AC導出）を案内している", "type": "structural"}
       ]
+    },
+    {
+      "id": 2,
+      "name": "classification-cites-spec",
+      "prompt": "Issue #210 のバグ。docs/specs/210-login.md status: approved が存在し AC3 「パスワード誤入力 3 回で lockout」が関連。調査済みの Root Cause は lockout カウンタの reset 漏れ。",
+      "expected_output": "Classification cites spec AC3 as the governing rule. Fix Proposal block contains 'Spec AC: docs/specs/210-login.md#AC3'.",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "Classification の根拠として spec の AC3 を引用している", "type": "structural"},
+        {"id": "C2", "text": "Fix Proposal ブロックに 'Spec AC: docs/specs/210-login.md' 形式の参照行が含まれている", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "classification-reports-missing-spec",
+      "prompt": "Issue #211 のバグ。docs/specs/ に対応する spec が存在しない (lib/spec_check.sh spec_exists が非ゼロ)。調査済みの Root Cause は想定外のエラーパスで UI が落ちる現象。",
+      "expected_output": "Classification reports 'no spec found for <area>' and marks as Classification A (AC Gap).",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "Classification: A (AC Gap) として報告している", "type": "structural"},
+        {"id": "D2", "text": "'no spec found for' を含む文で spec 不在を明示している", "type": "llm_judge"}
+      ]
     }
   ]
 }

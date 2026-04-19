@@ -65,12 +65,22 @@ Read `platform` from `.claude/workflow-config.yml`. Reproduce on each applicable
 
 Post evidence as Issue comment.
 
+## Spec Citation in Root Cause Classification
+
+Before writing Classification, load the spec via `lib/spec_check.sh`:
+
+1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)` (set `SPEC_SLUG_OVERRIDE` for non-ASCII).
+2. `bash lib/spec_check.sh spec_exists "$slug"`:
+   - **present** → `bash lib/spec_check.sh read_acs "$slug"` and cite the governing AC number + `Given/When/Then` text as the Classification basis.
+   - **absent** → report `Classification: A -- no spec found for <area>` (AC Gap). The missing spec itself is the gap; do not invent ad-hoc ACs.
+
 ## Fix Proposal Format
 
 ```
 ## Fix Proposal
 
-**Classification:** A/B/C -- <explanation>
+**Classification:** A/B/C -- <explanation citing spec AC or "no spec found for <area>">
+**Spec AC:** docs/specs/<slug>.md#ACN (or "none — Classification A")
 **Root Cause:** <what is broken and why>
 **Fix Location:** <file:line>
 **Parallel Patterns:** <N occurrences found / none>
