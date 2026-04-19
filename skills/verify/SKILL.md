@@ -38,18 +38,15 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
 
 ## Spec Authority Check (before Verification Flow)
 
-Before reading ACs from the Issue, resolve the authoritative AC source via `lib/spec_check.sh`:
+Resolve the authoritative AC source via `bash lib/spec_check.sh`:
 
-1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)` (set `SPEC_SLUG_OVERRIDE` for non-ASCII titles).
-2. `bash lib/spec_check.sh spec_exists "$slug"` — absent cases share the AC6 fallback matrix with atdd/bug:
-   - **absent, new verification (no prior commits on implementation branch)** → STOP with `[spec-warn] missing: ...`; re-run discover.
-   - **absent, Continuation Path** → emit `[spec-warn] continuation-fallback: ...` and fall back to Issue comment ACs.
-3. Otherwise `status=$(bash lib/spec_check.sh spec_status "$slug")`:
-   - `approved` / `implemented` → **spec is authoritative.** Use spec text; emit divergence notes against Issue comments.
-   - `draft` → Issue comment ACs win; emit `[spec-warn] draft: Issue comment AC preferred for docs/specs/<slug>.md`.
-   - `deprecated` → Issue comments win; emit `[spec-warn] deprecated: ...`.
-4. `spec_persona` == `TBD…` → emit `[spec-warn] tbd-persona: ...` and continue (do not block).
-5. Report divergences using the `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix. All 5 patterns (Added / Removed / Modified / Reordered / Status drift) have defined expected behavior.
+1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)`; AC6 fallback applies (missing / continuation-fallback / tbd-persona, all prefixed `[spec-warn]`).
+2. `status=$(bash lib/spec_check.sh spec_status "$slug")` — tiebreak:
+   - `approved` / `implemented` → **spec is authoritative.**
+   - `draft` / `deprecated` → Issue comment ACs win; emit `[spec-warn] draft:` or `[spec-warn] deprecated:`.
+3. Report divergences using `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix (5 patterns: Added / Removed / Modified / Reordered / Status drift).
+
+Full matrix, fallback cases, and examples: `docs/guides/spec-reference.md`.
 
 ## Verification Flow
 
