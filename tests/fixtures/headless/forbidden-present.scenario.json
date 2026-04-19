@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "forbidden hit (FAIL regardless of mode)",
+  "prompt": "(n/a)",
+  "expected_skills": ["atdd-kit:discover", "atdd-kit:plan"],
+  "forbidden_skills": ["atdd-kit:atdd"],
+  "match_mode": "subsequence",
+  "timeout": 1800,
+  "fixture": "tests/fixtures/headless/forbidden-present.jsonl"
+}

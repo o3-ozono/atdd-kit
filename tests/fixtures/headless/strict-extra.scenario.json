@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "strict-extra (strict FAIL, subsequence PASS)",
+  "prompt": "(n/a)",
+  "expected_skills": ["atdd-kit:discover", "atdd-kit:plan"],
+  "forbidden_skills": [],
+  "match_mode": "strict",
+  "timeout": 1800,
+  "fixture": "tests/fixtures/headless/strict-extra.jsonl"
+}
