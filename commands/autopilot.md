@@ -151,7 +151,7 @@ Example C — `--profile` with space delimiter and quoted spaces:
   - developer / qa / tester / researcher: session default
 <!-- nl-example end -->
 
-
+## Phase 0.5: Phase and Task Type Determination
 
 **Tools:** Bash (gh)
 
@@ -421,7 +421,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 ### development / refactoring: Developer implements
 
-1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer uses Skill tool to invoke `atdd-kit:atdd` with `"<number> --autopilot"`. If mid-phase resume spawns a fresh Developer here, pass the Agent tool `model` parameter from the resolved matrix (see Phase 0.9 Agent spawn model resolution).
+1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer uses Skill tool to invoke `atdd-kit:atdd` with `"<number> --autopilot"`. On mid-phase resume (Phase 0.9 Step 5), the fresh Developer receives its Agent tool `model` parameter from the resolved matrix (see Phase 0.9 Agent spawn model resolution).
 2. Developer creates branch, Draft PR, implements AC by AC
 3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs complete
 4. Developer marks PR ready and adds `ready-for-PR-review`

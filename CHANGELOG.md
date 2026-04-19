@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `skills/{atdd,verify,bug}/evals/evals.json`: new spec-reference behavioral evals — atdd +4 (spec-load + 3 fallback variants), verify +8 (3 tiebreak + 5 drift matrix), bug +2 (classification-cites-spec / reports-missing). (#70)
 - `tests/test_spec_check.bats` (15 @test) and `tests/test_spec_reference.bats` (22 @test): structural coverage of helper exports, slug rule, rules invariant, Divergence Matrix, and EN-only reference convention. (#70)
 - `evals/footprint/spec-reference.yml` + `evals/footprint/baseline.json` update: new 3-SKILL footprint checkpoint (covers bug SKILL.md which is not on the autopilot path); autopilot delta +496 ≤ +500 token budget. (#70)
+- `config/spawn-profiles.yml`: single source of truth for autopilot spawn profiles. `profiles.light.*` maps every sub-agent role to `sonnet`; `profiles.heavy.*` maps every sub-agent role to `opus`. (#109)
+- `commands/autopilot.md` Phase 0 Argument Parsing sub-heading: parses `--light` / `--heavy` / `--profile=<text>` / `--profile <text>` / trailing positional NL. Position-independent. Halts before Phase 0.9 on unknown flag, conflicting preset flags, utility-mode misuse, search-mode NL violation, preset+NL mixing, or double NL sources. (#109)
+- `commands/autopilot.md` Profile Confirmation Gate (fires before Phase 0.9 whenever a profile flag is supplied): prints the 6-role resolved matrix and confirms via AskUserQuestion, with a text-input `Reply with 1 (apply) or 2 (cancel).` fallback. No Team / worktree is created until the user approves. Main Claude (orchestrator) is not listed because its model is never overridden by these flags. (#109)
+- `commands/autopilot.md` Agent spawn model resolution rule: each spawn site in AC Review Round, Phase 3 (Developer / Tester / Researcher / Writer), and Phase 4 (Reviewer) references the resolved matrix for the `model` parameter passed to the Agent tool. When no flag is supplied, the parameter is omitted so sub-agents inherit their session default. Mid-phase resume spawns pick up the current invocation's profile. (#109)
+- `commands/autopilot.md` NL Resolution Examples block (marked with `<!-- nl-example start/end -->`): documents three representative per-role resolutions for positional NL, `--profile=` delimiter, and space-delimiter forms. (#109)
+- `docs/tests/nl-profile-fixtures.md`: 10 manual-verify fixtures pinning expected resolved matrices for preset flags, positional NL, and `--profile` variants. PR merge DoD references these fixtures for human smoke-test evidence. (#109)
+- `tests/test_spawn_profiles_config.bats`, `tests/test_autopilot_profile_parsing.bats`, `tests/test_autopilot_profile_flags.bats`, `tests/test_autopilot_nl_profile.bats`, `tests/test_autopilot_profile_main_claude_isolation.bats`: 61 drift-detect cases covering AC1–AC20 including code-fence-aware main-Claude isolation (AC3) and nl-example-aware single-source-of-truth (AC8). (#109)
+
+### Scope Note — effort control not supported (#109)
+`effortLevel` is **not** controlled by any profile flag in this release. Investigation during plan (#109) revealed that the Claude Code Agent tool schema does not expose an `effortLevel` parameter per-spawn; only `model` is overridable. Accordingly, `--light` / `--heavy` override the spawn `model` only (`sonnet` / `opus`), and NL profile grammar rejects any effort-dimension tokens with the `Effort control is not supported in this release.` error. Follow-up work to add effort control will be filed as a separate Issue once the Agent tool gains the parameter.
+
+### Model version note (#109)
+`model: opus` resolves to whichever Opus revision the Claude Code session is configured to run. The enum is not version-pinned; spawn-side Opus may therefore differ from main Claude's Opus revision at run time. This is deliberate — the profile matrix is intentionally decoupled from specific model revisions.
 
 ## [1.23.0] - 2026-04-20
 
