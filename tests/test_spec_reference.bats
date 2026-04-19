@@ -32,6 +32,19 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   [ "$persona_line" -lt "$spec_line" ]
 }
 
+@test "Group 1 / verify: SKILL.md has spec-authority-check step invoking lib/spec_check.sh" {
+  grep -q 'bash lib/spec_check.sh' "$REPO_ROOT/skills/verify/SKILL.md"
+}
+
+@test "Group 1 / verify: SKILL.md references status tiebreak (approved/implemented vs draft)" {
+  local f="$REPO_ROOT/skills/verify/SKILL.md"
+  grep -qi 'status.*approved.*implemented\|approved.*implemented.*spec.*authoritative\|tiebreak' "$f"
+}
+
+@test "Group 1 / verify: SKILL.md references divergence matrix" {
+  grep -qi 'Divergence Matrix\|divergence' "$REPO_ROOT/skills/verify/SKILL.md"
+}
+
 # =============================================================================
 # Group 3 — rules/atdd-kit.md invariant
 # =============================================================================

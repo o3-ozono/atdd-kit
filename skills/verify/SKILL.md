@@ -36,9 +36,21 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
 
 **FRESH means NOW:** Execute in this session, in this message. Do not use cached results, previous session output, or sub-agent reports.
 
+## Spec Authority Check (before Verification Flow)
+
+Before reading ACs from the Issue, resolve the authoritative AC source via `lib/spec_check.sh`:
+
+1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)` (set `SPEC_SLUG_OVERRIDE` for non-ASCII titles).
+2. `bash lib/spec_check.sh spec_exists "$slug"` — if absent, fall back to Issue comment ACs with `[spec-warn] continuation-fallback: ...` (or STOP on missing-new per AC6).
+3. Otherwise `status=$(bash lib/spec_check.sh spec_status "$slug")`:
+   - `approved` / `implemented` → **spec is authoritative.** Use spec text; emit divergence notes against Issue comments.
+   - `draft` → Issue comment ACs win; emit `[spec-warn] draft: Issue comment AC preferred for docs/specs/<slug>.md`.
+   - `deprecated` → Issue comments win; emit `[spec-warn] deprecated: ...`.
+4. Report divergences using the `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix. All 5 patterns (Added / Removed / Modified / Reordered / Status drift) have defined expected behavior.
+
 ## Verification Flow
 
-1. Read ACs from Issue
+1. Read ACs from the authoritative source determined above
 2. For each AC, identify the verification command:
    - Unit test AC → run specific test: `[test command] [test file/class]`
    - Snapshot test AC → run snapshot tests
