@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "skill-gate then discover (Group-B real session)",
+  "prompt": "atdd-kit:skill-gate を起動してから、atdd-kit:discover で Issue #9999 の AC を整理してください",
+  "expected_skills": ["atdd-kit:skill-gate", "atdd-kit:discover"],
+  "forbidden_skills": [],
+  "match_mode": "subsequence",
+  "timeout": 1800,
+  "model": "claude-haiku-4-5-20251001",
+  "fixture": "tests/fixtures/headless/skill-gate-discover.happy.jsonl"
+}
