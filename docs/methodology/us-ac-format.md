@@ -106,6 +106,43 @@ The slug is derived from the Issue title's main noun phrase:
 
 **File name = Spec ID.** The filename is the stable identifier for the spec; do not duplicate the title in an `id` frontmatter field.
 
+## Slug Derivation Rule
+
+**1 Issue = 1 spec.** One Issue produces at most one spec file. Splitting or merging specs is a rename operation — see [Rename Run-Book](#rename-run-book).
+
+The canonical slug is produced by `lib/spec_check.sh derive_slug <issue>`:
+
+| Title language | Rule |
+|----------------|------|
+| English (ASCII) | Strip conventional commit prefix (`feat:`, `fix(scope):`) → lowercase → replace non-alphanumeric runs with `-` → trim leading/trailing `-`. |
+| Japanese / non-ASCII | Translate the main concept to English first, then kebab-case. The helper exits non-zero unless `SPEC_SLUG_OVERRIDE=<english-slug>` is supplied. |
+
+Examples:
+
+- `"feat: LLM US/AC auto-reference mechanism"` → `llm-us-ac-auto-reference-mechanism`
+- `"Add login rate limiting"` → `add-login-rate-limiting`
+- A non-ASCII title (e.g., a Japanese Issue title) → requires `SPEC_SLUG_OVERRIDE=auth-token-leak` (or another English kebab-case slug chosen by the author)
+
+When a title would produce a clash with an existing spec (e.g., iterative rework), rename via the [Rename Run-Book](#rename-run-book) instead of creating a parallel file.
+
+## Spec ↔ Issue Divergence Matrix
+
+Issue comment ACs and `docs/specs/<slug>.md` ACs can diverge over time. `atdd-kit:verify` applies the following matrix; `docs/specs/` is the authority when `status ∈ {approved, implemented}`, and Issue comments are preferred only when `status: draft`.
+
+| Pattern | Example | Expected verify behavior |
+|---------|---------|--------------------------|
+| Added (spec has AC missing from Issue) | spec has AC11; Issue comment lists AC1–10 | Treat spec AC as authoritative (approved/implemented); emit diff note. On `draft`, warn and prefer Issue AC. |
+| Removed (Issue has AC missing from spec) | Issue comment lists AC11; spec has AC1–10 | Treat as gap: if spec status is `approved/implemented`, report Classification A candidate in verify output and do not silently accept the Issue-only AC. |
+| Modified (same AC number, different Given/When/Then) | Both have AC5 but wording differs | Use spec text when `status ∈ {approved, implemented}`; cite both versions side-by-side in the verify diff section. |
+| Reordered (same ACs, different order) | spec AC order: 1,2,3; Issue: 1,3,2 | Normalize by AC identifier; treat as equivalent for matching. No warning unless meaning-changing reorder is detected. |
+| Status drift (spec says `implemented`, Issue open) | spec `status: implemented`; Issue still `in-progress` | Flag as `status-drift` in verify output; ship skill must reconcile before marking complete. |
+
+### Status Tiebreak (verify)
+
+- `status ∈ {approved, implemented}` → spec text wins; diffs against Issue comments are reported as informational.
+- `status: draft` → Issue comment ACs win; emit `[spec-warn] draft: Issue comment AC preferred for docs/specs/<slug>.md` and proceed.
+- `status: deprecated` → spec is non-authoritative; use Issue comments and warn.
+
 ## Rename Run-Book
 
 When renaming a spec file:

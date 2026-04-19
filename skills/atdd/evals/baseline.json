@@ -1,13 +1,67 @@
 {
-  "timestamp": "2026-04-15T22:28:09Z",
+  "timestamp": "2026-04-19T22:57:41Z",
   "skill_name": "atdd-kit:atdd",
-  "pass_rate": 1.0,
+  "pass_rate": 0.931,
   "results": [
-    {"eval_name": "state-gate-pass", "pass_rate": 1.0, "passed": 3, "total": 3},
-    {"eval_name": "state-gate-reject", "pass_rate": 1.0, "passed": 3, "total": 3},
-    {"eval_name": "continuation-path", "pass_rate": 1.0, "passed": 2, "total": 2},
-    {"eval_name": "autopilot-guard-direct-invocation-block", "pass_rate": 1.0, "passed": 2, "total": 2},
-    {"eval_name": "skill-status-complete-autopilot", "pass_rate": 1.0, "passed": 3, "total": 3},
-    {"eval_name": "skill-status-blocked-state-gate", "pass_rate": 1.0, "passed": 3, "total": 3}
+    {
+      "eval_name": "state-gate-pass",
+      "pass_rate": 1.0,
+      "passed": 4,
+      "total": 4
+    },
+    {
+      "eval_name": "state-gate-reject",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "continuation-path",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "spec-load-on-state-gate-pass",
+      "pass_rate": 0.3333,
+      "passed": 1,
+      "total": 3
+    },
+    {
+      "eval_name": "spec-missing-fallback",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "spec-continuation-fallback",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "spec-tbd-persona",
+      "pass_rate": 1.0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "eval_name": "autopilot-guard-direct-invocation-block",
+      "pass_rate": 1.0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "eval_name": "skill-status-complete-autopilot",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "skill-status-blocked-state-gate",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    }
   ]
 }

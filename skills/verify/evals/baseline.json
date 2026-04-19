@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-04-19T22:57:41Z",
+  "skill_name": "atdd-kit:verify",
+  "pass_rate": 0.9545,
+  "results": [
+    {
+      "eval_name": "state-gate-pass",
+      "pass_rate": 1.0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "eval_name": "state-gate-reject",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "skill-status-complete-autopilot",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "skill-status-failed-ac-failure",
+      "pass_rate": 1.0,
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "eval_name": "spec-status-tiebreak-approved",
+      "pass_rate": 1.0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "eval_name": "spec-status-tiebreak-draft",
+      "pass_rate": 1.0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "eval_name": "spec-status-tiebreak-deprecated",
+      "pass_rate": 1.0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "eval_name": "spec-drift-added",
+      "pass_rate": 1.0,
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "eval_name": "spec-drift-modified",
+      "pass_rate": 1.0,
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "eval_name": "spec-drift-removed",
+      "pass_rate": 0.0,
+      "passed": 0,
+      "total": 1
+    },
+    {
+      "eval_name": "spec-drift-reordered",
+      "pass_rate": 1.0,
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "eval_name": "spec-drift-status-drift",
+      "pass_rate": 1.0,
+      "passed": 1,
+      "total": 1
+    }
+  ]
+}

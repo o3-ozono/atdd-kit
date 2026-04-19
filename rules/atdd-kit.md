@@ -6,6 +6,7 @@
 1. No code edits without an Issue.
 2. No implementation without approved ACs.
 3. No completion claims without fresh verification evidence.
+4. atdd / verify / bug must load `docs/specs/<slug>.md` via `lib/spec_check.sh` before implementation or AC judgement.
 
 ## Instruction Priority
 1. User's explicit instructions (CLAUDE.md, direct requests) -- highest
