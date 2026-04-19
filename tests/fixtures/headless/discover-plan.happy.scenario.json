@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "discover then plan (happy)",
+  "prompt": "Issue #72 の discover を始めて",
+  "expected_skills": ["atdd-kit:discover", "atdd-kit:plan"],
+  "forbidden_skills": ["atdd-kit:atdd", "atdd-kit:verify"],
+  "match_mode": "subsequence",
+  "timeout": 1800,
+  "model": "claude-haiku-4-5-20251001",
+  "fixture": "tests/fixtures/headless/discover-plan.happy.jsonl"
+}

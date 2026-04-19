@@ -17,6 +17,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       skills: ${{ steps.filter.outputs.skills }}
       tests: ${{ steps.filter.outputs.tests }}
+      headless: ${{ steps.filter.outputs.headless }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
@@ -47,6 +48,23 @@ jobs:
               - 'hooks/**'
               - '.claude-plugin/**'
               - 'evals/**'
+            headless:
+              # Narrow scope: trigger only when skills or the headless test
+              # infrastructure itself changes. Keeps the replay job focused
+              # and avoids flaky-looking churn from unrelated hooks/agents.
+              - 'skills/**'
+              - 'scripts/test-skills-headless.sh'
+              - 'lib/skill_transcript_parser.sh'
+              - 'lib/skill_assertion.sh'
+              - 'lib/scenario_loader.sh'
+              - 'tests/fixtures/headless/**'
+              - 'tests/test_skill_transcript_parser.bats'
+              - 'tests/test_skill_assertion.bats'
+              - 'tests/test_headless_runner.bats'
+              - 'tests/test_headless_exit_codes.bats'
+              - 'tests/test_pr_workflow_headless.bats'
+              - '.github/workflows/pr.yml'
+              - '.github/workflows/headless-live.yml'
 
   build-and-test:
     needs: changes
@@ -79,13 +97,44 @@ jobs:
       - name: Run BATS tests
         run: bats tests/ addons/ios/tests/
 
+  headless-replay:
+    needs: changes
+    if: needs.changes.outputs.headless == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Verify jq
+        run: |
+          jq --version
+      - name: Install BATS
+        run: |
+          EXPECTED_SHA="b640ec3cf2c7c9cfc9e6351479261186f76eeec8" # v1.11.1
+          git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git /tmp/bats
+          cd /tmp/bats
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::BATS integrity check failed: expected $EXPECTED_SHA, got $ACTUAL_SHA"
+            exit 1
+          fi
+          sudo ./install.sh /usr/local
+      - name: Run headless replay BATS
+        # Replay-only: no `claude` binary required, no token spend, fully
+        # deterministic. Live tests are dispatched via headless-live.yml.
+        run: |
+          bats \
+            tests/test_skill_transcript_parser.bats \
+            tests/test_skill_assertion.bats \
+            tests/test_headless_runner.bats \
+            tests/test_headless_exit_codes.bats
+
   ci-gate:
     runs-on: ubuntu-latest
-    needs: [changes, build-and-test, skill-tests]
+    needs: [changes, build-and-test, skill-tests, headless-replay]
     if: always()
     steps:
       - name: Check results
         if: |
           needs.build-and-test.result == 'failure' ||
-          needs.skill-tests.result == 'failure'
+          needs.skill-tests.result == 'failure' ||
+          needs.headless-replay.result == 'failure'
         run: exit 1

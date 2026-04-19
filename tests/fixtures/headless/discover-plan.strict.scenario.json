@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "discover then plan (strict)",
+  "prompt": "Issue #72 の discover を始めて",
+  "expected_skills": ["atdd-kit:discover", "atdd-kit:plan"],
+  "forbidden_skills": [],
+  "match_mode": "strict",
+  "timeout": 1800,
+  "model": "claude-haiku-4-5-20251001",
+  "fixture": "tests/fixtures/headless/discover-plan.strict.jsonl"
+}

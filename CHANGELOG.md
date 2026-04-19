@@ -20,6 +20,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_spec_check.bats` (15 @test) and `tests/test_spec_reference.bats` (22 @test): structural coverage of helper exports, slug rule, rules invariant, Divergence Matrix, and EN-only reference convention. (#70)
 - `evals/footprint/spec-reference.yml` + `evals/footprint/baseline.json` update: new 3-SKILL footprint checkpoint (covers bug SKILL.md which is not on the autopilot path); autopilot delta +496 ≤ +500 token budget. (#70)
 
+## [1.23.0] - 2026-04-20
+
+### Added
+- `scripts/test-skills-headless.sh`: integration runner for skill-chain tests. Supports `--replay <transcript> <scenario>` (deterministic, zero-token) and live mode (`claude -p --output-format stream-json --include-partial-messages --no-session-persistence`). Env overrides `HEADLESS_CLAUDE_BIN` / `HEADLESS_TEMP_DIR` for testability. SIGINT/SIGTERM terminates the subprocess and cleans up the transcript tempdir. (#72)
+- `lib/skill_transcript_parser.sh`: jq-based parser extracting `type=tool_use && name=Skill` events from stream-json into a JSON array of `{name, args, order}`. Strict schema validation: missing `input.skill`, malformed JSON per line, and non-UTF-8 input all fail with `exit 2` (`parse_error`). Subagent-invoked tool_use (`parent_tool_use_id != null`) is filtered out. (#72)
+- `lib/skill_assertion.sh`: match engine with `--mode subsequence|strict`, `--expected`, `--forbidden`, `--observed` JSON array flags. Subsequence allows intermediate skills; strict requires exact equality; forbidden hits FAIL regardless of mode. Exit codes: `0` PASS, `1` FAIL, `3` infra. (#72)
+- `lib/scenario_loader.sh`: validates scenario spec JSON (version/name/prompt/expected_skills/forbidden_skills/match_mode/timeout/model/fixture) and emits normalized output. Schema violations -> `exit 3`. (#72)
+- `tests/fixtures/headless/`: Group-A synthetic fixtures for happy/fail/malformed/schema paths, Group-B real-session fixture `skill-gate-discover.happy.jsonl` (144 lines, Haiku recording, sanitized host paths), plus scenario JSONs for each. (#72)
+- `tests/test_skill_transcript_parser.bats` (17 cases), `tests/test_skill_assertion.bats` (17 cases), `tests/test_headless_runner.bats` (13 cases -- flags / SIGINT / live stub / tempdir retention), `tests/test_headless_exit_codes.bats` (12-case matrix across all exit code categories), `tests/test_pr_workflow_headless.bats` (10 cases verifying CI integration). All run in the new `headless-replay` PR job and do not invoke `claude`. (#72)
+- `.github/workflows/pr.yml`: new `headless` paths-filter output and `headless-replay` job. Filter scope is narrow (skills/**, headless test own files, workflow YAMLs) to avoid flaky CI from unrelated edits; `hooks/`, `agents/`, `commands/` intentionally excluded in MVP. `ci-gate` now depends on `headless-replay`. (#72)
+- `.github/workflows/headless-live.yml`: workflow_dispatch-only live runner. Requires `ANTHROPIC_API_KEY` secret; installs Claude Code CLI; accepts scenario path and model override inputs; uploads transcript artifact on failure. Never triggers on `pull_request` or `push`. (#72)
+- `docs/guides/headless-skill-testing.md`: usage guide, regression coverage matrix, scenario spec schema, recording + sanitize procedure, engineered-prompt rationale for the skill-gate -> discover fixture, and budget notes. (#72)
+- `DEVELOPMENT.md` + `DEVELOPMENT.ja.md`: "Skill rename = semver-breaking" policy under Versioning. Renaming or removing a shipped skill id breaks pinned scenario fixtures and requires a major bump + fixture re-recording + CHANGELOG `BREAKING CHANGE:` entry. (#72)
+
 ## [1.22.0] - 2026-04-18
 
 ### Added

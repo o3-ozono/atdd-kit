@@ -16,6 +16,16 @@ Every feature PR merged to main **must** update the version and changelog:
 
 Failure to follow this will break the plugin update notification system (`scripts/check-plugin-version.sh`).
 
+#### Skill rename = semver-breaking
+
+Renaming or removing a shipped skill (the `name` segment of `skills/<name>/SKILL.md` or the invocation id `atdd-kit:<name>`) is a **breaking change** and requires a **major** version bump. Reason: `tests/fixtures/headless/*.scenario.json` and any downstream skill-chain references are pinned to exact skill ids. A rename silently breaks replay fixtures and user automation. When you must rename:
+
+1. Bump the major version.
+2. Re-record every affected fixture under `tests/fixtures/headless/` (see `docs/guides/headless-skill-testing.md`).
+3. Document the rename explicitly in the CHANGELOG "### Changed" / "### Removed" sections with a `BREAKING CHANGE:` prefix.
+
+Adding a new skill, or adding a new optional gate within an existing skill, is a **minor** bump.
+
 ### Language
 
 - **LLM-facing files** (skills, rules, docs, commands, agents): English only. No `*.ja.md` translations.

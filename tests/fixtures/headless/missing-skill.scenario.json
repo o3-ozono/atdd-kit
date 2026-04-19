@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "missing skill (subsequence FAIL)",
+  "prompt": "(n/a)",
+  "expected_skills": ["atdd-kit:discover", "atdd-kit:plan"],
+  "forbidden_skills": [],
+  "match_mode": "subsequence",
+  "timeout": 1800,
+  "fixture": "tests/fixtures/headless/missing-skill.jsonl"
+}

@@ -1,0 +1,2 @@
+{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Skill","input":{"skill":"atdd-kit:skill-gate","args":{"quoted":"hello \"world\"","lines":"line1\nline2","nested":{"k":1,"arr":[1,2,3]}}}}]}}
+{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"toolu_2","name":"Skill","input":{"skill":"atdd-kit:discover","args":"72 --autopilot"}}]}}

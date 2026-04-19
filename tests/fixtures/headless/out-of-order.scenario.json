@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "out-of-order (subsequence FAIL)",
+  "prompt": "(n/a)",
+  "expected_skills": ["atdd-kit:discover", "atdd-kit:plan"],
+  "forbidden_skills": [],
+  "match_mode": "subsequence",
+  "timeout": 1800,
+  "fixture": "tests/fixtures/headless/out-of-order.jsonl"
+}

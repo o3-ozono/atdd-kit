@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "scenario schema violation (invalid match_mode)",
+  "prompt": "(n/a)",
+  "expected_skills": ["atdd-kit:discover"],
+  "forbidden_skills": [],
+  "match_mode": "weird-unknown-mode",
+  "timeout": 1800,
+  "fixture": "tests/fixtures/headless/discover-plan.happy.jsonl"
+}
