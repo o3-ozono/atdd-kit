@@ -35,6 +35,17 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
 - [ ] Work branch cut from main (or exists for continuation)
 - [ ] Draft PR created (or exists for continuation)
 
+## Spec Load (after State Gate PASS, before first AC)
+
+Persona Prerequisite Check runs at State Gate (autopilot Phase 0.9). After State Gate PASS — before writing the first test — load the authoritative User Story + ACs from `docs/specs/`:
+
+1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)` — fails on non-ASCII titles unless `SPEC_SLUG_OVERRIDE` is set (see `docs/methodology/us-ac-format.md` § Slug Derivation Rule).
+2. `bash lib/spec_check.sh spec_exists "$slug"` — branch on result:
+   - **present**: `count=$(bash lib/spec_check.sh read_acs "$slug")` then emit `Loaded docs/specs/<slug>.md (AC count: N)` via `get_spec_load_message`. Cite spec ACs in every subsequent Outer Loop.
+   - **absent (new implementation)**: STOP with `[spec-warn] missing: ...` — re-run `discover` to create the spec.
+   - **absent (Continuation Path)**: emit `[spec-warn] continuation-fallback: ...` and fall back to Issue comment ACs.
+   - **`spec_persona` == `TBD…`**: emit `[spec-warn] tbd-persona: ...` and continue with spec ACs.
+
 ## The Double Loop
 
 ### Outer Loop (per AC)
