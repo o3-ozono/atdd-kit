@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `lib/spec_check.sh`: 7 subcommands (`derive_slug`, `spec_exists`, `read_acs`, `spec_status`, `spec_persona`, `get_spec_load_message`, `get_spec_warn_message`) — single source of truth for spec file detection and slug derivation, mirroring the `lib/persona_check.sh` dispatcher pattern. `GH_CMD_OVERRIDE` and `SPEC_SLUG_OVERRIDE` env vars enable JA titles and testability. (#70)
+- `rules/atdd-kit.md`: Iron Law 4 mandating atdd/verify/bug to load `docs/specs/<slug>.md` via `lib/spec_check.sh` before implementation or AC judgement. File stays at the 40-line cap. (#70)
+- `skills/atdd/SKILL.md` "Spec Load (after State Gate PASS, before first AC)": persona-check → spec-check ordering; emits `Loaded docs/specs/<slug>.md (AC count: N)`. (#70)
+- `skills/verify/SKILL.md` "Spec Authority Check": status tiebreak (approved/implemented → spec wins; draft/deprecated → Issue comments win with `[spec-warn]` prefix). (#70)
+- `skills/bug/SKILL.md` "Spec Citation in Root Cause Classification": spec present → cite governing AC; absent → Classification A with `no spec found for <area>`. (#70)
+- `docs/methodology/us-ac-format.md`: "Slug Derivation Rule" (1 Issue = 1 spec, EN-only + JA override), "Spec ↔ Issue Divergence Matrix" (5 patterns + status tiebreak) with cross-link to Rename Run-Book. (#70)
+- `docs/guides/spec-reference.md`: full reference for the AC6 fallback matrix and the shared Spec Reference flow across atdd/verify/bug. (#70)
+- `docs/specs/llm-us-ac-auto-reference.md`: self-dogfooded spec for #70 itself (AC7). (#70)
+- `skills/{atdd,verify,bug}/evals/evals.json`: new spec-reference behavioral evals — atdd +4 (spec-load + 3 fallback variants), verify +8 (3 tiebreak + 5 drift matrix), bug +2 (classification-cites-spec / reports-missing). (#70)
+- `tests/test_spec_check.bats` (15 @test) and `tests/test_spec_reference.bats` (22 @test): structural coverage of helper exports, slug rule, rules invariant, Divergence Matrix, and EN-only reference convention. (#70)
+- `evals/footprint/spec-reference.yml` + `evals/footprint/baseline.json` update: new 3-SKILL footprint checkpoint (covers bug SKILL.md which is not on the autopilot path); autopilot delta +496 ≤ +500 token budget. (#70)
+
 ## [1.22.0] - 2026-04-18
 
 ### Added
