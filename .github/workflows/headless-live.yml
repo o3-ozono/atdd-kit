@@ -1,0 +1,74 @@
+name: Headless Skill Test (Live)
+
+# Live skill-chain verification. Invokes `claude -p --output-format stream-json`
+# against a real API and spends tokens; therefore gated to manual dispatch.
+# The PR flow (pr.yml / headless-replay) covers regression with committed
+# fixtures — this workflow exists for periodic drift checks and fixture
+# re-recording.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario spec JSON path (relative to repo root)"
+        required: true
+        default: "tests/fixtures/headless/skill-gate-discover.happy.scenario.json"
+      model:
+        description: "Override scenario.model (optional; leave blank to use scenario value)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify API key present
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is required for live runs."
+            exit 1
+          fi
+
+      - name: Verify jq
+        run: jq --version
+
+      - name: Install Claude Code CLI
+        # Pinned to official install script. CLI handles its own version
+        # management. If upstream schema changes, re-record fixtures and
+        # update Plan v2 "supported claude version" accordingly.
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify claude binary
+        run: |
+          claude --version
+
+      - name: Run headless live scenario
+        run: |
+          scenario="${{ inputs.scenario }}"
+          model_override="${{ inputs.model }}"
+          if [ -n "$model_override" ]; then
+            # Override scenario.model in a temp copy (non-destructive).
+            tmp_scenario=$(mktemp --suffix=.json)
+            jq --arg m "$model_override" '.model = $m' "$scenario" > "$tmp_scenario"
+            scenario="$tmp_scenario"
+          fi
+          bash scripts/test-skills-headless.sh "$scenario"
+
+      - name: Upload transcript on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: headless-live-transcript
+          path: /tmp/headless-*/transcript.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
