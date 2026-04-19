@@ -67,12 +67,14 @@ Post evidence as Issue comment.
 
 ## Spec Citation in Root Cause Classification
 
-Before writing Classification, load the spec via `lib/spec_check.sh`:
+Before writing Classification, load the spec via `lib/spec_check.sh`. The AC6 fallback matrix is shared across atdd / verify / bug:
 
 1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)` (set `SPEC_SLUG_OVERRIDE` for non-ASCII).
 2. `bash lib/spec_check.sh spec_exists "$slug"`:
    - **present** → `bash lib/spec_check.sh read_acs "$slug"` and cite the governing AC number + `Given/When/Then` text as the Classification basis.
-   - **absent** → report `Classification: A -- no spec found for <area>` (AC Gap). The missing spec itself is the gap; do not invent ad-hoc ACs.
+   - **absent, no prior implementation commits** → emit `[spec-warn] missing: ...` and treat as `Classification: A -- no spec found for <area>` (AC Gap). The missing spec itself is the gap; do not invent ad-hoc ACs.
+   - **absent, Continuation Path (existing impl branch)** → emit `[spec-warn] continuation-fallback: ...` and cite Issue comment ACs as fallback.
+3. `spec_persona` == `TBD…` → emit `[spec-warn] tbd-persona: ...` and continue citing spec ACs (do not block).
 
 ## Fix Proposal Format
 

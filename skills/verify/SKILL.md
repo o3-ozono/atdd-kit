@@ -41,12 +41,15 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.
 Before reading ACs from the Issue, resolve the authoritative AC source via `lib/spec_check.sh`:
 
 1. `slug=$(bash lib/spec_check.sh derive_slug <issue>)` (set `SPEC_SLUG_OVERRIDE` for non-ASCII titles).
-2. `bash lib/spec_check.sh spec_exists "$slug"` — if absent, fall back to Issue comment ACs with `[spec-warn] continuation-fallback: ...` (or STOP on missing-new per AC6).
+2. `bash lib/spec_check.sh spec_exists "$slug"` — absent cases share the AC6 fallback matrix with atdd/bug:
+   - **absent, new verification (no prior commits on implementation branch)** → STOP with `[spec-warn] missing: ...`; re-run discover.
+   - **absent, Continuation Path** → emit `[spec-warn] continuation-fallback: ...` and fall back to Issue comment ACs.
 3. Otherwise `status=$(bash lib/spec_check.sh spec_status "$slug")`:
    - `approved` / `implemented` → **spec is authoritative.** Use spec text; emit divergence notes against Issue comments.
    - `draft` → Issue comment ACs win; emit `[spec-warn] draft: Issue comment AC preferred for docs/specs/<slug>.md`.
    - `deprecated` → Issue comments win; emit `[spec-warn] deprecated: ...`.
-4. Report divergences using the `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix. All 5 patterns (Added / Removed / Modified / Reordered / Status drift) have defined expected behavior.
+4. `spec_persona` == `TBD…` → emit `[spec-warn] tbd-persona: ...` and continue (do not block).
+5. Report divergences using the `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix. All 5 patterns (Added / Removed / Modified / Reordered / Status drift) have defined expected behavior.
 
 ## Verification Flow
 

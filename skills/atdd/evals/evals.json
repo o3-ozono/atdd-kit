@@ -51,6 +51,41 @@
       ]
     },
     {
+      "id": 7,
+      "name": "spec-missing-fallback",
+      "prompt": "Issue #304 の atdd 実装を新規開始 (ready-to-go ラベル)。docs/specs/304-*.md は存在しない。ブランチもまだ切っていない。",
+      "expected_output": "BLOCKED: spec missing. Emits [spec-warn] missing prefix and instructs user to re-run discover. Does not proceed to Outer Loop.",
+      "files": [],
+      "assertions": [
+        {"id": "H1", "text": "spec 未作成を検出してブロックしている（Outer Loop に進まない）", "type": "structural"},
+        {"id": "H2", "text": "[spec-warn] missing で始まる警告を出力している", "type": "structural"},
+        {"id": "H3", "text": "discover への再実行を案内している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "spec-continuation-fallback",
+      "prompt": "Issue #305 の atdd を resume。in-progress ラベルのみでブランチ feat/305-foo 上にいる。ready-to-go は既に外れている。docs/specs/305-*.md は存在しない。",
+      "expected_output": "Continuation Path: emits [spec-warn] continuation-fallback, falls back to Issue comment ACs, does not block.",
+      "files": [],
+      "assertions": [
+        {"id": "I1", "text": "ブロックせず継続を許可している", "type": "structural"},
+        {"id": "I2", "text": "[spec-warn] continuation-fallback で始まる警告を出力している", "type": "structural"},
+        {"id": "I3", "text": "Issue コメントの AC を fallback として使用している", "type": "structural"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "spec-tbd-persona",
+      "prompt": "Issue #306 の atdd 実装。docs/specs/306-foo.md は存在し status: approved だが persona: 'TBD — replace in #69' のまま。",
+      "expected_output": "Emits [spec-warn] tbd-persona, but continues with spec ACs (does not block).",
+      "files": [],
+      "assertions": [
+        {"id": "J1", "text": "[spec-warn] tbd-persona で始まる警告を出力している", "type": "structural"},
+        {"id": "J2", "text": "spec の AC を用いて Outer Loop に進んでいる（ブロックしていない）", "type": "structural"}
+      ]
+    },
+    {
       "id": 3,
       "name": "autopilot-guard-direct-invocation-block",
       "prompt": "/atdd-kit:atdd を直接実行。Issue #400 を実装したい。autopilot は経由していない。",
