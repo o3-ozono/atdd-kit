@@ -121,7 +121,7 @@ Examples:
 
 - `"feat: LLM US/AC auto-reference mechanism"` → `llm-us-ac-auto-reference-mechanism`
 - `"Add login rate limiting"` → `add-login-rate-limiting`
-- `"fix: 認証トークンのリーク"` → requires `SPEC_SLUG_OVERRIDE=auth-token-leak`
+- A non-ASCII title (e.g., a Japanese Issue title) → requires `SPEC_SLUG_OVERRIDE=auth-token-leak` (or another English kebab-case slug chosen by the author)
 
 When a title would produce a clash with an existing spec (e.g., iterative rework), rename via the [Rename Run-Book](#rename-run-book) instead of creating a parallel file.
 
