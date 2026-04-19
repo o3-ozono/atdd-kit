@@ -36,12 +36,19 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 ## Usage
 
 ```
-/atdd-kit:autopilot                  -> Auto-detect in-progress Issue
-/atdd-kit:autopilot 123              -> Target Issue #123
-/atdd-kit:autopilot search keywords  -> Search Issues by partial match
-/atdd-kit:autopilot sweep            -> /atdd-kit:auto-sweep (one-shot utility)
-/atdd-kit:autopilot eval             -> /atdd-kit:auto-eval (one-shot utility)
+/atdd-kit:autopilot                              -> Auto-detect in-progress Issue
+/atdd-kit:autopilot 123                          -> Target Issue #123
+/atdd-kit:autopilot search keywords              -> Search Issues by partial match
+/atdd-kit:autopilot sweep                        -> /atdd-kit:auto-sweep (one-shot utility)
+/atdd-kit:autopilot eval                         -> /atdd-kit:auto-eval (one-shot utility)
+/atdd-kit:autopilot 123 --light                  -> Preset profile: lightweight sub-agents
+/atdd-kit:autopilot 123 --heavy                  -> Preset profile: heavyweight sub-agents
+/atdd-kit:autopilot 123 --profile="reviewer only heavy"  -> Custom NL profile (= form)
+/atdd-kit:autopilot 123 --profile "reviewer only heavy"  -> Custom NL profile (space form)
+/atdd-kit:autopilot 123 reviewerのみ重く他は軽く          -> Positional NL profile
 ```
+
+Profile flags (`--light` / `--heavy` / `--profile` / positional NL) only affect sub-agents spawned via the Agent tool. Main Claude (orchestrator) always keeps its session default. Flags are position-independent (may appear before or after the issue number).
 
 ## Phase 0: Issue Resolution
 
@@ -66,7 +73,85 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 3. **1 result:** Use it.
 4. **Multiple results:** Present numbered list, ask user to select.
 
-## Phase 0.5: Phase and Task Type Determination
+### Phase 0 Argument Parsing (profile flags)
+
+**Tools:** (none — pure argument parsing by main Claude)
+
+Profile flags control the `model` parameter passed to the Agent tool when spawning sub-agents. Main Claude (orchestrator) is unaffected and keeps its session default. Flag position is independent — flags may appear either before or after the issue number / keyword. Both `--profile=VALUE` (= form) and `--profile VALUE` (space form) are accepted as equivalent; quoted values preserve internal spaces.
+
+Parsing proceeds top-to-bottom with the following halt conditions. Every halt occurs before Phase 0.9 (Team / worktree creation), so no cleanup is required.
+
+1. **Recognized flags:** `--light`, `--heavy`, `--profile=<text>` / `--profile <text>`. Any other `--xxx` token triggers an Unknown-flag halt.
+
+2. **Unknown flag halt (AC4):**
+   Emit: `Unknown flag: --typo-flag (supported: --light, --heavy, --profile)`
+   Then halt before Phase 0.9. No Team / worktree is created.
+
+3. **Conflicting preset flags (AC5):** When both `--light` and `--heavy` appear, emit: `Conflicting flags: --light, --heavy (choose one)` and halt.
+
+4. **Utility mode rejection (AC10):** When the first positional token is `sweep` or `eval` and any profile flag / positional NL is present, emit: `Profile flags are not supported in utility mode: sweep` (or `eval`) and halt. Utility mode does not spawn sub-agents, so profile flags are meaningless there.
+
+5. **search mode keyword separation (AC11):** When the first positional token is `search`, collect the keyword tokens until the first `--` flag. Preset flags like `--light` are detached and do NOT leak into the keyword: `/atdd-kit:autopilot search auth bug --light` resolves to keyword `auth bug` and profile `light`.
+
+6. **search mode + positional NL constraint (AC19):** In search mode, any trailing token that is neither a recognized flag nor part of the keyword is rejected with: `In search mode, custom profile must be specified via --profile="...". Positional NL is only valid after an issue number.` Then halt.
+
+7. **Preset vs NL mutual exclusion (AC16):** When a preset flag (`--light` or `--heavy`) and an NL profile (positional or `--profile`) are both supplied, emit: `Conflicting profile sources: --light and custom profile text. Use one.` (substitute `--heavy` as appropriate) and halt.
+
+8. **Positional NL + `--profile` mutual exclusion (AC20):** When both positional NL (trailing text after the issue number that is not a recognized flag) and `--profile=<text>` appear, emit: `Multiple NL profile sources specified. Use either positional text or --profile, not both.` and halt.
+
+9. **Resolution on success:**
+   - No profile flag → resolved matrix inherits session default for every sub-agent role. The Agent tool call omits the model parameter entirely; no profile confirmation gate is shown.
+   - `--light` → resolved matrix pulled verbatim from `config/spawn-profiles.yml` `profiles.light.*` (single source of truth). Do not duplicate the per-role values here.
+   - `--heavy` → resolved matrix pulled verbatim from `config/spawn-profiles.yml` `profiles.heavy.*`.
+   - NL (positional or `--profile`) → main Claude interprets the free-form text into a per-role resolved matrix. Only the model dimension may be overridden, and only with values drawn from the Agent tool model enum. Roles not mentioned fall back to session default.
+
+10. **NL parse failure (AC18):** If the NL text contains an unknown role name, an unsupported model name, or an effort dimension reference, halt with the following error message. The message is quoted literally so downstream tests can anchor on it; the nl-example markers mark it as preset-literal-allowed text (not a main-Claude override).
+
+<!-- nl-example start -->
+`Could not resolve: "<fragment>". Supported: model override only (sonnet/opus/haiku). Effort control is not supported in this release. Known roles: developer/qa/tester/reviewer/researcher/writer.`
+<!-- nl-example end -->
+
+    No Team / worktree is created.
+
+On successful resolution with any flag (preset or NL), proceed to the Profile Confirmation Gate below.
+
+#### NL Resolution Examples
+
+The following fixtures illustrate how positional NL and `--profile` text is interpreted. Additional manual-verify fixtures live in `docs/tests/nl-profile-fixtures.md`.
+
+<!-- nl-example start -->
+Example A — positional NL after an issue number:
+
+- Input: `/atdd-kit:autopilot 123 reviewerだけ sonnet で他は全部 opus`
+- Resolved matrix:
+  - reviewer: sonnet
+  - developer: opus
+  - qa: opus
+  - tester: opus
+  - researcher: opus
+  - writer: opus
+
+Example B — `--profile=` delimiter, role-exclusion pattern:
+
+- Input: `/atdd-kit:autopilot 123 --profile="developer 以外を sonnet に"`
+- Resolved matrix:
+  - developer: session default
+  - qa: sonnet
+  - tester: sonnet
+  - reviewer: sonnet
+  - researcher: sonnet
+  - writer: sonnet
+
+Example C — `--profile` with space delimiter and quoted spaces:
+
+- Input: `/atdd-kit:autopilot 123 --profile "reviewer only heavy, writer keep default"`
+- Resolved matrix:
+  - reviewer: opus
+  - writer: session default
+  - developer / qa / tester / researcher: session default
+<!-- nl-example end -->
+
+
 
 **Tools:** Bash (gh)
 
@@ -125,6 +210,37 @@ Procedure:
 
 The BLOCKED guidance is the canonical text emitted by `lib/persona_check.sh get_persona_guidance_message`. discover Step 3a-precheck emits the same message so the two layers agree on when and why persona bootstrap is disallowed.
 
+### Profile Confirmation Gate
+
+Fires whenever any profile flag (`--light`, `--heavy`, `--profile`, or positional NL) was supplied. Skipped when no profile flag is present (session default path — nothing to confirm).
+
+Applies to every sub-agent role (developer, qa, tester, reviewer, researcher, writer). Main Claude is not listed because profile flags never change its configuration.
+
+Procedure:
+
+1. Print the resolved matrix as a two-column table. One row per sub-agent role (developer, qa, tester, reviewer, researcher, writer), with the role name in column 1 and the model value from the resolved matrix in column 2. When a role has no override, render the cell as `session default`.
+
+   ```
+   | role        | model              |
+   | ----------- | ------------------ |
+   | developer   | <value from matrix> |
+   | qa          | <value from matrix> |
+   | tester      | <value from matrix> |
+   | reviewer    | <value from matrix> |
+   | researcher  | <value from matrix> |
+   | writer      | <value from matrix> |
+   ```
+
+2. Preferred UI: call `AskUserQuestion` with the question `Apply this profile?` and options `Yes, apply` / `No, cancel`.
+
+3. Fallback UI (when `AskUserQuestion` is unavailable): print the matrix followed by `Reply with 1 (apply) or 2 (cancel).` and STOP until the user replies. This is the same style as the Plan Stop-point.
+
+4. On approval (option `Yes, apply` or reply `1`): continue to Phase 0.9.
+
+5. On cancellation (option `No, cancel` or reply `2`): halt before Phase 0.9. Team / worktree is not created.
+
+This gate guarantees the resolved matrix is visible (AC6) and confirms intent (AC17) before any expensive Team / worktree creation. The matrix is not created until the user approves.
+
 ## Phase 0.9: Agent Teams Setup
 
 **Tools:** ToolSearch, TeamCreate, TeamDelete, EnterWorktree
@@ -141,7 +257,18 @@ Bootstrap Agent Teams before any phase. Solo execution fallback is prohibited. S
    - Phase 3 or 4: verify plan comment (`## Implementation Plan` with `### Agent Composition`) exists. If absent: STOP — "plan is incomplete. Re-run from Phase 2."
    Then proceed via SendMessage.
    Note: This is the sole exception to Autonomy Rule 5 — applies only on session restart.
+   **Profile flag propagation:** The profile flag supplied to this invocation applies to every fresh spawn in the resumed phase (e.g., Phase 3 Developer / Phase 4 Reviewers). Existing agents reached via SendMessage keep the model baked in at their original spawn time.
 6. On failure: report the error → STOP. Do NOT fall back to solo execution.
+
+### Agent spawn model resolution
+
+Every Agent tool spawn invocation throughout Phases 1, 3, and 4 follows this rule for the `model` parameter:
+
+- If no profile flag was supplied, omit the `model` parameter from the Agent tool call so the sub-agent inherits its session default (AC2).
+- If a preset flag was supplied, pass the role-specific model read from `config/spawn-profiles.yml` (`profiles.light.<role>` for `--light`, `profiles.heavy.<role>` for `--heavy`). AC1 / AC7 rely on this single source of truth.
+- If an NL profile was supplied, pass the role-specific model from the resolved matrix produced by the Profile Confirmation Gate. Roles not mentioned in the NL inherit the session default (model parameter omitted).
+
+This rule is stated once here and referenced from each spawn site below. Do not duplicate the resolution table in prose elsewhere.
 
 ## Output Channels (applies to all phases)
 
@@ -203,11 +330,11 @@ Prohibited patterns. Failure mode: report what failed → STOP → wait for user
 
 **Tools:** Agent, SendMessage
 
-Spawn agents per Phase 1 column of the Agent Composition Table and review draft ACs.
+Spawn agents per Phase 1 column of the Agent Composition Table and review draft ACs. Every Agent tool invocation in this section follows the Agent spawn model resolution rule defined in Phase 0.9 — pass the resolved `model` for the respective role (developer / qa / tester) per the profile flag, or omit the `model` parameter when no flag was supplied.
 
 ### development / refactoring: Three Amigos (PO + Developer + QA)
 
-1. Spawn Developer and QA in parallel (team_name: `autopilot-{issue_number}`, isolation: "worktree"):
+1. Spawn Developer and QA in parallel (team_name: `autopilot-{issue_number}`, isolation: "worktree"). The Agent tool `model` parameter for each spawn follows the resolved matrix (see Phase 0.9 Agent spawn model resolution):
    - **PO:** requirement completeness, user story alignment, business value
    - **Developer:** architecture, feasibility, edge cases, implementation complexity
    - **QA:** testability, boundary conditions, error cases
@@ -215,7 +342,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 ### bug: PO + Tester + Developer (bug-triage)
 
-1. Spawn Tester and Developer in parallel:
+1. Spawn Tester and Developer in parallel. Pass the Agent tool `model` per the resolved matrix (see Phase 0.9 Agent spawn model resolution):
    - **PO:** impact scope, priority
    - **Tester:** reproduction confirmation, test environment
    - **Developer:** root cause hypothesis, fix approach
@@ -294,7 +421,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 ### development / refactoring: Developer implements
 
-1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer uses Skill tool to invoke `atdd-kit:atdd` with `"<number> --autopilot"`.
+1. SendMessage to Developer: ATDD instructions with Issue number and AC set/Plan references. Developer uses Skill tool to invoke `atdd-kit:atdd` with `"<number> --autopilot"`. If mid-phase resume spawns a fresh Developer here, pass the Agent tool `model` parameter from the resolved matrix (see Phase 0.9 Agent spawn model resolution).
 2. Developer creates branch, Draft PR, implements AC by AC
 3. Developer uses Skill tool to invoke `atdd-kit:verify` after all ACs complete
 4. Developer marks PR ready and adds `ready-for-PR-review`
@@ -302,18 +429,18 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 ### bug: Developer fixes + Tester verifies
 
 1. Developer implements fix using ATDD
-2. Tester verifies fix by reproducing original bug
+2. Tester verifies fix by reproducing original bug. When Tester is spawned fresh at this phase, pass the Agent tool `model` parameter from the resolved matrix.
 3. Developer marks PR ready and adds `ready-for-PR-review`
 
 ### research: Researcher x N (min 2 per theme)
 
-1. PO spawns Researchers (per plan-approved Agent Composition)
+1. PO spawns Researchers (per plan-approved Agent Composition). Each Agent tool invocation passes the researcher `model` from the resolved matrix (see Phase 0.9 Agent spawn model resolution).
 2. Each Researcher returns findings via SendMessage
 3. PO synthesizes into a report, posts as Issue/PR comment
 
 ### documentation: Writer creates
 
-1. Writer creates/updates documentation per approved plan
+1. Writer creates/updates documentation per approved plan. The Agent tool `model` parameter for the Writer spawn follows the resolved matrix.
 2. Writer marks PR ready and adds `ready-for-PR-review`
 
 ## Phase 4: PR Review (task-type-specific)
@@ -326,7 +453,7 @@ Spawn agents per Phase 1 column of the Agent Composition Table and review draft 
 
 ### development / bug / documentation / refactoring: Reviewer x N
 
-1. PO spawns Reviewers (per plan-approved Agent Composition)
+1. PO spawns Reviewers (per plan-approved Agent Composition). Each Reviewer Agent tool invocation passes the `model` parameter from the resolved matrix (see Phase 0.9 Agent spawn model resolution).
 2. Each Reviewer returns results via SendMessage. PO posts consolidated review as PR comment.
 3. Issues found → `needs-pr-revision`, Developer/Writer fixes. No issues → review PASS comment.
 

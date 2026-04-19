@@ -31,13 +31,11 @@ prose_model_hits() {
 }
 
 @test "AC3: no prose-level model: literal in commands/autopilot.md" {
-  skip "enable after Phase B6 - NL Resolution Examples marker finalized"
   hits="$(prose_model_hits)"
   [ -z "$hits" ] || { echo "prose model: hits:"; echo "$hits"; return 1; }
 }
 
 @test "AC3: config/spawn-profiles.yml is the only non-fenced source of model: outside autopilot.md" {
-  skip "enable after Phase B6 - NL Resolution Examples marker finalized"
   # Config is allowed to have model: at file scope.
   grep -q 'model:' "${BATS_TEST_DIRNAME}/../config/spawn-profiles.yml"
 }
