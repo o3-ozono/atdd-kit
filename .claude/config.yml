@@ -1,0 +1,17 @@
+# atdd-kit project configuration
+
+platform:
+  - other
+
+# spawn_profiles:
+#   # custom: optional per-project spawn profile applied by /atdd-kit:autopilot
+#   # when no --profile flag is supplied. Define only the roles you want to
+#   # override — roles not listed here inherit the session default (model
+#   # parameter omitted from the Agent tool call).
+#   custom:
+#     developer:  { model: sonnet }
+#     qa:         { model: sonnet }
+#     tester:     { model: sonnet }
+#     reviewer:   { model: opus }
+#     researcher: { model: sonnet }
+#     writer:     { model: sonnet }

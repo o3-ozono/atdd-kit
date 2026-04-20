@@ -1,90 +1,91 @@
 #!/usr/bin/env bats
 
-# Issue #109 — NL (natural language) profile drift-detect.
+# Issue #122 — NL profile drift-detect (custom-base + NL overlay).
 #
 # Scope:
-#   AC14 — Positional NL after issue number resolves to per-role matrix
-#   AC15 — --profile flag accepts both = and space delimiters
-#   AC17 — Resolved matrix confirmation gate (AskUserQuestion + fallback)
-#   AC18 — NL parse failure halts with explanatory message
+#   AC3 — --profile="NL" resolves on top of spawn_profiles.custom, NL wins on
+#         role collisions; roles neither in custom nor in NL → session default
+#   AC4 — Profile Confirmation Gate fires ONLY when --profile is specified
+#   AC6 — Unknown role / unknown model in NL halts with specific error text
+#
+# Strategy: drift-detect on commands/autopilot.md — the NL profile path must
+# document a custom-base overlay (not a fresh resolution), the gate must be
+# gated on --profile presence, and the halt text must match AC6 literal.
 
 AUTOPILOT="${BATS_TEST_DIRNAME}/../commands/autopilot.md"
 
-# --- AC14: Positional NL ---
+# --- AC3: --profile NL resolves on top of custom, NL wins on collision ---
 
-@test "AC14: autopilot.md documents positional NL after issue number" {
-  grep -qiE 'positional NL|positional.*natural language|trailing NL|trailing natural' "$AUTOPILOT"
+@test "AC3: autopilot.md documents --profile NL overlay on custom base" {
+  grep -qiE 'NL.*overlay.*custom|custom.*base.*NL|custom をベースに NL|NL が custom を上書き|NL overlay|NL over custom|NL on top of custom' "$AUTOPILOT"
 }
 
-@test "AC14: NL Resolution Examples block exists with nl-example markers" {
+@test "AC3: autopilot.md documents NL-wins-on-collision rule" {
+  grep -qiE 'NL (wins|overrides|takes precedence|優先)|重複.*NL.*優先|collision.*NL' "$AUTOPILOT"
+}
+
+@test "AC3: autopilot.md documents session default fallback for roles unset in both custom and NL" {
+  grep -qiE '(neither|nor) custom.*nor NL.*session default|roles.*not.*custom.*NL.*session default|custom にも NL.*session default|both absent.*session default' "$AUTOPILOT"
+}
+
+@test "AC3: NL Resolution Examples block still exists" {
   grep -q '<!-- nl-example start -->' "$AUTOPILOT" \
     && grep -q '<!-- nl-example end -->' "$AUTOPILOT"
 }
 
-@test "AC14: NL Resolution Examples show per-role resolution" {
-  awk '/<!-- nl-example start -->/,/<!-- nl-example end -->/' "$AUTOPILOT" > /tmp/nl_examples.txt
-  # The example must show a resolved matrix with at least 2 distinct roles
-  # receiving different models.
-  grep -qE 'reviewer.*sonnet|reviewer.*opus' /tmp/nl_examples.txt \
-    && grep -qE 'developer.*sonnet|developer.*opus' /tmp/nl_examples.txt
+# --- AC4: Confirmation gate fires only when --profile is specified ---
+
+@test "AC4: Profile Confirmation Gate sub-heading exists" {
+  grep -qE '^### Profile Confirmation Gate' "$AUTOPILOT"
 }
 
-# --- AC15: --profile delimiter forms ---
-
-@test "AC15: autopilot.md shows --profile= delimiter form" {
-  grep -qE -e '--profile=' "$AUTOPILOT"
-}
-
-@test "AC15: autopilot.md shows --profile (space delimiter) form" {
-  grep -qE -e '--profile "' "$AUTOPILOT"
-}
-
-@test "AC15: argparse block notes both forms are accepted" {
-  awk '/^### Phase 0 Argument Parsing/{in_block=1; next} in_block && /^## /{exit} in_block && /^### /{exit} in_block{print}' \
-    "$AUTOPILOT" > /tmp/argparse.txt
-  grep -qiE 'both.*form|either.*form|= (or|and) space|space.*or.*=' /tmp/argparse.txt
-}
-
-# --- AC17: Confirmation gate with AskUserQuestion + fallback ---
-
-@test "AC17: confirmation gate references AskUserQuestion" {
+@test "AC4: gate block restricts firing to --profile path only" {
   awk '/^### Profile Confirmation Gate/{in_block=1; next} in_block && /^### /{exit} in_block && /^## /{exit} in_block{print}' \
-    "$AUTOPILOT" > /tmp/gate.txt
-  grep -q 'AskUserQuestion' /tmp/gate.txt
+    "$AUTOPILOT" > /tmp/gate_scope.txt
+  grep -qiE 'only when --profile|--profile.*specified|fires.*--profile|gate.*--profile path' /tmp/gate_scope.txt
 }
 
-@test "AC17: confirmation gate asks 'Apply this profile?'" {
+@test "AC4: gate block does not reference --light or --heavy as trigger" {
   awk '/^### Profile Confirmation Gate/{in_block=1; next} in_block && /^### /{exit} in_block && /^## /{exit} in_block{print}' \
-    "$AUTOPILOT" > /tmp/gate.txt
-  grep -q 'Apply this profile?' /tmp/gate.txt
+    "$AUTOPILOT" > /tmp/gate_scope.txt
+  ! grep -qE -e '--light' /tmp/gate_scope.txt
+  ! grep -qE -e '--heavy' /tmp/gate_scope.txt
 }
 
-@test "AC17: confirmation gate defines text fallback (Reply with 1 or 2)" {
+@test "AC4: gate uses AskUserQuestion with Apply this profile? text" {
   awk '/^### Profile Confirmation Gate/{in_block=1; next} in_block && /^### /{exit} in_block && /^## /{exit} in_block{print}' \
-    "$AUTOPILOT" > /tmp/gate.txt
-  grep -qE 'Reply with 1.*apply.*2.*cancel|1 \(apply\).*2 \(cancel\)' /tmp/gate.txt
+    "$AUTOPILOT" > /tmp/gate_scope.txt
+  grep -q 'AskUserQuestion' /tmp/gate_scope.txt
+  grep -q 'Apply this profile?' /tmp/gate_scope.txt
 }
 
-@test "AC17: gate halts until approval (no Team/worktree creation)" {
+@test "AC4: gate documents text fallback (Reply with 1/2)" {
   awk '/^### Profile Confirmation Gate/{in_block=1; next} in_block && /^### /{exit} in_block && /^## /{exit} in_block{print}' \
-    "$AUTOPILOT" > /tmp/gate.txt
-  grep -qiE 'Team.*not created|worktree.*not created|until.*approv|do not.*create.*Team' /tmp/gate.txt
+    "$AUTOPILOT" > /tmp/gate_scope.txt
+  grep -qE 'Reply with 1.*apply.*2.*cancel|1 \(apply\).*2 \(cancel\)' /tmp/gate_scope.txt
 }
 
-# --- AC18: NL parse failure ---
+@test "AC4: gate halts before Team / worktree creation on Cancel" {
+  awk '/^### Profile Confirmation Gate/{in_block=1; next} in_block && /^### /{exit} in_block && /^## /{exit} in_block{print}' \
+    "$AUTOPILOT" > /tmp/gate_scope.txt
+  grep -qiE 'Team.*not created|worktree.*not created|halt.*before Phase 0\.9|cancel.*halt' /tmp/gate_scope.txt
+}
 
-@test "AC18: autopilot.md specifies Could not resolve error message" {
+# --- AC6: NL unknown role / unknown model halt ---
+
+@test "AC6: autopilot.md includes Could not resolve error message" {
   grep -q 'Could not resolve:' "$AUTOPILOT"
 }
 
-@test "AC18: NL parse error message notes model override only scope" {
+@test "AC6: NL error message notes model override only scope with sonnet/opus/haiku" {
   grep -qE 'Supported: model override only.*sonnet/opus/haiku' "$AUTOPILOT"
 }
 
-@test "AC18: NL parse error message notes effort control unsupported" {
-  grep -qE 'Effort control is not supported in this release' "$AUTOPILOT"
+@test "AC6: NL error message enumerates all 6 known roles" {
+  grep -qE 'Known roles:.*developer/qa/tester/reviewer/researcher/writer' "$AUTOPILOT"
 }
 
-@test "AC18: NL parse error message lists known roles" {
-  grep -qE 'Known roles:.*developer/qa/tester/reviewer/researcher/writer' "$AUTOPILOT"
+@test "AC6: NL parse failure halts before Team / worktree creation" {
+  # Must be stated that Team / worktree is not created on parse fail.
+  grep -qiE 'No Team.*worktree.*created|Team / worktree is not created' "$AUTOPILOT"
 }

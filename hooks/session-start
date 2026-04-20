@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# workflow-config existence check only
-if [ -f ".claude/workflow-config.yml" ]; then
+# config existence check only. `.claude/workflow-config.yml` is the legacy file
+# that session-start auto-migrates to `.claude/config.yml`; treat either as a
+# signal that the project is already configured.
+if [ -f ".claude/config.yml" ] || [ -f ".claude/workflow-config.yml" ]; then
   echo '{}'
   exit 0
 fi

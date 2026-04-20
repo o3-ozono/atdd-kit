@@ -192,6 +192,39 @@ Only ~30 lines loaded every turn (kept minimal to save context):
 
 Detailed guides live in `docs/` and load on-demand.
 
+## Spawn Profile
+
+`/atdd-kit:autopilot` spawns sub-agents (developer / qa / tester / reviewer / researcher / writer) via the Agent tool. You can optionally pin per-role models by editing `.claude/config.yml`:
+
+```yaml
+spawn_profiles:
+  custom:
+    developer:  { model: sonnet }
+    qa:         { model: sonnet }
+    tester:     { model: sonnet }
+    reviewer:   { model: opus }
+    researcher: { model: sonnet }
+    writer:     { model: sonnet }
+```
+
+Model enum: `sonnet`, `opus`, `haiku`. Roles not listed inherit the **session default** (the Agent tool `model` parameter is omitted).
+
+### Invocation paths
+
+| Command | Behavior |
+|---|---|
+| `/atdd-kit:autopilot 123` | Applies `spawn_profiles.custom` automatically if present; otherwise every role falls back to session default. No confirmation gate. |
+| `/atdd-kit:autopilot 123 --profile="reviewer only heavy"` | Overlays NL on top of `custom` — NL wins on role collisions; roles present in neither `custom` nor the NL fall back to session default. A confirmation gate presents the resolved matrix before any Team / worktree is created. |
+
+Main Claude (the orchestrator) always keeps its session default — the profile only applies to sub-agent spawns.
+
+### BREAKING note (Issue #122)
+
+The legacy `--light` / `--heavy` preset flags have been **removed**. Passing either now halts with
+`Unknown flag: --light (removed in BREAKING change; use --profile="..." instead. supported: --profile)` (substituting `--heavy` as appropriate). Replace previous preset usage by defining `spawn_profiles.custom` in `.claude/config.yml` (for sticky defaults) and/or `--profile="..."` (for one-off overrides).
+
+The legacy `.claude/workflow-config.yml` and plugin-side `config/spawn-profiles.yml` have been merged into `.claude/config.yml`. `session-start` auto-migrates projects on the next session.
+
 ## Contributing
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the full development guide. Key rules:

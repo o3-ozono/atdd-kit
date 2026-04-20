@@ -29,7 +29,7 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 > deliverable classification → issue create/comment → closing comment → issue close → label removal → ExitWorktree/TeamDelete.
 
 ## Prerequisites
-- `.claude/workflow-config.yml` must exist (if missing, start a new session to trigger auto-setup)
+- `.claude/config.yml` must exist (if missing, start a new session to trigger auto-setup / migration)
 - Agent definitions in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md, tester.md, reviewer.md, researcher.md, writer.md). main Claude acts as PO.
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start)
 
@@ -37,18 +37,15 @@ When spawning Variable-Count Agents in Phase 3 or Phase 4:
 
 ```
 /atdd-kit:autopilot                              -> Auto-detect in-progress Issue
-/atdd-kit:autopilot 123                          -> Target Issue #123
+/atdd-kit:autopilot 123                          -> Target Issue #123 (applies .claude/config.yml spawn_profiles.custom if present)
 /atdd-kit:autopilot search keywords              -> Search Issues by partial match
 /atdd-kit:autopilot sweep                        -> /atdd-kit:auto-sweep (one-shot utility)
 /atdd-kit:autopilot eval                         -> /atdd-kit:auto-eval (one-shot utility)
-/atdd-kit:autopilot 123 --light                  -> Preset profile: lightweight sub-agents
-/atdd-kit:autopilot 123 --heavy                  -> Preset profile: heavyweight sub-agents
-/atdd-kit:autopilot 123 --profile="reviewer only heavy"  -> Custom NL profile (= form)
-/atdd-kit:autopilot 123 --profile "reviewer only heavy"  -> Custom NL profile (space form)
-/atdd-kit:autopilot 123 reviewerのみ重く他は軽く          -> Positional NL profile
+/atdd-kit:autopilot 123 --profile="reviewer only heavy"  -> NL profile overlay on custom base (= form)
+/atdd-kit:autopilot 123 --profile "reviewer only heavy"  -> NL profile overlay on custom base (space form)
 ```
 
-Profile flags (`--light` / `--heavy` / `--profile` / positional NL) only affect sub-agents spawned via the Agent tool. Main Claude (orchestrator) always keeps its session default. Flags are position-independent (may appear before or after the issue number).
+The `--profile` flag (NL) only affects sub-agents spawned via the Agent tool. Main Claude (orchestrator) always keeps its session default. The flag is position-independent (may appear before or after the issue number).
 
 ## Phase 0: Issue Resolution
 
@@ -77,35 +74,36 @@ Profile flags (`--light` / `--heavy` / `--profile` / positional NL) only affect 
 
 **Tools:** (none — pure argument parsing by main Claude)
 
-Profile flags control the `model` parameter passed to the Agent tool when spawning sub-agents. Main Claude (orchestrator) is unaffected and keeps its session default. Flag position is independent — flags may appear either before or after the issue number / keyword. Both `--profile=VALUE` (= form) and `--profile VALUE` (space form) are accepted as equivalent; quoted values preserve internal spaces.
+The `--profile` flag (NL) controls the `model` parameter passed to the Agent tool when spawning sub-agents. Main Claude (orchestrator) is unaffected and keeps its session default. Flag position is independent — the flag may appear either before or after the issue number / keyword. Both `--profile=VALUE` (= form) and `--profile "VALUE"` (space form) are accepted as equivalent; quoted values preserve internal spaces.
 
 Parsing proceeds top-to-bottom with the following halt conditions. Every halt occurs before Phase 0.9 (Team / worktree creation), so no cleanup is required.
 
-1. **Recognized flags:** `--light`, `--heavy`, `--profile=<text>` / `--profile <text>`. Any other `--xxx` token triggers an Unknown-flag halt.
+1. **Recognized flags:** `--profile=<text>` / `--profile <text>`. Any other `--xxx` token triggers an Unknown-flag halt.
 
-2. **Unknown flag halt (AC4):**
-   Emit: `Unknown flag: --typo-flag (supported: --light, --heavy, --profile)`
-   Then halt before Phase 0.9. No Team / worktree is created.
+2. **Legacy preset flag halt (AC5, BREAKING):**
+   When `--light` appears, emit: `Unknown flag: --light (removed in BREAKING change; use --profile="..." instead. supported: --profile)` and halt before Phase 0.9. No Team / worktree is created.
+   When `--heavy` appears, emit the same form with `--heavy` substituted: `Unknown flag: --heavy (removed in BREAKING change; use --profile="..." instead. supported: --profile)` and halt.
 
-3. **Conflicting preset flags (AC5):** When both `--light` and `--heavy` appear, emit: `Conflicting flags: --light, --heavy (choose one)` and halt.
+3. **Generic Unknown flag halt:**
+   For any other unrecognized `--xxx` token, emit: `Unknown flag: --typo-flag (supported: --profile)` and halt before Phase 0.9. No Team / worktree is created.
 
-4. **Utility mode rejection (AC10):** When the first positional token is `sweep` or `eval` and any profile flag / positional NL is present, emit: `Profile flags are not supported in utility mode: sweep` (or `eval`) and halt. Utility mode does not spawn sub-agents, so profile flags are meaningless there.
+4. **Utility mode rejection:** When the first positional token is `sweep` or `eval` and `--profile` is present, emit: `Profile flags are not supported in utility mode: sweep` (or `eval`) and halt. Utility mode does not spawn sub-agents, so the flag is meaningless there.
 
-5. **search mode keyword separation (AC11):** When the first positional token is `search`, collect the keyword tokens until the first `--` flag. Preset flags like `--light` are detached and do NOT leak into the keyword: `/atdd-kit:autopilot search auth bug --light` resolves to keyword `auth bug` and profile `light`.
+5. **Resolution on success:** Resolution branches on `.claude/config.yml` `spawn_profiles.custom` presence and on whether `--profile` was supplied. The full matrix is defined in the `### Agent spawn model resolution` section below. Summary:
+   - No flag + custom absent → all roles inherit session default (AC2).
+   - No flag + custom present → custom applied per role; any role missing from custom (partial definition) falls back to session default — the Agent tool call omits the model parameter for that role (AC1).
+   - `--profile` + custom present → custom-base overlay, NL wins on collision; a role in neither custom nor NL falls back to session default (AC3).
+   - `--profile` + custom absent → NL interpreted against a session-default base; unmentioned roles stay on session default (AC3 tail clause).
 
-6. **search mode + positional NL constraint (AC19):** In search mode, any trailing token that is neither a recognized flag nor part of the keyword is rejected with: `In search mode, custom profile must be specified via --profile="...". Positional NL is only valid after an issue number.` Then halt.
+6. **Config schema error (AC8):** If `.claude/config.yml` is malformed (invalid YAML), or if `spawn_profiles.custom.<role>` is not a map with a `model` key whose value is one of sonnet / opus / haiku, halt before Phase 0.9 with:
 
-7. **Preset vs NL mutual exclusion (AC16):** When a preset flag (`--light` or `--heavy`) and an NL profile (positional or `--profile`) are both supplied, emit: `Conflicting profile sources: --light and custom profile text. Use one.` (substitute `--heavy` as appropriate) and halt.
+   <!-- nl-example start -->
+   `.claude/config.yml: spawn_profiles.custom.reviewer must be a map of { model: sonnet|opus|haiku }`
+   <!-- nl-example end -->
 
-8. **Positional NL + `--profile` mutual exclusion (AC20):** When both positional NL (trailing text after the issue number that is not a recognized flag) and `--profile=<text>` appear, emit: `Multiple NL profile sources specified. Use either positional text or --profile, not both.` and halt.
+   (substituting the offending role and reason). No Team / worktree is created.
 
-9. **Resolution on success:**
-   - No profile flag → resolved matrix inherits session default for every sub-agent role. The Agent tool call omits the model parameter entirely; no profile confirmation gate is shown.
-   - `--light` → resolved matrix pulled verbatim from `config/spawn-profiles.yml` `profiles.light.*` (single source of truth). Do not duplicate the per-role values here.
-   - `--heavy` → resolved matrix pulled verbatim from `config/spawn-profiles.yml` `profiles.heavy.*`.
-   - NL (positional or `--profile`) → main Claude interprets the free-form text into a per-role resolved matrix. Only the model dimension may be overridden, and only with values drawn from the Agent tool model enum. Roles not mentioned fall back to session default.
-
-10. **NL parse failure (AC18):** If the NL text contains an unknown role name, an unsupported model name, or an effort dimension reference, halt with the following error message. The message is quoted literally so downstream tests can anchor on it; the nl-example markers mark it as preset-literal-allowed text (not a main-Claude override).
+7. **NL parse failure (AC6):** If the NL text (from `--profile`) contains an unknown role name, an unsupported model name, or an effort dimension reference, halt with the following error message. The message is quoted literally so downstream tests can anchor on it; the nl-example markers mark it as preset-literal-allowed text (not a main-Claude override).
 
 <!-- nl-example start -->
 `Could not resolve: "<fragment>". Supported: model override only (sonnet/opus/haiku). Effort control is not supported in this release. Known roles: developer/qa/tester/reviewer/researcher/writer.`
@@ -113,37 +111,40 @@ Parsing proceeds top-to-bottom with the following halt conditions. Every halt oc
 
     No Team / worktree is created.
 
-On successful resolution with any flag (preset or NL), proceed to the Profile Confirmation Gate below.
+On successful resolution with `--profile`, proceed to the Profile Confirmation Gate below. When no flag is supplied, skip the gate entirely and proceed to Phase 0.9.
 
 #### NL Resolution Examples
 
-The following fixtures illustrate how positional NL and `--profile` text is interpreted. Additional manual-verify fixtures live in `docs/tests/nl-profile-fixtures.md`.
+The following fixtures illustrate how `--profile` NL text is interpreted as an overlay on top of `.claude/config.yml` `spawn_profiles.custom`. NL wins on role collisions; roles present in neither custom nor NL fall back to session default. Additional manual-verify fixtures live in `docs/tests/nl-profile-fixtures.md`.
 
 <!-- nl-example start -->
-Example A — positional NL after an issue number:
+Example A — custom-base overlay, NL wins on collision:
 
-- Input: `/atdd-kit:autopilot 123 reviewerだけ sonnet で他は全部 opus`
-- Resolved matrix:
-  - reviewer: sonnet
-  - developer: opus
-  - qa: opus
-  - tester: opus
-  - researcher: opus
-  - writer: opus
-
-Example B — `--profile=` delimiter, role-exclusion pattern:
-
-- Input: `/atdd-kit:autopilot 123 --profile="developer 以外を sonnet に"`
-- Resolved matrix:
-  - developer: session default
+- Pre-condition: `spawn_profiles.custom` defines all 6 roles = sonnet
+- Input: `/atdd-kit:autopilot 123 --profile="reviewer only heavy"`
+- Resolved matrix (NL wins on the reviewer row):
+  - reviewer: opus
+  - developer: sonnet
   - qa: sonnet
   - tester: sonnet
-  - reviewer: sonnet
   - researcher: sonnet
   - writer: sonnet
 
-Example C — `--profile` with space delimiter and quoted spaces:
+Example B — `--profile=` delimiter, role neither in custom nor NL → session default:
 
+- Pre-condition: `spawn_profiles.custom` defines only `reviewer: { model: sonnet }`
+- Input: `/atdd-kit:autopilot 123 --profile="developer opus"`
+- Resolved matrix:
+  - developer: opus           (from NL)
+  - reviewer: sonnet          (from custom, not touched by NL)
+  - qa: session default
+  - tester: session default
+  - researcher: session default
+  - writer: session default
+
+Example C — `--profile` space delimiter, custom absent (AC3 tail clause):
+
+- Pre-condition: no `spawn_profiles.custom` defined in `.claude/config.yml`
 - Input: `/atdd-kit:autopilot 123 --profile "reviewer only heavy, writer keep default"`
 - Resolved matrix:
   - reviewer: opus
@@ -212,9 +213,9 @@ The BLOCKED guidance is the canonical text emitted by `lib/persona_check.sh get_
 
 ### Profile Confirmation Gate
 
-Fires whenever any profile flag (`--light`, `--heavy`, `--profile`, or positional NL) was supplied. Skipped when no profile flag is present (session default path — nothing to confirm).
+Fires only when `--profile` was specified on this invocation. Flagless runs — including flagless runs that apply `.claude/config.yml` `spawn_profiles.custom` — skip the gate entirely, because the user has already committed to that configuration by placing it in the project file.
 
-Applies to every sub-agent role (developer, qa, tester, reviewer, researcher, writer). Main Claude is not listed because profile flags never change its configuration.
+Applies to every sub-agent role (developer, qa, tester, reviewer, researcher, writer). Main Claude is not listed because the `--profile` flag never changes its configuration.
 
 Procedure:
 
@@ -239,7 +240,7 @@ Procedure:
 
 5. On cancellation (option `No, cancel` or reply `2`): halt before Phase 0.9. Team / worktree is not created.
 
-This gate guarantees the resolved matrix is visible (AC6) and confirms intent (AC17) before any expensive Team / worktree creation. The matrix is not created until the user approves.
+This gate guarantees the resolved matrix is visible and confirms intent (AC4) before any expensive Team / worktree creation. The matrix is not created until the user approves. On Cancel (option `No, cancel` or reply `2`), halt before Phase 0.9 — Team / worktree is not created.
 
 ## Phase 0.9: Agent Teams Setup
 
@@ -257,16 +258,23 @@ Bootstrap Agent Teams before any phase. Solo execution fallback is prohibited. S
    - Phase 3 or 4: verify plan comment (`## Implementation Plan` with `### Agent Composition`) exists. If absent: STOP — "plan is incomplete. Re-run from Phase 2."
    Then proceed via SendMessage.
    Note: This is the sole exception to Autonomy Rule 5 — applies only on session restart.
-   **Profile flag propagation:** The profile flag supplied to this invocation applies to every fresh spawn in the resumed phase (e.g., Phase 3 Developer / Phase 4 Reviewers). Existing agents reached via SendMessage keep the model baked in at their original spawn time.
+   **Profile propagation:** The resolved matrix from this invocation (custom from `.claude/config.yml`, optionally overlaid with `--profile` NL) applies to every fresh spawn in the resumed phase (e.g., Phase 3 Developer / Phase 4 Reviewers). Existing agents reached via SendMessage keep the model baked in at their original spawn time.
 6. On failure: report the error → STOP. Do NOT fall back to solo execution.
 
 ### Agent spawn model resolution
 
-Every Agent tool spawn invocation throughout Phases 1, 3, and 4 follows this rule for the `model` parameter:
+Every Agent tool spawn invocation throughout Phases 1, 3, and 4 follows this rule for the `model` parameter. The single source of truth for per-role model values is `.claude/config.yml` `spawn_profiles.custom` — never duplicate per-role values in this spec.
 
-- If no profile flag was supplied, omit the `model` parameter from the Agent tool call so the sub-agent inherits its session default (AC2).
-- If a preset flag was supplied, pass the role-specific model read from `config/spawn-profiles.yml` (`profiles.light.<role>` for `--light`, `profiles.heavy.<role>` for `--heavy`). AC1 / AC7 rely on this single source of truth.
-- If an NL profile was supplied, pass the role-specific model from the resolved matrix produced by the Profile Confirmation Gate. Roles not mentioned in the NL inherit the session default (model parameter omitted).
+| `spawn_profiles.custom` in `.claude/config.yml` | `--profile` supplied? | Per-role resolution | AC |
+|---|---|---|---|
+| absent | no | omit `model` for every role; session default for every sub-agent (orchestrator also unchanged — AC10) | AC2 |
+| present | no | role defined in custom → pass that `model`; role not in custom (partial definition) → omit `model` so the sub-agent inherits session default | AC1 |
+| absent | yes | role mentioned in NL → pass NL-resolved `model`; role not in NL → omit `model` (session default) | AC3 (tail clause) |
+| present | yes | NL wins on collisions; role in custom but not NL → pass custom `model`; role in NL but not custom → pass NL `model`; role in neither → omit `model` (session default) | AC3 |
+
+Partial-definition note (AC1 / AC3): whenever a role has no explicit entry in either custom or NL, the spawn call MUST omit the `model` parameter entirely so the sub-agent inherits its session default. Do not substitute a default model name.
+
+Main Claude (orchestrator) is outside this matrix — its session default is always preserved regardless of the cells above (AC10).
 
 This rule is stated once here and referenced from each spawn site below. Do not duplicate the resolution table in prose elsewhere.
 
@@ -555,7 +563,7 @@ For running one-shot utilities directly:
 
 **Tools:** ToolSearch, Read
 
-1. `.claude/workflow-config.yml` exists (if missing, start a new session to trigger auto-setup)
+1. `.claude/config.yml` exists (if missing, start a new session to trigger auto-setup / migration)
 2. Agent definitions exist in `${CLAUDE_PLUGIN_ROOT}/agents/` (developer.md, qa.md)
 3. ToolSearch: confirm `TeamCreate` and `SendMessage` are resolvable
    - Unavailable → STOP: "Agent Teams tools not found. Verify `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env`, then restart."

@@ -53,7 +53,7 @@ Search for and run related tests. Record results as Issue comment.
 
 ## Phase 4: Reproduction
 
-Read `platform` from `.claude/workflow-config.yml`. Reproduce on each applicable platform. Record evidence as Issue comment; ask for more info if not reproduced.
+Read `platform` from `.claude/config.yml`. Reproduce on each applicable platform. Record evidence as Issue comment; ask for more info if not reproduced.
 
 ## Phase 5: Evidence Collection
 

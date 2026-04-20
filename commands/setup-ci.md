@@ -14,7 +14,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/templates/ci/base.yml` — this provides the platfor
 
 ### Step 2: Read Addon CI Fragments
 
-Read `.claude/workflow-config.yml` to get the `platform` list. For each platform:
+Read `.claude/config.yml` to get the `platform` list. For each platform:
 
 1. Check if `${CLAUDE_PLUGIN_ROOT}/addons/<platform>/ci/` exists
 2. Read the CI job fragment (e.g., `addons/ios/ci/build-and-test.yml`)
