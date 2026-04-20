@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
-# Issue #109 AC3 — Main Claude is out of scope for profile flags (structural).
+# Issue #122 AC10 — Main Claude is always session default, across all 4 combos:
+#   (custom absent / custom present) × (--profile absent / --profile present)
 #
 # Strategy:
 #   Walk commands/autopilot.md line by line with code-fence tracking:
@@ -10,9 +11,7 @@
 #       -> also allowed.
 #     - Lines outside both -> treated as prose; `model:` here would indicate
 #       that someone wrote a main Claude override in free text, which is
-#       forbidden by AC3.
-#
-# Enabled after Phase B6 (NL Resolution Examples markers finalized).
+#       forbidden by AC10.
 
 AUTOPILOT="${BATS_TEST_DIRNAME}/../commands/autopilot.md"
 
@@ -30,12 +29,17 @@ prose_model_hits() {
   [ -f "$AUTOPILOT" ]
 }
 
-@test "AC3: no prose-level model: literal in commands/autopilot.md" {
+@test "AC10: no prose-level model: literal in commands/autopilot.md" {
   hits="$(prose_model_hits)"
   [ -z "$hits" ] || { echo "prose model: hits:"; echo "$hits"; return 1; }
 }
 
-@test "AC3: config/spawn-profiles.yml is the only non-fenced source of model: outside autopilot.md" {
-  # Config is allowed to have model: at file scope.
-  grep -q 'model:' "${BATS_TEST_DIRNAME}/../config/spawn-profiles.yml"
+@test "AC10: autopilot.md asserts main Claude keeps session default across all combos" {
+  # Must explicitly note that main Claude (orchestrator) is unaffected by
+  # custom presence or --profile presence.
+  grep -qiE 'main Claude.*session default|orchestrator.*session default|main Claude.*unaffected|main Claude.*always keeps' "$AUTOPILOT"
+}
+
+@test "AC10: legacy config/spawn-profiles.yml is no longer referenced as a model source" {
+  ! grep -q 'config/spawn-profiles.yml' "$AUTOPILOT"
 }

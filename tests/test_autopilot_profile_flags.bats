@@ -1,94 +1,80 @@
 #!/usr/bin/env bats
 
-# Issue #109 — Preset profile flag drift-detect.
+# Issue #122 — Flagless (default) profile drift-detect.
 #
 # Scope:
-#   AC1  — --light applies sonnet to all sub-agents
-#   AC2  — No flag inherits session default (model param omitted)
-#   AC6  — Resolved matrix echo visible to user before Phase 0.9
-#   AC7  — --heavy applies opus to all sub-agents
-#   AC9  — Flag position independence (before or after issue number)
-#   AC12 — Mid-phase resume: flag still applies to fresh spawns
+#   AC1 — custom defined + no flag → custom applied, partial-definition roles
+#         fall back to session default (Agent tool model omitted)
+#   AC2 — custom absent + no flag → all roles inherit session default
 #
-# Strategy: drift-detect on commands/autopilot.md — spawn specs must reference
-# config/spawn-profiles.yml for model resolution, and the Usage / argparse
-# sections must document the contract.
+# Strategy: drift-detect on commands/autopilot.md — the spec must describe the
+# flagless path branching on `.claude/config.yml` `spawn_profiles.custom`
+# presence, and must explicitly call out the partial-definition fallback.
 
 AUTOPILOT="${BATS_TEST_DIRNAME}/../commands/autopilot.md"
 
-# --- AC1 / AC7: preset flags map to config/spawn-profiles.yml ---
-
-@test "AC1: autopilot.md references --light flag" {
-  grep -qE -e '--light' "$AUTOPILOT"
+@test "autopilot.md exists" {
+  [ -f "$AUTOPILOT" ]
 }
 
-@test "AC7: autopilot.md references --heavy flag" {
-  grep -qE -e '--heavy' "$AUTOPILOT"
+# --- AC1: custom defined, no flag → custom applied (partial-definition) ---
+
+@test "AC1: autopilot.md documents .claude/config.yml spawn_profiles.custom" {
+  grep -q 'spawn_profiles.custom' "$AUTOPILOT"
 }
 
-@test "AC1/AC7: spawn specs reference config/spawn-profiles.yml" {
-  grep -q 'config/spawn-profiles.yml' "$AUTOPILOT"
+@test "AC1: autopilot.md references .claude/config.yml as model source" {
+  grep -qE '\.claude/config\.yml' "$AUTOPILOT"
 }
 
-@test "AC1/AC7: Usage section shows --light and --heavy examples" {
-  awk '/^## Usage/{in_block=1; next} in_block && /^## /{exit} in_block{print}' \
-    "$AUTOPILOT" | grep -qE -e '--light' \
-    && awk '/^## Usage/{in_block=1; next} in_block && /^## /{exit} in_block{print}' \
-         "$AUTOPILOT" | grep -qE -e '--heavy'
+@test "AC1: autopilot.md documents partial-definition fallback to session default" {
+  # When custom defines only some roles, unmentioned roles must fall back to
+  # session default (model parameter omitted).
+  grep -qiE 'partial.*definition|undefined role.*session default|roles not.*custom.*session default|custom に無い role|未定義 role|omit.*model.*session default' "$AUTOPILOT"
 }
 
-# --- AC2: no-flag path omits model ---
-
-@test "AC2: autopilot.md documents session default (no model param) path" {
-  grep -qE 'session default|omit.*model|no.*flag.*inherit' "$AUTOPILOT"
+@test "AC1: flagless path does not fire the Profile Confirmation Gate" {
+  grep -qiE 'no profile flag.*no.*gate|gate.*skipped.*no.*flag|flagless.*skip.*gate|no.*profile flag.*nothing to confirm|Gate.*(only|limited).*--profile' "$AUTOPILOT"
 }
 
-@test "AC2: spawn specs note model parameter is omitted when no profile is set" {
-  # Must mention that `model` is omitted from Agent tool calls under no-flag.
-  grep -qE 'model.*omit|omit.*model|no model|without.*model' "$AUTOPILOT"
+# --- AC2: custom absent, no flag → session default ---
+
+@test "AC2: autopilot.md documents custom-absent + no-flag session default inheritance" {
+  grep -qiE 'custom absent.*session default|no.*custom.*session default|spawn_profiles.custom.*absent.*session default|config\.yml.*absent.*session default' "$AUTOPILOT"
 }
 
-# --- AC6: Resolved matrix echo ---
-
-@test "AC6: autopilot.md contains Profile Confirmation Gate sub-heading" {
-  grep -qE '^### Profile Confirmation Gate' "$AUTOPILOT"
+@test "AC2: autopilot.md documents model parameter omission under flagless + custom-absent" {
+  grep -qiE 'omit.*model.*parameter|model.*parameter.*omit|Agent tool call omits the model' "$AUTOPILOT"
 }
 
-@test "AC6: confirmation gate references 6 agent roles" {
-  awk '/^### Profile Confirmation Gate/{in_block=1; next} in_block && /^### /{exit} in_block && /^## /{exit} in_block{print}' \
-    "$AUTOPILOT" > /tmp/profile_gate_block.txt
+# --- Single source of truth & removal of legacy preset flags ---
+
+@test "removal: autopilot.md no longer references config/spawn-profiles.yml" {
+  ! grep -q 'config/spawn-profiles.yml' "$AUTOPILOT"
+}
+
+@test "removal: Usage section does not advertise --light / --heavy" {
+  usage=$(awk '/^## Usage/{in_block=1; next} in_block && /^## /{exit} in_block{print}' "$AUTOPILOT")
+  [ -n "$usage" ]
+  ! echo "$usage" | grep -qE -e '--light'
+  ! echo "$usage" | grep -qE -e '--heavy'
+}
+
+@test "AC1/AC2: Agent spawn model resolution block references .claude/config.yml custom" {
+  awk '/^### Agent spawn model resolution/{in_block=1; next} in_block && /^## /{exit} in_block && /^### /{exit} in_block{print}' \
+    "$AUTOPILOT" > /tmp/spawn_resolution.txt
+  grep -qE 'spawn_profiles\.custom|\.claude/config\.yml' /tmp/spawn_resolution.txt
+}
+
+# --- Role coverage in custom spec section ---
+
+@test "AC1: autopilot.md references all 6 roles in custom-applied spec" {
+  awk '/^### Agent spawn model resolution/{in_block=1; next} in_block && /^## /{exit} in_block && /^### /{exit} in_block{print}' \
+    "$AUTOPILOT" > /tmp/spawn_resolution.txt
+  # Each role name must be present either in the resolution block or visible
+  # elsewhere in the autopilot spec (AC1 partial-definition path lists them).
   for role in developer qa tester reviewer researcher writer; do
-    grep -q "$role" /tmp/profile_gate_block.txt \
-      || { echo "gate missing role: $role"; return 1; }
+    grep -q "$role" "$AUTOPILOT" \
+      || { echo "role missing from autopilot.md: $role"; return 1; }
   done
-}
-
-@test "AC6: confirmation gate fires before Phase 0.9" {
-  # The gate heading must appear in the file before the Phase 0.9 heading.
-  gate_line=$(grep -n '^### Profile Confirmation Gate' "$AUTOPILOT" | head -1 | cut -d: -f1)
-  phase09_line=$(grep -n '^## Phase 0.9' "$AUTOPILOT" | head -1 | cut -d: -f1)
-  [ -n "$gate_line" ] && [ -n "$phase09_line" ] && [ "$gate_line" -lt "$phase09_line" ]
-}
-
-# --- AC9: Flag position independence ---
-
-@test "AC9: autopilot.md documents flag position independence" {
-  grep -qiE 'position.*independ|order.*independ|before or after|either before|either position' "$AUTOPILOT"
-}
-
-# --- AC12: Mid-phase resume applies flag ---
-
-@test "AC12: autopilot.md notes profile flag applies to fresh spawns on resume" {
-  # Phase 0.5 / mid-phase resume must mention that profile still applies.
-  grep -qE 'mid-phase resume.*profile|profile.*applies.*(resume|Phase 3|fresh spawn)|resume.*profile flag' "$AUTOPILOT"
-}
-
-# --- Spawn spec references: all 5 spawn sites explicitly pass model ---
-
-@test "AC1/AC7: spawn specs describe passing model parameter per profile" {
-  # References to Agent tool model passing must appear near each spawn site
-  # (AC Review Round, Phase 3 Developer/Researcher/Writer, Phase 4 Reviewer).
-  # We assert that the file contains at least one spawn spec that explicitly
-  # mentions `model` parameter in an Agent tool context.
-  grep -qE 'Agent tool.*model|model:.*(resolved|profile)|pass.*model.*Agent' "$AUTOPILOT"
 }
