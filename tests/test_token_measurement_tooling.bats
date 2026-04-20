@@ -4,7 +4,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 MEASURE_SCRIPT="$REPO_ROOT/scripts/measure-token-reduction.sh"
-FIXTURES_DIR="$REPO_ROOT/fixtures/token-reduction"
+FIXTURES_DIR="$REPO_ROOT/tests/fixtures/token-reduction"
 
 @test "AC4a: measure-token-reduction.sh exists" {
   [ -f "$MEASURE_SCRIPT" ]
@@ -14,11 +14,11 @@ FIXTURES_DIR="$REPO_ROOT/fixtures/token-reduction"
   [ -x "$MEASURE_SCRIPT" ]
 }
 
-@test "AC4a: fixtures/token-reduction/baseline/ directory exists" {
+@test "AC4a: tests/fixtures/token-reduction/baseline/ directory exists" {
   [ -d "$FIXTURES_DIR/baseline" ]
 }
 
-@test "AC4a: fixtures/token-reduction/after/ directory exists" {
+@test "AC4a: tests/fixtures/token-reduction/after/ directory exists" {
   [ -d "$FIXTURES_DIR/after" ]
 }
 

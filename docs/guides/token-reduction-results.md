@@ -6,7 +6,7 @@
 - **Unit:** Byte count (`wc -c`) as token-count proxy
 - **Note:** Byte-count-based estimation, not actual tokenizer output. Correlates with token count but is not 1:1.
 - **CJK caveat:** CJK characters (Japanese, Chinese, Korean) consume 3 bytes/char in UTF-8 but approximately 1 token/char in tiktoken, so this proxy over-estimates their token cost by up to 3×. Reduction rates for CJK-heavy outputs may therefore be under-reported.
-- **Fixtures:** `fixtures/token-reduction/baseline/` and `fixtures/token-reduction/after/`
+- **Fixtures:** `tests/fixtures/token-reduction/baseline/` and `tests/fixtures/token-reduction/after/`
 - **Reproducibility:** 100% — fixed mock logs eliminate LLM non-determinism
 
 ## Results
@@ -41,14 +41,14 @@ All three techniques exceed their respective baseline targets.
 ```bash
 # Single technique
 scripts/measure-token-reduction.sh \
-  fixtures/token-reduction/baseline/session-start-pr-view.json \
-  fixtures/token-reduction/after/session-start-pr-view.json
+  tests/fixtures/token-reduction/baseline/session-start-pr-view.json \
+  tests/fixtures/token-reduction/after/session-start-pr-view.json
 
 # All techniques
 for name in session-start-pr-view.json autopilot-phase2-sendmessage.md bash-output-sample.txt; do
   echo "=== $name ==="
   scripts/measure-token-reduction.sh \
-    "fixtures/token-reduction/baseline/$name" \
-    "fixtures/token-reduction/after/$name"
+    "tests/fixtures/token-reduction/baseline/$name" \
+    "tests/fixtures/token-reduction/after/$name"
 done
 ```
