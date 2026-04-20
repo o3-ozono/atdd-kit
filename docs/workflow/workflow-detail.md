@@ -185,7 +185,7 @@ graph TB
     end
 
     subgraph "Project (git-managed)"
-        CFG[".claude/workflow-config.yml"]
+        CFG[".claude/config.yml"]
         PDOCS["docs/process/"]
     end
 

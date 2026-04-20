@@ -13,8 +13,8 @@ AUTOPILOT="commands/autopilot.md"
   grep -q "## Prerequisites" "$AUTOPILOT"
 }
 
-@test "AC-7: Prerequisites include workflow-config.yml check" {
-  grep -A 10 "## Prerequisites" "$AUTOPILOT" | grep -q "workflow-config.yml"
+@test "AC-7: Prerequisites include .claude/config.yml check" {
+  grep -A 10 "## Prerequisites" "$AUTOPILOT" | grep -q "\.claude/config\.yml"
 }
 
 @test "AC-7: Prerequisites include agents/ directory verification" {

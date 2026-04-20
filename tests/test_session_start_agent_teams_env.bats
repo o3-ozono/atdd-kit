@@ -35,7 +35,10 @@
 # ---------------------------------------------------------------------------
 
 @test "AC3: session-start handles missing settings.local.json" {
-  grep -q 'does not exist' skills/session-start/SKILL.md
+  # The Phase 1-G block describes the Missing case explicitly with the word
+  # "Missing →" (see settings.local.json branch table).
+  awk '/^### G\. Agent Teams Environment Check/,/^## /' skills/session-start/SKILL.md \
+    | grep -qE 'Missing →|Missing -'
 }
 
 # ---------------------------------------------------------------------------

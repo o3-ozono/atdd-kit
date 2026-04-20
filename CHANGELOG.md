@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-04-20
+
+### BREAKING Changes
+- Autopilot spawn profile UX simplified from 3 paths (`--light` / `--heavy` / `--profile=NL`) to 2 paths: **default** (flagless) and `--profile="NL"`. Passing `--light` or `--heavy` now halts with `Unknown flag: --light (removed in BREAKING change; use --profile="..." instead. supported: --profile)` (substitute `--heavy` as appropriate). Replace preset usage by defining `spawn_profiles.custom` in `.claude/config.yml` for sticky defaults, and/or `--profile="..."` for one-off overrides. (#122)
+- Configuration files merged into a single source of truth: the plugin-side `config/spawn-profiles.yml` and the project-side `.claude/workflow-config.yml` are gone. All spawn profile + platform settings now live in **`.claude/config.yml`**. `skills/session-start` auto-migrates existing projects on the next session (write-then-delete, idempotent); new projects get `.claude/config.yml` with a `spawn_profiles.custom` placeholder template. (#122)
+- Positional NL after the issue number is no longer a supported invocation path. Use `--profile="..."` exclusively for NL profile overrides. (#122)
+- `Profile Confirmation Gate` now fires **only** when `--profile` is supplied; flagless runs (including those that auto-apply `spawn_profiles.custom`) skip the gate. (#122)
+
 ### Added
 - `lib/spec_check.sh`: 7 subcommands (`derive_slug`, `spec_exists`, `read_acs`, `spec_status`, `spec_persona`, `get_spec_load_message`, `get_spec_warn_message`) — single source of truth for spec file detection and slug derivation, mirroring the `lib/persona_check.sh` dispatcher pattern. `GH_CMD_OVERRIDE` and `SPEC_SLUG_OVERRIDE` env vars enable JA titles and testability. (#70)
 - `rules/atdd-kit.md`: Iron Law 4 mandating atdd/verify/bug to load `docs/specs/<slug>.md` via `lib/spec_check.sh` before implementation or AC judgement. File stays at the 40-line cap. (#70)

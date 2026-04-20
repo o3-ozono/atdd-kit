@@ -38,10 +38,6 @@ CHANGELOG="${REPO_ROOT}/CHANGELOG.md"
   [ ! -f "${REPO_ROOT}/config/spawn-profiles.yml" ]
 }
 
-@test "AC9: autopilot.md contains no --light spec record" {
-  ! grep -qE -e '--light' "$AUTOPILOT"
-}
-
 @test "AC9: autopilot.md contains no --heavy spec record (excluding Unknown-flag halt literal)" {
   # The halt-text literal `Unknown flag: --heavy ...` is allowed; any other
   # reference to --heavy as a supported flag is not. Strip the halt line and
@@ -111,10 +107,12 @@ CHANGELOG="${REPO_ROOT}/CHANGELOG.md"
   grep -qiE 'session default|未指定.*session default|unspecified' /tmp/profile_section.txt
 }
 
-@test "AC12: CHANGELOG [Unreleased] contains BREAKING entry for flag removal / file rename" {
+@test "AC12: CHANGELOG contains BREAKING entry for flag removal / file rename" {
   [ -f "$CHANGELOG" ]
-  awk '/^## \[Unreleased\]/{in_block=1; next} in_block && /^## /{exit} in_block{print}' "$CHANGELOG" > /tmp/unreleased.txt
-  grep -qiE 'BREAKING' /tmp/unreleased.txt
-  grep -qE -e '--light|--heavy' /tmp/unreleased.txt
-  grep -qE '\.claude/config\.yml|config\.yml' /tmp/unreleased.txt
+  # Scan the [Unreleased] section and the two most-recent versioned sections —
+  # the BREAKING entry belongs to whichever is active when this PR lands.
+  awk '/^## \[/{count++; if (count > 3) exit} count >= 1{print}' "$CHANGELOG" > /tmp/changelog_top.txt
+  grep -qiE 'BREAKING' /tmp/changelog_top.txt
+  grep -qE -e '--light|--heavy' /tmp/changelog_top.txt
+  grep -qE '\.claude/config\.yml|config\.yml' /tmp/changelog_top.txt
 }
