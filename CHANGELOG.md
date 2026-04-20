@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
-- `.claude/config.yml`: activate `spawn_profiles.custom` with all six roles (`developer` / `qa` / `tester` / `reviewer` / `researcher` / `writer`) pinned to `sonnet`. Flagless `/atdd-kit:autopilot` runs on this repo now spawn every sub-agent with the `sonnet` model. `--profile="..."` overrides are unaffected. (#128)
+- `.claude/config.yml`: activate `spawn_profiles.custom` — five roles (`developer` / `qa` / `tester` / `researcher` / `writer`) pinned to `sonnet` and `reviewer` pinned to `opus` for deeper review quality. Flagless `/atdd-kit:autopilot` runs on this repo now use this matrix. `--profile="..."` overrides are unaffected. (#128)
 
 ## [2.0.0] - 2026-04-20
 
