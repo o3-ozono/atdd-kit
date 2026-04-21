@@ -207,8 +207,8 @@ run_live() {
   fi
   args+=("$PROMPT")
 
-  # Launch claude; capture stdout to transcript file. Use background to allow SIGINT cleanup.
-  "$CLAUDE_BIN" "${args[@]}" > "$TRANSCRIPT_OUT" &
+  # Launch claude; capture stdout to transcript and stderr separately for artifact upload.
+  "$CLAUDE_BIN" "${args[@]}" > "$TRANSCRIPT_OUT" 2> "${TEMPDIR_CREATED}/claude.stderr" &
   CLAUDE_PID=$!
 
   # Poll for completion with a wall-clock timeout

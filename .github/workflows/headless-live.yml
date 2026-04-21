@@ -41,9 +41,13 @@ jobs:
         run: jq --version
 
       - name: Install Claude Code CLI
-        # Pinned to official install script. CLI handles its own version
-        # management. If upstream schema changes, re-record fixtures and
-        # update Plan v2 "supported claude version" accordingly.
+        # AC7 (Issue #125): integrity-pinning via SHA or release-asset download was
+        # investigated but github.com/anthropics/claude-code/releases has no binary
+        # assets (all releases have empty assets as of 2026-04-21). The install script
+        # at claude.ai/install.sh is the only supported distribution channel.
+        # TODO: re-evaluate when Anthropic publishes release assets or a checksum file.
+        # Until then, `curl | bash` is the only viable option; the `actions/checkout`
+        # step above is SHA-pinned to limit supply-chain risk on the repo side.
         run: |
           curl -fsSL https://claude.ai/install.sh | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
@@ -64,11 +68,16 @@ jobs:
           fi
           bash scripts/test-skills-headless.sh "$scenario"
 
+      # AC6 (Issue #125): artifact is populated only on assertion failure (if: failure()).
+      # The glob /tmp/headless-*/* captures both transcript.jsonl and claude.stderr
+      # so that stderr output from the CLI is also available for debugging.
+      # To keep artifacts on every run (pass or fail), set HEADLESS_KEEP_ON_FAIL=all
+      # in the env block above and remove the `if: failure()` condition.
       - name: Upload transcript on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: headless-live-transcript
-          path: /tmp/headless-*/transcript.jsonl
+          path: /tmp/headless-*/*
           if-no-files-found: ignore
           retention-days: 7
