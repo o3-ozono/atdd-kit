@@ -218,19 +218,21 @@ skill_line() {
 }
 
 # -----------------------------------------------------------------------------
-# AC1: parser tolerates empty-string/non-string input.skill (Issue #125, Plan Refinement)
+# AC1: parser tolerates null/empty-string/non-string input.skill (Issue #125)
 # field absent  → exit 2 (schema violation — unchanged)
-# field null    → exit 2 (schema violation — unchanged, preserves case 8/12)
+# field null    → skip, exit 0 (any non-string type)
 # field ""      → skip, exit 0 (NEW)
 # field number  → skip, exit 0 (NEW)
 # field array   → skip, exit 0 (NEW)
+# field object  → skip, exit 0 (NEW)
 # -----------------------------------------------------------------------------
 
-@test "AC1: input.skill=null exits 2 (null treated as missing — schema violation)" {
+@test "AC1: input.skill=null is skipped (exit 0, not counted)" {
   local f="$WORK/skill-null.jsonl"
   printf '{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Skill","input":{"skill":null,"args":null}}]}}\n' > "$f"
   run bash "$PARSER" "$f"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '. == []' >/dev/null
 }
 
 @test "AC1: input.skill empty string is skipped (exit 0, not counted)" {
@@ -255,6 +257,21 @@ skill_line() {
   run bash "$PARSER" "$f"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '. == []' >/dev/null
+}
+
+@test "parser skips Skill entry where input.skill is an object" {
+  local f="$WORK/skill-object.jsonl"
+  # valid entry before and after the object-valued entry to confirm skip-only effect
+  {
+    skill_line "atdd-kit:discover" "null"
+    printf '{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"toolu_obj","name":"Skill","input":{"skill":{"foo":"bar"},"args":null}}]}}\n'
+    skill_line "atdd-kit:plan" "null"
+  } > "$f"
+  run bash "$PARSER" "$f"
+  [ "$status" -eq 0 ]
+  [ "$(echo "$output" | jq '. | length')" -eq 2 ]
+  [ "$(echo "$output" | jq -r '.[0].name')" = "atdd-kit:discover" ]
+  [ "$(echo "$output" | jq -r '.[1].name')" = "atdd-kit:plan" ]
 }
 
 @test "AC1: missing input.skill field exits 2 (field absent = schema violation)" {
