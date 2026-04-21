@@ -1,0 +1,122 @@
+{
+  "skill_name": "atdd-kit:skill-fix",
+  "evals": [
+    {
+      "id": 0,
+      "name": "explicit-invocation-trigger",
+      "prompt": "/atdd-kit:skill-fix",
+      "expected_output": "skill-fix starts interview immediately on explicit invocation.",
+      "files": [],
+      "assertions": [
+        {"id": "A1", "text": "Q1 question is presented (which skill/phase was unexpected)", "type": "structural"},
+        {"id": "A2", "text": "No confirmation question shown (explicit invocation bypasses it)", "type": "structural"},
+        {"id": "A3", "text": "Interview proceeds without waiting for confirmation", "type": "structural"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "implicit-trigger-both-conditions",
+      "prompt": "discover スキルがおかしい動きをしている。直したい。",
+      "expected_output": "skill-fix shows one confirmation question (both skill name + intent verb present).",
+      "files": [],
+      "assertions": [
+        {"id": "B1", "text": "Confirmation question is asked once", "type": "structural"},
+        {"id": "B2", "text": "Question asks whether to use skill-fix flow", "type": "structural"},
+        {"id": "B3", "text": "Does not start interview before confirmation", "type": "structural"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "implicit-trigger-skill-only",
+      "prompt": "discover スキルについて教えて。",
+      "expected_output": "No skill-fix trigger (skill name present but no intent verb).",
+      "files": [],
+      "assertions": [
+        {"id": "C1", "text": "No confirmation question shown (only skill name, no intent verb)", "type": "structural"},
+        {"id": "C2", "text": "Normal conversation continues", "type": "structural"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "implicit-trigger-intent-only",
+      "prompt": "直したいことがある。",
+      "expected_output": "No skill-fix trigger (intent verb present but no specific skill name).",
+      "files": [],
+      "assertions": [
+        {"id": "D1", "text": "No confirmation question shown (intent verb without skill name)", "type": "structural"},
+        {"id": "D2", "text": "Normal conversation continues", "type": "structural"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "interview-3-questions-only",
+      "prompt": "/atdd-kit:skill-fix",
+      "expected_output": "Exactly 3 interview questions (Q1, Q2, Q3) are asked, no more.",
+      "files": [],
+      "assertions": [
+        {"id": "E1", "text": "Q1 is asked (which skill/phase)", "type": "structural"},
+        {"id": "E2", "text": "Q2 is asked (expected behavior)", "type": "structural"},
+        {"id": "E3", "text": "Q3 is asked (reproduction info)", "type": "structural"},
+        {"id": "E4", "text": "No Q4 or additional questions beyond Q3", "type": "structural"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "duplicate-check-4-class",
+      "prompt": "/atdd-kit:skill-fix after Q1=discover, Q2=persona listing broken, Q3=step3a-listing fails",
+      "expected_output": "Duplicate check performs 4-class evaluation and reports result.",
+      "files": [],
+      "assertions": [
+        {"id": "F1", "text": "Duplicate check executes before subagent dispatch", "type": "structural"},
+        {"id": "F2", "text": "Reports classification (new / existing_append / exact_duplicate / pending_judgement)", "type": "structural"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "exact-duplicate-no-dispatch",
+      "prompt": "Simulate exact duplicate scenario",
+      "expected_output": "On exact duplicate detection, subagent is NOT dispatched.",
+      "files": [],
+      "assertions": [
+        {"id": "G1", "text": "Reports existing issue reference", "type": "structural"},
+        {"id": "G2", "text": "Does not dispatch subagent", "type": "structural"},
+        {"id": "G3", "text": "Explains reason for not dispatching", "type": "structural"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "subagent-dispatch-non-blocking",
+      "prompt": "/atdd-kit:skill-fix followed by Q1/Q2/Q3 answers (non-duplicate)",
+      "expected_output": "Subagent dispatched, main session returns immediately without blocking.",
+      "files": [],
+      "assertions": [
+        {"id": "H1", "text": "Subagent dispatch confirmed", "type": "structural"},
+        {"id": "H2", "text": "Main session confirms it can continue with original work", "type": "structural"},
+        {"id": "H3", "text": "No blocking wait for subagent completion", "type": "structural"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "parallel-suppression",
+      "prompt": "skill-fix triggered again while one subagent already running with same skill+phase",
+      "expected_output": "New subagent dispatch suppressed with notification of existing one.",
+      "files": [],
+      "assertions": [
+        {"id": "I1", "text": "Reports existing inflight skill-fix", "type": "structural"},
+        {"id": "I2", "text": "Duplicate check still runs", "type": "structural"},
+        {"id": "I3", "text": "Does not launch second subagent for same content", "type": "structural"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "failure-path-reporting",
+      "prompt": "skill-fix subagent failed simulation",
+      "expected_output": "At next phase boundary, 1-line failure report is shown.",
+      "files": [],
+      "assertions": [
+        {"id": "J1", "text": "1-line failure report format: 'skill-fix dispatch failed: #N (phase=...) / link: ...'", "type": "structural"},
+        {"id": "J2", "text": "No user judgment requested", "type": "structural"}
+      ]
+    }
+  ]
+}
