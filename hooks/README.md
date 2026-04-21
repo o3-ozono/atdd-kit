@@ -54,7 +54,7 @@ In your project's `.claude/settings.json`, add a hook that returns `{}` for the 
 Enforces the autopilot-session rule that file writes must stay inside the active worktree (see Issue #111):
 
 1. Intercepts Edit, Write, MultiEdit, NotebookEdit, and Bash tool calls via PreToolUse hook
-2. Reads `ATDD_AUTOPILOT_WORKTREE` (set by `commands/autopilot.md` Phase 0.9 after `EnterWorktree`) — when unset, the hook is a complete no-op so normal (non-autopilot) sessions are unaffected
+2. Resolves the active worktree `W` by **precedence**: (a) `ATDD_AUTOPILOT_WORKTREE` env var if set (explicit override); (b) auto-detection from stdin `cwd` — if `cwd` is under `<repo>/.claude/worktrees/<name>/`, extracts worktree root via regex-peel + `realpath` (Issue #116); (c) no-op when neither applies (normal non-autopilot sessions are unaffected)
 3. For Edit/Write/MultiEdit/NotebookEdit: canonicalizes `tool_input.file_path` via `realpath` and blocks when it lands outside the worktree and outside the allow-list
 4. For Bash: tokenizes `tool_input.command` with Python `shlex.split` (quoted literals such as `echo "a > b"` and stream merges such as `2>&1` are correctly not misdetected), then blocks when any redirect target (`>`, `>>`, `>|`, `&>`, `&>>`, numbered) or mutating-command target (`cp`, `mv`, `rm`, `mkdir`, `touch`, `install`, `tee`, `ln`) escapes the worktree
 5. Bypasses path checks entirely when the first token is `git` or `gh` (repo-meta commands manage their own write scope)

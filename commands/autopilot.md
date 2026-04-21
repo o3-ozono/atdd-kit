@@ -251,7 +251,7 @@ Bootstrap Agent Teams before any phase. Solo execution fallback is prohibited. S
 1. ToolSearch: fetch schemas for `TeamCreate`, `TeamDelete`, `SendMessage`, `EnterWorktree`
 2. TeamCreate: create `autopilot-{issue_number}` — record team_name for all Agent calls
 3. Read agent definitions from `${CLAUDE_PLUGIN_ROOT}/agents/`. system_prompt is the markdown body; `tools` and `skills` frontmatter fields control capabilities.
-4. EnterWorktree `autopilot-{issue_number}` — all phases (1–5) run inside this worktree. Immediately after, export `ATDD_AUTOPILOT_WORKTREE=$(python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" <worktree_absolute_path>)` so the PreToolUse `autopilot-worktree-guard` hook enforces the boundary for all subsequent Edit/Write/MultiEdit/NotebookEdit/Bash calls. Keep the variable set for the rest of the session; do not `unset` it between phases.
+4. EnterWorktree `autopilot-{issue_number}` — all phases (1–5) run inside this worktree. Optionally export `ATDD_AUTOPILOT_WORKTREE=$(python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" <worktree_absolute_path>)` — this is **not load-bearing**: the `autopilot-worktree-guard` hook auto-detects the worktree boundary from stdin `cwd` when the env var is unset (precedence: env > cwd-detection > no-op). The export provides an explicit override and is kept for backward compatibility.
 5. **Mid-phase resume:** If Phase 0.5 start phase is beyond AC Review Round:
    - Phase 1 or AC Review Round: no re-spawn needed.
    - Phase 2+: spawn Phase 1/2 agents for the task type.
