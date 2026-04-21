@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-04-21
+
 ### Fixed
 - `autopilot-worktree-guard`: hook now auto-detects worktree boundary from stdin `cwd` when `ATDD_AUTOPILOT_WORKTREE` env var is unset, fixing the silent no-op caused by Claude Code's Bash tool not persisting shell state between invocations (fixes #116). The env var remains supported as an explicit override (precedence: env > cwd-detection > no-op); existing env-set behaviour is fully backward-compatible (patch bump). Non-autopilot session overhead increases by ~25ms per tool call (Python startup; negligible vs. 5s timeout). (#116)
 
