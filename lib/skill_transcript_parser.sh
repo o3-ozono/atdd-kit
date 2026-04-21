@@ -70,10 +70,12 @@ while IFS= read -r line || [ -n "$line" ]; do
 done < "$INPUT"
 
 # ---------------------------------------------------------------------------
-# Step 3: Schema validation — every Skill tool_use must have input.skill
+# Step 3: Schema validation — every Skill tool_use must have input.skill *field present*
 # ---------------------------------------------------------------------------
-# Walk the whole file via jq. Use --slurp with inputs to get 1-based line numbers.
-# If any Skill tool_use is missing input.skill, abort with exit 2.
+# Distinction (AC1 / Issue #125):
+#   - field ABSENT (key not in .input)           → schema violation, exit 2
+#   - field PRESENT but null / "" / non-string   → treat as non-skill entry (skip), exit 0
+# Use (.input | has("skill")) to distinguish absent from present-but-falsy.
 schema_errors=$(jq -r -n --arg file "$INPUT" '
   [inputs
    | . as $line
@@ -82,7 +84,7 @@ schema_errors=$(jq -r -n --arg file "$INPUT" '
    | select((.parent_tool_use_id // null) == null)
    | (.message.content // [])[]
    | select(.type == "tool_use" and .name == "Skill")
-   | select((.input.skill // null) == null)
+   | select((.input | has("skill")) | not)
    | "line \($n): Skill tool_use missing input.skill"
   ] | .[]
 ' "$INPUT" 2>&1 || true)
@@ -96,12 +98,15 @@ fi
 # ---------------------------------------------------------------------------
 # Step 4: Extract Skill tool_use events
 # ---------------------------------------------------------------------------
+# Skip entries where input.skill is present but not a non-empty string
+# (null, "", number, array, object → treated as non-skill, not emitted).
 jq -c -n '
   [inputs
    | select(.type == "assistant")
    | select((.parent_tool_use_id // null) == null)
    | (.message.content // [])[]
    | select(.type == "tool_use" and .name == "Skill")
+   | select((.input | has("skill")) and (.input.skill | type) == "string" and .input.skill != "")
    | { name: .input.skill, args: (.input.args // null) }
   ]
   | to_entries
