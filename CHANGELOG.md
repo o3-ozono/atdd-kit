@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 4. BLOCKED termination: gate FAIL → `blocked-ac` label, no `ready-to-go`
 5. CHANGELOG: this entry
 
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
 ---
 
 ### Added (Japanese / 日本語)
