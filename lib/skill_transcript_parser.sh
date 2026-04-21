@@ -70,12 +70,13 @@ while IFS= read -r line || [ -n "$line" ]; do
 done < "$INPUT"
 
 # ---------------------------------------------------------------------------
-# Step 3: Schema validation — every Skill tool_use must have input.skill *field present*
+# Step 3: Schema validation — every Skill tool_use must have input.skill (present and non-null)
 # ---------------------------------------------------------------------------
 # Distinction (AC1 / Issue #125):
-#   - field ABSENT (key not in .input)           → schema violation, exit 2
-#   - field PRESENT but null / "" / non-string   → treat as non-skill entry (skip), exit 0
-# Use (.input | has("skill")) to distinguish absent from present-but-falsy.
+#   - field ABSENT (key not in .input) → schema violation, exit 2
+#   - field PRESENT but null           → schema violation, exit 2 (preserves existing behaviour)
+#   - field PRESENT but "" / non-string → treat as non-skill entry (skip in Step 4), exit 0
+# Using (.input.skill // null) == null catches both absent and null without requiring has().
 schema_errors=$(jq -r -n --arg file "$INPUT" '
   [inputs
    | . as $line
@@ -84,7 +85,7 @@ schema_errors=$(jq -r -n --arg file "$INPUT" '
    | select((.parent_tool_use_id // null) == null)
    | (.message.content // [])[]
    | select(.type == "tool_use" and .name == "Skill")
-   | select((.input | has("skill")) | not)
+   | select((.input.skill // null) == null)
    | "line \($n): Skill tool_use missing input.skill"
   ] | .[]
 ' "$INPUT" 2>&1 || true)
@@ -106,7 +107,7 @@ jq -c -n '
    | select((.parent_tool_use_id // null) == null)
    | (.message.content // [])[]
    | select(.type == "tool_use" and .name == "Skill")
-   | select((.input | has("skill")) and (.input.skill | type) == "string" and .input.skill != "")
+   | select((.input | has("skill")) and (.input.skill | type) == "string" and (.input.skill | length) > 0)
    | { name: .input.skill, args: (.input.args // null) }
   ]
   | to_entries

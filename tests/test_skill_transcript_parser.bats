@@ -218,17 +218,19 @@ skill_line() {
 }
 
 # -----------------------------------------------------------------------------
-# AC1: parser tolerates null/empty-string/non-string input.skill (Issue #125)
-# field absent → exit 2 (existing behaviour preserved)
-# field present but null / "" / number / array → skip, exit 0
+# AC1: parser tolerates empty-string/non-string input.skill (Issue #125, Plan Refinement)
+# field absent  → exit 2 (schema violation — unchanged)
+# field null    → exit 2 (schema violation — unchanged, preserves case 8/12)
+# field ""      → skip, exit 0 (NEW)
+# field number  → skip, exit 0 (NEW)
+# field array   → skip, exit 0 (NEW)
 # -----------------------------------------------------------------------------
 
-@test "AC1: input.skill=null is skipped (exit 0, not counted)" {
+@test "AC1: input.skill=null exits 2 (null treated as missing — schema violation)" {
   local f="$WORK/skill-null.jsonl"
   printf '{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Skill","input":{"skill":null,"args":null}}]}}\n' > "$f"
   run bash "$PARSER" "$f"
-  [ "$status" -eq 0 ]
-  echo "$output" | jq -e '. == []' >/dev/null
+  [ "$status" -eq 2 ]
 }
 
 @test "AC1: input.skill empty string is skipped (exit 0, not counted)" {
@@ -255,7 +257,7 @@ skill_line() {
   echo "$output" | jq -e '. == []' >/dev/null
 }
 
-@test "AC1: missing input.skill field still exits 2 (field absent = schema violation)" {
+@test "AC1: missing input.skill field exits 2 (field absent = schema violation)" {
   local f="$WORK/skill-absent.jsonl"
   printf '{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Skill","input":{"args":"no-skill-field"}}]}}\n' > "$f"
   run bash "$PARSER" "$f"
