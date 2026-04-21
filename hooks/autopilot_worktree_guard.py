@@ -2,8 +2,10 @@
 """autopilot-worktree-guard: shared JSON/shlex/path logic for the hook.
 
 Invoked by hooks/autopilot-worktree-guard.sh. Reads Claude Code hook JSON
-on stdin. Requires ATDD_AUTOPILOT_WORKTREE env var to be set (the bash
-wrapper short-circuits when unset, so this script assumes it is).
+on stdin. Resolves active worktree W by precedence:
+  1. ATDD_AUTOPILOT_WORKTREE env var (explicit override)
+  2. Auto-detection from stdin `cwd` (if under .claude/worktrees/<name>/)
+  3. No-op (normal non-autopilot session)
 
 Exit codes:
   0 -> allow (stdout "{}")
@@ -16,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import sys
 
@@ -55,6 +58,15 @@ def _emit_block(worktree: str, violating: str, detail: str = "") -> None:
 def _fail_safe() -> None:
     sys.stdout.write("{}")
     sys.exit(0)
+
+
+def _detect_worktree_from_cwd(cwd: str) -> str:
+    """Return worktree root if cwd is under .claude/worktrees/<name>/, else ''."""
+    if not cwd:
+        return ""
+    cwd_real = os.path.realpath(cwd)
+    m = re.search(r"^(.+/\.claude/worktrees/[^/]+)", cwd_real)
+    return m.group(1) if m else ""
 
 
 def canonicalize(path: str, cwd: str) -> str:
@@ -165,15 +177,23 @@ def extract_bash_targets(command: str):
 
 def main() -> None:
     raw = sys.stdin.read()
-    worktree_raw = os.environ.get("ATDD_AUTOPILOT_WORKTREE", "")
-    if not worktree_raw:
-        _emit_allow()
-    worktree = os.path.realpath(worktree_raw)
 
+    # JSON parse first (cwd-detection fallback needs data before env check)
     try:
         data = json.loads(raw) if raw.strip() else {}
     except (json.JSONDecodeError, ValueError):
         _fail_safe()
+        return  # unreachable; _fail_safe() calls sys.exit(0)
+
+    # Precedence: env > cwd-detection > no-op
+    worktree_raw = os.environ.get("ATDD_AUTOPILOT_WORKTREE", "")
+    if not worktree_raw:
+        stdin_cwd = data.get("cwd", "") or ""
+        worktree_raw = _detect_worktree_from_cwd(stdin_cwd)
+    if not worktree_raw:
+        _emit_allow()
+
+    worktree = os.path.realpath(worktree_raw)
 
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input", {}) or {}

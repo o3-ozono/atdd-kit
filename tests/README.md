@@ -71,6 +71,8 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_hook_distribution.bats | PostToolUse hook plugin distribution (AC6, Issue #85) |
 | test_token_measurement_tooling.bats | Token reduction measurement tooling (AC4a, Issue #85) |
 | test_autopilot_phase1_transition.bats | discover autopilot output control and Phase 1 completion condition (AC1-AC3, Issue #101) |
+| test_autopilot_worktree_guard.bats | autopilot-worktree-guard hook boundary enforcement — env-mode (AC2-AC6, Issue #111) + cwd-detection regression (AC1-AC5, Issue #116) |
+| test_autopilot_phase09_env_export.bats | autopilot.md Phase 0.9 drift detection — ATDD_AUTOPILOT_WORKTREE export optional + cwd-detection primary (Issue #111, #116) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

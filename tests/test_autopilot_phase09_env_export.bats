@@ -1,13 +1,15 @@
 #!/usr/bin/env bats
 
-# Issue #111 AC1 drift-detection: commands/autopilot.md Phase 0.9 Step 4 must
-# export ATDD_AUTOPILOT_WORKTREE via realpath so the PreToolUse
-# autopilot-worktree-guard can enforce the boundary.
+# Issue #111 AC1 / #116 drift-detection: commands/autopilot.md Phase 0.9 Step 4
+# documents ATDD_AUTOPILOT_WORKTREE export as optional (not load-bearing).
+# cwd-detection is the primary mechanism (#116 fix).
 #
-# Three-token AND assertion within the same Phase 0.9 section:
-#   - ATDD_AUTOPILOT_WORKTREE
-#   - export
-#   - realpath
+# Assertions within the Phase 0.9 section:
+#   - ATDD_AUTOPILOT_WORKTREE  (var name present)
+#   - export                    (export keyword present, even if marked optional)
+#   - realpath                  (canonicalization instruction present)
+#   - optional / not load-bearing  (export is NOT mandatory per #116 fix)
+#   - cwd-detection             (primary mechanism documented)
 #
 # Rationale: a plain grep on the whole file can pass even if the section is
 # accidentally gutted. Anchoring to the Phase 0.9 heading makes the check
@@ -50,4 +52,14 @@ extract_phase09() {
   echo "$section" | grep -q "ATDD_AUTOPILOT_WORKTREE"
   echo "$section" | grep -qi "export"
   echo "$section" | grep -q "realpath"
+}
+
+@test "AC1-drift: Phase 0.9 states export is optional (not load-bearing)" {
+  # #116 fix: export must be documented as optional, not mandatory
+  extract_phase09 | grep -qi "optional"
+}
+
+@test "AC1-drift: Phase 0.9 mentions cwd-detection as primary mechanism" {
+  # #116 fix: hook auto-detects from stdin cwd
+  extract_phase09 | grep -qi "cwd"
 }
