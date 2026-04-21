@@ -4,11 +4,12 @@ set -uo pipefail
 # autopilot-worktree-guard.sh -- PreToolUse hook enforcing autopilot session
 # file-write boundary.
 #
-# Gated by env var ATDD_AUTOPILOT_WORKTREE (absolute worktree path).
-#   unset  -> no-op (exit 0, stdout "{}") -- Issue #111 AC6
-#   set    -> block Edit/Write/MultiEdit/NotebookEdit file_path and Bash
-#             mutating targets that resolve outside the worktree and are
-#             not in the allow-list. Issue #111 AC2-AC5.
+# Precedence: ATDD_AUTOPILOT_WORKTREE (env) > cwd-detection > no-op
+#   env set  -> block Edit/Write/MultiEdit/NotebookEdit file_path and Bash
+#               mutating targets that resolve outside the worktree and are
+#               not in the allow-list. Issue #111 AC2-AC5.
+#   env unset, cwd under .claude/worktrees/<name>/ -> auto-detect worktree
+#   neither  -> no-op (exit 0, stdout "{}") -- Issue #116
 #
 # Output contract:
 #   allow: exit 0, stdout "{}"
@@ -18,13 +19,6 @@ set -uo pipefail
 # Delegates JSON + shlex + path canonicalization to the co-located
 # autopilot_worktree_guard.py. Pure-bash is insufficient for shell-aware
 # tokenization (e.g. `echo "a > b"` must not be treated as a redirect).
-
-# AC6: env unset -> complete no-op, before touching stdin or python.
-if [ -z "${ATDD_AUTOPILOT_WORKTREE:-}" ]; then
-  cat >/dev/null 2>&1 || true
-  echo '{}'
-  exit 0
-fi
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PY_SCRIPT="$HERE/autopilot_worktree_guard.py"

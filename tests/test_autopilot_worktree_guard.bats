@@ -386,3 +386,301 @@ print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]},"cwd":
 @test "AC1: commands/autopilot.md Phase 0.9 documents ATDD_AUTOPILOT_WORKTREE export" {
   grep -q "ATDD_AUTOPILOT_WORKTREE" "${BATS_TEST_DIRNAME}/../commands/autopilot.md"
 }
+
+# ============================================================
+# Group G: AC1-AC5 cwd-detection regression (Issue #116)
+# ============================================================
+# Helper: build JSON payloads with explicit cwd argument
+
+json_edit_cwd() {
+  # $1 = file_path, $2 = cwd
+  python3 -c '
+import json, sys
+print(json.dumps({"tool_name":"Edit","tool_input":{"file_path":sys.argv[1]},"cwd":sys.argv[2]}))
+' "$1" "$2"
+}
+
+json_write_cwd() {
+  # $1 = file_path, $2 = cwd
+  python3 -c '
+import json, sys
+print(json.dumps({"tool_name":"Write","tool_input":{"file_path":sys.argv[1]},"cwd":sys.argv[2]}))
+' "$1" "$2"
+}
+
+json_bash_cwd() {
+  # $1 = command, $2 = cwd
+  python3 -c '
+import json, sys
+print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]},"cwd":sys.argv[2]}))
+' "$1" "$2"
+}
+
+json_multiedit_cwd() {
+  # $1 = file_path, $2 = cwd
+  python3 -c '
+import json, sys
+print(json.dumps({"tool_name":"MultiEdit","tool_input":{"file_path":sys.argv[1],"edits":[]},"cwd":sys.argv[2]}))
+' "$1" "$2"
+}
+
+json_notebookedit_cwd() {
+  # $1 = notebook_path, $2 = cwd
+  python3 -c '
+import json, sys
+print(json.dumps({"tool_name":"NotebookEdit","tool_input":{"notebook_path":sys.argv[1]},"cwd":sys.argv[2]}))
+' "$1" "$2"
+}
+
+# worktree_cwd: fake cwd under .claude/worktrees/<name>/ rooted at HOME-based path.
+# Uses $HOME to avoid macOS TMPDIR being under /private/var/folders which is in
+# ALLOW_PREFIXES — that would cause hook to allow writes that should be blocked.
+make_worktree_cwd() {
+  # $1 = worktree name (e.g. autopilot-116)
+  echo "${HOME}/.claude/worktrees/$1"
+}
+
+# ---- AC1: Regression — env unset + cwd-detection blocks outside writes ----
+
+@test "G-AC1-1: env unset + cwd-detect mode: Edit outside worktree -> block (exit 2)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_edit_cwd /etc/passwd "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC1-2: env unset + cwd-detect mode: Write outside worktree -> block (exit 2)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_write_cwd "$HOME/escaped.txt" "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC1-3: env unset + cwd-detect mode: Bash redirect outside -> block (exit 2)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_bash_cwd 'echo x > /etc/badfile' "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC1-4: env unset + cwd-detect mode: MultiEdit outside worktree -> block" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_multiedit_cwd /etc/passwd "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC1-5: env unset + cwd-detect mode: NotebookEdit outside worktree -> block" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_notebookedit_cwd /etc/evil.ipynb "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+# ---- AC2: cwd-detection auto-detection variations ----
+
+@test "G-AC2-1: cwd directly under .claude/worktrees/<name>/ -> detect and block outside" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_write_cwd "$HOME/outside.txt" "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC2-2: cwd nested under worktree subdir -> detect worktree root and block outside" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)/hooks/subdir"
+  run invoke_hook "$(json_write_cwd "$HOME/outside.txt" "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC2-3: cwd-detect mode: Write inside detected worktree -> allow" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  local wt_root
+  wt_root="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$wt_cwd")"
+  run invoke_hook "$(json_write_cwd "${wt_root}/inside.txt" "$wt_cwd")"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "G-AC2-4: cwd-detect mode: Edit inside detected worktree -> allow" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  local wt_root
+  wt_root="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$wt_cwd")"
+  run invoke_hook "$(json_edit_cwd "${wt_root}/src/foo.py" "$wt_cwd")"
+  [ "$status" -eq 0 ]
+}
+
+@test "G-AC2-5: cwd-detect mode: write to /tmp -> allow (allow-list)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_write_cwd /tmp/scratch.log "$wt_cwd")"
+  [ "$status" -eq 0 ]
+}
+
+# ---- AC3: env-var override precedence ----
+
+@test "G-AC3-1: env=W_env, cwd=W_cwd (different) -> env wins (block target outside W_env)" {
+  local wt_env
+  wt_env="$(make_worktree_cwd autopilot-env)"
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-cwd)"
+  export ATDD_AUTOPILOT_WORKTREE="$wt_env"
+  # Use $HOME-based path as target: definitely outside W_env and not in allow-list
+  run invoke_hook "$(json_write_cwd "$HOME/outside-w-env.txt" "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC3-2: env=W_env, cwd=W_cwd -> env wins (allow target inside W_env)" {
+  local wt_env
+  wt_env="$(make_worktree_cwd autopilot-env)"
+  local wt_env_real
+  wt_env_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$wt_env")"
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-cwd)"
+  export ATDD_AUTOPILOT_WORKTREE="$wt_env"
+  run invoke_hook "$(json_write_cwd "${wt_env_real}/allowed.txt" "$wt_cwd")"
+  [ "$status" -eq 0 ]
+}
+
+@test "G-AC3-3: env set + cwd unrelated -> env mode, unrelated cwd ignored" {
+  local wt_env
+  wt_env="$(make_worktree_cwd autopilot-env)"
+  export ATDD_AUTOPILOT_WORKTREE="$wt_env"
+  run invoke_hook "$(json_write_cwd "$HOME/outside.txt" "/tmp/unrelated")"
+  [ "$status" -eq 2 ]
+}
+
+# ---- AC4: non-autopilot session no-op ----
+
+@test "G-AC4-1: env unset, cwd key missing from JSON -> no-op (exit 0)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  run invoke_hook '{"tool_name":"Write","tool_input":{"file_path":"/etc/passwd"}}'
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "G-AC4-2: env unset, cwd empty string -> no-op (exit 0)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  run invoke_hook '{"tool_name":"Write","tool_input":{"file_path":"/etc/passwd"},"cwd":""}'
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "G-AC4-3: env unset, cwd null -> no-op (exit 0)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  run invoke_hook '{"tool_name":"Write","tool_input":{"file_path":"/etc/passwd"},"cwd":null}'
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "G-AC4-4: env unset, cwd=.claude/worktrees without name segment -> no-op" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local base
+  base="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "${TMPDIR:-/tmp}")"
+  run invoke_hook "$(json_write_cwd /etc/passwd "${base}/.claude/worktrees")"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "G-AC4-5: env unset, cwd unrelated path -> no-op (exit 0)" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  run invoke_hook "$(json_write_cwd /etc/passwd /tmp/normal-session)"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
+
+@test "G-AC4-6: env='', cwd under worktree -> cwd-detection activates and blocks outside" {
+  export ATDD_AUTOPILOT_WORKTREE=""
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_write_cwd "$HOME/outside.txt" "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+# ---- AC5: parallel session isolation ----
+
+@test "G-AC5-1: session A writes in A's worktree -> allow" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_a_cwd
+  wt_a_cwd="$(make_worktree_cwd autopilot-A)"
+  local wt_a_real
+  wt_a_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$wt_a_cwd")"
+  run invoke_hook "$(json_write_cwd "${wt_a_real}/file.txt" "$wt_a_cwd")"
+  [ "$status" -eq 0 ]
+}
+
+@test "G-AC5-2: session B attempts cross-boundary write into A's worktree -> block" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_a_cwd
+  wt_a_cwd="$(make_worktree_cwd autopilot-A)"
+  local wt_a_real
+  wt_a_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$wt_a_cwd")"
+  local wt_b_cwd
+  wt_b_cwd="$(make_worktree_cwd autopilot-B)"
+  # B writes into A's worktree -> should block
+  run invoke_hook "$(json_write_cwd "${wt_a_real}/file.txt" "$wt_b_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+# ---- AC6-ext: additional coverage ----
+
+@test "G-AC6-ext-1: MultiEdit env-set mode outside -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_multiedit_cwd /etc/passwd "$W")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC6-ext-2: MultiEdit env-set mode inside -> allow" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_multiedit_cwd "$W/src/foo.py" "$W")"
+  [ "$status" -eq 0 ]
+}
+
+@test "G-AC6-ext-3: NotebookEdit env-set mode outside -> block" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_notebookedit_cwd /etc/evil.ipynb "$W")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC6-ext-4: NotebookEdit env-set mode inside -> allow" {
+  export ATDD_AUTOPILOT_WORKTREE="$W"
+  run invoke_hook "$(json_notebookedit_cwd "$W/notebook.ipynb" "$W")"
+  [ "$status" -eq 0 ]
+}
+
+@test "G-AC6-ext-5: MultiEdit cwd-detect mode outside -> block" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_multiedit_cwd /etc/passwd "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC6-ext-6: NotebookEdit cwd-detect mode outside -> block" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_notebookedit_cwd /etc/evil.ipynb "$wt_cwd")"
+  [ "$status" -eq 2 ]
+}
+
+@test "G-AC6-ext-7: git bypass in cwd-detect mode -> allow" {
+  unset ATDD_AUTOPILOT_WORKTREE
+  local wt_cwd
+  wt_cwd="$(make_worktree_cwd autopilot-116)"
+  run invoke_hook "$(json_bash_cwd 'git push origin main' "$wt_cwd")"
+  [ "$status" -eq 0 ]
+  [ "$output" = "{}" ]
+}
