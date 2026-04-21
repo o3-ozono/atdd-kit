@@ -46,6 +46,7 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 | [session-start](session-start/) | Auto-invoked by other skills | Session initialization |
 | [ship](ship/) | Manually invoked after verify passes | Core chain: PR finalization → merge |
 | [sim-pool](sim-pool/) | Auto-triggers before iOS simulator tool calls | iOS simulator access management |
+| [skill-fix](skill-fix/) | Auto-triggers on skill name + intent verb; explicit via `/atdd-kit:skill-fix` | Background skill defect reporting without interrupting current work |
 | [skill-gate](skill-gate/) | Auto-triggers on every user message | Skill enforcement gate |
 | [ui-test-debugging](ui-test-debugging/) | Auto-triggers on CI UI Test failures | CI UI Test failure diagnosis |
 | [verify](verify/) | Manually invoked before claiming completion | Core chain: evidence-based verification |
