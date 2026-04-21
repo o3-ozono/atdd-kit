@@ -158,3 +158,15 @@ EOF
   HEADLESS_CLAUDE_BIN="$stub" HEADLESS_TEMP_DIR="$WORK/tmp" run bash "$RUNNER" "$sc"
   [ "$status" -eq 4 ]
 }
+
+# -----------------------------------------------------------------------------
+# Case 13 — empty transcript → exit 1 (AC2 / Issue #125)
+# -----------------------------------------------------------------------------
+@test "case 13 (exit 1): empty transcript file" {
+  local sc="$WORK/c13.json"
+  local empty_transcript="$WORK/empty.jsonl"
+  touch "$empty_transcript"
+  make_scenario "$sc" '["atdd-kit:discover"]' '[]' "subsequence" "$empty_transcript"
+  run bash "$RUNNER" --replay "$empty_transcript" "$sc"
+  [ "$status" -eq 1 ]
+}
