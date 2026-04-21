@@ -13,13 +13,15 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVED the deliverables (DoD, ACs, or both). No exceptions regardless of perceived simplicity.
 
 **Autopilot exception:** When invoked with `--autopilot`, Step 7 approval is satisfied by the AC Review Round. Both conditions must hold: (1) ARGUMENTS contains `--autopilot`, AND (2) AC Review Round completes with user approval.
+
+**skill-fix exception:** When invoked with `--skill-fix`, Step 7 user approval is skipped (subagent context has no user). Step 8 inline plan mode is forced (AC + plan posted as single comment). MUST-1/2/3, UX U1-U5, and Interruption I1-I4 quality gates are retained. Gate FAIL → `skill-status BLOCKED` → `blocked-ac` label + blocker comment (no `ready-to-go`).
 </HARD-GATE>
 
 <AUTOPILOT-GUARD>
-If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
+If ARGUMENTS does not contain `--autopilot` AND ARGUMENTS does not contain `--skill-fix` (user invoked directly via slash command):
 - Display message: "This skill is autopilot-only. Use `/atdd-kit:autopilot <number>` instead."
 - **STOP.** Do not proceed with execution.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
+If ARGUMENTS contains `--autopilot` OR `--skill-fix` (invoked by autopilot or skill-fix subagent): skip this guard silently.
 </AUTOPILOT-GUARD>
 
 First step of the Issue Ready flow. Understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks).
@@ -199,7 +201,7 @@ Before drafting the user story, identify the persona for the `As a` field. Step 
 Count valid persona files under `docs/personas/` using `lib/persona_check.sh count_valid_personas` (see "Valid Persona Definition").
 
 ```
-IF --autopilot AND valid_persona_count == 0:
+IF (--autopilot OR --skill-fix) AND valid_persona_count == 0:
   → Persona precheck BLOCKED (Step 3a-precheck)
 ELSE IF valid_persona_count >= 1:
   → Persona listing flow (Step 3a-listing)
@@ -207,7 +209,7 @@ ELSE (standalone AND valid_persona_count == 0):
   → Persona bootstrap flow (Step 3a-bootstrap)
 ```
 
-**Step 3a-precheck** (autopilot mode with no valid personas):
+**Step 3a-precheck** (autopilot or skill-fix mode with no valid personas):
 
 Do **not** create a new persona. Autopilot has no user dialogue, so bootstrapping would synthesize an Issue-specific persona from the Issue body and violate `docs/methodology/persona-guide.md` ("Creation Process" / Anti-Pattern 1 / Anti-Pattern 2).
 
@@ -370,6 +372,8 @@ Applicable: describe specifics, add AC if missing. Not applicable: state why.
 ### Step 7: Present Deliverables and Get Approval
 
 **Autopilot mode** (`--autopilot`): Skip approval. Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft AC listings, UX check results, Interruption check results, or Discussion Summary in terminal output. Do NOT proceed to Step 8.
+
+**skill-fix mode** (`--skill-fix`): Skip user approval (subagent has no user). Proceed directly to Step 8 inline plan mode. Quality gates (MUST-1/2/3, UX U1-U5, Interruption I1-I4) are retained and must pass before `ready-to-go` is granted.
 
 **Standalone mode:** Present AC set, UX check results, and interruption check results.
 
