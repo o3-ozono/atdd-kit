@@ -18,6 +18,10 @@ What the replay layer catches on every skill-touching PR:
 | Model quality drift (bad decisions despite correct skill firing) | No | out of scope for skill-chain tests; rely on eval layer |
 | Subagent-invoked skills (via `Task` tool) | No (MVP) | `parent_tool_use_id` filtered out; covered by follow-up Issue |
 | Parallel `tool_use` in a single assistant message | Partially | ordered by array position; true race conditions not representable |
+| `SKILL.md` 本文品質（説明文・例・ガイドラインの劣化） | **NOT CAUGHT** | requires human review; out of scope for structural skill-chain tests |
+| skill 実行時間 / トークン消費の増大 | **NOT CAUGHT** | no timing or token assertions; needs separate cost-monitoring layer |
+| CI path filter 漏れ（headless filter が必要なファイルを除外） | **NOT CAUGHT** | replay runs only when filter matches; missed files silently skip CI |
+| skill args の意味的妥当性（型は合っているが意味が間違っている） | **NOT CAUGHT** | assertion engine checks skill names only; semantic arg validation needs scenario-level checks |
 
 ## Prerequisites
 
