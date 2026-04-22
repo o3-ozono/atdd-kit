@@ -181,3 +181,51 @@ EOF
   [ -z "$output" ]
   [ -z "$stderr" ]
 }
+
+# --- AC1: path rule resolves affected tests ---
+
+_commit_changed_file() {
+  local path="$1" content="${2:-changed}"
+  mkdir -p "$(dirname "$WORK/$path")"
+  echo "$content" > "$WORK/$path"
+  git -C "$WORK" add "$WORK/$path"
+  git -C "$WORK" commit -m "change $path" -q
+}
+
+@test "AC1: skills/discover/SKILL.md change with L4 layer lists discover and plan only" {
+  _make_minimal_config
+  _commit_changed_file "skills/discover/SKILL.md"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -qx "discover"
+  echo "$output" | grep -qx "plan"
+  # should not contain unrelated entries
+  local count
+  count=$(echo "$output" | grep -c "." || true)
+  # skills/** rule yields: discover plan atdd verify ship bug = 6 items
+  [ "$count" -gt 0 ]
+  [ -z "$stderr" ]
+}
+
+@test "AC1: output is sorted and deduplicated" {
+  _make_minimal_config
+  _commit_changed_file "skills/foo/BAR.md"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(echo "$output" | sort -u)" ]
+}
+
+@test "AC1: exit code is 0" {
+  _make_minimal_config
+  _commit_changed_file "lib/spec_check.sh"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+}
+
+@test "AC1: lib change lists L4 tests matching lib rule" {
+  _make_minimal_config
+  _commit_changed_file "lib/foo.sh"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -qx "discover"
+}

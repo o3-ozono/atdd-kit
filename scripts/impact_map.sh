@@ -265,7 +265,6 @@ for f in "${diff_files[@]}"; do
   local_matched=0
 
   # Check path rules
-  local rule_results
   rule_results=$(resolve_path_rules "$f" "$OPT_LAYER")
   if [[ -n "$rule_results" ]]; then
     while IFS= read -r r; do
@@ -276,7 +275,6 @@ for f in "${diff_files[@]}"; do
 
   # Check @covers (BATS layer only)
   if [[ "$OPT_LAYER" == "BATS" ]]; then
-    local cover_results
     cover_results=$(scan_covers "$f")
     if [[ -n "$cover_results" ]]; then
       while IFS= read -r r; do
