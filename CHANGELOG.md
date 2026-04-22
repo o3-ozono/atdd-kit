@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/fixtures/claude-code/`: BATS fixtures — `transcripts/` (valid/empty/malformed/non-utf8 jsonl), `lint_skill_descriptions/` (good/bad SKILL.md). (#134)
 - `tests/test_l4_lint_skill_descriptions.bats`, `tests/test_l4_test_helpers.bats`, `tests/test_l4_analyze_token_usage.bats`, `tests/test_l4_run_skill_tests.bats`, `tests/test_l4_samples.bats`, `tests/test_l4_docs.bats`: BATS coverage for all AC1-AC6. (#134)
 
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
 ## [2.2.0] - 2026-04-22
 
 ### Added
