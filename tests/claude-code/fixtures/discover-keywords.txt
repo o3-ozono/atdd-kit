@@ -1,0 +1,11 @@
+session-start
+HARD-GATE
+DoD
+Approach
+User Story
+Given
+When
+Then
+UX
+COMPLETE|SKILL_STATUS|skill-status
+plan
