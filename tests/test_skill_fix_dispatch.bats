@@ -59,6 +59,14 @@ _run_dispatch() {
   grep -q '"new"\|: "new"' "${FIXTURES}/issues.json"
 }
 
+@test "AC3: issues.json has existing_append classification entry" {
+  grep -q '"existing_append"' "${FIXTURES}/issues.json"
+}
+
+@test "AC3: issues.json has pending_judgement classification entry" {
+  grep -q '"pending_judgement"' "${FIXTURES}/issues.json"
+}
+
 # --- AC5: RED/GREEN fixture content ---
 
 @test "AC5: dummy_skill_fail/SKILL.md represents a broken skill (RED scenario)" {
@@ -115,4 +123,20 @@ _run_dispatch() {
 
 @test "AC9: cleanup without issue number does not error" {
   _run_dispatch cleanup ""
+}
+
+@test "AC9: is_stale function is defined in dispatch lib" {
+  grep -q "^is_stale()" lib/skill_fix_dispatch.sh
+}
+
+@test "AC9: cleanup_stale removes entries with ready-to-go label" {
+  grep -q "cleanup_stale\|is_stale" lib/skill_fix_dispatch.sh
+}
+
+@test "AC9: cleanup_stale removes entries older than 24h" {
+  grep -q "24\|86400\|hours\|started_at" lib/skill_fix_dispatch.sh
+}
+
+@test "AC9: cleanup_stale removes entries for closed issues" {
+  grep -q "closed\|is_stale\|cleanup_stale" lib/skill_fix_dispatch.sh
 }

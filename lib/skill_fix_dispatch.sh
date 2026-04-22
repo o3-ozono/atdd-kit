@@ -193,6 +193,69 @@ check_completion() {
 }
 
 # ---------------------------------------------------------------------------
+# Stale detection (AC9)
+# An inflight entry is stale if:
+#   (1) the issue has ready-to-go label, OR
+#   (2) the issue is closed, OR
+#   (3) started_at is older than 24h (86400 seconds)
+# ---------------------------------------------------------------------------
+
+is_stale() {
+  local issue_n="$1"
+  local started_at="${2:-}"
+
+  # (1) ready-to-go label
+  local labels
+  labels="$($GH_CMD issue view "$issue_n" --json labels --jq '[.labels[].name]' 2>/dev/null || echo "[]")"
+  if echo "$labels" | grep -q '"ready-to-go"\|"blocked-ac"'; then
+    return 0
+  fi
+
+  # (2) closed
+  local state
+  state="$($GH_CMD issue view "$issue_n" --json state --jq .state 2>/dev/null || echo "")"
+  if [[ "$state" == "CLOSED" ]]; then
+    return 0
+  fi
+
+  # (3) 24h age check (started_at = ISO-8601)
+  if [[ -n "$started_at" ]]; then
+    local started_epoch now_epoch
+    started_epoch=$(date -u -d "$started_at" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$started_at" +%s 2>/dev/null || echo 0)
+    now_epoch=$(date -u +%s)
+    if (( now_epoch - started_epoch > 86400 )); then
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+# cleanup_stale — scan registry and deregister any stale entries
+cleanup_stale() {
+  if [[ ! -f "$INFLIGHT_REGISTRY" ]]; then
+    return 0
+  fi
+
+  local content
+  content=$(cat "$INFLIGHT_REGISTRY")
+
+  # Extract issue numbers from registry (simple grep, JSON is single-level)
+  local issues
+  issues=$(grep -o '"issue": [0-9]*' "$INFLIGHT_REGISTRY" | grep -o '[0-9]*' || true)
+
+  for issue_n in $issues; do
+    local started_at
+    # Extract started_at for this issue (grab next started_at after issue number)
+    started_at=$(grep -A4 "\"issue\": ${issue_n}" "$INFLIGHT_REGISTRY" | grep '"started_at"' | grep -o '"[0-9T:Z-]*"' | tr -d '"' | head -1 || echo "")
+
+    if is_stale "$issue_n" "$started_at"; then
+      deregister_inflight "$issue_n"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Cleanup (AC9)
 # ---------------------------------------------------------------------------
 
@@ -226,6 +289,8 @@ case "$fn" in
   build_env)             build_env "$@" ;;
   check_completion)      check_completion "$@" ;;
   cleanup)               cleanup "$@" ;;
+  is_stale)              is_stale "$@" ;;
+  cleanup_stale)         cleanup_stale "$@" ;;
   _build_audit_marker)   _build_audit_marker "$@" ;;
   "")
     echo "Usage: bash lib/skill_fix_dispatch.sh <function> [args...]" >&2
