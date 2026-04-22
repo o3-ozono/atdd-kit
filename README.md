@@ -94,6 +94,7 @@ flowchart LR
 | **ideate** | Design exploration -- auto-triggers on exploratory requests, also chains from issue before discover |
 | **debugging** | Auto-detects error reports and starts root cause investigation |
 | **skill-gate** | Ensures relevant skills are invoked before direct work |
+| **skill-fix** | Reports atdd-kit skill defects mid-session; dispatches a background subagent to create a ready-to-go fix Issue without interrupting current work |
 
 #### Utilities
 

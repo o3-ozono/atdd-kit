@@ -96,6 +96,7 @@ flowchart LR
 | **ideate** | 設計探索 -- 探索的リクエストで自動トリガー、issue から discover の間にもチェーン |
 | **debugging** | エラー報告を自動検知し、根本原因調査を開始 |
 | **skill-gate** | 関連スキルが直接作業の前に呼び出されることを保証 |
+| **skill-fix** | セッション中に atdd-kit skill の不具合を報告。background subagent が現在の作業を中断せず `ready-to-go` まで修正 Issue を自動起票 |
 
 #### ユーティリティ
 

@@ -26,6 +26,7 @@
 | `needs-plan-revision` | Plan review found issues | User fixes plan in main session (discover/plan). Implementer does not start. |
 | `ready-for-user-approval` | Plan review passed | Reviewer PASS transitions directly to `ready-to-go`. Retained for autonomy:0 manual approval flow. |
 | `ready-to-go` | Design complete, ready for implementation | Implementer picks it up. |
+| `blocked-ac` | skill-fix quality gate failed | Subagent could not reach `ready-to-go`; MUST/UX/Interruption gate failed. Manual review required before adding `ready-to-go`. |
 | `autonomy:0` | Full Control -- all approval gates active | Default if no autonomy label is set. |
 | `autonomy:1` | Guided -- AC approval + merge approval only | Plan review auto-approval if R1-R6 PASS. |
 | `autonomy:2` | Autonomous -- merge approval only | Plan review and user approval auto-skipped. |

@@ -1,0 +1,30 @@
+[
+  {
+    "number": 100,
+    "title": "fix: discover skill persona listing broken in autopilot mode",
+    "state": "OPEN",
+    "classification": "exact_duplicate",
+    "note": "完全重複 — 同一 skill (discover) + 同一 phase (step3a-listing) + 同一症状語 (persona listing broken)"
+  },
+  {
+    "number": 101,
+    "title": "feat: improve discover step3a error message",
+    "state": "OPEN",
+    "classification": "existing_append",
+    "note": "既存追記 — 同一 skill (discover) + 同一 phase (step3a) だが症状語が異なる (error message vs listing broken)"
+  },
+  {
+    "number": 102,
+    "title": "fix: plan skill AC count validation missing",
+    "state": "CLOSED",
+    "classification": "new",
+    "note": "新規 — skill 名 (plan) が一致するが phase と症状語が異なる"
+  },
+  {
+    "number": 103,
+    "title": "fix: atdd skill commit convention not followed",
+    "state": "OPEN",
+    "classification": "pending_judgement",
+    "note": "判断保留 — skill (atdd) + phase (commit step) が部分一致するが症状語が曖昧"
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "skill_name": "atdd-kit:skill-fix",
+  "baseline_date": "2026-04-21",
+  "pass_rate": 1.0,
+  "note": "Initial baseline established at PR #133 (Issue #119). All 10 eval cases passing."
+}

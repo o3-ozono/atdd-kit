@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-04-21
+
+### Added
+- `skills/skill-fix/SKILL.md`: new skill for reporting atdd-kit skill defects during an active session without interrupting current work. Triggers via explicit `/atdd-kit:skill-fix` or implicit detection (skill name + intent verb). Runs 3-question interview, duplicate check, and dispatches a background subagent (`isolation: worktree`, `run_in_background: true`) that creates a new Issue and drives it to `ready-to-go` using the `--skill-fix` bypass on discover. (#119)
+- `commands/skill-fix.md`: explicit slash command entry for skill-fix flow. (#119)
+- `lib/skill_fix_dispatch.sh`: shell functions for dispatch, inflight registry (AC7), env scrubbing (AC8), completion check (AC6), and cleanup (AC9). (#119)
+- `docs/workflow/skill-fix-flow.md`: workflow reference, Spike Results, #116 coexistence note, and audit marker regex. (#119)
+- `templates/workflow/blocked_ac_comment.md`: template for `blocked-ac` blocker comments with `$phase`, `$failed_gate`, `$reason` placeholders. (#119)
+- `tests/test_skill_fix_structure.bats`, `tests/test_skill_fix_dispatch.bats`, `tests/test_skill_fix_isolation.bats`, `tests/test_skill_fix_skill_md.bats`, `tests/test_skill_fix_beta_dispatch.bats`, `tests/test_skill_fix_env_contract.bats`, `tests/test_skill_fix_flag_scope.bats`, `tests/test_skill_fix_blocked_ac.bats`, `tests/test_skill_fix_audit_marker.bats`, `tests/test_discover_skill_fix_bypass.bats`: 10 bats test files covering AC1-AC10. (#119)
+- `tests/fixtures/skill-fix/`: fixtures for dummy_skill_pass (GREEN scenario), dummy_skill_fail (RED scenario), inflight_registry_sample.json (AC7), issues.json (AC3 4-class). (#119)
+- `skills/skill-fix/evals/evals.json` + `baseline.json`: 10 eval cases (trigger/interview/duplicate/dispatch), initial pass_rate 1.0 baseline. (#119)
+- `blocked-ac` GitHub label (`#B60205`): AC quality gate failed under skill-fix. (#119)
+
+### Changed
+- `skills/discover/SKILL.md`: AUTOPILOT-GUARD and HARD-GATE extended to accept `--skill-fix` flag in addition to `--autopilot`. **HARD-GATE contract change**: discover skill に `--skill-fix` flag を追加。skill-fix subagent 経由の inline plan mode をサポート（HARD-GATE 契約変更）。Step 7 adds `--skill-fix` mode (user approval skipped, quality gates retained). Persona auto-select condition updated to `(--autopilot OR --skill-fix) AND valid_persona_count == 0`. `plan` SKILL.md remains unchanged — HARD-GATE fully maintained (see AC10). (#119)
+- `commands/setup-github.md`: `blocked-ac` label added to the standard label set for new projects (prevents drift). (#119)
+
+### HARD-GATE Compensation (discover --skill-fix)
+1. Scope: discover only, plan HARD-GATE unchanged (AC10)
+2. Audit trail: `<!-- skill-fix-audit: invoked via --skill-fix bypass from parent-issue #N at <ISO-8601> -->` in every skill-fix-created Issue
+3. Quality gates retained: MUST-1/2/3 + UX U1-U5 + Interruption I1-I4 execute under `--skill-fix`
+4. BLOCKED termination: gate FAIL → `blocked-ac` label, no `ready-to-go`
+5. CHANGELOG: this entry
+
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
+---
+
+### Added (Japanese / 日本語)
+- `skills/skill-fix/SKILL.md`: セッション中に atdd-kit skill の不具合を発見した際、対応中 issue を中断せず background subagent で `ready-to-go` まで自動起票するフロー。明示コマンド `/atdd-kit:skill-fix` と暗黙起動（skill 名 × 意向動詞）の 2 パターン。3 問 interview → duplicate check → subagent dispatch（`isolation: worktree` + `run_in_background: true`）。(#119)
+- `commands/skill-fix.md`, `lib/skill_fix_dispatch.sh`, `docs/workflow/skill-fix-flow.md`, `templates/workflow/blocked_ac_comment.md`: 関連ファイル一式。(#119)
+- 10 本の bats テスト（AC1-AC10 カバレッジ）。(#119)
+- `blocked-ac` GitHub ラベル（`#B60205`）。(#119)
+
+### Changed (Japanese / 日本語)
+- `skills/discover/SKILL.md`: AUTOPILOT-GUARD / HARD-GATE 例外 / Step 7 の 3 箇所に `--skill-fix` 分岐を追加。**HARD-GATE 契約変更**: discover skill に `--skill-fix` flag を追加。skill-fix subagent 経由の inline plan mode をサポート。`plan` SKILL.md は変更なし（AC10 で CI 固定）。(#119)
+
 ## [2.0.1] - 2026-04-21
 
 ### Fixed
