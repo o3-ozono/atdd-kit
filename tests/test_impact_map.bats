@@ -229,3 +229,62 @@ _commit_changed_file() {
   [ "$status" -eq 0 ]
   echo "$output" | grep -qx "discover"
 }
+
+# --- AC3: unmatched changes trigger fallback to full scan ---
+
+@test "AC3: unmatched file triggers fallback with full L4 set and stderr reason" {
+  _make_minimal_config
+  _commit_changed_file ".github/workflows/foo.yml"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  # output equals --all output
+  expected=$(bash "$SCRIPT" --config "$CONFIG" --all --layer L4)
+  [ "$output" = "$expected" ]
+  echo "$stderr" | grep -q "FALLBACK"
+  echo "$stderr" | grep -q ".github/workflows/foo.yml"
+}
+
+@test "AC3: mixed matched and unmatched still triggers fallback" {
+  _make_minimal_config
+  # commit both a matched and an unmatched file
+  mkdir -p "$WORK/skills/foo" "$WORK/.github/workflows"
+  echo "a" > "$WORK/skills/foo/file.md"
+  echo "b" > "$WORK/.github/workflows/ci.yml"
+  git -C "$WORK" add .
+  git -C "$WORK" commit -m "mixed changes" -q
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$stderr" | grep -q "FALLBACK"
+}
+
+@test "AC3: config/impact_rules.yml self-change triggers fallback" {
+  _make_minimal_config
+  # change the config file itself
+  echo "# modified" >> "$CONFIG"
+  git -C "$WORK" add "$CONFIG"
+  git -C "$WORK" commit -m "change config" -q
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$stderr" | grep -q "FALLBACK"
+}
+
+@test "AC3: rename triggers fallback when new path is unmatched" {
+  _make_minimal_config
+  # add a file then rename it to unrecognized path
+  echo "original" > "$WORK/unknown_old.txt"
+  git -C "$WORK" add "$WORK/unknown_old.txt"
+  git -C "$WORK" commit -m "add old file" -q
+  git -C "$WORK" mv "$WORK/unknown_old.txt" "$WORK/unknown_new.txt"
+  git -C "$WORK" commit -m "rename file" -q
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$stderr" | grep -q "FALLBACK"
+}
+
+@test "AC3: fallback output matches --all output for same layer" {
+  _make_minimal_config
+  _commit_changed_file ".github/workflows/foo.yml"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer BATS
+  [ "$status" -eq 0 ]
+  echo "$stderr" | grep -q "FALLBACK"
+}
