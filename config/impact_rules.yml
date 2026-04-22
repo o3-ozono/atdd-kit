@@ -1,0 +1,22 @@
+rules:
+  - path: skills/**
+    l4: discover plan atdd verify ship bug debugging express ideate issue session-start sim-pool skill-fix skill-gate ui-test-debugging
+    bats: "@covers skills"
+  - path: lib/**
+    l4: discover plan atdd verify ship bug debugging express ideate issue session-start sim-pool skill-fix skill-gate ui-test-debugging
+    bats: "@covers lib"
+  - path: hooks/**
+    l4: discover plan atdd verify ship debugging session-start skill-fix skill-gate
+    bats: "@covers hooks"
+  - path: agents/**
+    l4: discover plan atdd verify ship debugging session-start skill-fix skill-gate
+    bats: "@covers agents"
+  - path: .claude-plugin/**
+    l4: discover plan
+    bats: "@covers .claude-plugin"
+  - path: scripts/**
+    l4: discover plan
+    bats: "@covers scripts"
+  - path: docs/**
+    l4: discover
+    bats: "@covers docs"

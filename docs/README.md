@@ -9,6 +9,7 @@ How-to guides and reference materials for day-to-day usage.
 | Document | Description |
 |----------|-------------|
 | [commit-guide.md](guides/commit-guide.md) | Commit message conventions and examples |
+| [testing-skills.md](guides/testing-skills.md) | Impact scope detection — `@covers` format, `impact_map.sh` usage |
 | [doc-sync-checklist.md](guides/doc-sync-checklist.md) | Pre-PR documentation sync checklist |
 | [error-handling.md](guides/error-handling.md) | Error handling rules for implementation skills |
 | [getting-started.md](guides/getting-started.md) | First-time user walkthrough from feature to merged PR |

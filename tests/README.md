@@ -83,6 +83,7 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_skill_fix_blocked_ac.bats | AC4 step 6 blocked-ac gate flow — template, MUST/UX/Interruption retention, negative assert (Issue #119) |
 | test_skill_fix_audit_marker.bats | AC4 step 2 audit marker regex pinning (Issue #119) |
 | test_discover_skill_fix_bypass.bats | AC10 discover β patch — AUTOPILOT-GUARD/HARD-GATE/Step7/persona auto-select (Issue #119) |
+| test_impact_map.bats | `scripts/impact_map.sh` — AC1-AC8 (31 cases, Issue #135) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 
