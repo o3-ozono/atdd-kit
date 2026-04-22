@@ -162,3 +162,22 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "$(echo "$output" | sort -u)" ]
 }
+
+# --- AC8: empty diff produces empty stdout and exit 0 ---
+
+@test "AC8: empty diff with --base HEAD outputs nothing and exits 0" {
+  _make_minimal_config
+  # --base HEAD means diff between HEAD and HEAD = empty
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer BATS
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  [ -z "$stderr" ]
+}
+
+@test "AC8: empty diff with --layer L4 also outputs nothing and exits 0" {
+  _make_minimal_config
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer L4
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  [ -z "$stderr" ]
+}
