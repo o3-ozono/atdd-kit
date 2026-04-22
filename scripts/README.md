@@ -13,6 +13,7 @@ Utility scripts used by commands, skills, and CI. All scripts are pure bash (or 
 | [upload-image-to-github.mjs](upload-image-to-github.mjs) | Uploads images to GitHub via PR comment and retrieves URLs | Called by `pr-screenshot-table.sh` |
 | [measure-token-reduction.sh](measure-token-reduction.sh) | Measures token reduction between before/after log files using byte-count proxy | Run manually for AC4 verification |
 | [impact_map.sh](impact_map.sh) | Maps git diff to affected tests via path rules and `@covers` metadata | `impact_map.sh --base <ref> --layer {L4\|BATS}` |
+| [lint_skill_descriptions.sh](lint_skill_descriptions.sh) | Scans `skills/*/SKILL.md` for description anti-patterns (step-chain, length > 200, dash-separator lists). WARN-only, exit 0. | `scripts/lint_skill_descriptions.sh` |
 
 iOS-specific scripts are in `addons/ios/scripts/`. See [addons/ios/README.md](../addons/ios/README.md).
 

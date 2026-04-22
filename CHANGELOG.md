@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-04-22
+
+### Added
+- `tests/claude-code/test-helpers.sh`: fast-test harness with `run_claude`, `assert_contains`, `assert_order`, `assert_count`, `create_test_project`. Supports `SKILL_TEST_CLAUDE_BIN` override for stub-based BATS testing. (#134)
+- `tests/claude-code/run-skill-tests.sh`: fast/integration runner with `--test <name>`, `--integration`, `--verbose` flags. Exit codes 0/1/3/130/143. Supports `SKILL_TEST_TMPDIR`, `SKILL_TEST_CLAUDE_BIN`, `SKILL_TEST_PYTHON3_BIN` env overrides. SIGINT/SIGTERM cleanup. (#134)
+- `tests/claude-code/analyze-token-usage.py`: per-agent token/cost breakdown from `claude -p` jsonl transcripts. Model-price map at script top; unknown models report N/A. Handles empty/malformed/non-UTF-8/missing files. (#134)
+- `scripts/lint_skill_descriptions.sh`: scans `skills/*/SKILL.md` for description anti-patterns (step-chain keywords, length > 200 chars, dash-separator lists). WARN-only mode (exit 0). (#134)
+- `tests/claude-code/samples/`: 4 sample tests — fast PASS (`fast-skill-description-lint.sh`), fast FAIL (`fast-intentional-fail.sh`), integration PASS (`integration-discover-minimal.sh`), integration FAIL (`integration-intentional-fail.sh`). (#134)
+- `tests/claude-code/fixtures/minimal-project/`: minimal fixture project (`README.md` + `.claude/CLAUDE.md` stub) for integration tests. (#134)
+- `docs/testing-skills.md`: L4 methodology — fast vs integration layers, jsonl analysis and pricing map update procedure, cost baseline (fast ≈ $0.10 / integration ≈ $5), adding new tests, linter WARN→FAIL escalation criteria. (#134)
+- `tests/claude-code/README.md`: invocation prerequisites, env vars, GH_TOKEN hygiene, SIGINT/SIGTERM contract, exit codes, CI guard (`RUN_INTEGRATION=1`). (#134)
+- `tests/fixtures/claude-code/`: BATS fixtures — `transcripts/` (valid/empty/malformed/non-utf8 jsonl), `lint_skill_descriptions/` (good/bad SKILL.md). (#134)
+- `tests/test_l4_lint_skill_descriptions.bats`, `tests/test_l4_test_helpers.bats`, `tests/test_l4_analyze_token_usage.bats`, `tests/test_l4_run_skill_tests.bats`, `tests/test_l4_samples.bats`, `tests/test_l4_docs.bats`: BATS coverage for all AC1-AC6. (#134)
+
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
 ## [2.2.0] - 2026-04-22
 
 ### Added
