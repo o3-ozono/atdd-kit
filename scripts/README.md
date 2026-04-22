@@ -12,8 +12,13 @@ Utility scripts used by commands, skills, and CI. All scripts are pure bash (or 
 | [pr-screenshot-table.sh](pr-screenshot-table.sh) | Adds before/after screenshot comparison tables to PR descriptions | Called during PR creation |
 | [upload-image-to-github.mjs](upload-image-to-github.mjs) | Uploads images to GitHub via PR comment and retrieves URLs | Called by `pr-screenshot-table.sh` |
 | [measure-token-reduction.sh](measure-token-reduction.sh) | Measures token reduction between before/after log files using byte-count proxy | Run manually for AC4 verification |
+| [impact_map.sh](impact_map.sh) | Maps git diff to affected tests via path rules and `@covers` metadata | `impact_map.sh --base <ref> --layer {L4\|BATS}` |
 
 iOS-specific scripts are in `addons/ios/scripts/`. See [addons/ios/README.md](../addons/ios/README.md).
+
+## Prerequisites
+
+- BATS v1.5.0+ (for `--separate-stderr` and `bats_require_minimum_version`)
 
 ## References
 

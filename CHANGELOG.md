@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-04-22
+
+### Added
+- `scripts/impact_map.sh`: maps git diff to affected tests via path rules (`config/impact_rules.yml`) and inline `@covers` metadata. Supports `--base <ref>`, `--layer {L4|BATS}`, `--all`, and `--config <path>`. Unmatched files trigger fallback to full scan with stderr diagnostics. Zero external dependencies (pure bash). (#135)
+- `config/impact_rules.yml`: central path glob → L4/BATS test mapping for 7 path categories (skills, lib, hooks, agents, .claude-plugin, scripts, docs). (#135)
+- `config/README.md`: schema reference for `impact_rules.yml` and extension policy. (#135)
+- `docs/guides/testing-skills.md`: impact scope concept, `@covers` format definition, supported bash fnmatch subset, fallback behavior, and performance target. (#135)
+- `tests/test_impact_map.bats`: 33 BATS cases covering AC1–AC8. (#135)
+
 ## [2.1.0] - 2026-04-21
 
 ### Added
