@@ -83,3 +83,42 @@ EOF
   [ -z "$output" ]
   echo "$stderr" | grep -qiE "base|--all"
 }
+
+# --- AC7: malformed config/impact_rules.yml produces clear errors ---
+
+@test "AC7: config file does not exist exits non-zero with error on stderr" {
+  run --separate-stderr bash "$SCRIPT" --config "$WORK/config/nonexistent.yml" --base HEAD --layer BATS
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]
+  echo "$stderr" | grep -qi "not found\|config"
+}
+
+@test "AC7: YAML missing rules section exits non-zero with parse error on stderr" {
+  cat > "$CONFIG" <<'EOF'
+# no rules key here
+foo: bar
+EOF
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer BATS
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]
+  echo "$stderr" | grep -qiE "malformed|missing|rules"
+}
+
+@test "AC7: YAML rules section with zero entries exits non-zero with parse error on stderr" {
+  cat > "$CONFIG" <<'EOF'
+rules:
+EOF
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer BATS
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]
+  echo "$stderr" | grep -qiE "malformed|no rules|entries"
+}
+
+@test "AC7: parse error exits with code 2" {
+  cat > "$CONFIG" <<'EOF'
+# malformed: no rules
+not_rules: true
+EOF
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer BATS
+  [ "$status" -eq 2 ]
+}
