@@ -183,7 +183,9 @@ scan_covers() {
         break
       fi
     done <<< "$header"
-    [[ $matched -eq 1 ]] && printf '%s\n' "$bats_file"
+    if [[ $matched -eq 1 ]]; then
+      printf '%s\n' "$bats_file"
+    fi
   done < <(find "$REPO_ROOT/tests" -name "*.bats")
 }
 
@@ -303,4 +305,6 @@ if [[ ${#unmatched[@]} -gt 0 ]]; then
 fi
 
 # Output union + dedup + sorted
-printf '%s\n' "${results[@]}" | sort -u
+if [[ ${#results[@]} -gt 0 ]]; then
+  printf '%s\n' "${results[@]}" | sort -u
+fi
