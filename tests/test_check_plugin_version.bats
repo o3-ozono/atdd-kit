@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: scripts/check-plugin-version.sh
 setup() {
   export PLUGIN_ROOT="${BATS_TEST_TMPDIR}/plugin"
   export CACHE_DIR="${BATS_TEST_TMPDIR}/cache"

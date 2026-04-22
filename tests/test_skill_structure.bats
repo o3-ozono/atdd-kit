@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # Skill lists for structure validation
 setup() {
   ALL_SKILLS=(atdd bug debugging discover express ideate issue plan session-start ship sim-pool skill-fix skill-gate ui-test-debugging verify)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC6: Orphan clone cleanup — TTL-based detection and deletion of stale clones.
 
 # Cross-platform date helper (BSD date on macOS, GNU date on Linux)

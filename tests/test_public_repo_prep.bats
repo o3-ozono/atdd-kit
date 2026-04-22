@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: docs/**
 # test_public_repo_prep.bats — Issue #16: public リポジトリ化の準備
 
 # ─── AC1: marketplace.json のバージョン整合 ───

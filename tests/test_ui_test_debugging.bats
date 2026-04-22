@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/ui-test-debugging/SKILL.md
 # Tests for ui-test-debugging skill
 
 SKILL="skills/ui-test-debugging/SKILL.md"

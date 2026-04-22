@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # workflow-config.yml now only requires the platform field.
 # Templates (workflow-config.yml.tmpl) no longer exist.
 

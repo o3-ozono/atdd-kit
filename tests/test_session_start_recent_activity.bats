@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/session-start/SKILL.md
 # session-start SKILL.md に Recent Activity (24h) の記述があることを検証
 
 @test "session-start has recent activity gathering step" {

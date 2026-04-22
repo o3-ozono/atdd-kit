@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC1: Fail-Open Guard — unknown tools get immediate ALLOW.
 # AC4: DENY erase_sims for golden image protection.
 # AC5: DENY check runs before session_id check.

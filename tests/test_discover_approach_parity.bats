@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/discover/SKILL.md
 # Tests for Issue #145: discover approach comparison equal-detail rules
 
 DISCOVER_SKILL="skills/discover/SKILL.md"

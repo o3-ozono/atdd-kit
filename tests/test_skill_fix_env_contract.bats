@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/skill-fix/SKILL.md
 # AC8: 3-env inheritance contract (Spike-verified values)
 # ATDD_AUTOPILOT_WORKTREE: unset in subagent (Spike: unset)
 # CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1: inherited (Spike: 1)

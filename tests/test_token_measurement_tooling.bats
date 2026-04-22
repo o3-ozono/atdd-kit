@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: scripts/measure-token-reduction.sh
 # tests/test_token_measurement_tooling.bats
 # AC4a: Token reduction measurement tooling exists and works correctly
 

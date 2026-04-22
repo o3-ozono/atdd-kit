@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # Issue #169: Notification integration removal tests
 # Verifies all external notification code, docs, config, and tests are removed.
 

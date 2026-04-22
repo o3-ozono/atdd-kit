@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # Issue #1 / #21: Verify build_sim, build_run_sim, test_sim are routed
 # through is_xcode_clone_required pattern match and handle_xcodebuildmcp.
 

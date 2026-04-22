@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/session-start/SKILL.md
 # session-start SKILL.md addon-based sync and always-sync tests
 
 @test "session-start has auto-sync on update step" {

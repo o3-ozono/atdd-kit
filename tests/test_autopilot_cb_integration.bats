@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # =============================================================================
 # test_autopilot_cb_integration.bats — Integration tests
 # Issue #56: autopilot にサーキットブレーカーを導入し無限ループを防止する

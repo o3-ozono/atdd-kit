@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/express/SKILL.md
 # Tests for Express mode skill (skills/express/SKILL.md)
 # All tests are BATS grep-based structural validation
 

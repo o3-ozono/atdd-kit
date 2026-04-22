@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: scripts/**
 # Worktree isolation + guard false-fire prevention
 # AC4: subagent uses isolation: worktree (structure check)
 # AC8: main branch not contaminated (structure check)

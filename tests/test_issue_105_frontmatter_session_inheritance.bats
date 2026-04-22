@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: agents/**
 # Issue #105: Agent frontmatter model/effort removal — regression guard
 # Agents must NOT have pinned model or effort; session-level settings inherit instead.
 

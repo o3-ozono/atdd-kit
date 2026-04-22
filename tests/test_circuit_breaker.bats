@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/circuit_breaker.sh
 # =============================================================================
 # circuit_breaker.sh -- Unit tests
 # Issue #56: autopilot にサーキットブレーカーを導入し無限ループを防止する

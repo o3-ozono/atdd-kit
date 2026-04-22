@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: docs/**
 # tests/test_gh_field_audit.bats
 # AC1: gh --json fields are minimized to only what is actually used downstream
 

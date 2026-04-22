@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC2: Golden image lazy initialization — first boot, marker creation,
 # skip on subsequent calls, error when runtime not found.
 

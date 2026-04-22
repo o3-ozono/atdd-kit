@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Bilingual issue template tests
 # Templates exist in templates/issue/ja/ and templates/issue/en/
 

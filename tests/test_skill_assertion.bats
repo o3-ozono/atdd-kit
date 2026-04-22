@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/skill_assertion.sh
 bats_require_minimum_version 1.5.0
 
 # =============================================================================

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # AC4/AC7/AC8/AC10/AC15: Interaction reduction tests
 # Unit (BATS) -- verifies SKILL.md structure for batch mode, fast track,
 # default recommendations, and risk-based approval classification

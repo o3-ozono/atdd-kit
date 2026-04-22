@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Issue #64: docs/ ディレクトリ構成の再編
 
 # AC1: 既存ファイルが正しいサブディレクトリに移動される

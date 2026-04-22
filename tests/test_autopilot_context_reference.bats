@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # tests/test_autopilot_context_reference.bats
+# @covers: commands/autopilot.md
 # AC2: Agent Team spawn prompts use references only, no full-text injection
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"

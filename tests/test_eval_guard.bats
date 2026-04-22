@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: hooks/eval-guard.sh
 # =============================================================================
 # eval-guard.sh — PreToolUse hook tests
 # Issue #22: fix false positives from main-side SKILL.md changes and

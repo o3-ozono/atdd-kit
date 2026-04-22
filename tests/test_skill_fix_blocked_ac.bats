@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/skill-fix/SKILL.md
 # AC4 step 6: blocked-ac label flow when quality gates fail
 # Tests: MUST-1/2/3, UX U1, Interruption I2 violations, and
 # negative assert that ready-to-go is NOT added on gate failure.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC5: Automatic simulator name/UDID injection —
 # XcodeBuildMCP: DENY+instruction on first build, ios-simulator: updatedInput udid injection.
 

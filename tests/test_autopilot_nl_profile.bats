@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #122 — NL profile drift-detect (custom-base + NL overlay).
 #
 # Scope:

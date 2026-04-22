@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/**
 # Language resolution logic was removed.
 # These tests verify the removal is complete.
 

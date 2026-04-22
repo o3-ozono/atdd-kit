@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Issue #68: User Story 品質基準の策定
 
 # AC1: MUST criteria defined

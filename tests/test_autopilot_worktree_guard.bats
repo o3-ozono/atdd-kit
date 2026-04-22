@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: hooks/autopilot-worktree-guard.sh
 # Issue #111: autopilot-worktree-guard.sh boundary enforcement
 #
 # AC1: env export (covered by commands/autopilot.md assertion)

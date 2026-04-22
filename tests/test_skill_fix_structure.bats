@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/skill-fix/SKILL.md
 # AC1 (explicit invocation), AC2 (interview Q count static assert),
 # AC4 (no Agent tool usage), AC6 (1-line report static assert)
 

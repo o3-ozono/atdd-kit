@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/ideate/SKILL.md
 # AC6: Workflow documentation includes ideate step between issue and discover
 
 # --- docs/workflow/issue-ready-flow.md ---

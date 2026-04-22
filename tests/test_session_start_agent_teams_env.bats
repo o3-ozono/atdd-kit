@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/session-start/SKILL.md
 # Issue #2: session-start Agent Teams environment variable auto-configuration
 
 # ---------------------------------------------------------------------------

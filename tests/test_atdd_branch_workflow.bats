@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # Tests for AC1: explicit git switch -c in atdd Workflow Step 2 (#90)
+# @covers: skills/atdd/SKILL.md
 
 SKILL="skills/atdd/SKILL.md"
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # Issue #34 AC2: Task-type-specific agent composition switching
 # Issue #34 AC3: Variable-count agent user approval
 

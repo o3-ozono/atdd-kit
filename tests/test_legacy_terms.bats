@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Issue #34 AC7: No legacy terms remain (excluding CHANGELOG.md)
 
 @test "AC7: no 'type:investigation' label in any file" {

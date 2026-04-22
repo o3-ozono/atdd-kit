@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/**
 # i18n structure tests — English-only skills, bilingual user-facing docs
 
 # --- No SKILL.ja.md files exist (English-only) ---

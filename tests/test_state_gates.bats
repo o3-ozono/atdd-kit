@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # Tests for Issue #108: ATDD workflow enforcement — State Gates
 
 SKILL_GATE="skills/skill-gate/SKILL.md"

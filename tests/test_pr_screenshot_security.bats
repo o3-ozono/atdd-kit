@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: scripts/pr-screenshot-table.sh
 # Test file for Issue #26: security hardening for pr-screenshot-table.sh and .gitignore
 
 SCRIPT="scripts/pr-screenshot-table.sh"

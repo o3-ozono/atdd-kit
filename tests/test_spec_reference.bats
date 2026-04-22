@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: lib/spec_check.sh
 # Issue #70: LLM US/AC auto-reference structural tests.
 #
 # Groups:

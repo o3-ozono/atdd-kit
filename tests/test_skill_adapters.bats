@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: agents/**
 # skill_adapters moved to agents/ frontmatter.
 # Tests validate agents/*.md structure and skill-gate governance.
 

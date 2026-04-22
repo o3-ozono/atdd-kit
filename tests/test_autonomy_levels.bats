@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # AC14: Autonomy Level Recommendation
 # Integration test -- verifies consistency across discover SKILL.md,
 # workflow-detail.md, autonomy-levels.md, and auto-review.md

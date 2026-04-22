@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # Verify templates/issue/ and templates/pr/ stay in sync with .github/ copies.
 # Prevents silent divergence between source templates and deployed copies.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: CHANGELOG.md
 @test "CHANGELOG.md exists" {
   [[ -f CHANGELOG.md ]]
 }

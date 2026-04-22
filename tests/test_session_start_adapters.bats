@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/session-start/SKILL.md
 # skill_adapters validation removed from session-start.
 # Agent configuration is now in agents/*.md files.
 

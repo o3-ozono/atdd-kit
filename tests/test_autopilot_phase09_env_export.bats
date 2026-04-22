@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #111 AC1 / #116 drift-detection: commands/autopilot.md Phase 0.9 Step 4
 # documents ATDD_AUTOPILOT_WORKTREE export as optional (not load-bearing).
 # cwd-detection is the primary mechanism (#116 fix).
