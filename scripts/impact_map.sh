@@ -148,18 +148,14 @@ get_diff_files() {
 # ---------------------------------------------------------------------------
 
 get_all_l4() {
-  local seen=()
   local i
   for (( i=0; i<${#l4_targets[@]}; i++ )); do
     local val="${l4_targets[$i]}"
     [[ -z "$val" ]] && continue
     for name in $val; do
-      local found=0
-      local s
-      for s in "${seen[@]:-}"; do [[ "$s" == "$name" ]] && found=1 && break; done
-      [[ $found -eq 0 ]] && seen+=("$name") && printf '%s\n' "$name"
+      printf '%s\n' "$name"
     done
-  done
+  done | sort -u
 }
 
 get_all_bats() {

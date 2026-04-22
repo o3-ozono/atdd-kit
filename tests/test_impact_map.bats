@@ -122,3 +122,43 @@ EOF
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer BATS
   [ "$status" -eq 2 ]
 }
+
+# --- AC4: --all + --layer forces full scan ---
+
+@test "AC4: --all --layer BATS lists all .bats files and exits 0" {
+  _make_minimal_config
+  # create two bats files in WORK/tests to verify full scan
+  echo "#!/usr/bin/env bats" > "$WORK/tests/test_alpha.bats"
+  echo "#!/usr/bin/env bats" > "$WORK/tests/test_beta.bats"
+  # Override REPO_ROOT for this test by passing explicit config and running from WORK
+  # The script uses REPO_ROOT derived from script location, so tests/ is WORK/tests
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer BATS
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "test_alpha.bats"
+  echo "$output" | grep -q "test_beta.bats"
+}
+
+@test "AC4: --all --layer L4 lists all L4 names from config and exits 0" {
+  _make_minimal_config
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer L4
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "discover"
+  echo "$output" | grep -q "plan"
+  [ -z "$stderr" ]
+}
+
+@test "AC4: --all without --base is valid (--base omission is accepted)" {
+  _make_minimal_config
+  # No --base provided — should succeed
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer L4
+  [ "$status" -eq 0 ]
+}
+
+@test "AC4: --all --layer BATS output is sorted and deduplicated" {
+  _make_minimal_config
+  echo "#!/usr/bin/env bats" > "$WORK/tests/test_zzz.bats"
+  echo "#!/usr/bin/env bats" > "$WORK/tests/test_aaa.bats"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer BATS
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(echo "$output" | sort -u)" ]
+}
