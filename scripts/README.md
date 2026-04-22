@@ -18,7 +18,7 @@ iOS-specific scripts are in `addons/ios/scripts/`. See [addons/ios/README.md](..
 
 ## Prerequisites
 
-- BATS v1.3.0+ (for `--separate-stderr` and `bats_require_minimum_version`)
+- BATS v1.5.0+ (for `--separate-stderr` and `bats_require_minimum_version`)
 
 ## References
 
