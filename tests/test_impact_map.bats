@@ -202,11 +202,14 @@ _commit_changed_file() {
   [ "$status" -eq 0 ]
   echo "$output" | grep -qx "discover"
   echo "$output" | grep -qx "plan"
-  # should not contain unrelated entries
+  echo "$output" | grep -qx "atdd"
+  echo "$output" | grep -qx "verify"
+  echo "$output" | grep -qx "ship"
+  echo "$output" | grep -qx "bug"
+  # skills/** rule yields exactly: discover plan atdd verify ship bug = 6 items
   local count
   count=$(echo "$output" | grep -c "." || true)
-  # skills/** rule yields: discover plan atdd verify ship bug = 6 items
-  [ "$count" -gt 0 ]
+  [ "$count" -eq 6 ]
   [ -z "$stderr" ]
 }
 
@@ -292,6 +295,35 @@ _commit_changed_file() {
   echo "$stderr" | grep -q "FALLBACK"
 }
 
+@test "AC3: delete-only change on unmatched path triggers fallback" {
+  _make_minimal_config
+  # add then delete a file on an unrecognized path
+  echo "to delete" > "$WORK/obsolete_file.txt"
+  git -C "$WORK" add "$WORK/obsolete_file.txt"
+  git -C "$WORK" commit -m "add file" -q
+  git -C "$WORK" rm "$WORK/obsolete_file.txt" -q
+  git -C "$WORK" commit -m "delete file" -q
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$stderr" | grep -q "FALLBACK"
+  echo "$stderr" | grep -q "obsolete_file.txt"
+}
+
+@test "AC3: binary file change on unmatched path triggers fallback" {
+  _make_minimal_config
+  # create a binary-ish file (NUL byte) on an unrecognized path
+  printf '\x00\x01\x02binary' > "$WORK/image.png"
+  git -C "$WORK" add "$WORK/image.png"
+  git -C "$WORK" commit -m "add binary" -q
+  printf '\x00\x01\x02binary changed' > "$WORK/image.png"
+  git -C "$WORK" add "$WORK/image.png"
+  git -C "$WORK" commit -m "change binary" -q
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  [ "$status" -eq 0 ]
+  echo "$stderr" | grep -q "FALLBACK"
+  echo "$stderr" | grep -q "image.png"
+}
+
 # --- AC2: @covers reverse lookup with full path and glob ---
 
 _make_bats_fixture() {
@@ -353,23 +385,42 @@ _make_bats_fixture() {
 }
 
 @test "AC2: @covers on line 6 (outside first 5 lines) is NOT detected" {
-  _make_minimal_config
+  # Strategy: two bats files under tests/ — test_visible.bats has @covers: scripts on
+  # line 2 (within head-5), test_hidden.bats has it only on line 6 (outside head-5).
+  # Change scripts/hidden.sh which matches scripts/** path rule with bats: "@covers scripts".
+  # resolve_path_rules scans for "scripts" token in head-5 of each .bats file.
+  # Expected: test_visible.bats in output, test_hidden.bats NOT in output.
+  cat > "$CONFIG" <<'EOF'
+rules:
+  - path: scripts/**
+    l4: discover
+    bats: "@covers scripts"
+EOF
+  git -C "$WORK" add "$CONFIG"
+  git -C "$WORK" commit -m "add config" -q
   mkdir -p "$WORK/tests"
+  # visible: @covers on line 2
+  {
+    echo "#!/usr/bin/env bats"
+    echo "# @covers: scripts"
+    echo "@test \"x\" { true; }"
+  } > "$WORK/tests/test_visible.bats"
+  # hidden: @covers on line 6 (outside head-5)
   {
     echo "#!/usr/bin/env bats"
     echo "# line 2"
     echo "# line 3"
     echo "# line 4"
     echo "# line 5"
-    echo "# @covers: lib/hidden.sh"
+    echo "# @covers: scripts"
     echo "@test \"x\" { true; }"
   } > "$WORK/tests/test_hidden.bats"
-  _commit_changed_file "lib/hidden.sh"
+  _commit_changed_file "scripts/hidden.sh"
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer BATS
-  # lib/hidden.sh matches lib/** path rule → BATS scan for "@covers lib" in bats files
-  # test_hidden.bats has @covers on line 6 (not scanned), but path rule still triggers
-  # fallback or path-rule match may find it
   [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
+  echo "$output" | grep -q "test_visible.bats"
+  echo "$output" | grep -qv "test_hidden.bats"
 }
 
 # --- AC5: path rule and @covers results are union + deduped ---

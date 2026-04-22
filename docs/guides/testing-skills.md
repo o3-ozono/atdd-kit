@@ -52,10 +52,10 @@ Add `@covers` lines within the **first 5 lines** of a `.bats` file:
 | Form | Example | Matches |
 |------|---------|---------|
 | Exact path | `lib/spec_check.sh` | Only that file |
-| Prefix glob | `lib/**` | Any file starting with `lib/` |
-| Simple glob | `scripts/*` | Any file directly under `scripts/` |
+| Prefix glob | `lib/**` | Any file under `lib/` at any depth |
+| Single-star glob | `lib/*.sh` | Any file under `lib/` at any depth with `.sh` extension |
 
-`**` is treated as equivalent to `*` in bash fnmatch (non-globstar). Patterns like `lib/**.sh` (recursive + extension) are **not supported** — use `lib/**` instead.
+In bash `[[ == ]]` pattern matching, `*` crosses `/` directory boundaries (this is not standard globbing). Both `lib/*` and `lib/**` match `lib/sub/dir/file.sh`. Use `lib/**` for clarity when expressing "any file under lib/".
 
 ### Deduplication
 

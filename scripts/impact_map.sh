@@ -112,7 +112,12 @@ parse_impact_rules() {
           echo "ERROR: malformed YAML '$yml' — 'bats:' without preceding 'path:' at line $line_num" >&2
           exit 2
         fi
-        bats_tags[$idx]="${BASH_REMATCH[1]}"
+        local raw_bats="${BASH_REMATCH[1]}"
+        # strip surrounding YAML double-quotes if present
+        if [[ "$raw_bats" =~ ^'"'(.*)'"'$ ]]; then
+          raw_bats="${BASH_REMATCH[1]}"
+        fi
+        bats_tags[$idx]="$raw_bats"
         continue
       fi
       # top-level key (non-rules) resets in_rules
@@ -139,8 +144,13 @@ parse_impact_rules() {
 
 get_diff_files() {
   local base="$1"
-  git -C "$REPO_ROOT" diff --name-status --diff-filter=ACMRDT "${base}..HEAD" 2>/dev/null \
-    | awk '/^R/ { print $2; print $3; next } { print $2 }'
+  local git_out
+  if ! git_out=$(git -C "$REPO_ROOT" diff --name-status --diff-filter=ACMRDT "${base}..HEAD" 2>&1); then
+    echo "ERROR: failed to diff against '${base}'" >&2
+    exit 1
+  fi
+  printf '%s\n' "$git_out" \
+    | awk -F'\t' '/^R/ { print $2; print $3; next } { print $2 }'
 }
 
 # ---------------------------------------------------------------------------
