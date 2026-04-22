@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/claude-code/README.md`: invocation prerequisites, env vars, GH_TOKEN hygiene, SIGINT/SIGTERM contract, exit codes, CI guard (`RUN_INTEGRATION=1`). (#134)
 - `tests/fixtures/claude-code/`: BATS fixtures — `transcripts/` (valid/empty/malformed/non-utf8 jsonl), `lint_skill_descriptions/` (good/bad SKILL.md). (#134)
 - `tests/test_l4_lint_skill_descriptions.bats`, `tests/test_l4_test_helpers.bats`, `tests/test_l4_analyze_token_usage.bats`, `tests/test_l4_run_skill_tests.bats`, `tests/test_l4_samples.bats`, `tests/test_l4_docs.bats`: BATS coverage for all AC1-AC6. (#134)
+- `scripts/bats_runner.sh`: impact-scoped BATS runner. `--all` runs all 111 BATS files under `tests/` and `addons/*/tests/`; `--impact --base <ref>` delegates to `impact_map.sh` to run only affected tests, with automatic full-run fallback for unmatched changed files. Exits 0 with `no affected BATS` when diff is empty (AC5). Invalid base ref exits non-zero with error message (AC6). (#136)
+- `scripts/check_bats_covers.sh`: validator that scans the first 5 lines of every BATS file for a non-empty `# @covers: <path-or-glob>` annotation. Exits 0 with `OK: N files` on success, non-zero with violation list on failure. (#136)
+- `# @covers:` annotations added to all 111 BATS files (`tests/*.bats` + `addons/ios/tests/*.bats`). Annotation values follow `impact_rules.yml` token conventions for compatibility with both `scan_covers()` (glob-match) and `resolve_path_rules()` (substring-match) in `impact_map.sh`. (#136)
+- `tests/test_check_bats_covers.bats`, `tests/test_bats_runner.bats`: BATS test files covering AC1-AC6. (#136)
+- `tests/fixtures/impact/`: fixture files for validator and runner tests (valid/missing/empty_covers BATS + mock_impact_rules.yml). (#136)
 
 ### BREAKING Changes (inherited from 2.0.0 — still in effect)
 - `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
