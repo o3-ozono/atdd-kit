@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","cwd":"/tmp/test","session_id":"sess1","tools":[],"mcp_servers":[],"model":"claude-opus-4-5","permissionMode":"bypassPermissions","apiKeySource":"env"}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"test prompt"}]},"parent_tool_use_id":null,"session_id":"sess1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"test response"}]},"session_id":"sess1","usage":{"input_tokens":100,"output_tokens":50,"cache_read_input_tokens":200,"cache_creation_input_tokens":0},"model":"claude-opus-4-5"}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"result"}]},"parent_tool_use_id":"t1","session_id":"sess1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"subagent response"}]},"session_id":"sess2","usage":{"input_tokens":80,"output_tokens":30,"cache_read_input_tokens":0,"cache_creation_input_tokens":100},"model":"claude-opus-4-5"}
