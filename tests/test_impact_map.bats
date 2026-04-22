@@ -371,3 +371,38 @@ _make_bats_fixture() {
   # fallback or path-rule match may find it
   [ "$status" -eq 0 ]
 }
+
+# --- AC5: path rule and @covers results are union + deduped ---
+
+@test "AC5: same bats file matched by path rule and @covers appears exactly once" {
+  _make_minimal_config
+  # test_spec.bats declares @covers: lib/spec_check.sh AND lib/**
+  # AND is also matched by the lib/** path rule BATS scan for "@covers lib"
+  _make_bats_fixture "tests/test_spec.bats" "lib/spec_check.sh" "lib/**"
+  _commit_changed_file "lib/spec_check.sh"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer BATS
+  [ "$status" -eq 0 ]
+  count=$(echo "$output" | grep -c "test_spec.bats" || true)
+  [ "$count" -eq 1 ]
+}
+
+@test "AC5: multiple @covers declarations in same file produce single entry" {
+  _make_minimal_config
+  # two @covers lines both matching lib/spec_check.sh
+  _make_bats_fixture "tests/test_multi.bats" "lib/spec_check.sh" "lib/**"
+  _commit_changed_file "lib/spec_check.sh"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer BATS
+  [ "$status" -eq 0 ]
+  count=$(echo "$output" | grep -c "test_multi.bats" || true)
+  [ "$count" -eq 1 ]
+}
+
+@test "AC5: output is sorted globally (not just per source)" {
+  _make_minimal_config
+  _make_bats_fixture "tests/test_zzz.bats" "lib/spec_check.sh"
+  _make_bats_fixture "tests/test_aaa.bats" "lib/spec_check.sh"
+  _commit_changed_file "lib/spec_check.sh"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer BATS
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(echo "$output" | sort -u)" ]
+}
