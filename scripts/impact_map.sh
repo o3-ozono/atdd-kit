@@ -145,9 +145,10 @@ parse_impact_rules() {
 get_diff_files() {
   local base="$1"
   local git_out
+  # capture stderr so invalid ref shows in our error, not raw git noise
   if ! git_out=$(git -C "$REPO_ROOT" diff --name-status --diff-filter=ACMRDT "${base}..HEAD" 2>&1); then
     echo "ERROR: failed to diff against '${base}'" >&2
-    exit 1
+    return 1
   fi
   printf '%s\n' "$git_out" \
     | awk -F'\t' '/^R/ { print $2; print $3; next } { print $2 }'
@@ -258,11 +259,13 @@ if [[ $OPT_ALL -eq 1 ]]; then
   exit 0
 fi
 
-# Diff-based mode
+# Diff-based mode: run git diff in current shell so error propagates via set -e
+_raw_diff=$(get_diff_files "$OPT_BASE")
 diff_files=()
 while IFS= read -r f; do
   [[ -n "$f" ]] && diff_files+=("$f")
-done < <(get_diff_files "$OPT_BASE")
+done <<< "$_raw_diff"
+unset _raw_diff
 
 # Empty diff → empty stdout, exit 0
 if [[ ${#diff_files[@]} -eq 0 ]]; then

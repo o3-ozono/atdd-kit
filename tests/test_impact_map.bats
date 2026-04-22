@@ -420,7 +420,7 @@ EOF
   [ "$status" -eq 0 ]
   [ -z "$stderr" ]
   echo "$output" | grep -q "test_visible.bats"
-  echo "$output" | grep -qv "test_hidden.bats"
+  ! echo "$output" | grep -q "test_hidden.bats"
 }
 
 # --- AC5: path rule and @covers results are union + deduped ---
