@@ -129,8 +129,8 @@ PLAN_SKILL="skills/plan/SKILL.md"
   echo "$step1" | grep -qi "DoD"
 }
 
-@test "AC8: plan SKILL.md description field mentions DoD" {
-  head -5 "$PLAN_SKILL" | grep -qi "DoD"
+@test "AC8: plan SKILL.md description field is trigger-only (Use when form)" {
+  head -5 "$PLAN_SKILL" | grep -qi "Use when"
 }
 
 # --- Mandatory Checklist check ---
