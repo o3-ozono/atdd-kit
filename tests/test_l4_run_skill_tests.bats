@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: tests/claude-code/run-skill-tests.sh
 # test_l4_run_skill_tests.bats -- AC2: integration runner
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"

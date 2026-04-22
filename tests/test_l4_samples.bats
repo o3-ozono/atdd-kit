@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: tests/claude-code/samples/**
 # test_l4_samples.bats -- AC5: positive + negative sample tests per layer
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"

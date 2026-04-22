@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: tests/claude-code/test-helpers.sh
 # test_l4_test_helpers.bats -- AC1: fast-test harness
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
