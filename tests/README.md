@@ -99,14 +99,37 @@ bats tests/ addons/ios/tests/    # Run all tests
 | test_sim_init_guidance.bats | Addon guidance validation |
 | test_sim_pool_docs.bats | sim-pool documentation |
 
+## L4 Skill Tests (`tests/claude-code/`)
+
+The `tests/claude-code/` subtree contains a 2-layer (fast / integration) test framework that invokes `claude -p` directly to catch skill-chain drift and description anti-patterns.
+
+```
+tests/claude-code/
+  test-helpers.sh              # fast-test harness helpers (run_claude, assert_*)
+  run-skill-tests.sh           # fast/integration runner
+  analyze-token-usage.py       # per-agent token/cost breakdown from jsonl
+  samples/                     # sample test scripts (fast-*.sh, integration-*.sh)
+  fixtures/                    # fixture projects for integration tests
+```
+
+Run L4 tests:
+```bash
+tests/claude-code/run-skill-tests.sh --test skill-description-lint       # fast
+tests/claude-code/run-skill-tests.sh --integration --test discover-minimal  # integration
+```
+
+BATS coverage for L4 infrastructure lives in `tests/test_l4_*.bats` and uses stub claude via `SKILL_TEST_CLAUDE_BIN`. See [tests/claude-code/README.md](claude-code/README.md) for full invocation docs.
+
 ## Conventions
 
 - File naming: `test_<target>.bats`
 - Each test file focuses on one feature or module
 - Tests must pass with zero external dependencies (no network, no npm)
 - iOS addon tests live in `addons/ios/tests/`, not in `tests/`
+- L4 live-LLM tests are guarded by `RUN_INTEGRATION=1`
 
 ## References
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) — Zero dependencies policy
+- [docs/testing-skills.md](../docs/testing-skills.md) — L4 methodology and cost baseline
 - [BATS documentation](https://bats-core.readthedocs.io/)

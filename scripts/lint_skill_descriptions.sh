@@ -9,6 +9,7 @@
 #       indicates a summary rather than a trigger condition
 #
 # update when detection rule changes
+# See DEVELOPMENT.md §Skill Description Field Rules for the authoritative rule definition.
 #
 # Usage:
 #   scripts/lint_skill_descriptions.sh               # scan skills/*/SKILL.md
