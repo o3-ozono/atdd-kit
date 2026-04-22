@@ -47,21 +47,13 @@ register_inflight() {
   local timestamp
   timestamp="${SKILL_FIX_TIMESTAMP_OVERRIDE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}"
 
+  # 1 entry = 1 line format (enables safe sed line-based deletion)
   local entry="{\"issue\": ${issue_n}, \"skill\": \"${skill}\", \"phase\": \"${phase}\", \"started_at\": \"${timestamp}\"}"
-
-  if [[ ! -f "$INFLIGHT_REGISTRY" ]]; then
-    echo "[${entry}]" > "$INFLIGHT_REGISTRY"
-  else
-    local existing
-    existing=$(cat "$INFLIGHT_REGISTRY")
-    existing="${existing%]}"
-    echo "${existing}, ${entry}]" > "$INFLIGHT_REGISTRY"
-  fi
+  echo "$entry" >> "$INFLIGHT_REGISTRY"
 }
 
 query_inflight() {
   local skill="${1:-}"
-  local phase="${2:-}"
 
   if [[ ! -f "$INFLIGHT_REGISTRY" ]]; then
     echo "[]"
@@ -73,7 +65,8 @@ query_inflight() {
     return 0
   fi
 
-  grep -o "\"skill\": \"${skill}\"" "$INFLIGHT_REGISTRY" >/dev/null 2>&1 && echo "1" || echo "0"
+  # Exact-match on skill field value (avoids plan matching planner)
+  grep -q "\"skill\": \"${skill}\"" "$INFLIGHT_REGISTRY" 2>/dev/null && echo "1" || echo "0"
 }
 
 deregister_inflight() {
@@ -81,7 +74,8 @@ deregister_inflight() {
   if [[ ! -f "$INFLIGHT_REGISTRY" ]]; then
     return 0
   fi
-  sed -i.bak "/\"issue\": ${issue_n}/d" "$INFLIGHT_REGISTRY" 2>/dev/null || true
+  # Safe: 1 entry = 1 line, sed deletes only the matching line
+  sed -i.bak "/\"issue\": ${issue_n},/d" "$INFLIGHT_REGISTRY" 2>/dev/null || true
   rm -f "${INFLIGHT_REGISTRY}.bak"
 }
 
@@ -204,17 +198,17 @@ is_stale() {
   local issue_n="$1"
   local started_at="${2:-}"
 
-  # (1) ready-to-go label
-  local labels
-  labels="$($GH_CMD issue view "$issue_n" --json labels --jq '[.labels[].name]' 2>/dev/null || echo "[]")"
-  if echo "$labels" | grep -q '"ready-to-go"\|"blocked-ac"'; then
+  # (1) ready-to-go or blocked-ac label (grep on raw JSON avoids jq dependency in tests)
+  local labels_json
+  labels_json="$($GH_CMD issue view "$issue_n" --json labels 2>/dev/null || echo '{"labels":[]}')"
+  if echo "$labels_json" | grep -q '"ready-to-go"\|"blocked-ac"'; then
     return 0
   fi
 
-  # (2) closed
-  local state
-  state="$($GH_CMD issue view "$issue_n" --json state --jq .state 2>/dev/null || echo "")"
-  if [[ "$state" == "CLOSED" ]]; then
+  # (2) closed (grep on raw JSON avoids jq dependency in tests)
+  local state_json
+  state_json="$($GH_CMD issue view "$issue_n" --json state 2>/dev/null || echo '{"state":""}')"
+  if echo "$state_json" | grep -q '"CLOSED"'; then
     return 0
   fi
 

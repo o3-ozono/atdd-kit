@@ -108,3 +108,16 @@ Issue #116 (autopilot-worktree-guard) and #119 (skill-fix) run in parallel. skil
 | `lib/skill_fix_dispatch.sh` | Shell functions: dispatch, inflight registry, env, cleanup |
 | `templates/workflow/blocked_ac_comment.md` | Blocker comment template |
 | `skills/discover/SKILL.md` | Modified: AUTOPILOT-GUARD + HARD-GATE + Step 7 + persona auto-select |
+
+## Known Limitations
+
+### AC7: Inflight Registry Race Condition (deferred)
+
+The inflight registry (`lib/skill_fix_dispatch.sh`) uses a file-based approach with 1-entry-per-line format. Within a single session this is safe (sequential dispatch). However, the following are **out of scope** for this PR and deferred to a follow-up Issue:
+
+1. **Atomic RMW**: `register_inflight` uses `>>` append (safe for concurrent appends) but `deregister_inflight` uses `sed -i` (non-atomic under concurrent delete). A `flock`-based wrapper would eliminate the race.
+2. **Exact-match query**: `query_inflight` uses `grep "\"skill\": \"${skill}\""` which is exact-match on the field value. The surrounding JSON structure (1 entry per line) prevents prefix collisions (e.g., `plan` vs `planner` are distinct field values).
+
+**Design rationale for deferral**: skill-fix is triggered interactively in a single session; the inflight check → dispatch sequence is synchronous. True parallel dispatch from the same session requires the user to simultaneously complete two separate 3-question interviews, which is not a realistic use case.
+
+**Follow-up scope**: `flock`-based atomic RMW + parallel bats test harness.

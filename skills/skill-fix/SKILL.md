@@ -76,6 +76,12 @@ Search the following for 3-point match (同一 skill 名 + 同一 phase + 同一
 
 ## Phase 3: Parallel Activity Guard (AC7)
 
+First, purge stale entries from inflight registry (AC9):
+```bash
+bash lib/skill_fix_dispatch.sh cleanup_stale
+```
+Stale criteria: issue has `ready-to-go`/`blocked-ac` label, issue is CLOSED, or `started_at` is >24h old.
+
 Check inflight registry (`lib/skill_fix_dispatch.sh query_inflight`):
 - If 1+ skill-fix subagent already running with same skill+phase → tell user `既存 skill-fix #N 実行中`, suppress new dispatch
 - If same count but **different content** (duplicate check shows 新規/既存追記) → allow new dispatch

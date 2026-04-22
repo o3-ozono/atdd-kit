@@ -125,18 +125,69 @@ _run_dispatch() {
   _run_dispatch cleanup ""
 }
 
-@test "AC9: is_stale function is defined in dispatch lib" {
-  grep -q "^is_stale()" lib/skill_fix_dispatch.sh
+# --- AC9: is_stale / cleanup_stale (behavioral) ---
+
+_make_mock_gh() {
+  local mode="$1"
+  local mock_bin="/tmp/bats_mock_gh_$$_${mode}"
+  cat > "$mock_bin" <<SCRIPT
+#!/usr/bin/env bash
+if [[ "\$*" == *"--json labels"* ]]; then
+  case "${mode}" in
+    ready)  echo '{"labels":[{"name":"ready-to-go"}]}';;
+    closed) echo '{"labels":[]}';;
+    open)   echo '{"labels":[]}';;
+  esac
+elif [[ "\$*" == *"--json state"* ]]; then
+  case "${mode}" in
+    ready)  echo '{"state":"OPEN"}';;
+    closed) echo '{"state":"CLOSED"}';;
+    open)   echo '{"state":"OPEN"}';;
+  esac
+fi
+SCRIPT
+  chmod +x "$mock_bin"
+  echo "$mock_bin"
 }
 
-@test "AC9: cleanup_stale removes entries with ready-to-go label" {
-  grep -q "cleanup_stale\|is_stale" lib/skill_fix_dispatch.sh
+@test "AC9: is_stale returns 0 (stale) when issue has ready-to-go label" {
+  mock=$(_make_mock_gh ready)
+  GH_CMD_OVERRIDE="$mock" INFLIGHT_REGISTRY="$TEST_REGISTRY" \
+    bash lib/skill_fix_dispatch.sh is_stale 99 "2026-04-22T00:00:00Z"
+  result=$?
+  rm -f "$mock"
+  [[ "$result" -eq 0 ]]
 }
 
-@test "AC9: cleanup_stale removes entries older than 24h" {
-  grep -q "24\|86400\|hours\|started_at" lib/skill_fix_dispatch.sh
+@test "AC9: is_stale returns 0 (stale) when issue state is CLOSED" {
+  mock=$(_make_mock_gh closed)
+  GH_CMD_OVERRIDE="$mock" INFLIGHT_REGISTRY="$TEST_REGISTRY" \
+    bash lib/skill_fix_dispatch.sh is_stale 99 "2026-04-22T00:00:00Z"
+  result=$?
+  rm -f "$mock"
+  [[ "$result" -eq 0 ]]
 }
 
-@test "AC9: cleanup_stale removes entries for closed issues" {
-  grep -q "closed\|is_stale\|cleanup_stale" lib/skill_fix_dispatch.sh
+@test "AC9: is_stale returns 0 (stale) when started_at is older than 24h" {
+  mock=$(_make_mock_gh open)
+  GH_CMD_OVERRIDE="$mock" INFLIGHT_REGISTRY="$TEST_REGISTRY" \
+    bash lib/skill_fix_dispatch.sh is_stale 99 "2020-01-01T00:00:00Z"
+  result=$?
+  rm -f "$mock"
+  [[ "$result" -eq 0 ]]
+}
+
+@test "AC9: cleanup_stale preserves fresh entries when stale entry removed (regression)" {
+  # Register stale (#99) and fresh (#88) — both in registry
+  _run_dispatch register_inflight 99 discover step3
+  _run_dispatch register_inflight 88 plan step2
+  grep -q '"issue": 99' "$TEST_REGISTRY"
+  grep -q '"issue": 88' "$TEST_REGISTRY"
+  # Deregister only stale #99
+  _run_dispatch deregister_inflight 99
+  # Fresh entry #88 must still be present
+  grep -q '"issue": 88' "$TEST_REGISTRY"
+  # Stale entry #99 must be gone
+  run grep -c '"issue": 99' "$TEST_REGISTRY"
+  [[ "$output" == "0" ]] || [[ "$status" -ne 0 ]]
 }
