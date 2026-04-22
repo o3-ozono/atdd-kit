@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: scripts/**
 # Test file for Issue #162: autopilot Agent Teams worktree isolation
 # Validates AC1-AC5 against commands/autopilot.md and skills/session-start/SKILL.md
 

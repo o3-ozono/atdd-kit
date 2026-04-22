@@ -10,6 +10,26 @@ bats addons/ios/tests/           # Run iOS addon tests
 bats tests/ addons/ios/tests/    # Run all tests
 ```
 
+### Impact-Scoped Execution (fast feedback)
+
+Run only the BATS files affected by your current changes:
+
+```bash
+# Run only tests covering files changed since origin/main
+scripts/bats_runner.sh --impact --base origin/main
+
+# Run all tests (same as bats tests/ addons/ios/tests/)
+scripts/bats_runner.sh --all
+```
+
+Requires `scripts/impact_map.sh` (introduced in #135) and `@covers:` annotations in BATS headers.
+
+Validate that all BATS files have annotations:
+
+```bash
+scripts/check_bats_covers.sh   # exits 0 with "OK: N files" if all annotated
+```
+
 ## Core Test Files
 
 | Test File | Target |

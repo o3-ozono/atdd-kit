@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/skill-fix/SKILL.md
 # AC10: --skill-fix flag scope lock
 # discover: accepts --skill-fix (β strategy)
 # plan: does NOT accept --skill-fix (HARD-GATE maintained)

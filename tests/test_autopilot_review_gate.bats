@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Tests for Issue #136: autopilot Phase 5 review verification
 
 AUTOPILOT_CMD="commands/autopilot.md"

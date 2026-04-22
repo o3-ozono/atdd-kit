@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: agents/**
 # Issue #138 / #34: Agent Teams architecture tests
 # Agent definitions live in agents/*.md
 # Updated for Issue #45: po.md removed — main Claude directly acts as PO orchestrator

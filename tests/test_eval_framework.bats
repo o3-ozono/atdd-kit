@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: scripts/**
 # =============================================================================
 # Skill Eval Framework Tests
 # Covers AC1 (change detection), AC3 (grading), AC4 (baseline comparison),

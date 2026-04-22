@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC2a: CLONE_REQUIRED via _sim pattern match.
 # AC2b: CLONE_REQUIRED individual tools (screenshot, snapshot_ui, session_*).
 # Tests pattern matching, edge cases, and clone failure.

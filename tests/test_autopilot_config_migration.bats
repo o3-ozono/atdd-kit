@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #122 — .claude/workflow-config.yml → .claude/config.yml migration + AC11
 # placeholder template drift-detect.
 #

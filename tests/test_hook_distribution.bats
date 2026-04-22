@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: hooks/**
 # tests/test_hook_distribution.bats
 # AC6: Bash PostToolUse hook is distributed via atdd-kit plugin standard mechanism
 

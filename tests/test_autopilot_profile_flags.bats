@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #122 — Flagless (default) profile drift-detect.
 #
 # Scope:

@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: tests/claude-code/analyze-token-usage.py
 # test_l4_analyze_token_usage.bats -- AC3: per-agent token/cost breakdown
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/skill_fix_dispatch.sh
 # AC4 (β strategy): lib/skill_fix_dispatch.sh build_subagent_prompt function output
 # and user approval dialog absence in SKILL.md.
 

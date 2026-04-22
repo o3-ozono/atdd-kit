@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # Tests for Issue #58: SKILL_STATUS output in core skills (AC2, AC3, AC4)
 
 DISCOVER="skills/discover/SKILL.md"

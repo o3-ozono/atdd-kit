@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Issue #65: ペルソナガイドの策定と docs/personas/ の導入
 
 # AC1: persona-guide.md に Cooper の Goal-Directed Design と Elastic User Problem に言及した定義

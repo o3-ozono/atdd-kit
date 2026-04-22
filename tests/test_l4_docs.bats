@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: docs/testing-skills.md
 # test_l4_docs.bats -- AC6: methodology and onboarding docs
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"

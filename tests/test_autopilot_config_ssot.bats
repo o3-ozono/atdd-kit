@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #122 — .claude/config.yml SSoT & drift-detect.
 #
 # Scope:

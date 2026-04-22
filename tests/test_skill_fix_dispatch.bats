@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/skill_fix_dispatch.sh
 # AC3 (4-class duplicate check), AC5 (RED/GREEN fixture),
 # AC7 (parallel suppression), AC9 (cleanup)
 

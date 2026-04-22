@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # AC9: Approval gate integration (discover + plan in one approval)
 # AC12: Auto-approval for plan review (autonomy level 1+)
 # Integration -- verifies label transitions and gate merging

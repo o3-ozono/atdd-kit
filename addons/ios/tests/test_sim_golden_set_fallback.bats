@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC4: Backward compatibility — SIM_GOLDEN_SET unset falls back to default Device Set behavior.
 
 setup() {

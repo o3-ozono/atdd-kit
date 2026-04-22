@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/atdd/SKILL.md
 # Test file for Issue #153: autopilot Agent Teams enforcement
 # Validates AC-1 through AC-7 against commands/autopilot.md
 

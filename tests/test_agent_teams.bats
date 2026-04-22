@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: agents/**
 # AC1-AC6: Agent Teams architecture tests (replaces test_autopilot.bats)
 
 # --- AC1: Polling loop files are deleted ---

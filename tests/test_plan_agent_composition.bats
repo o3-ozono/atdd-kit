@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: skills/plan/SKILL.md
 # Tests for Issue #41: Agent Composition in plan deliverables
 # AC1-AC7: plan SKILL.md and autopilot.md changes
 

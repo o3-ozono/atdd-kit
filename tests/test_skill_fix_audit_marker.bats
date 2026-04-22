@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/skill-fix/SKILL.md
 # AC4 手順 2: audit marker regex pinning
 
 DISPATCH_LIB="lib/skill_fix_dispatch.sh"

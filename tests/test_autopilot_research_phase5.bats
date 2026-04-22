@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #104: research task Phase 5 deliverable → action conversion
 
 AUTOPILOT="commands/autopilot.md"

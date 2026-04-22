@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: lib/spec_check.sh
 # Issue #70 AC4/AC5: spec_check.sh — single source of truth for spec file detection and slug derivation.
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"

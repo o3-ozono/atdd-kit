@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/discover/SKILL.md
 # Issue #155: discover の AC 承認がレビュー前に行われるため二重承認になる
 # Issue #3: autopilot モード検出を --autopilot フラグ方式に移行
 # Tests verify autopilot-mode conditional branching in discover and autopilot

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC6: sim-pool documentation includes Device Set isolation info.
 
 SIM_POOL="skills/sim-pool/SKILL.md"

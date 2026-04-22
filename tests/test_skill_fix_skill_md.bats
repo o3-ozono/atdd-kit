@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/skill-fix/SKILL.md
 # SKILL.md drift check + AC2/AC6 static asserts (Note B/C from Plan v2)
 
 SKILL_FIX_SKILL="skills/skill-fix/SKILL.md"

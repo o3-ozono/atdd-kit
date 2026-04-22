@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # AC1 / AC2 / AC3 / AC6 / AC7: Question design migration tests
 # Verifies that skill-authoring-guide.md exists with all required content,
 # that SKILL.md files use AskUserQuestion at key decision points,

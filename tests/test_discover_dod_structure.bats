@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/discover/SKILL.md
 # Tests for Issue #36: DoD + AC two-layer structure in discover skill
 
 DISCOVER_SKILL="skills/discover/SKILL.md"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/session-start/SKILL.md
 # session-start SKILL.md にバージョンチェックの記述があることを検証
 
 @test "session-start mentions check-plugin-version.sh" {

@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: hooks/bash-output-normalizer.sh
 # tests/test_bash_output_normalizer.bats
 # AC3a: JSON minify
 # AC3b: 3+ consecutive blank lines collapsed to 2

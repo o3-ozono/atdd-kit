@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/ship/SKILL.md
 # Tests for Issue #96: ship skill review gate (HARD-GATE)
 
 SHIP_SKILL="skills/ship/SKILL.md"

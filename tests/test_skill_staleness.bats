@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # Staleness detection tests for SKILL.md files
 # These tests detect stale references that should be caught before they reach users.
 #

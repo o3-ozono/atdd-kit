@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #101: discover COMPLETE 後の AC Review Round 即時遷移が再発停止する (#83 リグレッション)
 # Tests verify:
 #   AC1: discover autopilot terminal output is skill-status only

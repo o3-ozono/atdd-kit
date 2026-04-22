@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # AC11: Context Block information handoff between skills
 # Integration -- verifies issue/bug output Context Block and discover reads it
 

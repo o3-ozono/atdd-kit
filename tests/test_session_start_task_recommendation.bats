@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/session-start/SKILL.md
 # Issue #187: fix: session-start の推奨タスクが in-progress Issue を除外しない
 
 SKILL_EN="skills/session-start/SKILL.md"

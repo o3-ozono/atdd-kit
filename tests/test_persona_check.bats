@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: lib/persona_check.sh
 # Issue #108: persona_check.sh — single source of truth for valid persona detection
 # AC5 boundary cases covered: README/TEMPLATE excluded, hidden files, subdir,
 # empty .md, placeholder unchanged, symlink follow.

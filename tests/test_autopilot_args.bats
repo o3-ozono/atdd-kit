@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #125: autopilot argument parsing and plan message unification
 
 # --- AC1: No-argument auto-detection of in-progress Issue ---

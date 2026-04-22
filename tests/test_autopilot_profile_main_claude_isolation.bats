@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #122 AC10 — Main Claude is always session default, across all 4 combos:
 #   (custom absent / custom present) × (--profile absent / --profile present)
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # Tests for Issue #58: autopilot SKILL_STATUS transition logic (AC5, AC6, AC7)
 
 AUTOPILOT="commands/autopilot.md"

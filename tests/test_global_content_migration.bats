@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Issue #51: Migrate useful content from global config to atdd-kit upstream
 
 # AC1: Commit rules detail in rules/atdd-kit.md

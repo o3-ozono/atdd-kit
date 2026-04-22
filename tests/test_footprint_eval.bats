@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: scripts/measure-footprint.sh
 # tests/test_footprint_eval.bats
 # Footprint regression test suite -- 7 groups (G1-G7) covering AC1-AC7
 # FOOTPRINT_EVAL_DIR env var overrides the evals/footprint directory.

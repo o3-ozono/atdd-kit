@@ -1,0 +1,7 @@
+rules:
+  - path: lib/**
+    bats: "@covers lib"
+  - path: scripts/**
+    bats: "@covers scripts"
+  - path: hooks/**
+    bats: "@covers hooks"

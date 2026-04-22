@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: skills/**
 # Issue #34 AC6: Workflow skills autopilot-only enforcement (block mode)
 
 DISCOVER="skills/discover/SKILL.md"

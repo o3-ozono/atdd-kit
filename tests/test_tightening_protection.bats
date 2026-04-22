@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Issue #78: Tightening protection — structural elements must survive tight English compression
 
 # --- AC2a: Agent frontmatter fields preserved ---

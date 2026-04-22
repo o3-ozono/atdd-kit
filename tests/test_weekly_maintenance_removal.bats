@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # AC1: cron ワークフローと関連ファイルの完全削除を検証
 # AC3: init / workflow-config テンプレートから weekly_maintenance が削除されていることを検証
 

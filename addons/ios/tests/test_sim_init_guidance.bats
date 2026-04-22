@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC5: addon.yml guidance includes Device Set isolation info.
 
 ADDON_YML="addons/ios/addon.yml"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Tests for Issue #54: autopilot Plan approval clear/continue stop-point
 
 AUTOPILOT_CMD="commands/autopilot.md"

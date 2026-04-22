@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: docs/**
 # Tests for Issue #58: SKILL_STATUS spec document (AC1)
 
 SPEC_DOC="docs/guides/skill-status-spec.md"

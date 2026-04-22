@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # AC1: Plan Review -> ready-to-go direct (PO-led flow)
 @test "autopilot Plan Review transitions to ready-to-go" {
   grep -q 'ready-to-go' commands/autopilot.md

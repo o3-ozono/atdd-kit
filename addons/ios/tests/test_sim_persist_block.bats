@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC4: persist: true is unconditionally DENIED for session_set_defaults
 # and session_use_defaults_profile.
 

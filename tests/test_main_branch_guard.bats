@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: hooks/main-branch-guard.sh
 # =============================================================================
 # main-branch-guard.sh -- PreToolUse hook tests
 # Issue #38: Enforce Issue-driven workflow via PreToolUse hook (Tier 1)

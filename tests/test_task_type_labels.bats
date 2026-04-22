@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # Issue #34 AC5: Task type label consolidation (investigation -> research)
 
 @test "AC5: templates/issue/en/research.yml exists" {

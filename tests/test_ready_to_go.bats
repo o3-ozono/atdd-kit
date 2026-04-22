@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: .claude-plugin/**
 # Issue #34 AC4: ready-to-go label (replacing ready-to-implement)
 
 @test "AC4: autopilot.md uses ready-to-go instead of ready-to-implement" {

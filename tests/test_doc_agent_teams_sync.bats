@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: docs/**
 # Test: PR #142 Agent Teams doc sync verification (#146)
 
 # CC1: README command table updated

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: commands/autopilot.md
 # Issue #122 — Phase 0 Argument Parsing drift-detect (post-simplification).
 #
 # Scope:

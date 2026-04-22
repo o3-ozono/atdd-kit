@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: lib/skill_transcript_parser.sh
 bats_require_minimum_version 1.5.0
 
 # =============================================================================

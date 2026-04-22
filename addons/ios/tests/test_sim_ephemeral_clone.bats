@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-
+# @covers: addons/ios/**
 # AC1: Ephemeral clone lifecycle — clone creation, boot, session lock,
 # duplicate request handling, clone name format.
 
