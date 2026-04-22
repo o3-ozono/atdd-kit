@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Create test strategy and implementation strategy from discover's deliverables (DoD + ACs). Second step of the Issue Ready flow."
+description: "Use when creating test strategy and implementation strategy after discover completes with approved ACs."
 ---
 
 ## Session Start Check (required)
@@ -12,6 +12,14 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 <HARD-GATE>
 Do NOT invoke atdd or write any code until the plan has been REVIEWED and APPROVED. This skill produces strategy only -- no code, no tests, no file edits. Never suggest skipping plan review or PR review -- every plan must go through the QA process.
 </HARD-GATE>
+
+<IRON-LAW>
+1. **No implementation before approval** -- plan output is a document, not runnable code.
+2. **Never skip the Readiness Check** -- unverified plans cause chain drift downstream.
+3. **Exact file paths only** -- "somewhere in src/" is banned; every path must be resolvable.
+4. **Post deliverables as Issue comment** -- no private output; `gh issue comment` is the only output channel.
+5. **After COMPLETE, only atdd may be invoked** -- all other skill invocations from this point are forbidden.
+</IRON-LAW>
 
 <AUTOPILOT-GUARD>
 If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
@@ -46,6 +54,15 @@ Takes approved DoD + ACs from discover and produces test strategy (AC-to-test-la
 | P6 | **Post deliverables as Issue comments** | Use `gh issue comment`. |
 
 Default Recommendation Pattern: `Recommended: [X] — reply 'ok' to accept, or provide alternative`
+
+### Rationalization Table
+
+| Excuse | Reality |
+|--------|---------|
+| "I'll just sketch some code to clarify the approach" | Code without approval violates HARD-GATE. Write a prose Architecture Decision instead. |
+| "The AC is obvious, no need for detailed mapping" | Missing AC-to-layer mapping causes test gaps that BATS cannot catch. |
+| "I'll use approximate paths; exact ones come later" | Approximate paths block atdd from knowing what to create. Exact paths are required. |
+| "Plan review is a formality; let's proceed" | Every plan must pass `ready-for-plan-review`. Skipping breaks the approval gate. |
 
 ---
 
@@ -297,6 +314,16 @@ Implementation plan posted and `ready-for-plan-review` label added.
 ```
 
 STOP here. Do not proceed further.
+
+---
+
+## Terminal State
+
+After this skill reaches COMPLETE (plan posted + `ready-for-plan-review` label added):
+
+- **Only `atdd-kit:atdd` may be invoked next.** All other skill invocations are forbidden.
+- Do NOT invoke `discover`, `plan` again, `verify`, `ship`, or any other skill.
+- Do NOT edit files or write code. Strategy is complete; implementation belongs to `atdd`.
 
 ---
 
