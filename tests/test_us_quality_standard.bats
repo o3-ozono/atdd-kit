@@ -155,10 +155,11 @@
 }
 
 @test "#156-AC4: MUST-4 Why/Pass/Fail appear in correct order" {
-  local why_line pass_line fail_line
-  why_line=$(grep -n '^\*\*Why:\*\*' docs/methodology/us-quality-standard.md | awk -F: 'NR==last' last=$(grep -c '.' docs/methodology/us-quality-standard.md) | tail -1 | cut -d: -f1)
-  pass_line=$(grep -n '^\*\*Pass:\*\*' docs/methodology/us-quality-standard.md | tail -1 | cut -d: -f1)
-  fail_line=$(grep -n '^\*\*Fail:\*\*' docs/methodology/us-quality-standard.md | tail -1 | cut -d: -f1)
+  local must4_line why_line pass_line fail_line
+  must4_line=$(grep -n '^### MUST-4:' docs/methodology/us-quality-standard.md | cut -d: -f1)
+  why_line=$(awk -v start="$must4_line" 'NR>start && /^\*\*Why:\*\*/{print NR; exit}' docs/methodology/us-quality-standard.md)
+  pass_line=$(awk -v start="$must4_line" 'NR>start && /^\*\*Pass:\*\*/{print NR; exit}' docs/methodology/us-quality-standard.md)
+  fail_line=$(awk -v start="$must4_line" 'NR>start && /^\*\*Fail:\*\*/{print NR; exit}' docs/methodology/us-quality-standard.md)
   [ -n "$why_line" ] && [ -n "$pass_line" ] && [ -n "$fail_line" ]
   [ "$why_line" -lt "$pass_line" ]
   [ "$pass_line" -lt "$fail_line" ]

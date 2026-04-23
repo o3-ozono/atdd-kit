@@ -56,6 +56,29 @@ Each Acceptance Criterion must be independently verifiable. Each AC must have a 
 
 ---
 
+### MUST-4: US Traceability
+
+Each Acceptance Criterion must be traceable to at least one element of the User Story — either the persona's primary goal (`I want to`) or the benefit (`so that`). ACs that cannot be mapped to a specific User Story element do not belong in the AC set.
+
+**Why:** Three Amigos reviews (Developer/QA perspectives) tend to drift toward boundary conditions, project conventions, and implementation safety nets. Without an explicit traceability requirement, these concerns enter the AC set and dilute the story's focus. A named mapping forces the author to justify each AC against observable user value.
+
+**Exclusion categories** — candidates that must be re-routed, not added as ACs:
+
+| Category | Examples | Correct location |
+|----------|---------|-----------------|
+| Project conventions | CI green, zero warnings, lint, coverage thresholds | DoD |
+| Trivial / implied consequences | "feature works after previous AC passes" | Consolidate into existing AC or omit |
+| Implementation guards | init duplicate check, NaN fallback, defensive null check | Implementation note |
+| Future Story concerns | extensibility, DI wiring, upcoming features | Plan's test strategy |
+
+**Pass:** `Given: Hiro runs the export flow / When: the dataset has 0 rows / Then: the UI shows "No data to export" instead of a blank file` — maps directly to the persona's primary goal "I want to export data reliably."
+
+**Fail:** `Given: the CI pipeline runs / When: the export feature is deployed / Then: all lint checks pass` — this is a project convention (CI green), not traceable to the user's goal. Move to DoD.
+
+> **Retroactive application:** This criterion applies only to ACs derived in new `discover` runs. Existing approved specs under `docs/specs/` are not subject to retroactive MUST-4 evaluation.
+
+---
+
 ## SHOULD Criteria
 
 These are quality goals derived from the Quality User Story (QUS) framework. Violations degrade story quality but are not workflow blockers. During discover, the skill should prompt the author to address SHOULD violations before approval.
