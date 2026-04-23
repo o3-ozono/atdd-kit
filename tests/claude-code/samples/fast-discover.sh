@@ -63,21 +63,29 @@ if [ "${#KEYWORDS[@]}" -eq 0 ]; then
   exit 3
 fi
 
-PROMPT="You are reading the atdd-kit discover skill at ${DISCOVER_SKILL}. \
-List the key concepts and terms that appear in that skill, in the order they are introduced. \
+# Inline SKILL.md content so claude can answer in --max-turns 1 (no Read tool needed)
+SKILL_CONTENT=$(cat "$DISCOVER_SKILL")
+
+PROMPT="The following is the atdd-kit discover skill definition. \
+Respond in English. \
+List the key concepts and terms that appear in it, in the order they are introduced. \
 Include: what to run first, gate conditions, exploration steps, deliverable types, \
-quality checks, output format, and transition target skill."
+quality checks, output format, and transition target skill.
+
+--- SKILL.md START ---
+${SKILL_CONTENT}
+--- SKILL.md END ---"
 
 echo "Running fast discover test (timeout=${TIMEOUT_SECS}s)..."
 
 # Build timeout prefix if available
 TIMEOUT_PREFIX=$(_timeout_cmd)
 
-# Run with optional timeout and --max-turns 1
+# Run with optional timeout and --max-turns 1 (SKILL.md inlined in prompt, no Read tool needed)
 if [ -n "$TIMEOUT_PREFIX" ]; then
   # shellcheck disable=SC2086
   OUTPUT=$(${TIMEOUT_PREFIX} "$CLAUDE_BIN" -p "$PROMPT" \
-    --max-turns 3 \
+    --max-turns 1 \
     --permission-mode bypassPermissions \
     2>/dev/null) || {
     exit_code=$?
@@ -90,7 +98,7 @@ if [ -n "$TIMEOUT_PREFIX" ]; then
   }
 else
   OUTPUT=$("$CLAUDE_BIN" -p "$PROMPT" \
-    --max-turns 3 \
+    --max-turns 1 \
     --permission-mode bypassPermissions \
     2>/dev/null) || {
     echo "FAIL: claude exited with code $?" >&2

@@ -1,5 +1,5 @@
 session-start
-HARD-GATE
+One question at a time
 DoD
 Approach
 User Story

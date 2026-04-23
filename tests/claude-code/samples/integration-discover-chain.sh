@@ -17,6 +17,7 @@ FIXTURE_ISSUE="${SCRIPT_DIR}/../fixtures/discover-fixture-issue.md"
 PARSER="${REPO_ROOT}/lib/skill_transcript_parser.sh"
 HELPERS="${SCRIPT_DIR}/../test-helpers.sh"
 CLAUDE_BIN="${SKILL_TEST_CLAUDE_BIN:-claude}"
+TIMEOUT_SECS="${SKILL_TEST_TIMEOUT_SECS:-600}"
 
 if [ ! -f "$FIXTURE_ISSUE" ]; then
   echo "Error: fixture issue not found: $FIXTURE_ISSUE" >&2
@@ -38,6 +39,17 @@ if ! command -v jq > /dev/null 2>&1; then
   echo "Error: jq not found; required for transcript analysis" >&2
   exit 3
 fi
+
+# Resolve timeout command: GNU timeout (Linux) or gtimeout (macOS via coreutils)
+_timeout_prefix() {
+  if command -v timeout > /dev/null 2>&1; then
+    echo "timeout $TIMEOUT_SECS"
+  elif command -v gtimeout > /dev/null 2>&1; then
+    echo "gtimeout $TIMEOUT_SECS"
+  else
+    echo ""
+  fi
+}
 
 # Load test helpers and install gh stub
 # shellcheck source=../test-helpers.sh
@@ -61,11 +73,26 @@ ${FIXTURE_CONTENT}"
 echo "Running integration discover-chain test..."
 echo "Transcript: $TRANSCRIPT"
 
-"$CLAUDE_BIN" -p "$PROMPT" \
-  --permission-mode bypassPermissions \
-  --output-format stream-json \
-  --verbose \
-  2>/dev/null > "$TRANSCRIPT" || true
+TIMEOUT_PREFIX=$(_timeout_prefix)
+if [ -n "$TIMEOUT_PREFIX" ]; then
+  # shellcheck disable=SC2086
+  ${TIMEOUT_PREFIX} "$CLAUDE_BIN" -p "$PROMPT" \
+    --permission-mode bypassPermissions \
+    --output-format stream-json \
+    --verbose \
+    2>/dev/null > "$TRANSCRIPT" || {
+    exit_code=$?
+    [ "$exit_code" -eq 124 ] && { echo "FAIL: timeout after ${TIMEOUT_SECS}s" >&2; exit 1; }
+    echo "FAIL: claude exited with code $exit_code" >&2
+    exit 1
+  }
+else
+  "$CLAUDE_BIN" -p "$PROMPT" \
+    --permission-mode bypassPermissions \
+    --output-format stream-json \
+    --verbose \
+    2>/dev/null > "$TRANSCRIPT" || true
+fi
 
 if [ ! -s "$TRANSCRIPT" ]; then
   echo "FAIL: transcript is empty or missing: $TRANSCRIPT" >&2
@@ -113,16 +140,11 @@ if [ "$atdd_order" -gt 0 ] && [ "$atdd_order" -lt "$plan_order" ]; then
   exit 1
 fi
 
-# --- AC6 assertion 4: deliverable posted to Issue (issue comment in gh log) ---
-if [ -f "$GH_LOG" ] && grep -qE "issue comment" "$GH_LOG"; then
-  echo "OK: gh issue comment (deliverable post) logged"
-else
-  echo "INFO: deliverable post not confirmed in $GH_LOG (may be skipped in stub mode)"
-  if [ -f "$GH_LOG" ]; then
-    echo "  gh calls logged:"
-    cat "$GH_LOG"
-  fi
-fi
+# NOTE: gh stub log assertion is intentionally absent here.
+# Skill tool spawns discover as a sub-agent process that does not
+# inherit the parent's PATH (shim unreachable). AC6 relies on
+# transcript-based chain ordering assertions only (discover_count == 1,
+# discover_order < plan_order). See Issue #138 comment on this decision.
 
 echo "PASS: integration-discover-chain (discover->plan chain verified)"
 exit 0
