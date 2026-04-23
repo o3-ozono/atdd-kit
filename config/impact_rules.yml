@@ -20,3 +20,9 @@ rules:
   - path: docs/**
     l4: discover
     bats: "@covers docs"
+  - path: tests/**
+    l4: discover plan atdd verify ship bug debugging express ideate issue session-start
+    bats: "@covers skills"
+  - path: tests/claude-code/**
+    l4: discover plan atdd verify ship bug debugging express ideate issue session-start
+    bats: "@covers tests/claude-code"

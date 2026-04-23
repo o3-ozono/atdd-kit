@@ -103,7 +103,20 @@ scripts/check_bats_covers.sh   # exits 0 with "OK: N files" if all annotated
 | test_skill_fix_blocked_ac.bats | AC4 step 6 blocked-ac gate flow — template, MUST/UX/Interruption retention, negative assert (Issue #119) |
 | test_skill_fix_audit_marker.bats | AC4 step 2 audit marker regex pinning (Issue #119) |
 | test_discover_skill_fix_bypass.bats | AC10 discover β patch — AUTOPILOT-GUARD/HARD-GATE/Step7/persona auto-select (Issue #119) |
+| test_discover_superpowers_discipline.bats | discover superpowers discipline — Rationalization table, HARD-GATE single-block, Terminal-state clause (Issue #138) |
 | test_impact_map.bats | `scripts/impact_map.sh` — AC1-AC8 (33 cases, Issue #135) |
+
+### Discover Skill Safety Net (fixed list)
+
+Run these 5 files whenever `skills/discover/SKILL.md` changes:
+
+```bash
+bats tests/test_discover_autopilot_approval.bats \
+     tests/test_discover_approach_parity.bats \
+     tests/test_discover_dod_structure.bats \
+     tests/test_discover_skill_fix_bypass.bats \
+     tests/test_discover_superpowers_discipline.bats
+```
 
 ## iOS Addon Tests (addons/ios/tests/)
 

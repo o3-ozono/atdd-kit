@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `tests/claude-code/samples/fast-discover.sh`: fast L4 test verifying discover skill meta-knowledge — 11-keyword `assert_contains` loop + 2-anchor `assert_order` (session-start → plan). (#138)
+- `tests/claude-code/fixtures/discover-keywords.txt`: ordered keyword fixture for fast-discover.sh. (#138)
+- `tests/claude-code/samples/integration-discover.sh`: integration L4 test verifying discover invocation and `SKILL_STATUS: COMPLETE` in skill-status fence via jsonl transcript. (#138)
+- `tests/claude-code/fixtures/discover-fixture-issue.md`: mock Issue fixture for integration tests (no real GitHub Issue required). (#138)
+- `tests/claude-code/samples/integration-discover-chain.sh`: chain/triggering L4 test verifying discover → plan auto-invocation via `skill_transcript_parser.sh` order assertion. (#138)
+- `tests/test_discover_superpowers_discipline.bats`: BATS grep tests for discover superpowers discipline — Rationalization table, HARD-GATE single-block, Terminal-state clause. (#138)
+- `tests/claude-code/test-helpers.sh`: `setup_gh_stub()` helper added — creates a self-contained fake `gh` binary under `$tmpdir/gh-stub/` that intercepts `issue view/edit/comment` calls and logs all invocations to `gh-calls-<test-slug>.log`. Exports `GH_STUB_DIR` and `GH_STUB_LOG_FILE` (avoids subshell export problem). (#138)
+
+### Changed
+- `skills/discover/SKILL.md`: description rewritten to `Use when` form; Rationalization table added; Terminal-state constraint clause added restricting post-discover invocation to `atdd-kit:plan` only. (#138)
+
 ## [2.4.0] - 2026-04-22
 
 ### Added

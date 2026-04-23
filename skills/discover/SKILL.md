@@ -1,6 +1,6 @@
 ---
 name: discover
-description: "Explore requirements through dialogue and derive ACs (Given/When/Then). First step of the Issue Ready flow. Used for all task types: development, bug, refactoring, documentation, research."
+description: "Use when starting a new Issue to explore requirements and derive ACs (Given/When/Then) for development, bug, refactoring, documentation, or research tasks."
 ---
 
 ## Session Start Check (required)
@@ -16,6 +16,16 @@ Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVE
 
 **skill-fix exception:** When invoked with `--skill-fix`, Step 7 user approval is skipped (subagent context has no user). Step 8 inline plan mode is forced (AC + plan posted as single comment). MUST-1/2/3, UX U1-U5, and Interruption I1-I4 quality gates are retained. Gate FAIL → `skill-status BLOCKED` → `blocked-ac` label + blocker comment (no `ready-to-go`).
 </HARD-GATE>
+
+### Rationalization Table
+
+| Excuse | Reality |
+|--------|---------|
+| "The requirements are obvious, I can skip discover" | Requirements that seem obvious are where ambiguity hides. Skipping discover causes rework. |
+| "I'll just start coding and adjust later" | Code written without approved ACs has no acceptance baseline and cannot be verified. |
+| "The user already told me what to build" | User intent ≠ AC. Without Given/When/Then, you cannot confirm you built the right thing. |
+| "This is a small change, discover is overkill" | Size does not determine whether ACs are needed. All code-change tasks require verifiable ACs. |
+| "I can run plan and discover together to save time" | HARD-GATE exists precisely to prevent this. Concurrent execution violates the approval gate. |
 
 <AUTOPILOT-GUARD>
 If ARGUMENTS does not contain `--autopilot` AND ARGUMENTS does not contain `--skill-fix` (user invoked directly via slash command):
@@ -721,6 +731,8 @@ See `docs/guides/skill-status-spec.md` for full field definitions, BLOCKED vs FA
 ## Skill Completion and Transition
 
 After deliverables are posted and approved, show `"discover complete. Next: atdd-kit:plan"` and invoke `atdd-kit:plan` via the Skill tool.
+
+**Terminal-state constraint:** After discover completes, invoke only `atdd-kit:plan`. No other skills are permitted. Invoking `atdd-kit:atdd`, `atdd-kit:verify`, or any implementation skill directly from discover is prohibited — this bypasses the plan approval gate.
 
 ---
 

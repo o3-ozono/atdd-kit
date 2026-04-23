@@ -10,10 +10,7 @@
 # Env overrides:
 #   SKILL_TEST_CLAUDE_BIN  -- override claude binary path (default: PATH lookup)
 
-set -u
-set -o pipefail
-
-SKILL_TEST_HELPERS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_TEST_HELPERS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 SKILL_TEST_REPO_ROOT="$(cd "${SKILL_TEST_HELPERS_DIR}/../.." && pwd)"
 
 # Resolve claude binary: env override > PATH
@@ -116,4 +113,101 @@ create_test_project() {
   echo "# Test Project" > "${project_dir}/README.md"
   touch "${project_dir}/.claude/CLAUDE.md"
   echo "$project_dir"
+}
+
+# setup_gh_stub <tmpdir> [test_slug]
+# Creates a fake gh binary at $tmpdir/gh-stub/gh that intercepts GitHub CLI calls.
+# Sets GH_STUB_DIR and GH_STUB_LOG_FILE as exported env vars (NOT a subshell).
+# Usage:
+#   setup_gh_stub "$tmpdir" "discover"
+#   export PATH="${GH_STUB_DIR}:${PATH}"
+# All calls are logged to $tmpdir/gh-calls-<test_slug>.log
+# Handles: issue view, issue edit, issue comment, pr view
+setup_gh_stub() {
+  local _tmpdir="$1"
+  local _test_slug="${2:-default}"
+  local _stub_dir="${_tmpdir}/gh-stub"
+  local _log_file="${_tmpdir}/gh-calls-${_test_slug}.log"
+
+  mkdir -p "$_stub_dir"
+
+  # Write the stub script with the absolute log file path embedded
+  cat > "${_stub_dir}/gh" << STUB_EOF
+#!/usr/bin/env bash
+# Fake gh CLI stub — logs all calls and returns fixture responses
+
+LOG_FILE="\${GH_STUB_LOG_FILE:-${_log_file}}"
+echo "gh \$*" >> "\$LOG_FILE"
+
+subcommand="\${1:-}"
+resource="\${2:-}"
+
+case "\$subcommand" in
+  issue)
+    case "\$resource" in
+      view)
+        cat << 'JSON_EOF'
+{
+  "number": 999,
+  "title": "feat: add CSV export to report page",
+  "body": "As a user, I want to export the report table as CSV so that I can analyze the data in a spreadsheet.",
+  "labels": [],
+  "state": "OPEN",
+  "url": "https://github.com/example/repo/issues/999"
+}
+JSON_EOF
+        exit 0
+        ;;
+      edit)
+        exit 0
+        ;;
+      comment)
+        echo "https://github.com/example/repo/issues/999#issuecomment-000000001"
+        exit 0
+        ;;
+      *)
+        exit 0
+        ;;
+    esac
+    ;;
+  pr)
+    case "\$resource" in
+      view)
+        cat << 'JSON_EOF'
+{
+  "number": 1,
+  "title": "feat: stub PR",
+  "state": "OPEN",
+  "url": "https://github.com/example/repo/pull/1"
+}
+JSON_EOF
+        exit 0
+        ;;
+      *)
+        exit 0
+        ;;
+    esac
+    ;;
+  api)
+    echo "{}"
+    exit 0
+    ;;
+  auth)
+    echo "Logged in to github.com as stub-user"
+    exit 0
+    ;;
+  *)
+    exit 0
+    ;;
+esac
+STUB_EOF
+
+  chmod +x "${_stub_dir}/gh"
+
+  # Export as env vars so callers (and claude subprocess) can use them
+  export GH_STUB_DIR="$_stub_dir"
+  export GH_STUB_LOG_FILE="$_log_file"
+
+  # Ensure log file exists
+  touch "$_log_file"
 }
