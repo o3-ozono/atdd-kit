@@ -192,3 +192,51 @@
 @test "#45-AC7: autopilot.md has zero po.md file references" {
   ! grep -q 'po\.md' commands/autopilot.md
 }
+
+# --- Issue #156: AC Review guidance in developer.md and qa.md ---
+
+@test "#156-AC5: agents/developer.md has ## AC Review section" {
+  grep -q '^## AC Review' agents/developer.md
+}
+
+@test "#156-AC5: developer.md AC Review section instructs to map proposed AC to US element" {
+  sed -n '/^## AC Review/,/^## /p' agents/developer.md | grep -qi 'user story.*element\|US element\|map.*AC\|AC.*map'
+}
+
+@test "#156-AC5: developer.md AC Review section instructs to classify excluded categories" {
+  sed -n '/^## AC Review/,/^## /p' agents/developer.md | grep -qi 'DoD\|Implementation note\|test strategy\|plan'
+}
+
+@test "#156-AC5: developer.md AC Review section instructs Then-clause strengthening over new ACs" {
+  sed -n '/^## AC Review/,/^## /p' agents/developer.md | grep -qi 'Then.*strengthen\|strengthen.*Then\|first.*choice.*Then\|Then.*first'
+}
+
+@test "#156-AC5: developer.md existing role description is preserved" {
+  grep -q 'Own how things are built' agents/developer.md
+}
+
+@test "#156-AC6: agents/qa.md has ## AC Review section" {
+  grep -q '^## AC Review' agents/qa.md
+}
+
+@test "#156-AC6: qa.md AC Review section instructs to map proposed AC to US element" {
+  sed -n '/^## AC Review/,/^## /p' agents/qa.md | grep -qi 'user story.*element\|US element\|map.*AC\|AC.*map'
+}
+
+@test "#156-AC6: qa.md AC Review section instructs to classify excluded categories" {
+  sed -n '/^## AC Review/,/^## /p' agents/qa.md | grep -qi 'DoD\|Implementation note\|test strategy\|plan'
+}
+
+@test "#156-AC6: qa.md AC Review section instructs Then-clause strengthening over new ACs" {
+  sed -n '/^## AC Review/,/^## /p' agents/qa.md | grep -qi 'Then.*strengthen\|strengthen.*Then\|first.*choice.*Then\|Then.*first'
+}
+
+@test "#156-AC6: qa.md existing role description is preserved" {
+  grep -q 'Ensure quality through test design' agents/qa.md
+}
+
+@test "#156-AC6: developer.md and qa.md AC Review sections are identical" {
+  dev_section=$(sed -n '/^## AC Review/,/^## /p' agents/developer.md)
+  qa_section=$(sed -n '/^## AC Review/,/^## /p' agents/qa.md)
+  [ "$dev_section" = "$qa_section" ]
+}

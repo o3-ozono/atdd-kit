@@ -135,3 +135,56 @@
   [ -f "docs/methodology/README.md" ]
   ! grep -P '[ぁ-んァ-ヶ一-龥]' docs/methodology/README.md
 }
+
+# --- Issue #156: MUST-4 US Traceability ---
+
+@test "#156-AC4: MUST-4 section exists with h3 heading" {
+  grep -q '^### MUST-4:' docs/methodology/us-quality-standard.md
+}
+
+@test "#156-AC4: MUST-4 section contains Why paragraph" {
+  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Why:**'
+}
+
+@test "#156-AC4: MUST-4 section contains Pass example" {
+  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Pass:**'
+}
+
+@test "#156-AC4: MUST-4 section contains Fail example" {
+  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Fail:**'
+}
+
+@test "#156-AC4: MUST-4 Why/Pass/Fail appear in correct order" {
+  local why_line pass_line fail_line
+  why_line=$(grep -n '^\*\*Why:\*\*' docs/methodology/us-quality-standard.md | awk -F: 'NR==last' last=$(grep -c '.' docs/methodology/us-quality-standard.md) | tail -1 | cut -d: -f1)
+  pass_line=$(grep -n '^\*\*Pass:\*\*' docs/methodology/us-quality-standard.md | tail -1 | cut -d: -f1)
+  fail_line=$(grep -n '^\*\*Fail:\*\*' docs/methodology/us-quality-standard.md | tail -1 | cut -d: -f1)
+  [ -n "$why_line" ] && [ -n "$pass_line" ] && [ -n "$fail_line" ]
+  [ "$why_line" -lt "$pass_line" ]
+  [ "$pass_line" -lt "$fail_line" ]
+}
+
+@test "#156-AC4: MUST-4 section mentions exclusion categories (project conventions)" {
+  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'project.*convent\|CI.*green\|lint\|warning\|coverage'
+}
+
+@test "#156-AC4: MUST-4 section mentions exclusion categories (implementation guard)" {
+  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'implementation.*guard\|impl.*guard'
+}
+
+@test "#156-AC4: MUST-4 section notes no retroactive application to existing specs" {
+  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'retroactive\|existing.*spec\|new.*discover\|not.*apply.*existing'
+}
+
+@test "#156-AC4: MUST-4 section appears after MUST-3 in document" {
+  local must3_line must4_line
+  must3_line=$(grep -n '^### MUST-3:' docs/methodology/us-quality-standard.md | cut -d: -f1)
+  must4_line=$(grep -n '^### MUST-4:' docs/methodology/us-quality-standard.md | cut -d: -f1)
+  [ -n "$must3_line" ] && [ -n "$must4_line" ]
+  [ "$must3_line" -lt "$must4_line" ]
+}
+
+@test "Language policy: MUST-4 section is English only (no Japanese characters)" {
+  [ -f "docs/methodology/us-quality-standard.md" ]
+  ! grep -P '[ぁ-んァ-ヶ一-龥]' docs/methodology/us-quality-standard.md
+}
