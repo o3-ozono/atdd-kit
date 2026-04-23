@@ -115,23 +115,51 @@ create_test_project() {
   echo "$project_dir"
 }
 
-# setup_gh_stub <tmpdir> [test_slug]
+# setup_gh_stub <tmpdir> [test_slug] [--labels "label1 label2 ..."]
 # Creates a fake gh binary at $tmpdir/gh-stub/gh that intercepts GitHub CLI calls.
 # Sets GH_STUB_DIR and GH_STUB_LOG_FILE as exported env vars (NOT a subshell).
 # Usage:
 #   setup_gh_stub "$tmpdir" "discover"
+#   setup_gh_stub "$tmpdir" "atdd" --labels "ready-to-go"
 #   export PATH="${GH_STUB_DIR}:${PATH}"
 # All calls are logged to $tmpdir/gh-calls-<test_slug>.log
 # Handles: issue view, issue edit, issue comment, pr view
+# --labels: space-separated list of label names to include in issue view response.
+#           Defaults to [] (empty). Existing callers are unaffected.
 setup_gh_stub() {
   local _tmpdir="$1"
   local _test_slug="${2:-default}"
   local _stub_dir="${_tmpdir}/gh-stub"
   local _log_file="${_tmpdir}/gh-calls-${_test_slug}.log"
+  local _labels_json="[]"
+
+  # Parse optional --labels flag (3rd arg onwards)
+  shift 2 || true
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --labels)
+        shift
+        local _label_names="${1:-}"
+        local _arr="["
+        local _first=1
+        for _lname in $_label_names; do
+          [ "$_first" -eq 1 ] || _arr="${_arr},"
+          _arr="${_arr}{\"id\":1,\"name\":\"${_lname}\"}"
+          _first=0
+        done
+        _arr="${_arr}]"
+        _labels_json="$_arr"
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
 
   mkdir -p "$_stub_dir"
 
-  # Write the stub script with the absolute log file path embedded
+  # Write the stub script with the absolute log file path and labels JSON embedded
   cat > "${_stub_dir}/gh" << STUB_EOF
 #!/usr/bin/env bash
 # Fake gh CLI stub — logs all calls and returns fixture responses
@@ -151,7 +179,7 @@ case "\$subcommand" in
   "number": 999,
   "title": "feat: add CSV export to report page",
   "body": "As a user, I want to export the report table as CSV so that I can analyze the data in a spreadsheet.",
-  "labels": [],
+  "labels": ${_labels_json},
   "state": "OPEN",
   "url": "https://github.com/example/repo/issues/999"
 }
