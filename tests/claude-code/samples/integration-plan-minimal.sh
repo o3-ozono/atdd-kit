@@ -55,9 +55,15 @@ if [ ! -s "$TRANSCRIPT" ]; then
   fi
 fi
 
-# Stub mode detection: if SKILL_TEST_CLAUDE_BIN is set, skip content assertions
-# (stub emits minimal jsonl without plan content — infrastructure test only)
-IS_STUB="${SKILL_TEST_CLAUDE_BIN:+1}"
+# Stub mode detection: skip content assertions unless RUN_INTEGRATION=1 with real claude.
+# runner always exports SKILL_TEST_CLAUDE_BIN, so :+1 alone would mark every runner invocation
+# as stub even when real LLM is intended. Real mode requires RUN_INTEGRATION=1 AND
+# SKILL_TEST_CLAUDE_BIN unset or equal to "claude" (PATH lookup).
+if [ "${RUN_INTEGRATION:-0}" = "1" ] && { [ -z "${SKILL_TEST_CLAUDE_BIN:-}" ] || [ "${SKILL_TEST_CLAUDE_BIN}" = "claude" ]; }; then
+  IS_STUB=""
+else
+  IS_STUB="${SKILL_TEST_CLAUDE_BIN:+1}"
+fi
 
 # Verify transcript is parseable
 if python3 "$ANALYZER" "$TRANSCRIPT" > /dev/null 2>&1; then
