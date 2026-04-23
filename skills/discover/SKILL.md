@@ -301,6 +301,21 @@ Derive ACs from the user story in Given/When/Then format.
 - **3 or more ACs** per story
 - Cover happy path, error cases, and boundary conditions
 - Each AC must be independently verifiable
+- **Each AC must map to a specific User Story element** — either the persona's primary goal (`I want to`) or the benefit (`so that`). Build a traceability table before drafting:
+
+```
+| US element             | Derived AC  |
+|------------------------|-------------|
+| [persona's I want to…] | AC1, AC2    |
+| [persona's so that…]   | AC3         |
+```
+
+ACs that cannot be assigned to a row belong elsewhere. Exclusion list (overview — full definitions and fail markers in Step 4.5 MUST-4 and `docs/methodology/us-quality-standard.md`):
+
+- **Project conventions** (CI green, lint, warning-zero, coverage) → DoD
+- **Trivial / implied consequences** (logical follow-on from another AC) → consolidate or omit
+- **Implementation guards** (duplicate-init check, null guard, NaN fallback) → Implementation note
+- **Future Story concerns** (extensibility, DI wiring, upcoming features) → Plan's test strategy
 
 > **Split heuristic:** If the AC count reaches 7 or more, consider splitting the story. If splitting is inappropriate, document the reason and continue.
 
@@ -328,6 +343,20 @@ Validate all three MUST criteria. Any failure blocks progression.
 | **MUST-1** | `As a` field references a named persona from `docs/personas/` (not a generic placeholder like "user" or "developer" without a persona file). The persona selected or created in Step 3a satisfies this automatically. |
 | **MUST-2** | AC count ≥ 3 |
 | **MUST-3** | Each AC has a verifiable `Then` clause. Fail markers: vague phrases like "works correctly", "handles it", "is satisfied", or any subjective/unmeasurable outcome. Pass examples: "CSV downloads within 2 seconds", "returns HTTP 400 with error message". |
+| **MUST-4** | Each AC maps to at least one User Story element (persona's `I want to` or `so that`). Multiple mappings are allowed (pass). See full definitions, fail markers, and rewrite suggestions below. |
+
+**MUST-4 details — US Traceability** (authoritative source: `docs/methodology/us-quality-standard.md` MUST-4):
+
+Fail markers — ACs matching any of these categories fail MUST-4:
+
+- **Project conventions** (CI green, zero warnings, lint, coverage thresholds) → rewrite: move to DoD
+- **Trivial / implied consequences** (logical follow-on of another AC) → rewrite: consolidate into existing AC or omit
+- **Implementation guards** (init duplicate check, null guard, NaN fallback, defensive assertion) → rewrite: move to Implementation note
+- **Future Story concerns** (extensibility design, DI wiring, upcoming features) → rewrite: move to Plan's test strategy
+
+A single AC may map to multiple US elements — this is a pass. The requirement is at least one valid mapping.
+
+> **No retroactive application:** MUST-4 applies only to ACs derived in this `discover` run. Existing approved specs in `docs/specs/` are not subject to retroactive MUST-4 evaluation.
 
 **On MUST failure:**
 1. Report the specific criterion violated with a rewrite suggestion.
@@ -335,7 +364,7 @@ Validate all three MUST criteria. Any failure blocks progression.
 3. Re-validate after revision.
 4. If still failing after 2 revision rounds, escalate to the user with full details and pause for manual resolution.
 
-**In autopilot mode:** Include MUST violation details in the draft deliverables returned to the AC Review Round rather than blocking inline.
+**In autopilot mode:** Include MUST violation details in the draft deliverables returned to the AC Review Round rather than blocking inline. This applies equally to MUST-1/2/3 and MUST-4.
 
 #### SHOULD Criteria (non-blocking)
 

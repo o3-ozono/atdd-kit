@@ -19,7 +19,8 @@
         {"id": "A9", "text": "DoD セクションに完了条件がチェックリスト形式でリスト化されている", "type": "structural"},
         {"id": "A10", "text": "アプローチ選択・ユーザーストーリー確認・AC承認など主要な決定点において Recommended（推奨選択肢）が明示されており、ユーザーが 'ok' または選択肢を選ぶだけで確認できる形式になっている", "type": "structural"},
         {"id": "A11", "text": "Step 4.5 品質バリデーション（MUST-1/2/3）が実行され、その結果が出力に含まれている", "type": "structural"},
-        {"id": "A12", "text": "新規ペルソナ作成（bootstrap）フローに入ったことを示す文言（例: 'Let\\'s create one', 'bootstrap', '新規ペルソナ作成'）が出力に含まれていない — 有効 persona が存在するため listing flow のみが実行されるべき", "type": "structural"}
+        {"id": "A12", "text": "新規ペルソナ作成（bootstrap）フローに入ったことを示す文言（例: 'Let\\'s create one', 'bootstrap', '新規ペルソナ作成'）が出力に含まれていない — 有効 persona が存在するため listing flow のみが実行されるべき", "type": "structural"},
+        {"id": "A13", "text": "Step 4.5 品質バリデーションで MUST-4 (US Traceability) チェックが MUST-1/2/3 に加えて実行されている — 各ACがUser Story要素（'I want to' または 'so that'）に紐付いていることの確認、またはMUST-4違反（プロジェクト規約・自明な帰結・実装ガード・将来Storyの関心事が混入していないこと）の確認が出力に含まれている", "type": "structural"}
       ]
     },
     {
