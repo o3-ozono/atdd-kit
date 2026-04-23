@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-04-22
+
+### Added
+- `tests/claude-code/samples/fast-plan-skill-keywords.sh`: L4 fast test that verifies `skills/plan/SKILL.md` contains required anchors (`HARD-GATE`, `AUTOPILOT-GUARD`, `State Gate`, `## Core Flow`, `### Step 1`–`### Step 6`) in ascending line-number order using `grep -n` comparison. (#139)
+- `tests/claude-code/samples/integration-plan-minimal.sh`: L4 integration test (guarded by `RUN_INTEGRATION=1`) that invokes `claude -p` against the minimal-project fixture and verifies the jsonl transcript contains `## Implementation Plan` and `### Test Strategy` markers. Stub-mode safe (skips content assertions when `SKILL_TEST_CLAUDE_BIN` is set). (#139)
+
+### Changed
+- `skills/plan/SKILL.md`: Applied Option X superpowers discipline — (a) description rewritten to "Use when …" trigger form; (b) `<IRON-LAW>` block added after `<HARD-GATE>`; (c) Rationalization table (`| Excuse | Reality |`) added after Core Principles; (d) `## Terminal State` section added before `## Status Output`. Existing `<HARD-GATE>`, `<AUTOPILOT-GUARD>`, and `ready-for-plan-review` label transition preserved. (#139)
+
 ## [2.3.0] - 2026-04-22
 
 ### Added
