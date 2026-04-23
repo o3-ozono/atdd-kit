@@ -17,7 +17,7 @@ step45_section() {
 # --- AC1: US traceability table format in Step 4 ---
 
 @test "AC1: discover Step 4 contains US traceability table format" {
-  step4_section | grep -qE '\|\s*US.*\|\s*AC\|\s*\|\s*US.*(element|要素).*\|\s*(AC|対応)'
+  step4_section | grep -qE '\|\s*US.*(element|Element).*\|.*AC.*\|'
 }
 
 @test "AC1: discover Step 4 instructs each AC to map to a US element" {
