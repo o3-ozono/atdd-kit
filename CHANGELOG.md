@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/claude-code/samples/integration-discover-chain.sh`: chain/triggering L4 test verifying discover → plan auto-invocation via `skill_transcript_parser.sh` order assertion. (#138)
 - `tests/test_discover_superpowers_discipline.bats`: BATS grep tests for discover superpowers discipline — Rationalization table, HARD-GATE single-block, Terminal-state clause. (#138)
 - `tests/claude-code/test-helpers.sh`: `setup_gh_stub()` helper added — creates a self-contained fake `gh` binary under `$tmpdir/gh-stub/` that intercepts `issue view/edit/comment` calls and logs all invocations to `gh-calls-<test-slug>.log`. Exports `GH_STUB_DIR` and `GH_STUB_LOG_FILE` (avoids subshell export problem). (#138)
+- `skills/discover/SKILL.md` Step 4: US traceability table format instruction — each AC must map to a User Story element (`I want to` or `so that`); exclusion list overview (project conventions → DoD, trivial consequence → consolidate/omit, implementation guard → Implementation note, future Story → Plan test strategy). (#156)
+- `skills/discover/SKILL.md` Step 4.5: MUST-4 "US Traceability" blocking criterion with fail markers, rewrite suggestions, single-source reference to `docs/methodology/us-quality-standard.md`, autopilot parity note (same behavior as MUST-1/2/3), and retroactive non-application caveat. (#156)
+- `docs/methodology/us-quality-standard.md`: `### MUST-4: US Traceability` section with rule, Why, exclusion category table, Pass/Fail examples, retroactive non-application note. (#156)
+- `agents/developer.md` / `agents/qa.md`: `## AC Review` section appended (identical content) — guides agents to require US element mapping before proposing new ACs, classify excluded categories, and prefer Then-clause strengthening over new AC addition. (#156)
+- `skills/discover/evals/evals.json`: A13 assertion added to `dev-feature` eval for MUST-4 execution verification. (#156)
 
 ### Changed
 - `skills/discover/SKILL.md`: description rewritten to `Use when` form; Rationalization table added; Terminal-state constraint clause added restricting post-discover invocation to `atdd-kit:plan` only. (#138)
