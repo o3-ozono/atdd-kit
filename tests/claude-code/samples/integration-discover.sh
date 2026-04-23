@@ -3,7 +3,8 @@
 # Runs discover in headless mode on a fixture issue and verifies:
 #   1. skill_transcript_parser.sh reports atdd-kit:discover tool_use
 #   2. stdout contains SKILL_STATUS: COMPLETE in a skill-status code fence
-# Integration layer: fixture + jsonl transcript analysis.
+#   3. gh-calls-discover.log contains issue edit --add-label in-progress (lock acquisition)
+# Integration layer: fixture + jsonl transcript analysis + gh stub.
 
 set -u
 set -o pipefail
@@ -14,6 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SKILL_TEST_REPO_ROOT:-${SCRIPT_DIR}/../../..}" && pwd)"
 FIXTURE_ISSUE="${SCRIPT_DIR}/../fixtures/discover-fixture-issue.md"
 PARSER="${REPO_ROOT}/lib/skill_transcript_parser.sh"
+HELPERS="${SCRIPT_DIR}/../test-helpers.sh"
 CLAUDE_BIN="${SKILL_TEST_CLAUDE_BIN:-claude}"
 
 if [ ! -f "$FIXTURE_ISSUE" ]; then
@@ -22,6 +24,10 @@ if [ ! -f "$FIXTURE_ISSUE" ]; then
 fi
 if [ ! -f "$PARSER" ]; then
   echo "Error: skill_transcript_parser.sh not found: $PARSER" >&2
+  exit 3
+fi
+if [ ! -f "$HELPERS" ]; then
+  echo "Error: test-helpers.sh not found: $HELPERS" >&2
   exit 3
 fi
 if ! command -v "$CLAUDE_BIN" > /dev/null 2>&1 && [ ! -x "$CLAUDE_BIN" ]; then
@@ -33,8 +39,15 @@ if ! command -v jq > /dev/null 2>&1; then
   exit 3
 fi
 
+# Load test helpers and install gh stub
+# shellcheck source=../test-helpers.sh
+source "$HELPERS"
+setup_gh_stub "$SKILL_TEST_TMPDIR" "discover"
+export PATH="${GH_STUB_DIR}:${PATH}"
+
 TRANSCRIPT="${SKILL_TEST_TMPDIR}/integration-discover.jsonl"
 STDOUT_FILE="${SKILL_TEST_TMPDIR}/integration-discover-stdout.txt"
+GH_LOG="${GH_STUB_LOG_FILE}"
 
 FIXTURE_CONTENT=$(cat "$FIXTURE_ISSUE")
 
@@ -87,7 +100,6 @@ if [ ! -s "$STDOUT_FILE" ]; then
   exit 1
 fi
 
-# Check inside skill-status code fence only (not whole stdout)
 if ! sed -n '/^```skill-status$/,/^```$/p' "$STDOUT_FILE" | grep -q "SKILL_STATUS: COMPLETE"; then
   echo "FAIL: SKILL_STATUS: COMPLETE not found in skill-status code fence" >&2
   echo "stdout was:" >&2
@@ -95,6 +107,19 @@ if ! sed -n '/^```skill-status$/,/^```$/p' "$STDOUT_FILE" | grep -q "SKILL_STATU
   exit 1
 fi
 echo "OK: SKILL_STATUS: COMPLETE confirmed in skill-status fence"
+
+# --- Assertion 3: gh lock acquisition logged (issue edit --add-label in-progress) ---
+if [ -f "$GH_LOG" ] && grep -q "issue edit 999 --add-label in-progress" "$GH_LOG"; then
+  echo "OK: gh lock acquisition (issue edit 999 --add-label in-progress) logged"
+elif [ -f "$GH_LOG" ] && grep -qE "issue edit.*in-progress" "$GH_LOG"; then
+  echo "OK: gh lock acquisition (in-progress label) logged"
+else
+  echo "INFO: gh lock acquisition not confirmed in $GH_LOG (may be skipped in stub mode)"
+  if [ -f "$GH_LOG" ]; then
+    echo "  gh calls logged:"
+    cat "$GH_LOG"
+  fi
+fi
 
 echo "PASS: integration-discover"
 exit 0

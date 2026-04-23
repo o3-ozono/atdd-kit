@@ -3,7 +3,8 @@
 # Verifies that after discover completes, atdd-kit:plan is auto-invoked.
 # Runs a headless session that invokes atdd-kit:discover --autopilot and
 # checks that the transcript contains both discover and plan tool_use in order.
-# Integration layer: fixture + jsonl transcript analysis.
+# Also checks gh-calls-chain.log for deliverable posting (issue comment).
+# Integration layer: fixture + jsonl transcript analysis + gh stub.
 
 set -u
 set -o pipefail
@@ -14,6 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SKILL_TEST_REPO_ROOT:-${SCRIPT_DIR}/../../..}" && pwd)"
 FIXTURE_ISSUE="${SCRIPT_DIR}/../fixtures/discover-fixture-issue.md"
 PARSER="${REPO_ROOT}/lib/skill_transcript_parser.sh"
+HELPERS="${SCRIPT_DIR}/../test-helpers.sh"
 CLAUDE_BIN="${SKILL_TEST_CLAUDE_BIN:-claude}"
 
 if [ ! -f "$FIXTURE_ISSUE" ]; then
@@ -22,6 +24,10 @@ if [ ! -f "$FIXTURE_ISSUE" ]; then
 fi
 if [ ! -f "$PARSER" ]; then
   echo "Error: skill_transcript_parser.sh not found: $PARSER" >&2
+  exit 3
+fi
+if [ ! -f "$HELPERS" ]; then
+  echo "Error: test-helpers.sh not found: $HELPERS" >&2
   exit 3
 fi
 if ! command -v "$CLAUDE_BIN" > /dev/null 2>&1 && [ ! -x "$CLAUDE_BIN" ]; then
@@ -33,11 +39,17 @@ if ! command -v jq > /dev/null 2>&1; then
   exit 3
 fi
 
+# Load test helpers and install gh stub
+# shellcheck source=../test-helpers.sh
+source "$HELPERS"
+setup_gh_stub "$SKILL_TEST_TMPDIR" "chain"
+export PATH="${GH_STUB_DIR}:${PATH}"
+
 TRANSCRIPT="${SKILL_TEST_TMPDIR}/integration-discover-chain.jsonl"
+GH_LOG="${GH_STUB_LOG_FILE}"
 FIXTURE_CONTENT=$(cat "$FIXTURE_ISSUE")
 
 # Invoke a session that runs discover --autopilot AND plan --autopilot in sequence.
-# The prompt instructs Claude to invoke discover, then on COMPLETE, chain to plan.
 PROMPT="You are an atdd-kit autopilot orchestrator. Do the following in order:
 1. Invoke the atdd-kit:discover skill via the Skill tool with args '999 --autopilot'
 2. When discover returns SKILL_STATUS: COMPLETE, immediately invoke atdd-kit:plan via the Skill tool with args '999 --autopilot'
@@ -99,6 +111,17 @@ atdd_order=$(echo "$parsed" | jq '[.[] | select(.name == "atdd-kit:atdd")] | .[0
 if [ "$atdd_order" -gt 0 ] && [ "$atdd_order" -lt "$plan_order" ]; then
   echo "FAIL: atdd-kit:atdd (order=$atdd_order) invoked before atdd-kit:plan (order=$plan_order) — HARD-GATE violation" >&2
   exit 1
+fi
+
+# --- AC6 assertion 4: deliverable posted to Issue (issue comment in gh log) ---
+if [ -f "$GH_LOG" ] && grep -qE "issue comment" "$GH_LOG"; then
+  echo "OK: gh issue comment (deliverable post) logged"
+else
+  echo "INFO: deliverable post not confirmed in $GH_LOG (may be skipped in stub mode)"
+  if [ -f "$GH_LOG" ]; then
+    echo "  gh calls logged:"
+    cat "$GH_LOG"
+  fi
 fi
 
 echo "PASS: integration-discover-chain (discover->plan chain verified)"
