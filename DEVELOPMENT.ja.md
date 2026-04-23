@@ -105,7 +105,7 @@ description: "Use when implementing a ready-to-go Issue."
 1. 変更前後で eval を実行する
 2. before/after の pass_rate を比較して提示する
 3. pass_rate が 10% 以上低下した場合、その変更はブロックされる
-4. Red Flags テーブルや注意深く調整された強制コンテンツを eval エビデンスなしに変更してはいけない
+4. Rationalization テーブルや注意深く調整された強制コンテンツを eval エビデンスなしに変更してはいけない
 
 ## スキル Eval
 
