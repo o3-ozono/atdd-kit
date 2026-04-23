@@ -16,6 +16,7 @@ If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash com
 If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
 </AUTOPILOT-GUARD>
 
+<HARD-GATE>
 ## State Gate (required)
 
 1. **Check `ready-to-go` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("ready-to-go")'`
@@ -34,6 +35,7 @@ If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard sile
 - [ ] Issue has test and implementation strategy (from `plan`)
 - [ ] Work branch cut from main (or exists for continuation)
 - [ ] Draft PR created (or exists for continuation)
+</HARD-GATE>
 
 ## Spec Load (after State Gate PASS, before first AC)
 
@@ -130,18 +132,18 @@ Full matrix and examples: `docs/guides/spec-reference.md`.
 - [ ] If `skills/*/SKILL.md` edited: `bats tests/` run and all PASS
 - [ ] If `skills/*/SKILL.md` edited and `skills/<name>/evals/` exists: eval run with no regression
 
-## Red Flags (STOP immediately)
+## Rationalization (STOP immediately)
 
-| Thought | Reality |
-|---------|---------|
-| "I'll write tests later" | Tests-after are biased. Write FIRST. |
-| "This is too simple to test" | Simple code breaks. No exceptions. |
-| "Just this small piece of code first" | Delete it. Write the test. Then rewrite. |
-| "TDD is dogmatic, pragmatism means adapting" | TDD IS pragmatic: finds bugs before commit. |
-| "Test passes on first run, that's fine" | If it didn't fail first, you don't know it tests the right thing. |
-| "I'll weaken this assertion temporarily" | Fix implementation, not test. Never weaken. |
-| "This feature isn't in AC but it's needed" | STOP. Go back to discover. Add AC. Get approval. |
-| "I'll skip the Outer Loop E2E test" | Outer Loop proves AC end-to-end. Never skip. |
+| Excuse | Reality |
+|--------|---------|
+| "I'll write the tests after I get it working" | Tests-after are biased. Write FIRST. |
+| "This change is too trivial to need a test" | Simple code breaks. No exceptions. |
+| "Let me add just this one function without a test" | Delete it. Write the test. Then rewrite. |
+| "Real engineers skip TDD when speed matters" | TDD IS pragmatic: finds bugs before commit. |
+| "It passed — I don't need a red phase" | If it didn't fail first, you don't know it tests the right thing. |
+| "I'll loosen this assertion to unblock the build" | Fix implementation, not test. Never weaken. |
+| "I'll add this since it seems obviously needed" | STOP. Go back to discover. Add AC. Get approval. |
+| "The Outer Loop E2E test is overkill for this AC" | Outer Loop proves AC end-to-end. Never skip. |
 
 ## Bug Fix Variant (A/B/C Classification)
 
@@ -191,3 +193,5 @@ When all ACs are GREEN:
 > All ACs are GREEN. Running `atdd-kit:verify` for completion verification.
 
 Invoke `atdd-kit:verify` via the Skill tool.
+
+**Terminal-state constraint:** After atdd completes, invoke only `atdd-kit:verify`. No other skills are permitted at this point — invoking another skill directly bypasses the verify gate.

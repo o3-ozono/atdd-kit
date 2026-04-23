@@ -105,7 +105,7 @@ Skills are **behavior-shaping code**, not prose. Any modification to a skill's S
 1. Run evals before and after the change
 2. Show before/after pass_rate comparison
 3. If pass_rate drops 10%+, the change is blocked
-4. Do NOT modify Red Flags tables or carefully-tuned enforcement content without eval evidence
+4. Do NOT modify Rationalization tables or carefully-tuned enforcement content without eval evidence
 
 ## Skill Evals
 

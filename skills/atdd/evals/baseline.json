@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-04-19T22:57:41Z",
+  "timestamp": "2026-04-23T05:53:59Z",
   "skill_name": "atdd-kit:atdd",
-  "pass_rate": 0.931,
+  "pass_rate": 1.0,
   "results": [
     {
       "eval_name": "state-gate-pass",
@@ -23,8 +23,8 @@
     },
     {
       "eval_name": "spec-load-on-state-gate-pass",
-      "pass_rate": 0.3333,
-      "passed": 1,
+      "pass_rate": 1.0,
+      "passed": 3,
       "total": 3
     },
     {

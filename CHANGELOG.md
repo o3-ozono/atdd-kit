@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `tests/claude-code/samples/fast-atdd.sh`: fast L4 test verifying atdd skill meta-knowledge — 14-keyword `assert_contains` loop + 2-anchor `assert_order` (ready-to-go State Gate → verify transition). (#140)
+- `tests/claude-code/fixtures/atdd-keywords.txt`: ordered keyword fixture for fast-atdd.sh. (#140)
+- `tests/claude-code/samples/integration-atdd.sh`: integration L4 test verifying atdd headless invocation — `atdd-kit:atdd` tool_use, SKILL_STATUS declaration in skill-status fence, and State Gate `issue view --json labels` gh call. (#140)
+- `tests/claude-code/fixtures/atdd-fixture-issue.md`: mock Issue fixture for atdd integration tests with approved ACs and plan strategy (no real GitHub Issue required). (#140)
+- `tests/claude-code/samples/integration-atdd-chain.sh`: chain/triggering L4 test verifying atdd → verify auto-invocation via `skill_transcript_parser.sh` order assertion (atdd_count == 1, verify_count >= 1, verify_order > atdd_order). (#140)
+- `tests/test_atdd_superpowers_discipline.bats`: BATS grep tests for atdd superpowers discipline — Rationalization table (`| Excuse | Reality |`), HARD-GATE single-block, Terminal-state clause. (#140)
+- `tests/claude-code/test-helpers.sh`: `setup_gh_stub()` extended with optional `--labels "label1 label2"` flag — returns `[{"id":1,"name":"<label>"}]` in `issue view` response; default behavior (empty labels) unchanged for back-compat with all existing callers. (#140)
+
+### Changed
+- `skills/atdd/SKILL.md`: `## State Gate` section wrapped with `<HARD-GATE>` block (mirroring discover); Rationalization table added (replaces "Red Flags", `| Excuse | Reality |` format); Terminal-state constraint clause added restricting post-atdd invocation to `atdd-kit:verify` only. (#140)
+- `DEVELOPMENT.md` / `DEVELOPMENT.ja.md`: "Red Flags tables" → "Rationalization tables" concept name update (line 108). (#140)
+
 - `tests/claude-code/samples/fast-discover.sh`: fast L4 test verifying discover skill meta-knowledge — 11-keyword `assert_contains` loop + 2-anchor `assert_order` (session-start → plan). (#138)
 - `tests/claude-code/fixtures/discover-keywords.txt`: ordered keyword fixture for fast-discover.sh. (#138)
 - `tests/claude-code/samples/integration-discover.sh`: integration L4 test verifying discover invocation and `SKILL_STATUS: COMPLETE` in skill-status fence via jsonl transcript. (#138)
