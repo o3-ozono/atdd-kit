@@ -7,7 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-04-24
+
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. Config lives in `.claude/config.yml` (migrated from `.claude/workflow-config.yml`). (#122)
+
 ### Added
+- `docs/guides/skill-status-spec.md`: optional `NEXT_REQUIRED_ACTION` field on skill-status blocks. Canonical Source section defines the enum (`spawn_ac_review_agents`, `proceed_to_next_phase`, `await_user_input`, `halt`); Supplementary Dispatch table under Autopilot Action Matrix tells autopilot how to act when the field is present. Field is optional and backward-compatible — absent value falls back to the baseline Action Matrix. (#162)
+- `commands/autopilot.md`: Supplementary Dispatch table for `COMPLETE` + `NEXT_REQUIRED_ACTION`; Phase 1 consumes `spawn_ac_review_agents` and requires Agent tool calls in the same assistant response turn as skill-status reception. (#162)
+- `skills/discover/SKILL.md`: `--autopilot` mode (Step 7 dev/refactoring flow + Step 6 bug flow) now emits `NEXT_REQUIRED_ACTION: spawn_ac_review_agents` inside the skill-status block. Standalone mode is unaffected. (#162)
+- `lib/transition_detector.sh`: stream-json transcript analyzer that detects same-turn vs cross-turn discover→AC Review Round dispatch. Returns a JSON object with `skill_tool_use_id`, `skill_result_user_msg_index`, `next_assistant_msg_index`, `next_assistant_tool_uses`, `same_turn_spawn`, `intervening_user_msgs`. (#162)
+- `tests/fixtures/autopilot-phase1/{same-turn,cross-turn,no-skill}.jsonl`: 3 fixture transcripts for the detector's unit path. (#162)
+- `tests/claude-code/fixtures/autopilot-phase1-bug-fixture-issue.md`: minimal bug-type Issue fixture for the L4 integration sample. (#162)
+- `tests/test_transition_detector.bats`: 16 unit tests validating canonical spec consistency, argument handling, three fixture paths, and `--skill-name` override. (#162)
+- `tests/claude-code/samples/integration-autopilot-phase1-transition.sh`: L4 runtime sample — launches headless main-Claude orchestrator against the bug fixture and asserts same-turn 2-Agent spawn via the detector. Gated by `PHASE1_TRANSITION_TEST_N` and `PHASE1_TRANSITION_REQUIRED_PASSES`. (#162)
+
+### Changed
+- `tests/test_autopilot_phase1_transition.bats`: +7 tests covering the Supplementary Dispatch table, Phase 1 reference, Extraction Rule update, discover Step 7 / Step 6 NEXT_REQUIRED_ACTION emission, and standalone mode non-emission. (#162)
+- `tests/test_skill_status_spec.bats`: +6 tests covering `NEXT_REQUIRED_ACTION` field definition, optional/backward-compat marking, Canonical Source section, `spawn_ac_review_agents` enum value, Supplementary Dispatch table, and absent-field fallback. (#162)
+
+### Fixed
+- `autopilot` Phase 1 third regression of discover → AC Review Round turn-crossing stop (#83 → #101 → #162). Past fixes (imperative text additions, output minimization) relied on the implicit "same-turn continuation" assumption and silently lost the transition when an LLM response boundary occurred after receiving the skill-status block. This release introduces machine-readable dispatch metadata and a dispatch table so autopilot acts on exact enum values rather than text heuristics. (#162)
+
+### Rejected alternatives (documented to prevent future re-litigation)
+- **Case B** — discover skill itself spawns AC Review Round Agents: rejected because skills are Markdown prompts executed by main Claude, so they cannot structurally cross turn boundaries.
+- **Case C** — PostToolUse + Skill matcher hook injecting a reminder: deferred to a follow-up Issue. Evaluated viable in principle but adds a hook layer and duplicates enforcement with the dispatch metadata; Case A provides a sufficient structural guarantee on its own.
+
+### Added (pre-existing Unreleased entries carried into 2.5.0)
 - `tests/claude-code/samples/fast-atdd.sh`: fast L4 test verifying atdd skill meta-knowledge — 14-keyword `assert_contains` loop + 2-anchor `assert_order` (ready-to-go State Gate → verify transition). (#140)
 - `tests/claude-code/fixtures/atdd-keywords.txt`: ordered keyword fixture for fast-atdd.sh. (#140)
 - `tests/claude-code/samples/integration-atdd.sh`: integration L4 test verifying atdd headless invocation — `atdd-kit:atdd` tool_use, SKILL_STATUS declaration in skill-status fence, and State Gate `issue view --json labels` gh call. (#140)
