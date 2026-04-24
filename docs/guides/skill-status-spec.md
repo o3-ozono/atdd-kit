@@ -12,15 +12,17 @@ terminal point (completion, block, or failure):
 SKILL_STATUS: <value>
 PHASE: <skill-name>
 RECOMMENDATION: <one sentence>
+NEXT_REQUIRED_ACTION: <action>   # optional
 ```
 
 ## Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `SKILL_STATUS` | enum | Outcome status. See valid values below. |
-| `PHASE` | string | Skill name that produced the block (e.g., `discover`, `plan`, `atdd`, `verify`, `ship`). |
-| `RECOMMENDATION` | string | Human-readable next action or error description. **Informational only** — autopilot must NOT use this field for branching logic. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `SKILL_STATUS` | enum | Required | Outcome status. See valid values below. |
+| `PHASE` | string | Required | Skill name that produced the block (e.g., `discover`, `plan`, `atdd`, `verify`, `ship`). |
+| `RECOMMENDATION` | string | Required | Human-readable next action or error description. **Informational only** — autopilot must NOT use this field for branching logic. |
+| `NEXT_REQUIRED_ACTION` | enum | Optional | Machine-readable dispatch directive for autopilot when `SKILL_STATUS: COMPLETE`. Canonical Source of valid values (see below). When absent, autopilot falls back to the `SKILL_STATUS` Action Matrix. |
 
 ## Valid Values for SKILL_STATUS
 
@@ -30,6 +32,24 @@ RECOMMENDATION: <one sentence>
 | `PENDING` | Skill is waiting for external input (e.g., user approval mid-flow). Not yet complete. |
 | `BLOCKED` | A precondition was not met or the current state prevents continuation. Human action can unblock. |
 | `FAILED` | An unrecoverable structural or environment error occurred. Human must diagnose root cause. |
+
+## Valid Values for NEXT_REQUIRED_ACTION (Canonical Source)
+
+This table is the sole source of truth for `NEXT_REQUIRED_ACTION` enum values. Skill outputs and
+autopilot dispatch tables must reference these exact strings. Adding, renaming, or removing a value
+requires updating this table first; downstream consumers (skills, autopilot) must be updated in the
+same PR.
+
+| Value | Emitted By | Autopilot Required Action |
+|-------|------------|---------------------------|
+| `spawn_ac_review_agents` | `discover` (autopilot mode) on `COMPLETE` | In the same assistant response turn as receiving `skill-status`, issue Agent tool calls to spawn the AC Review Round agents (per task type). Do not emit intermediate user-facing text before the Agent tool calls. |
+| `proceed_to_next_phase` | reserved | Advance to the next autopilot phase per the phase sequence. |
+| `await_user_input` | reserved | Wait for user input; do not advance. |
+| `halt` | reserved | Stop autopilot; surface RECOMMENDATION to user. |
+
+**Field policy:** `NEXT_REQUIRED_ACTION` is optional. When omitted (the common case for existing
+skills), autopilot uses the `SKILL_STATUS` Action Matrix unchanged — this preserves full backward
+compatibility with pre-2.5.0 skill-status consumers.
 
 ## BLOCKED vs FAILED Distinction
 
@@ -59,6 +79,15 @@ or halt entirely.
 SKILL_STATUS: COMPLETE
 PHASE: discover
 RECOMMENDATION: Proceed to plan with approved ACs
+```
+
+### COMPLETE with NEXT_REQUIRED_ACTION (autopilot dispatch)
+
+```skill-status
+SKILL_STATUS: COMPLETE
+PHASE: discover
+RECOMMENDATION: AC draft ready; spawning AC Review Round
+NEXT_REQUIRED_ACTION: spawn_ac_review_agents
 ```
 
 ### PENDING (waiting for user approval)
@@ -92,11 +121,25 @@ the `skill-status` block to determine the next action.
 
 | SKILL_STATUS | Autopilot Next Action |
 |---|---|
-| `COMPLETE` | Proceed to next phase |
+| `COMPLETE` | If `NEXT_REQUIRED_ACTION` is present, use the Supplementary Dispatch for COMPLETE (below). Otherwise, proceed to next phase per the phase sequence. |
 | `PENDING` | Wait for external input (user approval); do not advance |
 | `BLOCKED` | Stop current phase. Post RECOMMENDATION as Issue comment. STOP and wait for user. |
 | `FAILED` | Stop autopilot. Post RECOMMENDATION as Issue comment. Report to user. |
 | (any other value) | Treat as `PENDING` |
+
+### Supplementary Dispatch for COMPLETE
+
+When `SKILL_STATUS: COMPLETE` and `NEXT_REQUIRED_ACTION` is present, autopilot resolves the
+required action by matching the directive against the Canonical Source above. The dispatch is
+machine-readable: do not derive intent from `RECOMMENDATION` text.
+
+| NEXT_REQUIRED_ACTION | Autopilot Required Action |
+|---|---|
+| `spawn_ac_review_agents` | In the same assistant response turn as receiving `skill-status`, issue Agent tool calls to spawn the AC Review Round agents. Do not end the response with text-only before the Agent tool calls. |
+| `proceed_to_next_phase` | Advance to the next phase per the phase sequence (equivalent to the baseline `COMPLETE` action). |
+| `await_user_input` | Wait for user input; do not advance. |
+| `halt` | Stop autopilot; surface `RECOMMENDATION` as Issue comment. |
+| (any other value) | Log and treat as if `NEXT_REQUIRED_ACTION` were absent (fall back to the baseline `COMPLETE` action). |
 
 ## Fallback: No SKILL_STATUS Block Found
 
