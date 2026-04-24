@@ -410,7 +410,7 @@ Applicable: describe specifics, add AC if missing. Not applicable: state why.
 
 ### Step 7: Present Deliverables and Get Approval
 
-**Autopilot mode** (`--autopilot`): Skip approval. Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft AC listings, UX check results, Interruption check results, or Discussion Summary in terminal output. Do NOT proceed to Step 8.
+**Autopilot mode** (`--autopilot`): Skip approval. Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` and `NEXT_REQUIRED_ACTION: spawn_ac_review_agents` as the **only** output. Do NOT include draft AC listings, UX check results, Interruption check results, or Discussion Summary in terminal output. Do NOT proceed to Step 8. The `NEXT_REQUIRED_ACTION` value is defined by the Canonical Source in `docs/guides/skill-status-spec.md` — do not paraphrase or localize; autopilot dispatches on the exact string.
 
 **skill-fix mode** (`--skill-fix`): Skip user approval (subagent has no user). Proceed directly to Step 8 inline plan mode. Quality gates (MUST-1/2/3, UX U1-U5, Interruption I1-I4) are retained and must pass before `ready-to-go` is granted.
 
@@ -607,7 +607,7 @@ Each AC's `Given`/`When`/`Then` should reference the persona selected in Step 3 
 
 ### Step 6: Present Deliverables and Get Approval
 
-**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 7.
+**Autopilot mode** (`--autopilot`): Output a `skill-status` fenced code block with `SKILL_STATUS: COMPLETE` and `NEXT_REQUIRED_ACTION: spawn_ac_review_agents` as the **only** output. Do NOT include draft deliverables in terminal output. Do NOT proceed to Step 7. The `NEXT_REQUIRED_ACTION` value is defined by the Canonical Source in `docs/guides/skill-status-spec.md` — do not paraphrase.
 
 **Standalone mode:** Present the full AC set to the user (same approval flow as development flow Step 7 standalone mode).
 
