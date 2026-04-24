@@ -108,3 +108,48 @@ AUTOPILOT="commands/autopilot.md"
   phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
   echo "$phase1" | grep -qi 'same.*response\|same.*turn\|immediately.*agent\|agent.*immediately'
 }
+
+# ===================================================================
+# AC1 (Issue #162): NEXT_REQUIRED_ACTION dispatch metadata
+# ===================================================================
+
+@test "AC1(#162): autopilot Status Evaluation defines Supplementary Dispatch table for NEXT_REQUIRED_ACTION" {
+  grep -q 'Supplementary Dispatch' "$AUTOPILOT"
+}
+
+@test "AC1(#162): autopilot Supplementary Dispatch lists spawn_ac_review_agents" {
+  grep -q 'spawn_ac_review_agents' "$AUTOPILOT"
+}
+
+@test "AC1(#162): autopilot Phase 1 references NEXT_REQUIRED_ACTION dispatch" {
+  local phase1
+  phase1=$(sed -n '/## Phase 1/,/## AC Review Round/p' "$AUTOPILOT")
+  echo "$phase1" | grep -q 'NEXT_REQUIRED_ACTION'
+}
+
+@test "AC1(#162): autopilot Extraction Rule parses NEXT_REQUIRED_ACTION" {
+  local extr
+  extr=$(sed -n '/### Extraction Rule/,/### Action Matrix/p' "$AUTOPILOT")
+  echo "$extr" | grep -q 'NEXT_REQUIRED_ACTION'
+}
+
+@test "AC1(#162): discover Step 7 autopilot mode emits NEXT_REQUIRED_ACTION with spawn_ac_review_agents" {
+  local step7
+  step7=$(sed -n '/### Step 7/,/### Step 8/p' "$DISCOVER")
+  echo "$step7" | grep -q 'NEXT_REQUIRED_ACTION' \
+    && echo "$step7" | grep -q 'spawn_ac_review_agents'
+}
+
+@test "AC1(#162): discover Bug Flow Step 6 autopilot mode emits NEXT_REQUIRED_ACTION" {
+  local step
+  step=$(sed -n '/### Step 6: Present Deliverables/,/### Step 7/p' "$DISCOVER")
+  echo "$step" | grep -q 'NEXT_REQUIRED_ACTION' \
+    && echo "$step" | grep -q 'spawn_ac_review_agents'
+}
+
+@test "AC1(#162): discover Step 7 standalone branch does not emit NEXT_REQUIRED_ACTION" {
+  # Lines between "**Standalone mode:**" and the next blank-section boundary
+  local standalone
+  standalone=$(sed -n '/\*\*Standalone mode/,/### Step 8/p' "$DISCOVER")
+  ! echo "$standalone" | grep -q 'NEXT_REQUIRED_ACTION'
+}

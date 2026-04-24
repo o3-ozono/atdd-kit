@@ -293,17 +293,29 @@ Evaluate the `skill-status` block in each agent reply to determine the next acti
 
 ### Extraction Rule
 
-Locate the **last** `skill-status` block. Parse `SKILL_STATUS` and `PHASE`. `RECOMMENDATION` is informational only — do not use it for branching.
+Locate the **last** `skill-status` block. Parse `SKILL_STATUS`, `PHASE`, and (if present) `NEXT_REQUIRED_ACTION`. `RECOMMENDATION` is informational only — do not use it for branching.
 
 ### Action Matrix
 
 | SKILL_STATUS | Autopilot Next Action |
 |---|---|
-| `COMPLETE` | Proceed to next phase |
+| `COMPLETE` | If `NEXT_REQUIRED_ACTION` is present, apply the Supplementary Dispatch (below). Otherwise proceed to next phase. |
 | `PENDING` | Wait for user input; do not advance |
 | `BLOCKED` | Post RECOMMENDATION as Issue comment. STOP and wait for user. |
 | `FAILED` | Stop autopilot. Post RECOMMENDATION. Report to user. |
 | (any other) | Treat as `PENDING` |
+
+### Supplementary Dispatch for COMPLETE (NEXT_REQUIRED_ACTION)
+
+When `SKILL_STATUS: COMPLETE` and `NEXT_REQUIRED_ACTION` is present, dispatch by the exact string value. The enum is defined in the Canonical Source at `docs/guides/skill-status-spec.md` — do not derive intent from `RECOMMENDATION`.
+
+| NEXT_REQUIRED_ACTION | Autopilot Required Action |
+|---|---|
+| `spawn_ac_review_agents` | **In the same assistant response turn as receiving `skill-status`**, issue Agent tool calls to spawn AC Review Round agents (per task type). Do not emit intermediate user-facing text and do not end the response with text-only before the Agent tool calls. |
+| `proceed_to_next_phase` | Advance to the next phase per the phase sequence (same as the baseline `COMPLETE` action). |
+| `await_user_input` | Wait for user input; do not advance. |
+| `halt` | Stop autopilot. Post `RECOMMENDATION` as Issue comment. Report to user. |
+| (any other) | Log and fall back to the baseline `COMPLETE` action. |
 
 ### Fallback: No SKILL_STATUS Block Found
 
@@ -332,7 +344,7 @@ Prohibited patterns. Failure mode: report what failed → STOP → wait for user
 1. `gh issue edit <number> --add-label in-progress` (exclusive lock)
 2. Read the Issue body and comments
 3. Use Skill tool to invoke `atdd-kit:discover` with `"<number> --autopilot"`
-4. On `SKILL_STATUS: COMPLETE` from discover: immediately issue Agent tool calls to spawn AC Review Round agents. **Phase 1 is not complete until AC Review Round agents have been spawned. Receiving SKILL_STATUS: COMPLETE from discover alone does not complete Phase 1.** Do NOT present draft deliverables to the user or send any intermediate messages before the Agent tool calls.
+4. On `SKILL_STATUS: COMPLETE` from discover: the skill-status block will carry `NEXT_REQUIRED_ACTION: spawn_ac_review_agents`. Apply the Supplementary Dispatch rule — in the **same assistant response turn** as receiving the skill-status block, immediately issue Agent tool calls to spawn AC Review Round agents. **Phase 1 is not complete until AC Review Round agents have been spawned. Receiving SKILL_STATUS: COMPLETE from discover alone does not complete Phase 1.** Do NOT present draft deliverables to the user and do NOT send any intermediate messages before the Agent tool calls.
 
 ## AC Review Round
 
