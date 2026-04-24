@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","cwd":"/tmp/t","session_id":"s3","tools":[],"mcp_servers":[],"model":"claude-opus-4-7","permissionMode":"bypassPermissions","apiKeySource":"env"}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"hello"}]},"parent_tool_use_id":null,"session_id":"s3"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"hi there"}]},"parent_tool_use_id":null,"session_id":"s3","model":"claude-opus-4-7"}
+{"type":"result","subtype":"success","session_id":"s3"}
