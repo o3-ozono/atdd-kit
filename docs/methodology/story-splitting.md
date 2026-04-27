@@ -46,14 +46,16 @@ For more nuanced situations, the Lawrence 9-pattern guide provides additional sp
 | # | Pattern | Description |
 |---|---------|-------------|
 | 1 | Workflow Steps | Split each step of a multi-step process |
-| 2 | Business Rule Variations | One story per rule variant |
-| 3 | Major Effort | Spike first, then implementation |
-| 4 | Simple / Complex | Simple case first; complex as follow-up |
-| 5 | Variations in Data | One story per data type/source |
-| 6 | Data Entry Methods | One story per input method |
-| 7 | Defer System QA | Core feature first; QA/NFR as separate story |
-| 8 | Operations (CRUD) | Create / Read / Update / Delete as separate stories |
-| 9 | Breaking Out a Spike | Extract unknowns into a research story |
+| 2 | Operations (CRUD) | Create / Read / Update / Delete as separate stories |
+| 3 | Business Rule Variations | One story per rule variant |
+| 4 | Variations in Data | One story per data type/source |
+| 5 | Data Entry Methods | One story per input method |
+| 6 | Major Effort | Spike first, then implementation |
+| 7 | Simple / Complex | Simple case first; complex as follow-up |
+| 8 | Defer Performance | "Make it work" first; "make it fast" (or other NFR) as separate story |
+| 9 | Break Out a Spike | Extract unknowns into a research story |
+
+**Meta-Pattern:** Find the Complexity & Reduce the Variations — before splitting, identify where the real complexity lives, then use the pattern that reduces it most.
 
 ## Split Decision Flow
 
