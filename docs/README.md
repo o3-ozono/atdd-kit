@@ -17,14 +17,29 @@ How-to guides and reference materials for day-to-day usage.
 | [skill-authoring-guide.md](guides/skill-authoring-guide.md) | Dialogue UX design principles for skill authors |
 | [skill-status-spec.md](guides/skill-status-spec.md) | SKILL_STATUS block field definitions and autopilot action matrix |
 
+## product/
+
+Product strategy and prioritization documents.
+
+| Document | Description |
+|----------|-------------|
+| [product-goal.md](product/product-goal.md) | Product Goal — why atdd-kit exists and success indicators |
+| [impact-map.md](product/impact-map.md) | Impact Map — Actors, Impacts, and Deliverable links to open Issues |
+| [story-map.md](product/story-map.md) | Story Map — Backbone (skill chain), Walking Skeleton, and next slices |
+| [roadmap.md](product/roadmap.md) | Roadmap — Now / Next / Later lanes (quarterly cadence) |
+
 ## methodology/
 
-Deep-dive methodology documents for ATDD and bug fix processes.
+Deep-dive methodology documents for ATDD, Scrumban, and related practices.
 
 | Document | Description |
 |----------|-------------|
 | [atdd-guide.md](methodology/atdd-guide.md) | ATDD methodology guide for the atdd skill and Issue templates |
 | [bug-fix-process.md](methodology/bug-fix-process.md) | Bug fix workflow and triage process |
+| [definition-of-done.md](methodology/definition-of-done.md) | Definition of Done — AC gate, CI gate, PR gate, documentation gate |
+| [definition-of-ready.md](methodology/definition-of-ready.md) | Definition of Ready — criteria for Issue to reach ready-to-go state |
+| [scrumban.md](methodology/scrumban.md) | Scrumban + ATDD integrated methodology — terminology, label table, solo adaptations |
+| [story-splitting.md](methodology/story-splitting.md) | Story splitting guide — SPIDR patterns, Lawrence 9-pattern |
 | [test-mapping.md](methodology/test-mapping.md) | AC-to-test-layer mapping and Testing Quadrants reference |
 | [us-ac-format.md](methodology/us-ac-format.md) | US/AC spec file format definition (frontmatter schema, status transitions, filename convention) |
 

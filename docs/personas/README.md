@@ -27,3 +27,12 @@ File naming: `<first-name>-<role>.md` (lowercase, hyphen-separated)
 | [TEMPLATE.md](TEMPLATE.md) | Blank template for new personas |
 | [hiro-solo-dev.md](hiro-solo-dev.md) | **Primary** — solo developer running atdd-kit on personal projects as the sole maintainer |
 | [rin-freeform-coder.md](rin-freeform-coder.md) | **Negative** — freeform coder who rejects Issue-driven and AC-first process (explicitly out of scope) |
+
+## Impact Map Actor Reference
+
+Both personas are referenced as Actors in [impact-map.md](../product/impact-map.md):
+
+- **Hiro Sawaki** (hiro-solo-dev.md) — Primary Actor. All Impacts describe behavioral changes in Hiro.
+- **Rin Akagi** (rin-freeform-coder.md) — Negative Actor. Scope decisions that would benefit Rin at Hiro's expense are rejected.
+
+When creating a new persona, also update impact-map.md to declare whether the persona is a new Actor or a variant of an existing one.
