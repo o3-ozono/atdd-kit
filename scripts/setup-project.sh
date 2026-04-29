@@ -62,6 +62,21 @@ else
 fi
 log "  PROJECT_NUM=$PROJECT_NUM  PROJECT_ID=$PROJECT_ID"
 
+# Update scrumban.md with the actual project URL (idempotent)
+SCRUMBAN_DOC="docs/methodology/scrumban.md"
+PROJECT_URL="https://github.com/users/${OWNER}/projects/${PROJECT_NUM}"
+if [ "$DRY_RUN" = "--dry-run" ]; then
+    dry_run_echo "sed replace projects/<TBD> -> projects/${PROJECT_NUM} in $SCRUMBAN_DOC"
+elif grep -q "projects/<TBD>" "$SCRUMBAN_DOC"; then
+    sed -i.bak "s|projects/<TBD>|projects/${PROJECT_NUM}|g" "$SCRUMBAN_DOC"
+    rm "${SCRUMBAN_DOC}.bak"
+    log "[INFO] Updated $SCRUMBAN_DOC with project URL: $PROJECT_URL"
+elif grep -q "$PROJECT_URL" "$SCRUMBAN_DOC"; then
+    log "[INFO] $SCRUMBAN_DOC already has correct project URL"
+else
+    log "[WARN] $SCRUMBAN_DOC URL state unclear — please update manually"
+fi
+
 # ---------------------------------------------------------------------------
 # Step 2: Create Status field (Single-select, 8 options)
 # ---------------------------------------------------------------------------

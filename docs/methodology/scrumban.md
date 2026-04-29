@@ -94,7 +94,7 @@ An Increment in atdd-kit = **one merged PR that passes all ACs**.
 
 ### Project URL
 
-https://github.com/users/o3-ozono/projects/9
+https://github.com/users/o3-ozono/projects/<TBD>
 
 ### Custom Fields
 

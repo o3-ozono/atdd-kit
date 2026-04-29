@@ -109,8 +109,16 @@ SCRUMBAN_DOC="docs/methodology/scrumban.md"
     grep -q '## GitHub Project' "$SCRUMBAN_DOC"
 }
 
-@test "AC5: scrumban.md contains live Project URL" {
-    grep -qE 'github\.com/users/o3-ozono/projects/[0-9]+' "$SCRUMBAN_DOC"
+@test "AC5: scrumban.md contains Project URL (placeholder or real)" {
+    # Accepts either the <TBD> placeholder (pre-setup) or a real project number (post-setup)
+    grep -qE 'github\.com/users/o3-ozono/projects/([0-9]+|<TBD>)' "$SCRUMBAN_DOC"
+}
+
+@test "AC5: setup-project.sh auto-updates scrumban.md URL via sed (option B)" {
+    # Verifies that setup-project.sh contains the sed replacement logic and scrumban.md reference
+    grep -q 'sed' "$SETUP_SCRIPT"
+    grep -q 'scrumban.md' "$SETUP_SCRIPT"
+    grep -q 'projects/<TBD>' "$SETUP_SCRIPT"
 }
 
 @test "AC5: scrumban.md lists all 7 fields including Iteration" {
