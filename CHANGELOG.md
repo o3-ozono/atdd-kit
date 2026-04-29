@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `docs/methodology/scrumban.md`: `## GitHub Project` section — Project URL (`<TBD>` placeholder, auto-replaced by `setup-project.sh` on first run), 7-field schema (6 custom fields + Iteration), Status↔autopilot label mapping table with intentional gap note for "Shaped (Pitch済)". (#168)
+- `scripts/setup-project.sh`: idempotent CLI script for GitHub Projects v2 setup — project create guard, Status + 5 custom fields creation, all Open Issue bulk-add, bulk field-set (uses `--single-select-option-id` and GraphQL node ID for `--project-id`); auto-replaces `projects/<TBD>` placeholder in scrumban.md with the real project URL on first run. (#168)
+- `scripts/verify-project.sh`: automated verification script for AC2 (item count + non-null field check) and AC5 (scrumban.md URL / field schema / mapping grep); also queries Iteration date ranges via GraphQL for AC4 evidence. (#168)
+- `tests/test_github_projects_setup.bats`: 23-assertion BATS test suite covering AC1–AC5 for the setup scripts and scrumban.md GitHub Project section; includes placeholder/sed verification for AC5 URL handling. (#168)
 - `tests/claude-code/samples/fast-atdd.sh`: fast L4 test verifying atdd skill meta-knowledge — 14-keyword `assert_contains` loop + 2-anchor `assert_order` (ready-to-go State Gate → verify transition). (#140)
 - `tests/claude-code/fixtures/atdd-keywords.txt`: ordered keyword fixture for fast-atdd.sh. (#140)
 - `tests/claude-code/samples/integration-atdd.sh`: integration L4 test verifying atdd headless invocation — `atdd-kit:atdd` tool_use, SKILL_STATUS declaration in skill-status fence, and State Gate `issue view --json labels` gh call. (#140)
