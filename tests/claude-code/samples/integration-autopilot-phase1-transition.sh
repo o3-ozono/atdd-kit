@@ -17,6 +17,13 @@
 #   SKILL_TEST_TIMEOUT_SECS           — per-run timeout, default 600
 #   PHASE1_TRANSITION_TEST_N          — number of runs (default 1)
 #   PHASE1_TRANSITION_REQUIRED_PASSES — required same-turn passes (default N)
+#   SKILL_TEST_PLUGIN_DIR             — plugin directory to load via
+#                                       `claude -p --plugin-dir`; defaults
+#                                       to $REPO_ROOT (the worktree the
+#                                       test is running from). Set to a
+#                                       pre-fix worktree (e.g. checkout
+#                                       of main) to drive the RED state
+#                                       in ATDD verification.
 #
 # Exit codes:
 #   0   PASS (required passes met)
@@ -39,6 +46,16 @@ TIMEOUT_SECS="${SKILL_TEST_TIMEOUT_SECS:-600}"
 
 N="${PHASE1_TRANSITION_TEST_N:-1}"
 REQUIRED_PASSES="${PHASE1_TRANSITION_REQUIRED_PASSES:-$N}"
+PLUGIN_DIR="${SKILL_TEST_PLUGIN_DIR:-$REPO_ROOT}"
+
+if [ ! -d "$PLUGIN_DIR" ]; then
+  echo "Error: plugin dir not found: $PLUGIN_DIR" >&2
+  exit 3
+fi
+if [ ! -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ]; then
+  echo "Error: plugin manifest not found: $PLUGIN_DIR/.claude-plugin/plugin.json" >&2
+  exit 3
+fi
 
 if [ ! -f "$FIXTURE_ISSUE" ]; then
   echo "Error: fixture issue not found: $FIXTURE_ISSUE" >&2
@@ -78,29 +95,24 @@ export PATH="${GH_STUB_DIR}:${PATH}"
 
 FIXTURE_CONTENT=$(cat "$FIXTURE_ISSUE")
 
-# Prompt instructs the orchestrator to:
-#   1. Invoke atdd-kit:discover with 999 --autopilot
-#   2. On SKILL_STATUS: COMPLETE + NEXT_REQUIRED_ACTION: spawn_ac_review_agents,
-#      spawn two Agent tool calls (Tester + Developer — bug-triage per
-#      autopilot.md AC Review Round) in the SAME response turn.
+# Prompt design (ATDD-correct, Issue #162):
+#   Self-contained — does not reference any file path on disk so the
+#   orchestrator is forced to rely on the plugin-dir-provided
+#   /atdd-kit:autopilot slash command and skill definitions for its
+#   procedure knowledge. Combined with the cwd isolation in run_once,
+#   this ensures Claude's behavior is driven only by the loaded plugin
+#   (the artifact under test). The variable across RED/GREEN runs is
+#   exactly $SKILL_TEST_PLUGIN_DIR (a pre-fix vs fix-applied checkout).
 PROMPT=$(cat <<PROMPT_EOF
-You are the atdd-kit autopilot orchestrator (Phase 1). Follow this
-procedure exactly:
-
-1. Invoke the atdd-kit:discover skill via the Skill tool with args
-   '999 --autopilot'.
-
-2. When discover returns a skill-status block containing
-   SKILL_STATUS: COMPLETE and NEXT_REQUIRED_ACTION: spawn_ac_review_agents,
-   you must IMMEDIATELY — in the SAME assistant response turn — issue TWO
-   Agent tool calls in parallel to spawn the bug-triage AC Review Round:
-     - one Agent with subagent_type="tester"
-     - one Agent with subagent_type="developer"
-   Each with any short description/prompt of your choice.
-
-Do NOT output any user-facing text between receiving the skill-status
-block and issuing the Agent tool calls. Do NOT end your response with
-text-only before the Agent tool calls.
+You are the atdd-kit autopilot orchestrator. Issue #999 is a bug-type
+Issue and needs Phase 1 work. Follow the standard /atdd-kit:autopilot
+Phase 1 procedure for this Issue: invoke the discover skill in
+--autopilot mode with args '999 --autopilot' and apply the appropriate
+Phase 1 transition behavior. Stop after the immediate Phase 1 transition
+action completes; do not proceed to Phase 2 or later. Do not invent
+extra steps. Do not read repository files outside what your plugin
+context provides — rely solely on your loaded /atdd-kit slash command
+and skill definitions.
 
 Fixture Issue #999 content:
 ${FIXTURE_CONTENT}
@@ -112,20 +124,40 @@ TIMEOUT_PREFIX=$(_timeout_prefix)
 run_once() {
   local idx="$1"
   local transcript="$2"
+  # Run claude from an isolated cwd that has no atdd-kit context. This
+  # prevents leakage of repo-state implementation details (e.g. the fix
+  # worktree's commands/autopilot.md, lib/transition_detector.sh, test
+  # fixtures, .git history) into the orchestrator's context. Plugin
+  # behavior is the sole variable, supplied via --plugin-dir, with the
+  # autopilot procedure injected as system prompt from $PLUGIN_DIR so
+  # the orchestrator's dispatch awareness tracks the plugin under test.
+  local isolated_cwd="${SKILL_TEST_TMPDIR}/cwd-${idx}"
+  mkdir -p "$isolated_cwd"
+  local autopilot_md="${PLUGIN_DIR}/commands/autopilot.md"
+  if [ ! -f "$autopilot_md" ]; then
+    echo "Error: autopilot.md not found in plugin dir: $autopilot_md" >&2
+    return 3
+  fi
   if [ -n "$TIMEOUT_PREFIX" ]; then
     # shellcheck disable=SC2086
-    ${TIMEOUT_PREFIX} "$CLAUDE_BIN" -p "$PROMPT" \
-      --permission-mode bypassPermissions \
-      --output-format stream-json \
-      --verbose \
-      2>/dev/null > "$transcript"
+    ( cd "$isolated_cwd" && \
+      ${TIMEOUT_PREFIX} "$CLAUDE_BIN" -p "$PROMPT" \
+        --permission-mode bypassPermissions \
+        --plugin-dir "$PLUGIN_DIR" \
+        --append-system-prompt-file "$autopilot_md" \
+        --output-format stream-json \
+        --verbose \
+        2>/dev/null > "$transcript" )
     return $?
   else
-    "$CLAUDE_BIN" -p "$PROMPT" \
-      --permission-mode bypassPermissions \
-      --output-format stream-json \
-      --verbose \
-      2>/dev/null > "$transcript"
+    ( cd "$isolated_cwd" && \
+      "$CLAUDE_BIN" -p "$PROMPT" \
+        --permission-mode bypassPermissions \
+        --plugin-dir "$PLUGIN_DIR" \
+        --append-system-prompt-file "$autopilot_md" \
+        --output-format stream-json \
+        --verbose \
+        2>/dev/null > "$transcript" )
     return $?
   fi
 }
@@ -159,16 +191,19 @@ for i in $(seq 1 "$N"); do
     continue
   fi
 
-  # AC1/AC2 assertion — all six must be true.
+  # AC1/AC2 assertion — all true:
+  #   same_turn_spawn == true: aggregated has Agent calls within current
+  #     response turn (bounded by next real user input).
+  #   agent_count == 2: bug-triage spawn pattern (Tester + Developer).
+  # Legacy delta/intervening checks were dropped because headless mode
+  # injects a runtime "Base directory for this skill:" user-text msg
+  # between carrier and model's first assistant message — same_turn_spawn
+  # already absorbs that semantic.
   same_turn=$(jq -r '.same_turn_spawn' <<< "$detector_out")
-  delta=$(jq -r '.next_assistant_msg_index - .skill_result_user_msg_index' <<< "$detector_out")
-  intervening=$(jq -r '.intervening_user_msgs' <<< "$detector_out")
-  agent_count=$(jq '[.next_assistant_tool_uses[] | select(. == "Agent")] | length' <<< "$detector_out")
+  agent_count=$(jq '[.aggregated_tool_uses[] | select(. == "Agent")] | length' <<< "$detector_out")
 
   ok=1
   if [ "$same_turn" != "true" ]; then ok=0; fi
-  if [ "$delta" != "1" ]; then ok=0; fi
-  if [ "$intervening" != "0" ]; then ok=0; fi
   if [ "$agent_count" != "2" ]; then ok=0; fi
 
   if [ "$ok" -eq 1 ]; then

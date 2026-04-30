@@ -24,6 +24,15 @@
 #      that user message.
 #   6. Counts Agent tool_use entries (name=="Agent") in that next assistant
 #      message's content array.
+#   6b. Aggregates tool_use names across ALL assistant messages from the
+#       "next" one onward, stopping at the first user message that looks
+#       like a real new user input (text-type content that does NOT start
+#       with the runtime-injected skill-body marker "Base directory for
+#       this skill:"). This handles headless `claude -p` mode where one
+#       response turn is split across multiple assistant messages
+#       (thinking + text + tool_use), with skill-body injection appearing
+#       as an intervening user-text message that is NOT a real turn
+#       boundary.
 #   7. Emits a JSON object with the fields below to stdout and exits 0.
 #
 #   If the Skill tool_use is not found, emits an "error" JSON with
@@ -35,6 +44,7 @@
 #     "skill_result_user_msg_index": <int> | null,
 #     "next_assistant_msg_index": <int> | null,
 #     "next_assistant_tool_uses": ["Agent","Agent",...],
+#     "aggregated_tool_uses": ["Agent","Agent",...],
 #     "same_turn_spawn": <bool>,
 #     "intervening_user_msgs": <int>,
 #     "error": "<code>"         # only present on failure
@@ -152,6 +162,7 @@ if [ -z "$skill_hit" ] || [ "$skill_hit" = "null" ]; then
       skill_result_user_msg_index: null,
       next_assistant_msg_index: null,
       next_assistant_tool_uses: [],
+      aggregated_tool_uses: [],
       same_turn_spawn: false,
       intervening_user_msgs: 0,
       error: $err,
@@ -188,6 +199,7 @@ context=$(jq -c --arg tid "$skill_tool_use_id" --argjson sidx "$skill_assistant_
         skill_result_user_msg_index: null,
         next_assistant_msg_index: null,
         next_assistant_content: [],
+        aggregated_tool_uses: [],
         intervening_user_msgs: 0
       }
     else
@@ -198,13 +210,36 @@ context=$(jq -c --arg tid "$skill_tool_use_id" --argjson sidx "$skill_assistant_
             skill_result_user_msg_index: $carrier_idx,
             next_assistant_msg_index: null,
             next_assistant_content: [],
+            aggregated_tool_uses: [],
             intervening_user_msgs: 0
           }
         else
-          {
+          # Find the next real user input (text-type, not runtime-injected
+          # skill-body) AFTER $next_asst. This bounds the "current response
+          # turn" in headless mode where one response is split across
+          # multiple assistant messages with auto-injected user msgs
+          # (skill body, parallel-tool interleaves) between them.
+          ([ $tl[] | select(.type == "user")
+             | select(.idx > $next_asst.idx)
+             | select(
+                 (.content[0]? // null) as $c
+                 | $c != null
+                 and ($c.type? == "text")
+                 and ((($c.text // "") | startswith("Base directory for this skill:")) | not)
+               )
+             | .idx
+           ] | sort | .[0] // null) as $turn_end_idx
+          | (if $turn_end_idx == null then 999999999 else $turn_end_idx end) as $turn_end
+          | ([ $tl[] | select(.type == "assistant")
+               | select(.idx >= $next_asst.idx and .idx < $turn_end)
+             ]) as $turn_assistants
+          | {
             skill_result_user_msg_index: $carrier_idx,
             next_assistant_msg_index: $next_asst.idx,
             next_assistant_content: $next_asst.content,
+            aggregated_tool_uses:
+              [ $turn_assistants[].content[]?
+                | select(.type == "tool_use") | .name ],
             intervening_user_msgs:
               ([ $tl[] | select(.type == "user")
                  | select(.idx > $carrier_idx and .idx < $next_asst.idx)
@@ -214,25 +249,33 @@ context=$(jq -c --arg tid "$skill_tool_use_id" --argjson sidx "$skill_assistant_
     end
 ' <<< "$timeline")
 
-# Step 6: count Agent tool_use in next assistant message content.
+# Step 6: count Agent tool_use in next assistant message content (legacy
+# field, single-msg view) and aggregated across all assistant msgs in the
+# current response turn (new field, multi-msg view for headless mode).
 tool_uses=$(jq -c '
   .next_assistant_content
   | [ .[] | select(.type == "tool_use") | .name ]
 ' <<< "$context")
 
-agent_uses=$(jq -c '[ .[] | select(. == "Agent") ]' <<< "$tool_uses")
-agent_count=$(jq 'length' <<< "$agent_uses")
+aggregated_tool_uses=$(jq -c '.aggregated_tool_uses // []' <<< "$context")
+
+agent_uses_aggregated=$(jq -c '[ .[] | select(. == "Agent") ]' <<< "$aggregated_tool_uses")
+agent_count_aggregated=$(jq 'length' <<< "$agent_uses_aggregated")
 
 skill_result_user_msg_index=$(jq -r '.skill_result_user_msg_index' <<< "$context")
 next_assistant_msg_index=$(jq -r '.next_assistant_msg_index' <<< "$context")
 intervening_user_msgs=$(jq -r '.intervening_user_msgs' <<< "$context")
 
-# Step 7: same_turn_spawn is true iff the next assistant message immediately
-# follows the carrier user message (index delta == 1) AND Agent tool_uses >= 1.
+# Step 7: same_turn_spawn is true iff aggregated Agent tool_uses across the
+# current response turn (bounded by the next real user input that is NOT a
+# runtime-injected skill body) is >= 1. The legacy delta == 1 check was
+# dropped because in headless mode skill execution injects a "Base directory
+# for this skill:" user-text message between the tool_result carrier and
+# the model's next assistant message, making delta naturally 2 even when
+# the spawn is functionally same-turn.
 same_turn=false
 if [ "$next_assistant_msg_index" != "null" ] && [ "$skill_result_user_msg_index" != "null" ]; then
-  delta=$(( next_assistant_msg_index - skill_result_user_msg_index ))
-  if [ "$delta" -eq 1 ] && [ "$agent_count" -ge 1 ]; then
+  if [ "$agent_count_aggregated" -ge 1 ]; then
     same_turn=true
   fi
 fi
@@ -243,6 +286,7 @@ jq -c -n \
   --argjson sidx "${skill_result_user_msg_index}" \
   --argjson nidx "${next_assistant_msg_index}" \
   --argjson tu "$tool_uses" \
+  --argjson agg "$aggregated_tool_uses" \
   --argjson st "$same_turn" \
   --argjson iu "$intervening_user_msgs" '
   {
@@ -250,6 +294,7 @@ jq -c -n \
     skill_result_user_msg_index: $sidx,
     next_assistant_msg_index: $nidx,
     next_assistant_tool_uses: $tu,
+    aggregated_tool_uses: $agg,
     same_turn_spawn: $st,
     intervening_user_msgs: $iu
   }
