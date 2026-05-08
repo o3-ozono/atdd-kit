@@ -19,17 +19,23 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 | [autopilot-worktree-guard.sh](autopilot-worktree-guard.sh) + [autopilot_worktree_guard.py](autopilot_worktree_guard.py) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit/Bash writes that escape the autopilot session's worktree (gated by `ATDD_AUTOPILOT_WORKTREE` env var; no-op in normal sessions) |
 | [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal (timeout=10s: balances normalization benefit vs hook overhead; large outputs complete in <1s on typical hardware) |
 
-### main-branch-guard.sh
+### main-branch-guard.sh + main_branch_guard.py
 
-Enforces the Issue-driven workflow rule that direct edits on `main`/`master` are not allowed:
+Enforces the Issue-driven workflow rule that direct edits on `main`/`master` are not allowed for repository-managed files:
 
 1. Intercepts Edit, Write, MultiEdit, and NotebookEdit tool calls via PreToolUse hook
 2. Reads the current git branch with `git branch --show-current`
-3. If the branch is exactly `main` or `master` (case-sensitive), denies the tool call with a `permissionDecision: "deny"` response
-4. The deny message includes guidance to use `/atdd-kit:issue` and `/atdd-kit:autopilot`
-5. All unexpected conditions (non-git directory, detached HEAD, git unavailable) pass through safely with `{}`
+3. If the branch is not `main` or `master` (case-sensitive exact match), passes through immediately with `{}`
+4. On `main`/`master`, delegates to `main_branch_guard.py` which:
+   - Parses `tool_input.file_path` (or `tool_input.notebook_path` for NotebookEdit) from the hook JSON
+   - Canonicalizes the path via `~` expansion + `os.path.realpath`
+   - Checks against an allow-list: `/tmp`, `/private/tmp`, `/var/folders`, `/private/var/folders`, `/dev/null`, `~/.claude/`, `~/.config/`
+   - Allow-list match → `{}` exit 0 (edit permitted)
+   - No match → `permissionDecision: "deny"` JSON exit 0
+5. Deny message instructs users to create a feature branch and use the Issue-driven workflow (no skill names)
+6. All unexpected conditions (non-git directory, detached HEAD, git unavailable, python3 unavailable, malformed JSON) pass through safely with `{}`
 
-**Fail-safe design:** Any error condition returns `{}` + exit 0. The hook never blocks edits due to unexpected failures — only explicit `main`/`master` branch matches trigger a deny.
+**Fail-safe design:** Any error condition returns `{}` + exit 0. The hook never blocks edits due to unexpected failures — only explicit `main`/`master` branch matches with non-allow-list paths trigger a deny.
 
 #### Emergency Recovery (if the hook misbehaves)
 

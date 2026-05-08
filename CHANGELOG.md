@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- `hooks/main-branch-guard.sh` + `hooks/main_branch_guard.py` (new): allow-list for repo-external paths (`/tmp`, `/var/folders`, `/private/var/folders`, `/private/tmp`, `/dev/null`, `~/.claude/`, `~/.config/`) on `main`/`master`; deny message updated to skill-name-agnostic wording; BATS suite extended to 47 cases covering AC1–AC5. (#181)
+
 ### Added
 - `docs/methodology/scrumban.md`: `## GitHub Project` section — Project URL (`<TBD>` placeholder, auto-replaced by `setup-project.sh` on first run), 7-field schema (6 custom fields + Iteration), Status↔autopilot label mapping table with intentional gap note for "Shaped (Pitch済)". (#168)
 - `scripts/setup-project.sh`: idempotent CLI script for GitHub Projects v2 setup — project create guard, Status + 5 custom fields creation, all Open Issue bulk-add, bulk field-set (uses `--single-select-option-id` and GraphQL node ID for `--project-id`); auto-replaces `projects/<TBD>` placeholder in scrumban.md with the real project URL on first run. (#168)
