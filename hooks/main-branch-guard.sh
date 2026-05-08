@@ -3,12 +3,14 @@ set -uo pipefail
 
 # main-branch-guard.sh -- PreToolUse hook that blocks edits on main/master
 #
-# Denies Edit/Write/MultiEdit/NotebookEdit tool calls when the current git
-# branch is exactly "main" or "master" (case-sensitive). All other conditions
-# pass through with {} to ensure fail-safe behaviour.
+# Checks the current git branch (case-sensitive exact match for "main" or
+# "master"). On other branches or when branch detection fails, passes through
+# with {} (fail-safe). On main/master, delegates to main_branch_guard.py which
+# parses the hook JSON, canonicalizes file_path via realpath, and checks the
+# allow-list. Allow -> {} exit 0, Deny -> deny JSON exit 0.
 #
 # AC6 (fail-safe): Any unexpected condition (non-git directory, detached HEAD,
-# git not in PATH, malformed stdin) returns {} + exit 0 without blocking.
+# git not in PATH, python3 not in PATH, malformed stdin) returns {} + exit 0.
 #
 # Registered in hooks/hooks.json as a plugin-level PreToolUse hook so that
 # all projects using atdd-kit automatically receive this protection.
@@ -31,28 +33,26 @@ if [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
   exit 0
 fi
 
-# --- Deny ---
-escape_for_json() {
-  local s="$1"
-  s="${s//\\/\\\\}"
-  s="${s//\"/\\\"}"
-  s="${s//$'\n'/\\n}"
-  s="${s//$'\r'/\\r}"
-  s="${s//$'\t'/\\t}"
-  printf '%s' "$s"
-}
+# --- Delegate to Python helper for allow-list check ---
+HERE="$(cd "$(dirname "$0")" && pwd)"
+PY_SCRIPT="$HERE/main_branch_guard.py"
 
-REASON="main/master branch direct edits are not allowed. Please create a feature branch and use /atdd-kit:issue to open an Issue, then /atdd-kit:autopilot to implement via the Issue-driven workflow."
-ESCAPED_REASON=$(escape_for_json "$REASON")
+if [ ! -f "$PY_SCRIPT" ]; then
+  # Fail-safe: missing helper -> do not break tool flow.
+  echo '{}'
+  exit 0
+fi
 
-cat <<ENDJSON
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "deny",
-    "permissionDecisionReason": "${ESCAPED_REASON}"
-  }
-}
-ENDJSON
+echo "$INPUT" | python3 "$PY_SCRIPT"
+RC=$?
 
-exit 0
+case "$RC" in
+  0)
+    exit 0
+    ;;
+  *)
+    # Python crashed or exited unexpectedly. Fail-safe allow.
+    echo '{}'
+    exit 0
+    ;;
+esac
