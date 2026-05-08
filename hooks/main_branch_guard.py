@@ -116,7 +116,7 @@ def main() -> None:
 
     fp = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
     if not fp:
-        _emit_deny()
+        _emit_allow()
 
     canon = canonicalize(fp, cwd)
     if is_allowed(canon):

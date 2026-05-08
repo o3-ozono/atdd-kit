@@ -237,7 +237,7 @@ run_guard_raw() {
   cd "$WORK"
   git checkout main -q
   result=$(run_guard "Edit")
-  echo "$result" | grep -q "Issue"
+  echo "$result" | grep -q "Issue-driven"
 }
 
 # ---------------------------------------------------------------------------
@@ -488,5 +488,44 @@ run_guard_raw() {
   git checkout main -q
   # realpath resolves /tmp/../tmp/foo -> /tmp/foo (stays in allow-list)
   result=$(run_guard "Edit" "/tmp/../tmp/foo")
+  [ "$result" = "{}" ]
+}
+
+@test "AC5(#181): symlink in repo pointing to /tmp/ on main returns {} (intentional per Issue Note)" {
+  cd "$WORK"
+  git checkout main -q
+  ln -s /tmp "$WORK/tmp-link"
+  result=$(run_guard "Edit" "$WORK/tmp-link/foo.md")
+  [ "$result" = "{}" ]
+}
+
+# ---------------------------------------------------------------------------
+# AC6 extension: tool_input key missing / empty cases → fail-safe {} (DoD)
+# ---------------------------------------------------------------------------
+
+@test "AC6: tool_input key missing on main returns {} (fail-safe per DoD)" {
+  cd "$WORK"
+  git checkout main -q
+  local json
+  json=$(printf '{"tool_name":"Edit","cwd":"%s"}' "$WORK")
+  result=$(cd "$WORK" && bash "$GUARD" <<< "$json")
+  [ "$result" = "{}" ]
+}
+
+@test "AC6: empty tool_input on main returns {} (fail-safe per DoD)" {
+  cd "$WORK"
+  git checkout main -q
+  local json
+  json=$(printf '{"tool_name":"Edit","tool_input":{},"cwd":"%s"}' "$WORK")
+  result=$(cd "$WORK" && bash "$GUARD" <<< "$json")
+  [ "$result" = "{}" ]
+}
+
+@test "AC6: empty file_path in tool_input on main returns {} (fail-safe per DoD)" {
+  cd "$WORK"
+  git checkout main -q
+  local json
+  json=$(printf '{"tool_name":"Edit","tool_input":{"file_path":""},"cwd":"%s"}' "$WORK")
+  result=$(cd "$WORK" && bash "$GUARD" <<< "$json")
   [ "$result" = "{}" ]
 }
