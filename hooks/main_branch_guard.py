@@ -9,8 +9,8 @@ JSON exit 0. Any unhandled exception → "{}" exit 0 (fail-safe).
 Exit codes:
   0 -> allow (stdout "{}") or deny (stdout deny JSON)
 
-Note: Unlike autopilot-worktree-guard.py this helper only uses exit 0 so the
-sh wrapper does not need to distinguish exit codes.
+Note: This helper only uses exit 0 so the sh wrapper does not need to
+distinguish exit codes.
 """
 
 from __future__ import annotations

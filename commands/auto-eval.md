@@ -103,19 +103,6 @@ No regression: update `baseline.json`. Regression: do NOT update; warn and exit 
 - Per skill total: up to 15 minutes
 - Single eval timeout: mark FAIL, continue with remaining
 
-## Phase 6: Create Eval Evidence Marker
-
-After eval completes (pass or fail), create marker so `eval-guard` hook allows `git push`:
-
-```bash
-BRANCH=$(git branch --show-current | tr '/' '-')
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/atdd-kit"
-mkdir -p "$CACHE_DIR"
-touch "${CACHE_DIR}/eval-ran-${BRANCH}"
-```
-
-This marker is checked by the PreToolUse `eval-guard.sh` hook. Without it, `git push` is blocked when SKILL.md changes are detected.
-
 ## Exit Conditions
 
 | Condition | Action |
