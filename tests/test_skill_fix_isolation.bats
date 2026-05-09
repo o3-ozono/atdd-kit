@@ -3,11 +3,9 @@
 # Worktree isolation + guard false-fire prevention
 # AC4: subagent uses isolation: worktree (structure check)
 # AC8: main branch not contaminated (structure check)
-# Guard: autopilot_worktree_guard does not misfire on skill-fix paths
 
 SKILL_FIX_SKILL="skills/skill-fix/SKILL.md"
 DISPATCH_LIB="lib/skill_fix_dispatch.sh"
-WORKTREE_GUARD="hooks/autopilot_worktree_guard.py"
 
 # --- AC4: isolation: worktree documented ---
 
@@ -32,26 +30,6 @@ WORKTREE_GUARD="hooks/autopilot_worktree_guard.py"
   echo "$prompt" | grep -qi 'subagent\|skill-fix'
   # Prompt should NOT reference main session worktree
   ! echo "$prompt" | grep -q 'ATDD_AUTOPILOT_WORKTREE'
-}
-
-# --- Guard: autopilot_worktree_guard does not block skill-fix ---
-
-@test "autopilot_worktree_guard.py exists" {
-  [[ -f "$WORKTREE_GUARD" ]]
-}
-
-@test "worktree guard does not hard-block --skill-fix invocations" {
-  # The guard should be aware of --skill-fix as a valid autopilot-related path
-  # Verify the guard either: (a) doesn't mention skill-fix blocking, or
-  # (b) explicitly allows --skill-fix
-  if grep -q 'skill.fix' "$WORKTREE_GUARD"; then
-    # If mentioned, it should be in an allow/exception context
-    grep -q 'skill.fix.*allow\|allow.*skill.fix\|skill.fix.*except\|except.*skill.fix' "$WORKTREE_GUARD" \
-      || grep -qv 'skill.fix.*block\|block.*skill.fix' "$WORKTREE_GUARD"
-  else
-    # Not mentioned = not blocked by default
-    true
-  fi
 }
 
 # --- AC8: env scrubbing prevents main branch contamination ---

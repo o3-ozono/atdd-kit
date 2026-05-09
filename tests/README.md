@@ -91,7 +91,6 @@ scripts/check_bats_covers.sh   # exits 0 with "OK: N files" if all annotated
 | test_hook_distribution.bats | PostToolUse hook plugin distribution (AC6, Issue #85) |
 | test_token_measurement_tooling.bats | Token reduction measurement tooling (AC4a, Issue #85) |
 | test_autopilot_phase1_transition.bats | discover autopilot output control and Phase 1 completion condition (AC1-AC3, Issue #101) |
-| test_autopilot_worktree_guard.bats | autopilot-worktree-guard hook boundary enforcement — env-mode (AC2-AC6, Issue #111) + cwd-detection regression (AC1-AC5, Issue #116) |
 | test_autopilot_phase09_env_export.bats | autopilot.md Phase 0.9 drift detection — ATDD_AUTOPILOT_WORKTREE export optional + cwd-detection primary (Issue #111, #116) |
 | test_skill_fix_structure.bats | skill-fix SKILL.md structure — AC1 explicit trigger, AC2 interview Q count, AC4 no Agent tool, AC6 1-line report (Issue #119) |
 | test_skill_fix_dispatch.bats | lib/skill_fix_dispatch.sh — AC3 4-class fixtures, AC5 RED/GREEN fixtures, AC7 inflight registry, AC9 cleanup (Issue #119) |

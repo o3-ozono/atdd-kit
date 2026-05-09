@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+- `hooks/autopilot-worktree-guard.sh`, `hooks/autopilot_worktree_guard.py`, `hooks/eval-guard.sh` と対応テスト・設定エントリ: autopilot / evals 機構削除（#179 Step E1/E3）に先行して hook 安全網を除去。(#182)
+
 ### Fixed
 - `hooks/main-branch-guard.sh` + `hooks/main_branch_guard.py` (new): allow-list for repo-external paths (`/tmp`, `/var/folders`, `/private/var/folders`, `/private/tmp`, `/dev/null`, `~/.claude/`, `~/.config/`) on `main`/`master`; deny message updated to skill-name-agnostic wording; BATS suite extended to 47 cases covering AC1–AC5. (#181)
 

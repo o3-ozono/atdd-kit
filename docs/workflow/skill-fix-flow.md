@@ -85,14 +85,6 @@ The following was observed in autopilot-119 worktree with `run_in_background: tr
 ### (iv) Next-turn message delivery
 - **OK** — completion result delivered on next turn as `<task-notification>`
 
-## #116 Coexistence Note
-
-Issue #116 (autopilot-worktree-guard) and #119 (skill-fix) run in parallel. skill-fix does not depend on #116's fix:
-
-- `isolation: worktree` provides independent worktree per subagent
-- AC8 env scrubbing ensures `ATDD_AUTOPILOT_WORKTREE` is not forwarded
-- The guard does not need to be aware of `--skill-fix` paths
-
 ## Audit Marker Regex
 
 ```

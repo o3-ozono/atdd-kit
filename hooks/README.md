@@ -16,7 +16,6 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 | [hooks.json](hooks.json) | — | Hook definitions — maps events to shell commands |
 | [session-start](session-start) | SessionStart | Checks if `.claude/config.yml` (or legacy `workflow-config.yml`) exists; guides first-time setup |
 | [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit on `main`/`master` branches |
-| [autopilot-worktree-guard.sh](autopilot-worktree-guard.sh) + [autopilot_worktree_guard.py](autopilot_worktree_guard.py) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit/Bash writes that escape the autopilot session's worktree (gated by `ATDD_AUTOPILOT_WORKTREE` env var; no-op in normal sessions) |
 | [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal (timeout=10s: balances normalization benefit vs hook overhead; large outputs complete in <1s on typical hardware) |
 
 ### main-branch-guard.sh + main_branch_guard.py
@@ -54,51 +53,6 @@ In the atdd-kit repository, on a feature branch, edit `hooks/hooks.json` and rem
 **Option 3: Override via Claude Code settings (project-level)**
 
 In your project's `.claude/settings.json`, add a hook that returns `{}` for the same matcher before the plugin hook runs.
-
-### autopilot-worktree-guard.sh + autopilot_worktree_guard.py
-
-Enforces the autopilot-session rule that file writes must stay inside the active worktree (see Issue #111):
-
-1. Intercepts Edit, Write, MultiEdit, NotebookEdit, and Bash tool calls via PreToolUse hook
-2. Resolves the active worktree `W` by **precedence**: (a) `ATDD_AUTOPILOT_WORKTREE` env var if set (explicit override); (b) auto-detection from stdin `cwd` — if `cwd` is under `<repo>/.claude/worktrees/<name>/`, extracts worktree root via regex-peel + `realpath` (Issue #116); (c) no-op when neither applies (normal non-autopilot sessions are unaffected)
-3. For Edit/Write/MultiEdit/NotebookEdit: canonicalizes `tool_input.file_path` via `realpath` and blocks when it lands outside the worktree and outside the allow-list
-4. For Bash: tokenizes `tool_input.command` with Python `shlex.split` (quoted literals such as `echo "a > b"` and stream merges such as `2>&1` are correctly not misdetected), then blocks when any redirect target (`>`, `>>`, `>|`, `&>`, `&>>`, numbered) or mutating-command target (`cp`, `mv`, `rm`, `mkdir`, `touch`, `install`, `tee`, `ln`) escapes the worktree
-5. Bypasses path checks entirely when the first token is `git` or `gh` (repo-meta commands manage their own write scope)
-6. **Allow-list:** `/tmp`, `/var/folders`, `/private/var/folders`, `/private/tmp`, `/dev/null`, and `<worktree>/.git`
-7. **Block contract:** exits 2 with stderr starting `worktree=<W>\nviolating=<path>` so parallel autopilot sessions can unambiguously triage the offender
-8. **Fail-safe design:** any unexpected error (missing `python3`, malformed JSON, unparseable command) returns `{}` + exit 0 — the hook never breaks the tool flow
-
-#### Known Limitations (intentional deferrals — Issue #111)
-
-These shell forms are best-effort and may not be detected. The `/tmp` allow-list and separate Edit/Write/MultiEdit/NotebookEdit coverage mitigate the impact:
-
-- **heredoc body targets** (`cat <<EOF > /etc/x\n...\nEOF`) — the outer `> /etc/x` redirect IS detected; body content is not
-- **Nested subshell mutations** (`$(cmd > path)`) — only the outer command is inspected
-- **`eval "cmd > path"` / `bash -c "cmd > path"`** — command strings are opaque to shlex
-- **`exec >path`** redirects — not detected
-- **Interpreter-level file IO** (`python -c "open('/p','w').write(...)"`) — target lives inside a Python string literal, unreachable for shlex
-- **`$VAR` expansion** (e.g. `$HOME`) — shlex does not expand shell variables; only literal `~` is expanded by the canonicalizer
-
-Python 3 is required in `$PATH` for JSON parsing and shlex tokenization. Standard on macOS and CI; unavailability falls back to no-op (fail-safe).
-
-## Development-Only Hooks (atdd-kit repo only)
-
-These hooks are registered in `.claude/settings.json` (project-level), NOT in `hooks.json` (plugin-level). They only affect atdd-kit developers, not end users.
-
-| File | Event | Purpose |
-|------|-------|---------|
-| [eval-guard.sh](eval-guard.sh) | PreToolUse (Bash) | Blocks `git push` when SKILL.md changes detected without eval evidence |
-
-### eval-guard.sh
-
-Enforces the rule that skill changes require eval before push:
-
-1. Intercepts all Bash tool calls
-2. If the command is a `git push` (not in arguments), checks for SKILL.md changes on this branch vs merge-base with origin/main
-3. If changes exist, checks for eval evidence marker (`$XDG_CACHE_HOME/atdd-kit/eval-ran-<branch>`)
-4. Blocks push with guidance to run `/atdd-kit:auto-eval` if no evidence found
-
-The marker is created by `/atdd-kit:auto-eval` after eval completes.
 
 ## References
 
