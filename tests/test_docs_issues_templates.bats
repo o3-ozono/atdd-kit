@@ -70,3 +70,25 @@
 @test "AC3: plan.md has verify: line" {
   grep -q "verify:" templates/docs/issues/plan.md
 }
+
+# AC4: acceptance-tests.md — 4 状態マーカー（planned/draft/green/regression）
+
+@test "AC4: acceptance-tests.md exists" {
+  [ -f "templates/docs/issues/acceptance-tests.md" ]
+}
+
+@test "AC4: acceptance-tests.md has [planned] marker" {
+  grep -q "\[planned\]" templates/docs/issues/acceptance-tests.md
+}
+
+@test "AC4: acceptance-tests.md has [draft] marker" {
+  grep -q "\[draft\]" templates/docs/issues/acceptance-tests.md
+}
+
+@test "AC4: acceptance-tests.md has [green] marker" {
+  grep -q "\[green\]" templates/docs/issues/acceptance-tests.md
+}
+
+@test "AC4: acceptance-tests.md has [regression] marker" {
+  grep -q "\[regression\]" templates/docs/issues/acceptance-tests.md
+}
