@@ -143,12 +143,6 @@ PLAN_SKILL="skills/plan/SKILL.md"
 
 # --- Regression: existing behaviors are preserved ---
 
-@test "Regression: discover AUTOPILOT-GUARD uses --autopilot flag" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER_SKILL")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-
 @test "Regression: Development flow UX check U1-U5 is preserved" {
   grep -q "U1" "$DISCOVER_SKILL"
   grep -q "U5" "$DISCOVER_SKILL"

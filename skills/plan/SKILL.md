@@ -21,13 +21,6 @@ Do NOT invoke atdd or write any code until the plan has been REVIEWED and APPROV
 5. **After COMPLETE, only atdd may be invoked** -- all other skill invocations from this point are forbidden.
 </IRON-LAW>
 
-<AUTOPILOT-GUARD>
-If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
-- Display message: "This skill is autopilot-only. Use `/atdd-kit:autopilot <number>` instead."
-- **STOP.** Do not proceed with execution.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
-</AUTOPILOT-GUARD>
-
 ## State Gate (required -- skip only in Inline Mode)
 
 1. **Check `in-progress` label:** `gh issue view <number> --json labels --jq '[.labels[].name] | index("in-progress")'`

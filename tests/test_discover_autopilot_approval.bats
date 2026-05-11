@@ -127,26 +127,6 @@ OVERRIDES=".claude/rules/workflow-overrides.md"
   echo "$hard_gate" | grep -qi 'autopilot\|AC Review Round'
 }
 
-# --- AC3+AC4: AUTOPILOT-GUARD uses --autopilot flag in all 3 skills ---
-
-@test "AC3: plan AUTOPILOT-GUARD uses --autopilot flag for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-
-@test "AC4: atdd AUTOPILOT-GUARD uses --autopilot flag for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-
-@test "AC1: discover AUTOPILOT-GUARD uses --autopilot flag for detection" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  echo "$guard" | grep -q '\-\-autopilot'
-}
-
 # --- AC5: autopilot.md passes --autopilot flag in Skill calls ---
 
 @test "AC5: autopilot Phase 1 passes --autopilot in discover Skill call" {
@@ -161,22 +141,3 @@ OVERRIDES=".claude/rules/workflow-overrides.md"
   echo "$phase3" | grep -q '\-\-autopilot'
 }
 
-# --- Negative tests: no teammate-message residue in AUTOPILOT-GUARDs ---
-
-@test "No teammate-message references remain in discover AUTOPILOT-GUARD" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  ! echo "$guard" | grep -qi 'teammate-message'
-}
-
-@test "No teammate-message references remain in plan AUTOPILOT-GUARD" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  ! echo "$guard" | grep -qi 'teammate-message'
-}
-
-@test "No teammate-message references remain in atdd AUTOPILOT-GUARD" {
-  local guard
-  guard=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$ATDD")
-  ! echo "$guard" | grep -qi 'teammate-message'
-}

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `skills/discover/SKILL.md`, `skills/plan/SKILL.md`, `skills/atdd/SKILL.md`, `skills/verify/SKILL.md`, `skills/ship/SKILL.md`: Removed `<AUTOPILOT-GUARD>` blocks from all 5 skills. Standalone slash-command invocation (e.g. `/atdd-kit:discover 188`) now works without `--autopilot`. Autopilot-mode behavioral branches preserved. Precursor partial of #202. (#214)
+
+### Removed
+- `tests/test_autopilot_guard_block.bats`: Obsolete after `<AUTOPILOT-GUARD>` blocks were removed from 5 skills. The test asserted GUARD block presence and STOP behavior which no longer exists. (#214)
+- BATS tests asserting `<AUTOPILOT-GUARD>` presence in `discover`/`plan`/`atdd` SKILL.md files (`test_discover_dod_structure.bats`, `test_discover_autopilot_approval.bats`, `test_discover_skill_fix_bypass.bats`, `test_skill_fix_flag_scope.bats`) — obsolete after GUARD removal. (#214)
+
 ## [2.5.1] - 2026-05-11
 
 ### Changed

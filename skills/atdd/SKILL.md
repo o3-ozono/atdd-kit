@@ -9,13 +9,6 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 
 # atdd -- ATDD Double-Loop TDD Implementation Skill
 
-<AUTOPILOT-GUARD>
-If ARGUMENTS does not contain `--autopilot` (user invoked directly via slash command):
-- Display message: "This skill is autopilot-only. Use `/atdd-kit:autopilot <number>` instead."
-- **STOP.** Do not proceed with execution.
-If ARGUMENTS contains `--autopilot` (invoked by autopilot): skip this guard silently.
-</AUTOPILOT-GUARD>
-
 <HARD-GATE>
 ## State Gate (required)
 
