@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-05-11
+
+### Changed
+- `rules/atdd-kit.md`: Workflow section replaced with the v1.0 6-step table (Discovery & Definition / User Stories / Plan / ATDD / Review / Merge) listing the 6 new capability-name skills and `docs/issues/<NNN>/` deliverable paths. Added "1 Issue = 1 worktree = 1 Draft PR" to PRs section and "Open Draft PR on first commit/push" to Commits section. (#187)
+- `CLAUDE.md`: Added Workflow overview section mirroring the 6-step table with concrete deliverable paths under `docs/issues/<NNN>/`; preserved existing DEVELOPMENT.md / CHANGELOG.md references. (#187)
+- `DEVELOPMENT.md`, `DEVELOPMENT.ja.md`, `rules/README.md`: Always-loaded rules budget raised from 40 to 60 lines (v1.0 migration concession); each location notes the re-tighten target tied to Step E. (#187)
+
+### Added
+- `tests/test_rules_workflow.bats`: New BATS suite (11 @test functions) mechanically verifying AC1-AC5 of #187 — 6 step names + 6 skill names + ≤60 line budget (AC1), 5 grep checks on CLAUDE.md (AC2), case-insensitive autopilot absence (AC3), verbatim "1 Issue = 1 worktree = 1 Draft PR" (AC4), Draft PR + first/initial commit/push regex (AC5). (#187)
+
 ## [2.5.0] - 2026-05-11
 
 ### Added
