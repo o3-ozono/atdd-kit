@@ -4,7 +4,7 @@
 
 An Issue is **Ready** when all of the following criteria are met. `ready-to-go` label is applied only after DoR is confirmed.
 
-> v1.0 (#216 / #218) note: persona / INVEST / Story Splitting (US methodology) は v1.0 で不採用。User Story は persona 抜き Connextra (`I want to <goal>, so that <benefit>`)。
+> v1.0 (#216 / #218) note: persona / INVEST / Story Splitting (as a US methodology) are not adopted in v1.0. User Stories use persona-less Connextra (`I want to <goal>, so that <benefit>`).
 
 ## DoR Criteria
 

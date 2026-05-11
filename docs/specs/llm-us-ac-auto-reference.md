@@ -6,7 +6,7 @@ status: draft
 
 This spec is the self-referencing dogfood instance for the US/AC auto-reference mechanism introduced in #70. It is cited by `atdd`, `verify`, and `bug` when working on #70 itself (Continuation Path) per AC6(b) + AC1.
 
-> v1.0 (#216 / #218) note: persona フィールドは廃止。本 spec は persona 抜き Connextra に書き換え済み。`spec_persona` サブコマンドも廃止された。
+> v1.0 (#216 / #218) note: the persona field has been dropped. This spec has been rewritten as persona-less Connextra. The `spec_persona` subcommand has also been removed.
 
 ## User Story
 

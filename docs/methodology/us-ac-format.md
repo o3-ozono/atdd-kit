@@ -4,7 +4,7 @@ This document defines the format for User Story + Acceptance Criteria spec files
 
 A spec file persists the User Story and its ACs beyond Issue closure, serving as Living Documentation with a consistent, LLM-parseable structure.
 
-> v1.0 (#216 / #218) note: persona フィールドは廃止されました。User Story 本文は **persona 抜き Connextra** (`I want to <goal>, so that <reason>`) を使います。
+> v1.0 (#216 / #218) note: the persona field has been dropped. User Story bodies use **persona-less Connextra** (`I want to <goal>, so that <reason>`).
 
 ## Frontmatter Schema
 
@@ -78,7 +78,7 @@ The body must contain these three sections in this order:
 
 ### Section Rules
 
-- `## User Story` — must contain a non-empty Story in **persona 抜き Connextra** form (`I want to <goal>, so that <benefit>`).
+- `## User Story` — must contain a non-empty Story in **persona-less Connextra** form (`I want to <goal>, so that <benefit>`).
 - `## Acceptance Criteria` — must contain 3 or more ACs, each with non-empty `Given`, `When`, `Then` lines.
 - `## Notes` — may be empty or omitted if there are no notes.
 

@@ -4,7 +4,7 @@
 > **See also:** [atdd-guide.md](atdd-guide.md) — AC format and GWT rules
 > **See also:** [us-ac-format.md](us-ac-format.md) — spec file format (frontmatter exception)
 
-> v1.0 (#216 / #218) note: persona 概念は採用しない。User Story は **persona 抜き Connextra** (`I want to <goal>, so that <benefit>`) を使う。INVEST チェックも採用しない。
+> v1.0 (#216 / #218) note: the persona concept is not adopted. User Stories use **persona-less Connextra** (`I want to <goal>, so that <benefit>`). INVEST checks are also not adopted.
 
 ## Classification Rationale
 

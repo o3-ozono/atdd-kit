@@ -6,7 +6,7 @@ status: draft
 
 This spec describes the `docs/specs/` format convention introduced in #66. The User Story and ACs below are the authoritative living record of that format, intended to survive Issue closure. This sample conforms to the format defined in [`docs/methodology/us-ac-format.md`](../methodology/us-ac-format.md).
 
-> v1.0 (#216 / #218) note: persona フィールドは廃止されました。本 sample は **persona 抜き Connextra** に書き換え済みです。
+> v1.0 (#216 / #218) note: the persona field has been dropped. This sample has been rewritten as **persona-less Connextra**.
 
 *Note: AC5 (bats structural tests) and AC7 (CHANGELOG update) are implementation-level delivery obligations, not part of the format contract itself. They are listed here for traceability.*
 
@@ -64,4 +64,4 @@ This spec describes the `docs/specs/` format convention introduced in #66. The U
 - This file is the self-referencing sample for the format it describes. The circularity is intentional: the format is proven by its own first use.
 - The filename `us-ac-format.md` is derived from the Issue #66 title's main noun phrase.
 - This sample spec remains in `draft` state as a historic record.
-- **Updated by #218 (Step E6, 2026-05-11):** persona フィールドを frontmatter から削除し、User Story 本文を persona 抜き Connextra に書き換え。
+- **Updated by #218 (Step E6, 2026-05-11):** persona frontmatter field removed; User Story body rewritten as persona-less Connextra.
