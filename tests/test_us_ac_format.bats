@@ -16,9 +16,13 @@
 
 @test "AC1: us-ac-format.md defines required frontmatter fields" {
   grep -q "title" docs/methodology/us-ac-format.md
-  grep -q "persona" docs/methodology/us-ac-format.md
   grep -q "issue" docs/methodology/us-ac-format.md
   grep -q "status" docs/methodology/us-ac-format.md
+}
+
+@test "AC1: us-ac-format.md does NOT include persona frontmatter (v1.0 #218)" {
+  # persona concept dropped in v1.0; the field must not be reintroduced.
+  ! grep -E "^\| \`persona\`|persona\".*string" docs/methodology/us-ac-format.md
 }
 
 @test "AC1: us-ac-format.md defines status values" {
@@ -50,11 +54,12 @@
   [ -f "docs/specs/TEMPLATE.md" ]
 }
 
-@test "AC2: TEMPLATE.md has all 4 frontmatter placeholder fields" {
+@test "AC2: TEMPLATE.md has all 3 frontmatter placeholder fields (v1.0 #218: persona removed)" {
   grep -q "title" docs/specs/TEMPLATE.md
-  grep -q "persona" docs/specs/TEMPLATE.md
   grep -q "issue" docs/specs/TEMPLATE.md
   grep -q "status" docs/specs/TEMPLATE.md
+  # persona must not be reintroduced
+  ! grep -q "^persona:" docs/specs/TEMPLATE.md
 }
 
 @test "AC2: TEMPLATE.md has status draft as default" {
@@ -69,11 +74,12 @@
   [ -f "docs/specs/us-ac-format.md" ]
 }
 
-@test "AC3: sample spec has all 4 frontmatter fields" {
+@test "AC3: sample spec has all 3 frontmatter fields (v1.0 #218: persona removed)" {
   grep -q "^title:" docs/specs/us-ac-format.md
-  grep -q "^persona:" docs/specs/us-ac-format.md
   grep -q "^issue:" docs/specs/us-ac-format.md
   grep -q "^status:" docs/specs/us-ac-format.md
+  # persona must not be reintroduced
+  ! grep -q "^persona:" docs/specs/us-ac-format.md
 }
 
 @test "AC3: sample spec issue value is #66" {
@@ -129,16 +135,9 @@ assert m and m.group(1).strip(), 'User Story section is empty'
   [ -f "docs/methodology/us-ac-format.md" ]
 }
 
-@test "AC6: docs/specs links do not reference non-existent files" {
-  # Extract markdown link paths to docs/personas/*.md from docs/specs/ files
-  # and verify each referenced file exists
-  links=$(grep -roh '\](docs/personas/[^)]*\.md)' docs/specs/ 2>/dev/null \
-    | sed 's/^](\(.*\))$/\1/' || true)
-  if [ -n "$links" ]; then
-    echo "$links" | while IFS= read -r f; do
-      [ -f "$f" ]
-    done
-  fi
+@test "AC6: docs/specs does NOT reference removed docs/personas/" {
+  # v1.0 (#218): docs/personas/ was deleted; spec files must not link to it.
+  ! grep -rq 'docs/personas/' docs/specs/ 2>/dev/null
 }
 
 # ---------------------------------------------------------------------------

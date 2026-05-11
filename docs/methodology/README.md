@@ -10,9 +10,7 @@ Methodology deep-dives: detailed guidance on ATDD, User Story quality, Scrumban 
 | [bug-fix-process.md](bug-fix-process.md) | Bug fix classification (A/B/C) and step-by-step repair process |
 | [definition-of-done.md](definition-of-done.md) | Definition of Done — AC gate, CI gate, PR gate, documentation gate |
 | [definition-of-ready.md](definition-of-ready.md) | Definition of Ready — criteria for an Issue to enter ready-to-go state |
-| [persona-guide.md](persona-guide.md) | Persona definitions, Elastic User Problem, and creation process |
 | [scrumban.md](scrumban.md) | Scrumban + ATDD integrated methodology — terminology, label table, solo adaptations |
-| [story-splitting.md](story-splitting.md) | Story splitting guide — SPIDR patterns, Lawrence 9-pattern, split decision flow |
 | [test-mapping.md](test-mapping.md) | AC-to-test-layer mapping reference |
 | [us-ac-format.md](us-ac-format.md) | User Story and AC spec file format (frontmatter schema, status transitions) |
 | [us-quality-standard.md](us-quality-standard.md) | User Story quality standard: MUST/SHOULD criteria, anti-patterns, and LLM guidelines |

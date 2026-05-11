@@ -21,9 +21,10 @@ The slug is derived from the Issue title's main noun phrase (e.g., Issue #66 "US
 ## Creating a New Spec
 
 1. Copy `TEMPLATE.md` to a new file: `cp docs/specs/TEMPLATE.md docs/specs/<kebab-slug>.md`
-2. Fill in all four frontmatter fields (`title`, `persona`, `issue`, `status`).
+2. Fill in all three frontmatter fields (`title`, `issue`, `status`).
 3. Replace `status: draft` with the correct status once ACs are approved.
-4. Replace the `TBD` persona placeholder with a real persona from `docs/personas/` before moving to `approved`.
+
+> v1.0 (#216 / #218) note: persona field was removed from spec frontmatter; User Stories use **persona-less Connextra** (`I want to <goal>, so that <reason>`).
 
 ## Operational Rules
 

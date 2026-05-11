@@ -4,14 +4,15 @@ This document defines the format for User Story + Acceptance Criteria spec files
 
 A spec file persists the User Story and its ACs beyond Issue closure, serving as Living Documentation with a consistent, LLM-parseable structure.
 
+> v1.0 (#216 / #218) note: the persona field has been dropped. User Story bodies use **persona-less Connextra** (`I want to <goal>, so that <reason>`).
+
 ## Frontmatter Schema
 
-Every spec file opens with a YAML frontmatter block containing exactly these four fields:
+Every spec file opens with a YAML frontmatter block containing exactly these three fields:
 
 ```yaml
 ---
 title: "Short title matching the Issue title"
-persona: "PersonaName"
 issue: "#123"
 status: draft
 ---
@@ -22,17 +23,16 @@ status: draft
 | Field | Type | Description |
 |-------|------|-------------|
 | `title` | string | Short title matching the corresponding Issue title |
-| `persona` | string | Persona name from `docs/personas/` (see TBD rule below) |
 | `issue` | string | Issue reference in `"#NNN"` format (quoted) |
 | `status` | enum | One of: `draft`, `approved`, `implemented`, `deprecated` |
 
 ### Field Order
 
-Fields must appear in the order: `title`, `persona`, `issue`, `status`.
+Fields must appear in the order: `title`, `issue`, `status`.
 
 ### Frontmatter Exception
 
-**Frontmatter applies to spec files only.** Other docs (guides, methodology, workflow, personas) do not use YAML frontmatter. Do not add frontmatter to non-spec files.
+**Frontmatter applies to spec files only.** Other docs (guides, methodology, workflow) do not use YAML frontmatter. Do not add frontmatter to non-spec files.
 
 ## Status Values and Transitions
 
@@ -49,16 +49,6 @@ Allowed transitions:
 
 Do not skip states (e.g., `draft` → `implemented`).
 
-## TBD Persona Rule
-
-When a spec is created before persona research is complete, use:
-
-```yaml
-persona: "TBD — replace in #69"
-```
-
-This is only permitted when `status: draft`. Before moving to `approved`, the `TBD` placeholder must be replaced with a real persona name from `docs/personas/`.
-
 ## Body Section Structure
 
 The body must contain these three sections in this order:
@@ -66,7 +56,6 @@ The body must contain these three sections in this order:
 ```markdown
 ## User Story
 
-**As a** [persona],
 **I want to** [goal],
 **so that** [benefit].
 
@@ -89,7 +78,7 @@ The body must contain these three sections in this order:
 
 ### Section Rules
 
-- `## User Story` — must contain a non-empty Constraint Story (As a / I want to / so that).
+- `## User Story` — must contain a non-empty Story in **persona-less Connextra** form (`I want to <goal>, so that <benefit>`).
 - `## Acceptance Criteria` — must contain 3 or more ACs, each with non-empty `Given`, `When`, `Then` lines.
 - `## Notes` — may be empty or omitted if there are no notes.
 
@@ -166,4 +155,3 @@ docs/specs/
 - `docs/specs/README.md` — operational guide for creating and maintaining specs
 - `docs/specs/TEMPLATE.md` — blank template
 - `docs/specs/us-ac-format.md` — sample spec (self-reference) demonstrating this format
-- `docs/personas/` — persona files referenced in `persona:` field

@@ -39,7 +39,6 @@ Deep-dive methodology documents for ATDD, Scrumban, and related practices.
 | [definition-of-done.md](methodology/definition-of-done.md) | Definition of Done — AC gate, CI gate, PR gate, documentation gate |
 | [definition-of-ready.md](methodology/definition-of-ready.md) | Definition of Ready — criteria for Issue to reach ready-to-go state |
 | [scrumban.md](methodology/scrumban.md) | Scrumban + ATDD integrated methodology — terminology, label table, solo adaptations |
-| [story-splitting.md](methodology/story-splitting.md) | Story splitting guide — SPIDR patterns, Lawrence 9-pattern |
 | [test-mapping.md](methodology/test-mapping.md) | AC-to-test-layer mapping and Testing Quadrants reference |
 | [us-ac-format.md](methodology/us-ac-format.md) | US/AC spec file format definition (frontmatter schema, status transitions, filename convention) |
 
@@ -62,15 +61,6 @@ User Story + Acceptance Criteria spec files. Spec files persist ACs beyond Issue
 | [README.md](specs/README.md) | Directory purpose, naming convention, and operational rules |
 | [TEMPLATE.md](specs/TEMPLATE.md) | Blank template for new spec files |
 | [us-ac-format.md](specs/us-ac-format.md) | Sample spec: US/AC format convention introduced in #66 |
-
-## personas/
-
-Research-based persona files. Personas anchor User Stories to specific characters and prevent the Elastic User Problem.
-
-| Document | Description |
-|----------|-------------|
-| [README.md](personas/README.md) | Directory purpose, template usage, and one-file-per-persona convention |
-| [TEMPLATE.md](personas/TEMPLATE.md) | Blank template for creating new persona files |
 
 ## References
 

@@ -7,9 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### BREAKING Changes (v1.0 — Step E6)
+
+- **Persona concept removed.** v1.0 (#218) drops the persona model entirely. User Stories use **persona-less Connextra** (`I want to <goal>, so that <reason>`). The following are removed: `docs/personas/` directory, `lib/persona_check.sh`, `docs/methodology/persona-guide.md`, `scripts/check-persona-check-order.sh`, `tests/test_persona_check.bats`, `tests/test_persona_guide.bats`, `agents/us-reviewer.md` criteria #2 (named persona) / #5 (INVEST) / #6 (persona traceability), `lib/spec_check.sh::spec_persona` subcommand, `docs/specs/TEMPLATE.md` persona frontmatter field, and persona-related sections in `docs/methodology/{us-ac-format,us-quality-standard,definition-of-ready,scrumban,atdd-guide}.md`. Applied projects with `docs/personas/` must migrate User Stories to the persona-less form (manual migration required). (#218)
+- **Example Mapping not adopted.** Inherited #169 (旧 Phase C: Backlog Refinement evolution) machinery was never part of #179 v1.0 PRD's "採用する設計判断" table. Explicitly removed from sub-issue ACs (#188 / #189). (#216 / #218)
+- **INVEST not adopted.** Same provenance as Example Mapping. `agents/us-reviewer.md` criterion #5, `docs/methodology/definition-of-ready.md` R5, and `docs/methodology/us-quality-standard.md` SHOULD references removed. (#216 / #218)
+- **Story Splitting (US methodology) not adopted.** `docs/methodology/story-splitting.md` removed. The "Story Splitting" naming in #179 epic refers to **PR splitting** (about 26 sub-PRs), not US methodology splitting. (#216 / #218)
+
 ### Changed
+- `agents/us-reviewer.md`: Reduced from 10 to 7 criteria after removing #2 (named persona), #5 (INVEST), #6 (persona traceability). Connextra form criterion #1 rewritten as `I want to <capability>, so that <outcome>` (persona-less). (#218)
+- `agents/final-reviewer.md`: Total traceability references reduced from 50 to 47 to mirror the us-reviewer change. (#218)
+- `agents/qa.md`, `agents/developer.md`: AC Review note "persona's `I want to`" generalized to "`I want to`". (#218)
+- `templates/docs/issues/user-stories.md`: `[persona]` placeholder removed; functional and constraint stories use persona-less Connextra. (#218)
+- `templates/issue/en/development.yml`: User Story placeholder rewritten as persona-less Connextra. (#218)
+- `docs/methodology/us-quality-standard.md`: MUST-1 (Persona Reference) removed; MUST-2/3/4 renumbered to MUST-1/2/3. SHOULD examples rewritten to persona-less form. (#218)
+- `docs/methodology/definition-of-ready.md`: R2 rewritten to persona-less Connextra; R5 (INVEST) and R6 (Story Splitting) removed; R7 renumbered to R5. (#218)
+- `docs/methodology/us-ac-format.md`: persona frontmatter field removed from schema; field order reduced to `title / issue / status`; TBD Persona Rule section removed. (#218)
+- `docs/methodology/scrumban.md`: persona / Hiro / Story Splitting / persona-guide references removed. (#218)
+- `docs/methodology/atdd-guide.md`: User Story format rewritten as persona-less Connextra; MUST-1 reference removed; constraint story example rewritten without persona. (#218)
+- `docs/methodology/README.md`: persona-guide.md / story-splitting.md rows removed. (#218)
+- `docs/README.md`: `personas/` section removed; methodology table cleared of persona-guide / story-splitting rows. (#218)
+- `docs/specs/TEMPLATE.md`, `docs/specs/README.md`, `docs/specs/us-ac-format.md`, `docs/specs/llm-us-ac-auto-reference.md`: persona frontmatter field and User Story persona placeholder removed. (#218)
+- `docs/guides/spec-reference.md`: AC6 Fallback Matrix `tbd-persona` row removed; Order Invariant `persona check` precedence removed. (#218)
+- `docs/workflow/skill-fix-flow.md`: discover SKILL.md row updated to mark persona auto-select as removed in #218. (#218)
+- `skills/bug/SKILL.md`: spec-cite step text simplified to remove `tbd-persona` reference. (#218)
+- `lib/spec_check.sh`: `spec_persona` subcommand and `tbd-persona` warn case removed. (#218)
+- `tests/test_reviewer_subagents.bats`: AC2 us-reviewer category list reduced to `Connextra` + `制約 Story`; AC2 forbidden-category guard added; AC3 reviewer-specific criteria count (us-reviewer=7, others=10); AC4 traceability count reduced from 50 to 47 with role-specific N range. (#218)
+- `tests/test_spec_check.bats`: `_make_spec` helper persona arg removed; `spec_persona` subcommand existence test replaced with removal verification. (#218)
+- `tests/test_spec_reference.bats`: Group 1 atdd "persona check precedes spec check" test removed. (#218)
+- `tests/test_us_ac_format.bats`: persona frontmatter assertions converted to negative guards. (#218)
+- `tests/test_us_quality_standard.bats`: persona-related assertions converted to negative guards; MUST-4 references renumbered to MUST-3. (#218)
 - `docs/issues/179-atdd-kit-v1-redesign/prd.md`: Step A0 PRD revision — explicitly marked **persona / Example Mapping / INVEST / Story Splitting (US methodology)** as **不採用 (not adopted)** in v1.0. User Story format changed to **persona-less Connextra** (`I want to <goal>, so that <reason>`). Resolved all 4 Open Questions: subagent review = serial execution, dogfood timing = after Step E5, post-deploy regression mechanism and launching-preview args are deferred to #193 / #194 discover phases. Added Step A0 and E6 (persona machinery removal) to the Step structure. (#216)
 - `skills/discover/SKILL.md`, `skills/plan/SKILL.md`, `skills/atdd/SKILL.md`, `skills/verify/SKILL.md`, `skills/ship/SKILL.md`: Removed `<AUTOPILOT-GUARD>` blocks from all 5 skills. Standalone slash-command invocation (e.g. `/atdd-kit:discover 188`) now works without `--autopilot`. Autopilot-mode behavioral branches preserved. Precursor partial of #202. (#214)
+
+### Removed
+- `docs/personas/` directory (all files: README, TEMPLATE, hiro-solo-dev.md, rin-freeform-coder.md). (#218)
+- `lib/persona_check.sh`, `scripts/check-persona-check-order.sh`. (#218)
+- `docs/methodology/persona-guide.md`. (#218)
+- `docs/methodology/story-splitting.md` (US methodology splitting concept dropped; #179 epic's "Story Splitting" refers to PR splitting). (#218)
+- `tests/test_persona_check.bats`, `tests/test_persona_guide.bats`. (#218)
 
 ### Removed
 - `tests/test_autopilot_guard_block.bats`: Obsolete after `<AUTOPILOT-GUARD>` blocks were removed from 5 skills. The test asserted GUARD block presence and STOP behavior which no longer exists. (#214)

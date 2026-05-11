@@ -10,7 +10,7 @@
 - **Kanban** provides WIP limit and pull-based flow that prevents overload when working alone.
 - **ATDD** provides the quality gate: no implementation without AC-driven tests.
 
-The combination fits the primary persona (Hiro — solo developer) who needs structure without ceremony.
+The combination fits the solo developer use case where structure is needed without ceremony.
 
 参考: Corey Ladas, *Scrumban* (2008) — https://leanpub.com/scrumban
 
@@ -22,12 +22,12 @@ The combination fits the primary persona (Hiro — solo developer) who needs str
 |-------------------|---------------|-------|
 | Product Goal | Product Goal | Documented in [product-goal.md](../product/product-goal.md) |
 | Product Backlog | GitHub Issues | Open Issues ordered by roadmap lane |
-| Backlog Refinement | discover skill | Requirement exploration + AC derivation + INVEST check |
+| Backlog Refinement | discover skill | Requirement exploration + AC derivation |
 | Definition of Ready (DoR) | DoR | See [definition-of-ready.md](./definition-of-ready.md) |
 | Definition of Done (DoD) | DoD | See [definition-of-done.md](./definition-of-done.md) |
 | Increment | PR / merge | One merged PR = one Increment (potentially shippable) |
 | Sprint Goal | (intentionally omitted) | See "Solo Development Adaptations" below |
-| User Story (US) | US | "As a [persona], I want to [goal], so that [benefit]." |
+| User Story (US) | US | "I want to [goal], so that [benefit]." (persona-less Connextra, v1.0) |
 | Acceptance Criteria (AC) | AC | Given / When / Then — see [us-ac-format.md](./us-ac-format.md) |
 | Story Points / Sizing | MoSCoW + Size label | M/S/C/W priority; XS/S/M/L/XL size |
 
@@ -135,11 +135,9 @@ The table below maps each Status option to the corresponding autopilot label:
 
 - [definition-of-ready.md](./definition-of-ready.md) — DoR criteria
 - [definition-of-done.md](./definition-of-done.md) — DoD criteria
-- [story-splitting.md](./story-splitting.md) — When and how to split stories
 - [atdd-guide.md](./atdd-guide.md) — ATDD double-loop TDD rules
 - [us-ac-format.md](./us-ac-format.md) — US/AC spec file format (AC notation authority)
 - [us-quality-standard.md](./us-quality-standard.md) — US quality MUST/SHOULD criteria
-- [persona-guide.md](./persona-guide.md) — Persona creation and usage
 - [test-mapping.md](./test-mapping.md) — AC-to-test-layer mapping
 - [bug-fix-process.md](./bug-fix-process.md) — Bug classification and fix workflow
 - [product-goal.md](../product/product-goal.md) — Product Goal statement

@@ -20,7 +20,6 @@ body:
         Describe what the user wants to achieve, from their perspective.
         If a user story doesn't apply (e.g., infra or research tasks), explain why.
       placeholder: |
-        **As a** [persona],
         **I want to** [goal],
         **so that** [reason].
     validations:

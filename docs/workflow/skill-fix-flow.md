@@ -99,7 +99,7 @@ The following was observed in autopilot-119 worktree with `run_in_background: tr
 | `commands/skill-fix.md` | Explicit invocation entry |
 | `lib/skill_fix_dispatch.sh` | Shell functions: dispatch, inflight registry, env, cleanup |
 | `templates/workflow/blocked_ac_comment.md` | Blocker comment template |
-| `skills/discover/SKILL.md` | Modified: AUTOPILOT-GUARD + HARD-GATE + Step 7 + persona auto-select |
+| `skills/discover/SKILL.md` | Modified: AUTOPILOT-GUARD + HARD-GATE + Step 7 (legacy; persona auto-select removed in #218) |
 
 ## Known Limitations
 

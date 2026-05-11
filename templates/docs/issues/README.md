@@ -7,7 +7,7 @@
 | ファイル | 用途 |
 |---------|------|
 | `prd.md` | PRD（Problem / Why now / Outcome / What / Non-Goals / Open Questions） |
-| `user-stories.md` | User Stories（Connextra 形式 + Pichler 制約 Story） |
+| `user-stories.md` | User Stories（persona 抜き Connextra 形式 + Pichler 制約 Story） |
 | `plan.md` | Plan（2-5 分粒度タスク + verification 交互配置） |
 | `acceptance-tests.md` | Acceptance Tests（lifecycle: planned → draft → green → regression） |
 | `design-doc.md` | Design Doc（Context / Goals / Proposal / Alternatives / Trade-offs / Risks） — **optional** |
@@ -33,7 +33,7 @@ cp templates/docs/issues/design-doc.md docs/issues/NNN/design-doc.md
 PRD（Product Requirements Document）テンプレート。`## Problem` から `## Open Questions` までの 6 セクションに記入ガイドコメントが付いています。
 
 ### user-stories.md
-User Story テンプレート。Connextra 形式（`As a [persona], I want to [goal], so that [reason].`）と Pichler 2013 形式の制約 Story（NFR を Story 形式で表現）の 2 種類を含みます。
+User Story テンプレート。**persona 抜き Connextra** 形式（`I want to [goal], so that [reason].`）と Pichler 2013 形式の制約 Story（NFR を Story 形式で表現）の 2 種類を含みます。persona フィールドは v1.0 (#216 / #218) で廃止されました。
 
 ### plan.md
 実装計画テンプレート。2-5 分粒度のタスク行（`- [ ] <task>`）と verification 行（`- [ ] verify: <condition>`）を交互に配置する superpowers writing-plans 形式です。

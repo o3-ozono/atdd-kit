@@ -164,12 +164,26 @@ ALL_REVIEWERS=(
 
 @test "AC2: us-reviewer covers required categories" {
   [[ -f agents/us-reviewer.md ]] || { echo "missing agents/us-reviewer.md"; return 1; }
-  for cat in "Connextra" "INVEST" "制約 Story" "persona traceability"; do
+  # v1.0 (#218): persona / INVEST were removed when persona was dropped.
+  # Required categories shrank to Connextra (persona-less form) + 制約 Story.
+  for cat in "Connextra" "制約 Story"; do
     grep -qi -- "$cat" agents/us-reviewer.md || {
       echo "us-reviewer missing category: $cat"
       return 1
     }
   done
+  # Forbidden: ensure the dropped concepts are NOT reintroduced as *criteria*.
+  # The v1.0 note that explains the removal is permitted (and contains the
+  # word "persona" by necessity), so we look for the criterion-level patterns
+  # only — `named persona`, `persona traceability`, and `INVEST quality`
+  # were the exact rubric labels in PR #211.
+  for forbidden in "named persona" "persona traceability" "INVEST quality"; do
+    grep -qi -- "$forbidden" agents/us-reviewer.md && {
+      echo "us-reviewer reintroduces dropped v1.0 criterion: $forbidden"
+      return 1
+    }
+  done
+  true
 }
 
 @test "AC2: plan-reviewer covers required categories" {
@@ -203,14 +217,24 @@ ALL_REVIEWERS=(
 }
 
 # ============================================================
-# AC3: each specialist reviewer enumerates exactly 10 criteria
+# AC3: each specialist reviewer enumerates its expected number of criteria
+# (v1.0 #218: us-reviewer reduced from 10 to 7 — see CHANGELOG and #218 body)
 # ============================================================
 
-@test "AC3: each specialist reviewer has exactly 10 top-level numbered criteria" {
+# Expected criteria count per reviewer
+_expected_count() {
+  case "$1" in
+    agents/us-reviewer.md) echo 7 ;;
+    *) echo 10 ;;
+  esac
+}
+
+@test "AC3: each specialist reviewer has the expected number of top-level numbered criteria" {
   for f in "${SPECIALISTS[@]}"; do
     count=$(_count_numbered_criteria "$f")
-    [[ "$count" -eq 10 ]] || {
-      echo "FAIL $f: numbered-criteria count=$count (expected 10)"
+    expected=$(_expected_count "$f")
+    [[ "$count" -eq "$expected" ]] || {
+      echo "FAIL $f: numbered-criteria count=$count (expected $expected)"
       return 1
     }
   done
@@ -231,18 +255,23 @@ ALL_REVIEWERS=(
   true
 }
 
-@test "AC3: numbered criteria are contiguous 1..10 in document order" {
+@test "AC3: numbered criteria are contiguous 1..N in document order" {
   for f in "${SPECIALISTS[@]}"; do
+    expected=$(_expected_count "$f")
+    # Build expected sequence "1 2 ... expected "
+    want=""
+    for ((i=1; i<=expected; i++)); do want="${want}${i} "; done
     nums=$(_numbered_criteria_lines "$f" | awk '{ sub(/\..*/, ""); print }' | tr '\n' ' ')
-    [[ "$nums" == "1 2 3 4 5 6 7 8 9 10 " ]] || {
-      echo "FAIL $f: criteria numbering=[$nums] (expected 1 2 ... 10)"
+    [[ "$nums" == "$want" ]] || {
+      echo "FAIL $f: criteria numbering=[$nums] (expected $want)"
       return 1
     }
   done
 }
 
 # ============================================================
-# AC4: final-reviewer aggregates 50 criteria with traceability
+# AC4: final-reviewer aggregates 47 criteria with traceability
+# (v1.0 #218: us-reviewer dropped from 10 to 7 — total 50→47)
 # ============================================================
 
 @test "AC4: final-reviewer names all 5 upstream specialist files by basename" {
@@ -254,18 +283,24 @@ ALL_REVIEWERS=(
   done
 }
 
-@test "AC4: final-reviewer contains exactly 50 distinct traceability references" {
+@test "AC4: final-reviewer contains exactly 47 distinct traceability references" {
   count=$(grep -oE '(prd|us|plan|code|at)-reviewer#[0-9]+' agents/final-reviewer.md | sort -u | wc -l | tr -d ' ')
-  [[ "$count" -eq 50 ]] || {
-    echo "FAIL: distinct refs=$count (expected 50)"
+  [[ "$count" -eq 47 ]] || {
+    echo "FAIL: distinct refs=$count (expected 47)"
     return 1
   }
 }
 
-@test "AC4: traceability references use exactly the 5 role prefixes with N in 1..10" {
+@test "AC4: traceability references use the 5 role prefixes with valid N per role" {
   [[ -f agents/final-reviewer.md ]] || { echo "missing agents/final-reviewer.md"; return 1; }
+  # us-reviewer: 1..7; others: 1..10
   bad=$(grep -oE '(prd|us|plan|code|at)-reviewer#[0-9]+' agents/final-reviewer.md \
-        | awk -F'#' '{ if ($2+0 < 1 || $2+0 > 10) print }')
+        | awk -F'#' '
+            {
+              n = $2 + 0
+              if ($1 == "us-reviewer") { lo = 1; hi = 7 } else { lo = 1; hi = 10 }
+              if (n < lo || n > hi) print
+            }')
   [[ -z "$bad" ]] || { echo "FAIL: out-of-range refs: $bad"; return 1; }
 }
 

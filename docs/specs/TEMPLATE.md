@@ -1,6 +1,5 @@
 ---
 title: "Short title matching the Issue title"
-persona: "TBD — replace in #69"
 issue: "#NNN"
 status: draft
 ---
@@ -11,7 +10,6 @@ status: draft
 
 ## User Story
 
-**As a** [persona name],
 **I want to** [goal],
 **so that** [benefit].
 

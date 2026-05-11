@@ -67,7 +67,7 @@ Post evidence as Issue comment.
 
 ## Spec Citation in Root Cause Classification
 
-Before Classification, load the spec via `bash lib/spec_check.sh derive_slug <issue>` then `spec_exists`. Cite spec AC if present; on absent, emit `[spec-warn] missing: ...` and classify as A (AC Gap) with `no spec found for <area>` — never invent ad-hoc ACs. Continuation-fallback / tbd-persona follow the shared AC6 matrix; see `docs/guides/spec-reference.md`.
+Before Classification, load the spec via `bash lib/spec_check.sh derive_slug <issue>` then `spec_exists`. Cite spec AC if present; on absent, emit `[spec-warn] missing: ...` and classify as A (AC Gap) with `no spec found for <area>` — never invent ad-hoc ACs. Continuation-fallback follows the shared AC6 matrix; see `docs/guides/spec-reference.md`.
 
 ## Fix Proposal Format
 

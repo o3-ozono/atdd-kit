@@ -40,9 +40,10 @@ budget.
 |------|-----------|--------|-----------------|
 | (a) missing-new | `spec_exists` fails AND no prior impl commits | STOP, re-run discover | `[spec-warn] missing: ...` |
 | (b) continuation-fallback | `spec_exists` fails AND Continuation Path (existing impl branch) | Continue with Issue comment ACs | `[spec-warn] continuation-fallback: ...` |
-| (c) tbd-persona | `spec_persona` begins with `TBD` | Continue with spec ACs | `[spec-warn] tbd-persona: ...` |
 
 All three skills use `lib/spec_check.sh::get_spec_warn_message <reason>`.
+
+> v1.0 (#218): the former `tbd-persona` case was removed when persona was dropped.
 
 ## verify Status Tiebreak
 
@@ -64,6 +65,7 @@ See [`docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix](../
 
 ## Order Invariant
 
-`persona check` (State Gate — autopilot Phase 0.9) **must precede** `spec
-check` (after State Gate PASS, before first AC / verification / classification).
+`spec check` runs after State Gate PASS, before first AC / verification / classification.
 `tests/test_spec_reference.bats` Group 1 asserts this ordering for atdd.
+
+> v1.0 (#218): the legacy `persona check` precedence was removed when persona was dropped.
