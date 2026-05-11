@@ -92,3 +92,37 @@
 @test "AC4: acceptance-tests.md has [regression] marker" {
   grep -q "\[regression\]" templates/docs/issues/acceptance-tests.md
 }
+
+# AC5: design-doc.md — 7 見出し（Ubl 2020 形式）
+
+@test "AC5: design-doc.md exists" {
+  [ -f "templates/docs/issues/design-doc.md" ]
+}
+
+@test "AC5: design-doc.md has ## Context heading" {
+  grep -q "^## Context" templates/docs/issues/design-doc.md
+}
+
+@test "AC5: design-doc.md has ## Goals heading" {
+  grep -q "^## Goals" templates/docs/issues/design-doc.md
+}
+
+@test "AC5: design-doc.md has ## Non-Goals heading" {
+  grep -q "^## Non-Goals" templates/docs/issues/design-doc.md
+}
+
+@test "AC5: design-doc.md has ## Proposal heading" {
+  grep -q "^## Proposal" templates/docs/issues/design-doc.md
+}
+
+@test "AC5: design-doc.md has ## Alternatives Considered heading" {
+  grep -q "^## Alternatives Considered" templates/docs/issues/design-doc.md
+}
+
+@test "AC5: design-doc.md has ## Trade-offs heading" {
+  grep -q "^## Trade-offs" templates/docs/issues/design-doc.md
+}
+
+@test "AC5: design-doc.md has ## Risks heading" {
+  grep -q "^## Risks" templates/docs/issues/design-doc.md
+}
