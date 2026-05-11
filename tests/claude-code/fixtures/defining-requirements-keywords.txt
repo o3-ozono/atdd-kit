@@ -1,0 +1,12 @@
+session-start
+Problem
+Why now
+Outcome
+What
+Non-Goals
+Open Questions
+docs/issues
+prd.md
+extracting-user-stories
+COMPLETE|SKILL_STATUS|skill-status
+persona-less Connextra
