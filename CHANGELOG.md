@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- `docs/issues/179-atdd-kit-v1-redesign/prd.md`: Step A0 PRD revision — explicitly marked **persona / Example Mapping / INVEST / Story Splitting (US methodology)** as **不採用 (not adopted)** in v1.0. User Story format changed to **persona-less Connextra** (`I want to <goal>, so that <reason>`). Resolved all 4 Open Questions: subagent review = serial execution, dogfood timing = after Step E5, post-deploy regression mechanism and launching-preview args are deferred to #193 / #194 discover phases. Added Step A0 and E6 (persona machinery removal) to the Step structure. (#216)
 - `skills/discover/SKILL.md`, `skills/plan/SKILL.md`, `skills/atdd/SKILL.md`, `skills/verify/SKILL.md`, `skills/ship/SKILL.md`: Removed `<AUTOPILOT-GUARD>` blocks from all 5 skills. Standalone slash-command invocation (e.g. `/atdd-kit:discover 188`) now works without `--autopilot`. Autopilot-mode behavioral branches preserved. Precursor partial of #202. (#214)
 
 ### Removed
