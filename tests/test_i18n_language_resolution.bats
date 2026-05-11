@@ -19,10 +19,10 @@
   ! grep -qi 'i18n' rules/atdd-kit.md
 }
 
-@test "rules/atdd-kit.md stays within 40-line budget" {
+@test "rules/atdd-kit.md stays within 60-line budget" {
   local lines
   lines=$(wc -l < rules/atdd-kit.md)
-  [[ "$lines" -le 40 ]]
+  [[ "$lines" -le 60 ]]
 }
 
 @test "rules/atdd-kit.md contains EN-first read rule for bilingual variants" {

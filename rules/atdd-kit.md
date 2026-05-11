@@ -15,7 +15,16 @@
 ## Addons
 Platform-specific addons are in `${CLAUDE_PLUGIN_ROOT}/addons/`. Each addon has `addon.yml` declaring MCP servers, hooks, deploy files, and CI fragments. See `${CLAUDE_PLUGIN_ROOT}/addons/README.md`.
 
-## Workflow
+## Workflow (v1.0 6-step, migration in progress)
+| Step | Skill | Deliverable in `docs/issues/<NNN>/` |
+|------|-------|-------------------------------------|
+| 1. Discovery & Definition | `defining-requirements` | `prd.md` |
+| 2. User Stories | `extracting-user-stories` | `user-stories.md` |
+| 3. Plan + AT | `writing-plan-and-tests` | `plan.md`, `acceptance-tests.md` |
+| 4. ATDD | `running-atdd-cycle` | `tests/acceptance/AT-*.*` (draft → green) |
+| 5. Review | `reviewing-deliverables` | review notes |
+| 6. Merge + Deploy | `merging-and-deploying` | merged PR + post-deploy regression |
+
 - Exclusive lock: do not start work on an Issue with `in-progress` label.
 - Test-first, always. 1 PR = 1 thing.
 
@@ -23,9 +32,11 @@ Platform-specific addons are in `${CLAUDE_PLUGIN_ROOT}/addons/`. Each addon has 
 - Conventional Commits: `<type>: <description> (#<issue>)`. Commit after each change.
 - Tests + implementation together. Only related files (max 2-3).
 - Branch: `<prefix>/<issue-number>-<slug>` (`feat/`, `fix/`, `docs/`, `ci/`, `chore/`, `ops/`, `design/`)
+- Open Draft PR on first commit/push to the branch (commit moment = Draft PR moment).
 
 ## PRs
 Start with `Closes #<issue-number>`. Merge with `--squash`. Add matching `type:` label.
+1 Issue = 1 worktree = 1 Draft PR.
 
 ## Label Flow
 - Issue: (no label) -> `in-progress` -> `ready-for-plan-review` -> `ready-to-go` -> `in-progress`

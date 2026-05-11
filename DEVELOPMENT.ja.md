@@ -52,7 +52,9 @@ atdd-kit は**外部依存ゼロ**を設計方針としている。npm パッケ
 
 ### 常時ロードルールのトークン予算
 
-`rules/atdd-kit.md` は**毎ターン**ロードされる。**40行以下**に抑えること。それ以外は `docs/` に移動する。
+`rules/atdd-kit.md` は**毎ターン**ロードされる。**60行以下**に抑えること。それ以外は `docs/` に移動する。
+
+> 予算は v1.0 移行（#179）中に新 6-step Workflow テーブル収容のため 40 行から 60 行に引き上げた。Step E で Iron Laws #4・旧 Label Flow・旧スキルヒントを除去し終えたら、再度 40 行を目標に圧縮すること。
 
 ### ディレクトリ README
 
@@ -158,7 +160,7 @@ atdd-kit/
 ├── addons/           # プラットフォーム固有アドオンパッケージ（ios/, web/）
 │   └── ios/          # iOS アドオン（addon.yml, scripts/, ci/, tests/）
 ├── commands/         # ユーザー明示呼び出しコマンド（/atdd-kit:*）
-├── rules/            # 常時ロードルール（40行予算、毎ターンロード）
+├── rules/            # 常時ロードルール（60行予算、毎ターンロード）
 ├── docs/             # オンデマンド参照ドキュメント（スキルが必要時にロード）
 │   ├── guides/       # ハウツーガイドとリファレンス（commit-guide, review-guide 等）
 │   ├── methodology/  # 方法論詳細（atdd-guide, bug-fix-process）

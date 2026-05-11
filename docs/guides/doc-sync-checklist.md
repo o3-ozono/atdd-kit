@@ -24,7 +24,7 @@ Every PR must verify that documentation stays in sync with the changes. Before m
 | Item | When applicable |
 |------|----------------|
 | `DEVELOPMENT.md` and `DEVELOPMENT.ja.md` in sync | Architecture decision, new convention, or process change |
-| `rules/atdd-kit.md` updated | New workflow rule (stay under 40 lines) |
+| `rules/atdd-kit.md` updated | New workflow rule (stay under 60 lines) |
 | `docs/guides/review-guide.md` updated | New review criteria |
 
 ## If You Changed Eval-Related Files

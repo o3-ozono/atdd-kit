@@ -52,7 +52,9 @@ atdd-kit has **zero external dependencies** by design. No npm packages, no exter
 
 ### Always-Loaded Rules Budget
 
-`rules/atdd-kit.md` loads on **every turn**. Keep it under **40 lines**. Move anything else to `docs/`.
+`rules/atdd-kit.md` loads on **every turn**. Keep it under **60 lines**. Move anything else to `docs/`.
+
+> The budget was raised from 40 to 60 lines during the v1.0 migration (#179) to accommodate the new 6-step Workflow table. Re-tighten toward 40 lines once Step E removes Iron Laws #4, the legacy Label Flow, and old skill hints.
 
 ### Directory READMEs
 
@@ -158,7 +160,7 @@ atdd-kit/
 ├── addons/           # Platform-specific addon packages (ios/, web/)
 │   └── ios/          # iOS addon (addon.yml, scripts/, ci/, tests/)
 ├── commands/         # User-invoked slash commands (/atdd-kit:*)
-├── rules/            # Always-loaded rules (40-line budget, loaded every turn)
+├── rules/            # Always-loaded rules (60-line budget, loaded every turn)
 ├── docs/             # On-demand reference documents (loaded by skills when needed)
 │   ├── guides/       # How-to guides and reference materials (commit-guide, review-guide, etc.)
 │   ├── methodology/  # Methodology deep-dives (atdd-guide, bug-fix-process)
