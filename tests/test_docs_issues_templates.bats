@@ -41,8 +41,10 @@
   [ -f "templates/docs/issues/user-stories.md" ]
 }
 
-@test "AC2: user-stories.md has Connextra 'As a' pattern" {
-  grep -q "As a" templates/docs/issues/user-stories.md
+@test "AC2: user-stories.md does NOT reintroduce 'As a' (persona was dropped in v1.0 #218)" {
+  # v1.0 uses persona-less Connextra (`I want to <goal>, so that <reason>`).
+  # The `As a [persona]` form must not be reintroduced.
+  ! grep -q "^\*\*As a\*\*" templates/docs/issues/user-stories.md
 }
 
 @test "AC2: user-stories.md has Connextra 'I want to' pattern" {

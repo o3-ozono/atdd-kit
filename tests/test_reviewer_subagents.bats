@@ -172,10 +172,14 @@ ALL_REVIEWERS=(
       return 1
     }
   done
-  # Forbidden categories: ensure persona / INVEST are NOT reintroduced.
-  for cat in "persona" "INVEST"; do
-    grep -qi -- "$cat" agents/us-reviewer.md && {
-      echo "us-reviewer contains forbidden v1.0-dropped category: $cat"
+  # Forbidden: ensure the dropped concepts are NOT reintroduced as *criteria*.
+  # The v1.0 note that explains the removal is permitted (and contains the
+  # word "persona" by necessity), so we look for the criterion-level patterns
+  # only — `named persona`, `persona traceability`, and `INVEST quality`
+  # were the exact rubric labels in PR #211.
+  for forbidden in "named persona" "persona traceability" "INVEST quality"; do
+    grep -qi -- "$forbidden" agents/us-reviewer.md && {
+      echo "us-reviewer reintroduces dropped v1.0 criterion: $forbidden"
       return 1
     }
   done

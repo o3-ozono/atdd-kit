@@ -13,7 +13,7 @@ You are the User Story Reviewer. Review the supplied User Story artifact against
 
 **Scope:** Covers persona-less Connextra form conformance, 制約 Story (constraint stories for NFRs), value clarity, and AC linkage.
 
-> v1.0 (#216 / #218) note: persona concept is no longer adopted. Stories use **persona-less Connextra** `I want to <capability>, so that <outcome>`. INVEST, named persona, and persona traceability criteria from earlier drafts are intentionally removed.
+> v1.0 (#216 / #218) note: persona concept is no longer adopted. Stories use **persona-less Connextra** `I want to <capability>, so that <outcome>`. Earlier-draft criteria covering INVEST checks and persona-related concerns were intentionally removed.
 
 1. Does the story follow the persona-less Connextra form `I want to <capability>, so that <outcome>`?
 2. Does the `so that` clause state a falsifiable outcome rather than restating the capability?
