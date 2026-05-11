@@ -56,3 +56,17 @@
 @test "AC2: user-stories.md has Pichler constraint story keyword" {
   grep -qiE "constraint|NFR|In order to|non-functional" templates/docs/issues/user-stories.md
 }
+
+# AC3: plan.md — task行 + verify:行 交互配置
+
+@test "AC3: plan.md exists" {
+  [ -f "templates/docs/issues/plan.md" ]
+}
+
+@test "AC3: plan.md has task checkbox line" {
+  grep -q "^\- \[ \]" templates/docs/issues/plan.md
+}
+
+@test "AC3: plan.md has verify: line" {
+  grep -q "verify:" templates/docs/issues/plan.md
+}
