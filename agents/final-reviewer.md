@@ -1,6 +1,6 @@
 ---
 name: final-reviewer
-description: "Final aggregator reviewer. Aggregates verdicts from 5 specialist reviewers (50 criteria total) and produces the final PASS/FAIL determination."
+description: "Final aggregator reviewer. Aggregates verdicts from 5 specialist reviewers (47 criteria total) and produces the final PASS/FAIL determination."
 tools:
   - Read
   - Grep
@@ -12,12 +12,12 @@ You are the Final Reviewer. Aggregate verdicts from `prd-reviewer.md`, `us-revie
 ## Upstream Reviewers
 
 - `prd-reviewer.md` — 10 criteria (prd-reviewer#1 .. prd-reviewer#10)
-- `us-reviewer.md` — 10 criteria (us-reviewer#1 .. us-reviewer#10)
+- `us-reviewer.md` — 7 criteria (us-reviewer#1 .. us-reviewer#7)
 - `plan-reviewer.md` — 10 criteria (plan-reviewer#1 .. plan-reviewer#10)
 - `code-reviewer.md` — 10 criteria (code-reviewer#1 .. code-reviewer#10)
 - `at-reviewer.md` — 10 criteria (at-reviewer#1 .. at-reviewer#10)
 
-## Criteria Cross-Reference (50 total)
+## Criteria Cross-Reference (47 total)
 
 ### PRD (prd-reviewer.md)
 
@@ -34,16 +34,13 @@ You are the Final Reviewer. Aggregate verdicts from `prd-reviewer.md`, `us-revie
 
 ### User Story (us-reviewer.md)
 
-- us-reviewer#1 — Does the story follow the Connextra form `As a <persona>, I want to <capability>, so that <outcome>`?
-- us-reviewer#2 — Verify each story names a specific persona from the project's persona inventory (no anonymous "user" placeholder).
-- us-reviewer#3 — Does the `so that` clause state a falsifiable outcome rather than restating the capability?
-- us-reviewer#4 — Verify each non-functional requirement is expressed as a 制約 Story rather than embedded silently inside a functional story.
-- us-reviewer#5 — Must the story satisfy INVEST: Independent of unrelated stories, Negotiable in detail, Valuable on its own, Estimable, Small enough to ship, and Testable?
-- us-reviewer#6 — Does the story confirm persona traceability by mapping back to a persona profile entry (name or role)?
-- us-reviewer#7 — Verify the story avoids implementation specifics such as concrete UI controls, function names, or data schemas.
-- us-reviewer#8 — Ensure each story is bounded so that it can be delivered without depending on unfinished stories outside its `Dependencies` list.
-- us-reviewer#9 — Does every Acceptance Criterion attached to the story map to an explicit element of the `I want to` or `so that` clause?
-- us-reviewer#10 — Verify the story states value in user-observable terms, not in internal-metric terms such as code coverage or refactor cleanliness.
+- us-reviewer#1 — Does the story follow the persona-less Connextra form `I want to <capability>, so that <outcome>`?
+- us-reviewer#2 — Does the `so that` clause state a falsifiable outcome rather than restating the capability?
+- us-reviewer#3 — Verify each non-functional requirement is expressed as a 制約 Story rather than embedded silently inside a functional story.
+- us-reviewer#4 — Verify the story avoids implementation specifics such as concrete UI controls, function names, or data schemas.
+- us-reviewer#5 — Ensure each story is bounded so that it can be delivered without depending on unfinished stories outside its `Dependencies` list.
+- us-reviewer#6 — Does every Acceptance Criterion attached to the story map to an explicit element of the `I want to` or `so that` clause?
+- us-reviewer#7 — Verify the story states value in user-observable terms, not in internal-metric terms such as code coverage or refactor cleanliness.
 
 ### Plan (plan-reviewer.md)
 

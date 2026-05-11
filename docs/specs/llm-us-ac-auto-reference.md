@@ -1,15 +1,15 @@
 ---
 title: "LLM US/AC auto-reference mechanism and atdd-kit dogfooding"
-persona: "hiro-solo-dev"
 issue: "#70"
 status: draft
 ---
 
 This spec is the self-referencing dogfood instance for the US/AC auto-reference mechanism introduced in #70. It is cited by `atdd`, `verify`, and `bug` when working on #70 itself (Continuation Path) per AC6(b) + AC1.
 
+> v1.0 (#216 / #218) note: persona フィールドは廃止。本 spec は persona 抜き Connextra に書き換え済み。`spec_persona` サブコマンドも廃止された。
+
 ## User Story
 
-**As a** hiro-solo-dev (a solo developer using atdd-kit on a personal project),
 **I want to** have atdd / verify / bug automatically load `docs/specs/<slug>.md` through a helper (`lib/spec_check.sh`) and codified SKILL.md steps,
 **so that** "implementation guided by AC" is structurally enforced, and AC-external code, forgotten ACs, and spec/Issue divergence are prevented.
 
@@ -35,9 +35,9 @@ This spec is the self-referencing dogfood instance for the US/AC auto-reference 
 
 ### AC4: `lib/spec_check.sh` helper is provided
 
-- **Given:** the `lib/persona_check.sh` pattern as a model
+- **Given:** a need for a shared helper across atdd / verify / bug
 - **When:** a developer runs `bash lib/spec_check.sh <function> <args>`
-- **Then:** `derive_slug`, `spec_exists`, `read_acs`, `spec_status`, `spec_persona`, `get_spec_load_message`, and `get_spec_warn_message` are documented exports; SKILL.md spec-reference steps call through this helper.
+- **Then:** `derive_slug`, `spec_exists`, `read_acs`, `spec_status`, `get_spec_load_message`, and `get_spec_warn_message` are documented exports; SKILL.md spec-reference steps call through this helper. (Note: `spec_persona` was removed in #218 when persona was dropped.)
 
 ### AC5: slug derivation rule is documented
 
@@ -45,11 +45,11 @@ This spec is the self-referencing dogfood instance for the US/AC auto-reference 
 - **When:** `lib/spec_check.sh derive_slug` runs
 - **Then:** EN → main noun phrase kebab-cased; JA → translated to English first via `SPEC_SLUG_OVERRIDE`. `docs/methodology/us-ac-format.md` documents this rule, the 1 Issue = 1 spec policy, and cross-links the Rename Run-Book.
 
-### AC6: fallback for missing / continuation / TBD cases
+### AC6: fallback for missing / continuation cases
 
-- **Given:** one of — (a) new work without a spec, (b) Continuation Path on a branch whose spec is absent, (c) spec with `persona: TBD` + `status: approved`
+- **Given:** one of — (a) new work without a spec, (b) Continuation Path on a branch whose spec is absent
 - **When:** atdd / verify / bug consult the spec
-- **Then:** (a) BLOCKED as discover-incomplete; (b) warning + Issue comment fallback; (c) warning + continue with spec ACs. All warnings use the `[spec-warn]` terminal prefix.
+- **Then:** (a) BLOCKED as discover-incomplete; (b) warning + Issue comment fallback. All warnings use the `[spec-warn]` terminal prefix.
 
 ### AC7: self-dogfooding on #70
 
@@ -80,6 +80,6 @@ This spec is the self-referencing dogfood instance for the US/AC auto-reference 
 ## Notes
 
 - Scope: Only the mechanism + this one spec. The remaining 8 skills (discover/plan/verify/ship/autopilot/bug/issue/session-start) get specs under a follow-up tracking Issue — one PR per skill.
-- Persona: `hiro-solo-dev` (see `docs/personas/hiro-solo-dev.md`). Not `TBD` because persona research was completed ahead of #70.
 - `status: draft` remains until merge; transitions to `implemented` in ship phase after the AC7 dogfood transcript lands in the PR.
 - Slug: `llm-us-ac-auto-reference`. Because the Issue title is Japanese, `SPEC_SLUG_OVERRIDE=llm-us-ac-auto-reference` was supplied (see `docs/methodology/us-ac-format.md` § Slug Derivation Rule).
+- **Updated by #218 (Step E6, 2026-05-11):** persona frontmatter removed, User Story rewritten as persona-less Connextra, AC4 / AC6 references to `spec_persona` / `tbd-persona` cleaned up.

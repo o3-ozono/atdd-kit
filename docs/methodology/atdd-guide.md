@@ -19,15 +19,15 @@
 
 ### Format
 
-> "As a [persona], I want to [goal], so that [reason]."
+> "I want to [goal], so that [reason]."
 
-> **MUST-1:** The `As a` field must reference a named persona from `docs/personas/`. Generic placeholders like "As a user" are prohibited. See [us-quality-standard.md](us-quality-standard.md#must-1-persona-reference) for details and examples.
+> v1.0 (#216 / #218) note: persona concept is no longer adopted. Stories use **persona-less Connextra** form.
 
 ### Constraint Stories
 
 Stories that define quality standards. No Story Test needed.
 
-Example: "As a developer, I want zero build warnings, so that quality regressions are caught early."
+Example: "I want zero build warnings, so that quality regressions are caught early."
 
 ## AC (Acceptance Criteria) Format
 
@@ -43,7 +43,7 @@ Then:  <expected result>
 
 - 3 or more ACs per story (if 7+, consider splitting the story; document the reason if splitting is inappropriate)
 - Derive boundary values and edge cases from the happy path
-- Each AC must be independently verifiable — see [us-quality-standard.md](us-quality-standard.md#must-3-independent-verifiability) for pass/fail examples (MUST-3)
+- Each AC must be independently verifiable — see [us-quality-standard.md](us-quality-standard.md#must-2-independent-verifiability) for pass/fail examples (MUST-2)
 
 ## UX Heuristic Checklist
 

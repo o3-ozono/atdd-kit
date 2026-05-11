@@ -23,15 +23,9 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   grep -q 'Loaded docs/specs/.*AC count' "$REPO_ROOT/skills/atdd/SKILL.md"
 }
 
-@test "Group 1 / atdd: persona check precedes spec check (order grep)" {
-  local f="$REPO_ROOT/skills/atdd/SKILL.md"
-  local persona_line spec_line
-  persona_line=$(grep -n 'persona_check\.sh\|persona check\|Persona Prerequisite' "$f" | head -1 | cut -d: -f1)
-  spec_line=$(grep -n 'spec_check\.sh\|spec-load\|spec load' "$f" | head -1 | cut -d: -f1)
-  [ -n "$persona_line" ]
-  [ -n "$spec_line" ]
-  [ "$persona_line" -lt "$spec_line" ]
-}
+# v1.0 (#218): the "persona check precedes spec check" ordering test was
+# removed when persona was dropped from atdd-kit. The persona machinery
+# (lib/persona_check.sh, Step 3a) is no longer part of the flow.
 
 @test "Group 1 / verify: SKILL.md has spec-authority-check step invoking lib/spec_check.sh" {
   grep -q 'bash lib/spec_check.sh' "$REPO_ROOT/skills/verify/SKILL.md"

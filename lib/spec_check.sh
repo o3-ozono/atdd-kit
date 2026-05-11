@@ -6,16 +6,16 @@
 #   bash lib/spec_check.sh spec_exists <slug> [<dir>]
 #   bash lib/spec_check.sh read_acs <slug> [<dir>]
 #   bash lib/spec_check.sh spec_status <slug> [<dir>]
-#   bash lib/spec_check.sh spec_persona <slug> [<dir>]
 #   bash lib/spec_check.sh get_spec_load_message <slug> <ac_count>
 #   bash lib/spec_check.sh get_spec_warn_message <reason> [<slug>]
 #
 # Design:
-#   - Mirror of lib/persona_check.sh: dispatcher with "fn; exit $?" propagation,
-#     inner functions use "return 0/1" to avoid set -e foot-guns.
+#   - Dispatcher with "fn; exit $?" propagation; inner functions use
+#     "return 0/1" to avoid set -e foot-guns.
 #   - Referenced by skills/{atdd,verify,bug}/SKILL.md spec-load / spec-authority /
 #     spec-cite steps. SKILL.md prose is paired with these functions — do not
 #     rely on prose alone.
+#   - v1.0 (#218): spec_persona subcommand removed (persona concept dropped).
 #
 # Environment:
 #   GH_CMD_OVERRIDE       Overrides `gh issue view ... title` for testability.
@@ -160,33 +160,6 @@ _spec_status() {
 }
 
 # ---------------------------------------------------------------------------
-# spec_persona <slug> [<dir>]
-# ---------------------------------------------------------------------------
-
-_spec_persona() {
-  local slug="${1:-}"
-  local dir="${2:-$SPECS_DIR_DEFAULT}"
-  if [ -z "$slug" ]; then
-    echo "ERROR: spec_persona requires a slug." >&2
-    return 1
-  fi
-  local file="${dir}/${slug}.md"
-  if [ ! -f "$file" ]; then
-    echo "ERROR: spec not found: ${file}" >&2
-    return 1
-  fi
-  local persona
-  persona=$(awk -F': *' '/^persona:/ { sub(/^persona: */, "", $0); print; exit }' "$file" \
-    | sed -E 's/^"//; s/"$//')
-  if [ -z "$persona" ]; then
-    echo "ERROR: persona field missing in ${file}" >&2
-    return 1
-  fi
-  echo "$persona"
-  return 0
-}
-
-# ---------------------------------------------------------------------------
 # get_spec_load_message <slug> <ac_count>
 #
 # Canonical "Loaded docs/specs/<slug>.md (AC count: N)" format used by atdd
@@ -210,7 +183,6 @@ _get_spec_load_message() {
 # Emits `[spec-warn]`-prefixed warning for fallback cases (AC6). Known reasons:
 #   missing                    — (a) no spec at all (BLOCKED, used by non-continuation)
 #   continuation-fallback      — (b) Continuation Path with no spec
-#   tbd-persona                — (c) spec_persona == TBD...
 # ---------------------------------------------------------------------------
 
 _get_spec_warn_message() {
@@ -226,9 +198,6 @@ _get_spec_warn_message() {
       ;;
     continuation-fallback)
       echo "[spec-warn] continuation-fallback: resuming branch without docs/specs/${slug}.md — falling back to Issue comment ACs."
-      ;;
-    tbd-persona)
-      echo "[spec-warn] tbd-persona: docs/specs/${slug}.md has persona: TBD — continuing with spec ACs but persona resolution is pending."
       ;;
     *)
       echo "[spec-warn] ${reason}: docs/specs/${slug}.md"
@@ -250,7 +219,6 @@ Valid subcommands:
   spec_exists <slug> [<dir>]           — Exit 0 if docs/specs/<slug>.md exists.
   read_acs <slug> [<dir>]              — Print AC count (### AC<N> heading count).
   spec_status <slug> [<dir>]           — Print status frontmatter value.
-  spec_persona <slug> [<dir>]          — Print persona frontmatter value.
   get_spec_load_message <slug> <n>     — Canonical "Loaded docs/specs/..." line for AC1.
   get_spec_warn_message <reason> [<slug>] — [spec-warn]-prefixed fallback line for AC6.
 EOF
@@ -267,7 +235,6 @@ case "$SUBCOMMAND" in
   spec_exists)        shift; _spec_exists "$@";        exit $? ;;
   read_acs)           shift; _read_acs "$@";           exit $? ;;
   spec_status)        shift; _spec_status "$@";        exit $? ;;
-  spec_persona)       shift; _spec_persona "$@";       exit $? ;;
   get_spec_load_message)  shift; _get_spec_load_message "$@";  exit $? ;;
   get_spec_warn_message)  shift; _get_spec_warn_message "$@";  exit $? ;;
   *)

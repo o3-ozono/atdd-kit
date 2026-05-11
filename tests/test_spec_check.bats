@@ -15,18 +15,16 @@ teardown() {
 }
 
 _make_spec() {
-  local path="$1" status="${2:-approved}" persona="${3:-hiro-solo-dev}"
+  local path="$1" status="${2:-approved}"
   cat > "$path" <<EOF
 ---
 title: "Sample spec"
-persona: "$persona"
 issue: "#999"
 status: $status
 ---
 
 ## User Story
 
-**As a** $persona,
 **I want to** do X,
 **so that** Y.
 
@@ -118,7 +116,8 @@ EOF
 }
 
 # =============================================================================
-# spec_status / spec_persona — frontmatter fields
+# spec_status — frontmatter field
+# (v1.0 #218: spec_persona subcommand was removed when persona was dropped.)
 # =============================================================================
 
 @test "spec_status: prints draft|approved|implemented|deprecated" {
@@ -128,18 +127,9 @@ EOF
   [ "$output" = "approved" ]
 }
 
-@test "spec_persona: detects TBD placeholder" {
-  _make_spec "$SPECS_DIR/foo.md" draft "TBD — replace in #69"
-  run bash "$SCRIPT" spec_persona foo "$SPECS_DIR"
-  [ "$status" -eq 0 ]
-  echo "$output" | grep -qi 'TBD'
-}
-
-@test "spec_persona: returns concrete persona name when not TBD" {
-  _make_spec "$SPECS_DIR/foo.md" approved hiro-solo-dev
-  run bash "$SCRIPT" spec_persona foo "$SPECS_DIR"
-  [ "$status" -eq 0 ]
-  [ "$output" = "hiro-solo-dev" ]
+@test "spec_persona: subcommand is removed (returns usage error)" {
+  run bash "$SCRIPT" spec_persona foo
+  [ "$status" -ne 0 ]
 }
 
 # =============================================================================

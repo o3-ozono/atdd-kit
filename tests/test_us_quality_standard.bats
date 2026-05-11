@@ -8,12 +8,12 @@
   [ -f "docs/methodology/us-quality-standard.md" ]
 }
 
-@test "AC1: MUST section references docs/personas/ with a relative link" {
-  grep -q "docs/personas/" docs/methodology/us-quality-standard.md
+@test "AC1: MUST section does NOT reference removed docs/personas/ (v1.0 #218)" {
+  ! grep -q "docs/personas/" docs/methodology/us-quality-standard.md
 }
 
-@test "AC1: MUST section prohibits 'As a user'" {
-  grep -qi "As a user" docs/methodology/us-quality-standard.md
+@test "AC1: MUST section does NOT reintroduce 'As a [persona]' (v1.0 #218)" {
+  ! grep -qE 'As a \[persona\]|As a user' docs/methodology/us-quality-standard.md
 }
 
 @test "AC1: MUST section contains GWT AC count rule (3+)" {
@@ -83,18 +83,20 @@
   grep -qi "LLM\|llm.*guideline\|guideline.*llm" docs/methodology/us-quality-standard.md
 }
 
-@test "AC4: LLM guidelines contains Issue #69 link" {
-  grep -q "#69" docs/methodology/us-quality-standard.md
+@test "AC4: LLM guidelines contains defer note (deferred to a future Issue)" {
+  grep -qi "defer\|deferred" docs/methodology/us-quality-standard.md
 }
 
-@test "AC4: LLM guidelines contains defer note" {
-  grep -qi "defer\|deferred" docs/methodology/us-quality-standard.md
+@test "AC4: LLM guidelines retains historical #69 reference for traceability (v1.0 #218 note)" {
+  # The original deferral target #69 is mentioned in the note that explains why
+  # it became irrelevant in v1.0 — keeping the link satisfies traceability.
+  grep -q "#69" docs/methodology/us-quality-standard.md
 }
 
 # AC5: Cross-reference consistency
 
-@test "AC5: document references persona-guide.md" {
-  grep -q "persona-guide.md" docs/methodology/us-quality-standard.md
+@test "AC5: document does NOT reference removed persona-guide.md (v1.0 #218)" {
+  ! grep -q "persona-guide.md" docs/methodology/us-quality-standard.md
 }
 
 @test "AC5: document references atdd-guide.md" {
@@ -136,27 +138,27 @@
   ! grep -P '[ぁ-んァ-ヶ一-龥]' docs/methodology/README.md
 }
 
-# --- Issue #156: MUST-4 US Traceability ---
+# --- Issue #156: MUST-3 US Traceability ---
 
-@test "#156-AC4: MUST-4 section exists with h3 heading" {
-  grep -q '^### MUST-4:' docs/methodology/us-quality-standard.md
+@test "#156-AC4: MUST-3 section exists with h3 heading" {
+  grep -q '^### MUST-3:' docs/methodology/us-quality-standard.md
 }
 
-@test "#156-AC4: MUST-4 section contains Why paragraph" {
-  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Why:**'
+@test "#156-AC4: MUST-3 section contains Why paragraph" {
+  sed -n '/^### MUST-3:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Why:**'
 }
 
-@test "#156-AC4: MUST-4 section contains Pass example" {
-  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Pass:**'
+@test "#156-AC4: MUST-3 section contains Pass example" {
+  sed -n '/^### MUST-3:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Pass:**'
 }
 
-@test "#156-AC4: MUST-4 section contains Fail example" {
-  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Fail:**'
+@test "#156-AC4: MUST-3 section contains Fail example" {
+  sed -n '/^### MUST-3:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qF '**Fail:**'
 }
 
-@test "#156-AC4: MUST-4 Why/Pass/Fail appear in correct order" {
+@test "#156-AC4: MUST-3 Why/Pass/Fail appear in correct order" {
   local must4_line why_line pass_line fail_line
-  must4_line=$(grep -n '^### MUST-4:' docs/methodology/us-quality-standard.md | cut -d: -f1)
+  must4_line=$(grep -n '^### MUST-3:' docs/methodology/us-quality-standard.md | cut -d: -f1)
   why_line=$(awk -v start="$must4_line" 'NR>start && /^\*\*Why:\*\*/{print NR; exit}' docs/methodology/us-quality-standard.md)
   pass_line=$(awk -v start="$must4_line" 'NR>start && /^\*\*Pass:\*\*/{print NR; exit}' docs/methodology/us-quality-standard.md)
   fail_line=$(awk -v start="$must4_line" 'NR>start && /^\*\*Fail:\*\*/{print NR; exit}' docs/methodology/us-quality-standard.md)
@@ -165,27 +167,27 @@
   [ "$pass_line" -lt "$fail_line" ]
 }
 
-@test "#156-AC4: MUST-4 section mentions exclusion categories (project conventions)" {
-  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'project.*convent\|CI.*green\|lint\|warning\|coverage'
+@test "#156-AC4: MUST-3 section mentions exclusion categories (project conventions)" {
+  sed -n '/^### MUST-3:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'project.*convent\|CI.*green\|lint\|warning\|coverage'
 }
 
-@test "#156-AC4: MUST-4 section mentions exclusion categories (implementation guard)" {
-  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'implementation.*guard\|impl.*guard'
+@test "#156-AC4: MUST-3 section mentions exclusion categories (implementation guard)" {
+  sed -n '/^### MUST-3:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'implementation.*guard\|impl.*guard'
 }
 
-@test "#156-AC4: MUST-4 section notes no retroactive application to existing specs" {
-  sed -n '/^### MUST-4:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'retroactive\|existing.*spec\|new.*discover\|not.*apply.*existing'
+@test "#156-AC4: MUST-3 section notes no retroactive application to existing specs" {
+  sed -n '/^### MUST-3:/,/^### /p' docs/methodology/us-quality-standard.md | grep -qi 'retroactive\|existing.*spec\|new.*discover\|not.*apply.*existing'
 }
 
-@test "#156-AC4: MUST-4 section appears after MUST-3 in document" {
-  local must3_line must4_line
+@test "#156-AC4: MUST-3 (US Traceability) appears after MUST-2 (Independent Verifiability)" {
+  local must2_line must3_line
+  must2_line=$(grep -n '^### MUST-2:' docs/methodology/us-quality-standard.md | cut -d: -f1)
   must3_line=$(grep -n '^### MUST-3:' docs/methodology/us-quality-standard.md | cut -d: -f1)
-  must4_line=$(grep -n '^### MUST-4:' docs/methodology/us-quality-standard.md | cut -d: -f1)
-  [ -n "$must3_line" ] && [ -n "$must4_line" ]
-  [ "$must3_line" -lt "$must4_line" ]
+  [ -n "$must2_line" ] && [ -n "$must3_line" ]
+  [ "$must2_line" -lt "$must3_line" ]
 }
 
-@test "Language policy: MUST-4 section is English only (no Japanese characters)" {
+@test "Language policy: MUST-3 section is English only (no Japanese characters)" {
   [ -f "docs/methodology/us-quality-standard.md" ]
   ! grep -P '[ぁ-んァ-ヶ一-龥]' docs/methodology/us-quality-standard.md
 }
