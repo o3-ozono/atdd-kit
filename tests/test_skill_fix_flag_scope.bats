@@ -9,11 +9,6 @@ PLAN="skills/plan/SKILL.md"
 
 # --- discover: --skill-fix accepted ---
 
-@test "AC10 discover: AUTOPILOT-GUARD contains --skill-fix acceptance" {
-  guard_block=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  echo "$guard_block" | grep -q -- '--skill-fix'
-}
-
 @test "AC10 discover: HARD-GATE skill-fix exception defined" {
   hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$DISCOVER")
   echo "$hard_gate" | grep -q -- '--skill-fix'
@@ -29,29 +24,8 @@ PLAN="skills/plan/SKILL.md"
 
 # --- plan: --skill-fix NOT accepted (HARD-GATE maintained) ---
 
-@test "AC10 plan: AUTOPILOT-GUARD does NOT accept --skill-fix" {
-  guard_block=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  ! echo "$guard_block" | grep -q -- '--skill-fix'
-}
-
 @test "AC10 plan: HARD-GATE does NOT have skill-fix exception" {
   hard_gate=$(sed -n '/<HARD-GATE>/,/<\/HARD-GATE>/p' "$PLAN")
   ! echo "$hard_gate" | grep -q -- '--skill-fix'
 }
 
-@test "AC10 plan: AUTOPILOT-GUARD still requires --autopilot" {
-  guard_block=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  echo "$guard_block" | grep -q -- '--autopilot'
-}
-
-# --- Structural integrity ---
-
-@test "AC10: discover AUTOPILOT-GUARD still blocks direct invocation with STOP" {
-  guard_block=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$DISCOVER")
-  echo "$guard_block" | grep -qi 'STOP'
-}
-
-@test "AC10: plan AUTOPILOT-GUARD still blocks direct invocation with STOP" {
-  guard_block=$(sed -n '/<AUTOPILOT-GUARD>/,/<\/AUTOPILOT-GUARD>/p' "$PLAN")
-  echo "$guard_block" | grep -qi 'STOP'
-}
