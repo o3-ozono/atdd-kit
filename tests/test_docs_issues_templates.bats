@@ -34,3 +34,25 @@
 @test "AC1: prd.md has at least one HTML guide comment" {
   grep -q "<!--" templates/docs/issues/prd.md
 }
+
+# AC2: user-stories.md — Connextra 形式 + Pichler 制約 Story
+
+@test "AC2: user-stories.md exists" {
+  [ -f "templates/docs/issues/user-stories.md" ]
+}
+
+@test "AC2: user-stories.md has Connextra 'As a' pattern" {
+  grep -q "As a" templates/docs/issues/user-stories.md
+}
+
+@test "AC2: user-stories.md has Connextra 'I want to' pattern" {
+  grep -q "I want to" templates/docs/issues/user-stories.md
+}
+
+@test "AC2: user-stories.md has Connextra 'so that' pattern" {
+  grep -q "so that" templates/docs/issues/user-stories.md
+}
+
+@test "AC2: user-stories.md has Pichler constraint story keyword" {
+  grep -qiE "constraint|NFR|In order to|non-functional" templates/docs/issues/user-stories.md
+}
