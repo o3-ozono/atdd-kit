@@ -50,6 +50,14 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 | [skill-gate](skill-gate/) | Auto-triggers on every user message | Skill enforcement gate |
 | [ui-test-debugging](ui-test-debugging/) | Auto-triggers on CI UI Test failures | CI UI Test failure diagnosis |
 | [verify](verify/) | Manually invoked before claiming completion | Core chain: evidence-based verification |
+| [defining-requirements](defining-requirements/) | v1.0 skeleton — not yet implemented (#179 B1) | v1.0 flow: Step 1+2 Discovery & Definition |
+| [extracting-user-stories](extracting-user-stories/) | v1.0 skeleton — not yet implemented (#179 B2) | v1.0 flow: Step 3 User Story extraction |
+| [writing-plan-and-tests](writing-plan-and-tests/) | v1.0 skeleton — not yet implemented (#179 B3) | v1.0 flow: Step 4 Plan + Acceptance Tests |
+| [running-atdd-cycle](running-atdd-cycle/) | v1.0 skeleton — not yet implemented (#179 B4) | v1.0 flow: Step 5 ATDD implementation |
+| [reviewing-deliverables](reviewing-deliverables/) | v1.0 skeleton — not yet implemented (#179 B5) | v1.0 flow: Step 6 Review |
+| [merging-and-deploying](merging-and-deploying/) | v1.0 skeleton — not yet implemented (#179 B6) | v1.0 flow: Step 7 Merge + Deploy |
+| [launching-preview](launching-preview/) | v1.0 skeleton — not yet implemented (#179 B7) | v1.0 on-demand: local preview |
+| [writing-design-doc](writing-design-doc/) | v1.0 skeleton — not yet implemented (#179 B8) | v1.0 on-demand: design document |
 
 ## References
 

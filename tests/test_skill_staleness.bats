@@ -6,7 +6,7 @@
 # Maintenance: When adding new skills, tools, or files, update the allowlists in setup().
 
 setup() {
-  ALL_SKILLS=(atdd bug debugging discover ideate issue plan session-start ship sim-pool skill-gate ui-test-debugging verify)
+  ALL_SKILLS=(atdd bug debugging defining-requirements discover express extracting-user-stories ideate issue launching-preview merging-and-deploying plan reviewing-deliverables running-atdd-cycle session-start ship sim-pool skill-fix skill-gate ui-test-debugging verify writing-design-doc writing-plan-and-tests)
 
   # Valid tool names that may appear in SKILL.md files.
   # Update this list when Claude Code adds or removes tools.
