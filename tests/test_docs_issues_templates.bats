@@ -126,3 +126,41 @@
 @test "AC5: design-doc.md has ## Risks heading" {
   grep -q "^## Risks" templates/docs/issues/design-doc.md
 }
+
+# AC6: README.md — 5 テンプレート名・cp 例・docs/issues/NNN/・design-doc 任意性注記
+
+@test "AC6: templates/docs/issues/README.md exists" {
+  [ -f "templates/docs/issues/README.md" ]
+}
+
+@test "AC6: README.md lists prd.md" {
+  grep -q "prd.md" templates/docs/issues/README.md
+}
+
+@test "AC6: README.md lists user-stories.md" {
+  grep -q "user-stories.md" templates/docs/issues/README.md
+}
+
+@test "AC6: README.md lists plan.md" {
+  grep -q "plan.md" templates/docs/issues/README.md
+}
+
+@test "AC6: README.md lists acceptance-tests.md" {
+  grep -q "acceptance-tests.md" templates/docs/issues/README.md
+}
+
+@test "AC6: README.md lists design-doc.md" {
+  grep -q "design-doc.md" templates/docs/issues/README.md
+}
+
+@test "AC6: README.md has cp command example" {
+  grep -q "^cp " templates/docs/issues/README.md
+}
+
+@test "AC6: README.md mentions docs/issues/NNN/" {
+  grep -q "docs/issues/NNN/" templates/docs/issues/README.md
+}
+
+@test "AC6: README.md notes design-doc is optional" {
+  grep -qiE "optional|任意" templates/docs/issues/README.md
+}
