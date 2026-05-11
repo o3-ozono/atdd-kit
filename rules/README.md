@@ -4,7 +4,7 @@ Rules are markdown files loaded into Claude Code's context on every turn. They d
 
 ## Budget Constraint
 
-`atdd-kit.md` is loaded on **every turn** and must stay under **40 lines**. Detailed guidance belongs in `docs/` instead.
+`atdd-kit.md` is loaded on **every turn** and must stay under **60 lines**. Detailed guidance belongs in `docs/` instead. (Budget raised from 40 to 60 during v1.0 migration; see `DEVELOPMENT.md` § Always-Loaded Rules Budget.)
 
 ## Files
 
