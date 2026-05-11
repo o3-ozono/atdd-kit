@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `skills/writing-design-doc/SKILL.md`: v1.0 skeleton — on-demand design document. HARD-GATE blocks execution until #179 Step B8 is implemented. (#185)
 - `tests/test_v1_skill_skeletons.bats`: BATS smoke test (11 @test functions) verifying all 8 v1.0 skeleton skills for existence, frontmatter conformance, HARD-GATE, Integration section, and ≤50 line constraint. (#185)
 
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
 ### Removed
 - `hooks/autopilot-worktree-guard.sh`, `hooks/autopilot_worktree_guard.py`, `hooks/eval-guard.sh` と対応テスト・設定エントリ: autopilot / evals 機構削除（#179 Step E1/E3）に先行して hook 安全網を除去。(#182)
 
