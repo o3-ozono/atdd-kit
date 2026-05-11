@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `skills/discover/SKILL.md`, `skills/plan/SKILL.md`, `skills/atdd/SKILL.md`, `skills/verify/SKILL.md`, `skills/ship/SKILL.md`: Removed `<AUTOPILOT-GUARD>` blocks from all 5 skills. Standalone slash-command invocation (e.g. `/atdd-kit:discover 188`) now works without `--autopilot`. Autopilot-mode behavioral branches preserved. Precursor partial of #202. (#214)
+
 ## [2.5.1] - 2026-05-11
 
 ### Changed

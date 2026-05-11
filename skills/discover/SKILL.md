@@ -27,13 +27,6 @@ Do NOT invoke plan, atdd, or any implementation skill until the user has APPROVE
 | "This is a small change, discover is overkill" | Size does not determine whether ACs are needed. All code-change tasks require verifiable ACs. |
 | "I can run plan and discover together to save time" | HARD-GATE exists precisely to prevent this. Concurrent execution violates the approval gate. |
 
-<AUTOPILOT-GUARD>
-If ARGUMENTS does not contain `--autopilot` AND ARGUMENTS does not contain `--skill-fix` (user invoked directly via slash command):
-- Display message: "This skill is autopilot-only. Use `/atdd-kit:autopilot <number>` instead."
-- **STOP.** Do not proceed with execution.
-If ARGUMENTS contains `--autopilot` OR `--skill-fix` (invoked by autopilot or skill-fix subagent): skip this guard silently.
-</AUTOPILOT-GUARD>
-
 First step of the Issue Ready flow. Understand requirements, explore approaches, and produce structured deliverables (DoD for all tasks; User Story + ACs for code-change tasks).
 
 ---
