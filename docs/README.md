@@ -75,4 +75,4 @@ Research-based persona files. Personas anchor User Stories to specific character
 ## References
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) -- Always-loaded rules budget, language policy
-- [rules/](../rules/) -- Always-loaded rules (40-line budget)
+- [rules/](../rules/) -- Always-loaded rules (60-line budget)

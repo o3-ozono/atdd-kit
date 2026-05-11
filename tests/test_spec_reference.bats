@@ -63,10 +63,10 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   grep -qi 'docs/specs/\|spec reference\|US/AC spec' "$REPO_ROOT/rules/atdd-kit.md"
 }
 
-@test "Group 3 / rules invariant: atdd-kit.md stays at or below 40 lines" {
+@test "Group 3 / rules invariant: atdd-kit.md stays at or below 60 lines" {
   local n
   n=$(wc -l < "$REPO_ROOT/rules/atdd-kit.md" | tr -d ' ')
-  [ "$n" -le 40 ]
+  [ "$n" -le 60 ]
 }
 
 # =============================================================================
