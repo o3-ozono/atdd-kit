@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-05-11
+
+### Added
+- `skills/defining-requirements/SKILL.md`: v1.0 skeleton — Step 1+2 Discovery & Definition. HARD-GATE blocks execution until #179 Step B1 is implemented. (#185)
+- `skills/extracting-user-stories/SKILL.md`: v1.0 skeleton — Step 3 User Story extraction. HARD-GATE blocks execution until #179 Step B2 is implemented. (#185)
+- `skills/writing-plan-and-tests/SKILL.md`: v1.0 skeleton — Step 4 Plan + Acceptance Tests. HARD-GATE blocks execution until #179 Step B3 is implemented. (#185)
+- `skills/running-atdd-cycle/SKILL.md`: v1.0 skeleton — Step 5 ATDD implementation cycle. HARD-GATE blocks execution until #179 Step B4 is implemented. (#185)
+- `skills/reviewing-deliverables/SKILL.md`: v1.0 skeleton — Step 6 Review. HARD-GATE blocks execution until #179 Step B5 is implemented. (#185)
+- `skills/merging-and-deploying/SKILL.md`: v1.0 skeleton — Step 7 Merge + Deploy. HARD-GATE blocks execution until #179 Step B6 is implemented. (#185)
+- `skills/launching-preview/SKILL.md`: v1.0 skeleton — on-demand local preview. HARD-GATE blocks execution until #179 Step B7 is implemented. (#185)
+- `skills/writing-design-doc/SKILL.md`: v1.0 skeleton — on-demand design document. HARD-GATE blocks execution until #179 Step B8 is implemented. (#185)
+- `tests/test_v1_skill_skeletons.bats`: BATS smoke test (11 @test functions) verifying all 8 v1.0 skeleton skills for existence, frontmatter conformance, HARD-GATE, Integration section, and ≤50 line constraint. (#185)
+
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
 ### Removed
 - `hooks/autopilot-worktree-guard.sh`, `hooks/autopilot_worktree_guard.py`, `hooks/eval-guard.sh` と対応テスト・設定エントリ: autopilot / evals 機構削除（#179 Step E1/E3）に先行して hook 安全網を除去。(#182)
 
