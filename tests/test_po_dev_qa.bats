@@ -166,10 +166,14 @@
   grep -q 'team-lead' agents/qa.md
 }
 
-# AC5(b) (Issue #45): exactly 6 agent definitions exist (excluding README.md)
-@test "#45-AC5: exactly 6 agent definition files exist (po.md removed)" {
+# AC5(b) (Issue #45): exactly 12 agent definitions exist (excluding README.md)
+# Original Issue #45 baseline: 6 role agents (developer/qa/tester/reviewer/researcher/writer).
+# Issue #186 (Step A3) added 6 step-reviewer agents
+# (prd/us/plan/code/at/final-reviewer). Total = 6 + 6 = 12.
+# When agents/reviewer.md is removed by #206 (Step E5), update this count to 11.
+@test "#45-AC5: exactly 12 agent definition files exist (6 role + 6 step-reviewer)" {
   count=$(ls agents/*.md 2>/dev/null | grep -v 'README\.md' | wc -l | tr -d ' ')
-  [ "$count" -eq 6 ]
+  [ "$count" -eq 12 ]
 }
 
 # AC7 (Issue #45): autopilot phase structure preserved

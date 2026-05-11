@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `hooks/main-branch-guard.sh` + `hooks/main_branch_guard.py` (new): allow-list for repo-external paths (`/tmp`, `/var/folders`, `/private/var/folders`, `/private/tmp`, `/dev/null`, `~/.claude/`, `~/.config/`) on `main`/`master`; deny message updated to skill-name-agnostic wording; BATS suite extended to 47 cases covering AC1–AC5. (#181)
 
 ### Added
+- `agents/prd-reviewer.md`, `agents/us-reviewer.md`, `agents/plan-reviewer.md`, `agents/code-reviewer.md`, `agents/at-reviewer.md`: 5 specialist reviewer subagent definitions for the new 6-step ATDD flow (#179 Step A3). Each enumerates 10 verifiable criteria covering the Issue-specified categories (PRD: 問題定義の明確性 / Audience / Outcome 測定可能性 / Non-Goals / Open Questions; US: Connextra / INVEST / 制約 Story / persona traceability; Plan: 2-5 分粒度 / verification / 依存関係; Code: Robot Pattern / testplan 分離 / AT 対応; AT: domain language / AT lifecycle / coverage). Frontmatter = `{name, description, tools}` with `Read, Grep, Glob` only. (#186)
+- `agents/final-reviewer.md`: Final aggregator reviewer that names the 5 specialists by basename, cross-references all 50 criteria (10 per specialist via `<role>-reviewer#N` references), and defines the unified PASS/FAIL aggregation rule (PASS iff all 5 upstream reviewers report PASS). (#186)
+- `tests/test_reviewer_subagents.bats`: 19-test structural smoke test covering AC1-AC6 of #186 — frontmatter shape, tools allowlist, AC2 category substring coverage, exactly-10 numbered criteria with verb/`?` constraint, 50 distinct traceability references in final-reviewer, and `name = basename` discoverability. (#186)
 - `docs/methodology/scrumban.md`: `## GitHub Project` section — Project URL (`<TBD>` placeholder, auto-replaced by `setup-project.sh` on first run), 7-field schema (6 custom fields + Iteration), Status↔autopilot label mapping table with intentional gap note for "Shaped (Pitch済)". (#168)
 - `scripts/setup-project.sh`: idempotent CLI script for GitHub Projects v2 setup — project create guard, Status + 5 custom fields creation, all Open Issue bulk-add, bulk field-set (uses `--single-select-option-id` and GraphQL node ID for `--project-id`); auto-replaces `projects/<TBD>` placeholder in scrumban.md with the real project URL on first run. (#168)
 - `scripts/verify-project.sh`: automated verification script for AC2 (item count + non-null field check) and AC5 (scrumban.md URL / field schema / mapping grep); also queries Iteration date ranges via GraphQL for AC4 evidence. (#168)
@@ -43,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/claude-code/test-helpers.sh`: `setup_gh_stub()` extended with optional `--labels "label1 label2"` flag — returns `[{"id":1,"name":"<label>"}]` in `issue view` response; default behavior (empty labels) unchanged for back-compat with all existing callers. (#140)
 
 ### Changed
+- `agents/README.md`: Available Agents table extended with 6 new step-reviewer rows (prd/us/plan/code/at/final-reviewer). (#186)
+- `tests/test_po_dev_qa.bats` `#45-AC5`: agent definition file count updated from 6 to 12 (6 role agents + 6 step-reviewer agents); intent comment notes that Step E5 (#206) will drop `agents/reviewer.md` and the count will become 11. (#186)
 - `skills/atdd/SKILL.md`: `## State Gate` section wrapped with `<HARD-GATE>` block (mirroring discover); Rationalization table added (replaces "Red Flags", `| Excuse | Reality |` format); Terminal-state constraint clause added restricting post-atdd invocation to `atdd-kit:verify` only. (#140)
 - `DEVELOPMENT.md` / `DEVELOPMENT.ja.md`: "Red Flags tables" → "Rationalization tables" concept name update (line 108). (#140)
 

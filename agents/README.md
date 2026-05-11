@@ -12,6 +12,12 @@ Role definitions for the autopilot multi-agent workflow. Each agent is a Markdow
 | `reviewer.md` | Reviewer | Code review across task types. Cannot edit code. |
 | `researcher.md` | Researcher | Research and analysis. Cannot edit code. |
 | `writer.md` | Writer | Documentation creation. Can edit files. |
+| `prd-reviewer.md` | PRD Reviewer | PRD review against 10 structural criteria. Read-only. Cannot edit files. |
+| `us-reviewer.md` | User Story Reviewer | User Story review against 10 structural criteria. Read-only. Cannot edit files. |
+| `plan-reviewer.md` | Plan Reviewer | Plan review against 10 structural criteria. Read-only. Cannot edit files. |
+| `code-reviewer.md` | Code Reviewer | Code change review against 10 structural criteria. Read-only. Cannot edit files. |
+| `at-reviewer.md` | Acceptance Test Reviewer | Acceptance Test review against 10 structural criteria. Read-only. Cannot edit files. |
+| `final-reviewer.md` | Final Reviewer | Aggregates 5 specialist reviewer verdicts (50 criteria total) into a unified PASS/FAIL. Read-only. Cannot edit files. |
 
 ## Frontmatter Fields
 
