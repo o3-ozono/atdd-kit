@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `skills/defining-requirements/SKILL.md`: v1.0 Step 1+2 implementation. 64-line orchestrator that walks the author through the 6 PRD sections (Problem / Why now / Outcome / What / Non-Goals / Open Questions) one question at a time, then writes `docs/issues/<NNN>/prd.md`. Scope ends at the PRD (User Story extraction is owned by `extracting-user-stories` #189). Subagent invocation and `in-progress` label management are explicitly out of scope. (#188)
+- `tests/claude-code/samples/fast-defining-requirements.sh` + `tests/claude-code/fixtures/defining-requirements-keywords.txt`: Fast-layer Skill Acceptance Test. Verifies that an LLM reading the SKILL.md recovers PRD 6 sections, upstream/downstream skill names with correct order, output path and trigger, and dialog discipline. (#188)
+- `tests/test_defining_requirements_skill.bats`: 6 @test gates — responsibility boundary (output path, downstream skill, subagent and label scope) and line budget (≤200). Wording-level checks delegated to the Fast SAT. (#188)
+
+### Changed
+- `tests/test_v1_skill_skeletons.bats`: Split `V1_SKILLS` into a skeleton-only `SKELETON_SKILLS` array. `defining-requirements` is removed from the skeleton list. Each future B PR (#189–#195) follows the same one-line removal. (#188)
+
 ### BREAKING Changes (v1.0 — Step E6)
 
 - **Persona concept removed.** v1.0 (#218) drops the persona model entirely. User Stories use **persona-less Connextra** (`I want to <goal>, so that <reason>`). The following are removed: `docs/personas/` directory, `lib/persona_check.sh`, `docs/methodology/persona-guide.md`, `scripts/check-persona-check-order.sh`, `tests/test_persona_check.bats`, `tests/test_persona_guide.bats`, `agents/us-reviewer.md` criteria #2 (named persona) / #5 (INVEST) / #6 (persona traceability), `lib/spec_check.sh::spec_persona` subcommand, `docs/specs/TEMPLATE.md` persona frontmatter field, and persona-related sections in `docs/methodology/{us-ac-format,us-quality-standard,definition-of-ready,scrumban,atdd-guide}.md`. Applied projects with `docs/personas/` must migrate User Stories to the persona-less form (manual migration required). (#218)

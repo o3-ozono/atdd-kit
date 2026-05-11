@@ -2,8 +2,21 @@
 # @covers: skills/defining-requirements skills/extracting-user-stories skills/writing-plan-and-tests skills/running-atdd-cycle skills/reviewing-deliverables skills/merging-and-deploying skills/launching-preview skills/writing-design-doc
 
 setup() {
+  # All 8 v1 capability skills — checks that apply regardless of skeleton
+  # vs implemented state (existence, naming, "Use when" prefix).
   V1_SKILLS=(
     defining-requirements
+    extracting-user-stories
+    writing-plan-and-tests
+    running-atdd-cycle
+    reviewing-deliverables
+    merging-and-deploying
+    launching-preview
+    writing-design-doc
+  )
+  # Skills still in the skeleton state from #185. Each B PR (B1=#188 …
+  # B8=#195) removes its own entry when implemented.
+  SKELETON_SKILLS=(
     extracting-user-stories
     writing-plan-and-tests
     running-atdd-cycle
@@ -53,19 +66,19 @@ setup() {
 # --- AC3: HARD-GATE block with stop instruction ---
 
 @test "all v1 skeleton SKILL.md have HARD-GATE block" {
-  for skill in "${V1_SKILLS[@]}"; do
+  for skill in "${SKELETON_SKILLS[@]}"; do
     grep -q '<HARD-GATE>' "skills/${skill}/SKILL.md"
   done
 }
 
 @test "all v1 skeleton SKILL.md contain not yet implemented message" {
-  for skill in "${V1_SKILLS[@]}"; do
+  for skill in "${SKELETON_SKILLS[@]}"; do
     grep -q 'not yet implemented' "skills/${skill}/SKILL.md"
   done
 }
 
 @test "all v1 skeleton SKILL.md contain stop instruction" {
-  for skill in "${V1_SKILLS[@]}"; do
+  for skill in "${SKELETON_SKILLS[@]}"; do
     grep -q 'Stop\. Do not proceed\.' "skills/${skill}/SKILL.md"
   done
 }
@@ -93,7 +106,7 @@ setup() {
 # --- AC5: Each SKILL.md is 50 lines or fewer ---
 
 @test "all v1 skeleton SKILL.md are 50 lines or fewer" {
-  for skill in "${V1_SKILLS[@]}"; do
+  for skill in "${SKELETON_SKILLS[@]}"; do
     local lines
     lines=$(wc -l < "skills/${skill}/SKILL.md")
     [[ "$lines" -le 50 ]]

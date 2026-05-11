@@ -1,0 +1,13 @@
+Problem
+Why now
+Outcome
+What
+Non-Goals
+Open Questions
+session-start
+extracting-user-stories
+docs/issues
+defining-requirements
+explicit
+one question at a time
+Approve
