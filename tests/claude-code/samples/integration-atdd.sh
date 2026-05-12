@@ -5,7 +5,7 @@
 #      not raw transcript — parser emits {name, args, order} per Skill tool_use)
 #   2. assistant text contains SKILL_STATUS declaration in a skill-status code fence
 #   3. gh-calls-atdd.log contains issue view --json labels (State Gate check)
-# Integration layer: fixture + jsonl transcript analysis + gh stub with ready-to-go label.
+# Skill E2E Test (fixture-based chain): fixture + jsonl transcript analysis + gh stub with ready-to-go label.
 
 set -u
 set -o pipefail

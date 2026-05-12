@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fast-plan-skill-keywords.sh -- AC1 fast PASS
 # Verifies that skills/plan/SKILL.md contains required anchors in ascending line-number order.
-# Fast layer: no LLM invocation, no fixture. Uses grep -n line-number comparison.
+# Skill E2E Test (single-turn): no LLM invocation, no fixture. Uses grep -n line-number comparison.
 #
 # Anchor order required:
 #   HARD-GATE → AUTOPILOT-GUARD → State Gate → Core Flow

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fast-discover.sh -- AC1: fast L4 test for discover skill meta-knowledge
 # Verifies that Claude can read discover's required keywords and ordering.
-# Fast layer: single-turn claude -p, no fixture project, no skill chain.
+# Skill E2E Test (single-turn): single-turn claude -p, no fixture project, no skill chain.
 
 set -u
 set -o pipefail

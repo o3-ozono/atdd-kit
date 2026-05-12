@@ -7,7 +7,7 @@
 # Stub mode: when SKILL_TEST_CLAUDE_BIN is set, transcript parsing is skipped
 #            (stub emits no plan content — same pattern as integration-discover-minimal.sh:54).
 #
-# Integration layer: fixture project + jsonl transcript analysis.
+# Skill E2E Test (fixture-based chain): fixture project + jsonl transcript analysis.
 
 set -u
 set -o pipefail

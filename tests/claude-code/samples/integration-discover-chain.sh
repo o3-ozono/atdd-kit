@@ -4,7 +4,7 @@
 # Runs a headless session that invokes atdd-kit:discover --autopilot and
 # checks that the transcript contains both discover and plan tool_use in order.
 # Verifies chain order via transcript (discover_count == 1, discover_order < plan_order, atdd_order > plan_order). gh stub log assertion omitted per Option C (sub-agent PATH non-inheritance) -- see L143-147.
-# Integration layer: fixture + jsonl transcript analysis + gh stub.
+# Skill E2E Test (fixture-based chain): fixture + jsonl transcript analysis + gh stub.
 
 set -u
 set -o pipefail

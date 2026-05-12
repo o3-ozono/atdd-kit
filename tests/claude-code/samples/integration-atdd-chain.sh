@@ -6,7 +6,7 @@
 # Verifies chain order via transcript: atdd_count == 1, verify_count >= 1, verify_order > atdd_order.
 # NOTE: gh stub log assertion omitted per Option C (sub-agent PATH non-inheritance) --
 # Skill tool spawns sub-agents that do not inherit the parent's PATH shim.
-# Integration layer: fixture + jsonl transcript analysis + gh stub.
+# Skill E2E Test (fixture-based chain): fixture + jsonl transcript analysis + gh stub.
 
 set -u
 set -o pipefail
