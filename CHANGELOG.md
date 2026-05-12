@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_run_skill_e2e_impact.bats`: runner の path-based マッピングと log 必須フィールドを検証する Unit Test 10 case。(#222)
 - `tests/test_skill_terminology_grep.bats`: legacy skill testing terminology (SAT / L1-L3 / Fast layer / Integration layer / BATS gate / Fast SAT / Integration SAT) が active source に残らないことを検証。(#222)
 - `tests/e2e/`: Skill E2E Test 配置ディレクトリ。`.logs/` は gitignore 済み、`.gitkeep` でディレクトリ自体は管理。(#222)
+- `tests/e2e/defining-requirements.bats`: Skill E2E Test の最初の実体。1 skill = 1 ファイル、1 User Story = 1 `@test` の構造で、実 claude を `claude -p --max-turns 1` で呼び出して PRD 6 section / upstream→downstream chain order / 出力 path を検証。`scripts/run-skill-e2e.sh --changed-files skills/defining-requirements/SKILL.md` で path-based 影響範囲算定 → 実 claude 実行 → ログ出力までを通しで実証。(#222)
 - `docs/issues/222-skill-test-redesign/`: PRD / user-stories / plan / acceptance-tests。Step 2-3 は B2 (#189) / B3 (#190) skill 未実装のため手動代行。(#222)
 
 ### Changed
