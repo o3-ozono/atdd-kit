@@ -24,12 +24,16 @@ CLAUDE_CODE_README="${REPO_ROOT}/tests/claude-code/README.md"
   grep -qE '\$0\.10|\$5|0\.10|5\.00' "$TESTING_SKILLS_DOC"
 }
 
-@test "docs/testing-skills.md has adding a new test section" {
-  grep -qiE "add.*test|new.*test|adding.*test" "$TESTING_SKILLS_DOC"
+@test "docs/testing-skills.md describes how to add tests" {
+  grep -qiE "(add|new|追加).*(test|Test)|(Unit Test|Skill E2E Test).*追加" "$TESTING_SKILLS_DOC"
 }
 
-@test "docs/testing-skills.md has linter WARN to FAIL escalation criteria" {
-  grep -qiE "WARN.*FAIL|warn.*fail|escalat|upgra" "$TESTING_SKILLS_DOC"
+# Removed in #222: linter WARN→FAIL escalation lives in DEVELOPMENT.md
+# §Skill Description Field Rules. The new docs/testing-skills.md focuses on the
+# Unit Test / Skill E2E Test 2-layer system, not lint policy.
+@test "docs/testing-skills.md defines the Unit Test / Skill E2E Test 2-layer system" {
+  grep -q "Unit Test" "$TESTING_SKILLS_DOC"
+  grep -q "Skill E2E Test" "$TESTING_SKILLS_DOC"
 }
 
 # --- tests/claude-code/README.md ---
