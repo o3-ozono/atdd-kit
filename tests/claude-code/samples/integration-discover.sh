@@ -4,7 +4,7 @@
 #   1. skill_transcript_parser.sh reports atdd-kit:discover tool_use
 #   2. stdout contains SKILL_STATUS: COMPLETE in a skill-status code fence
 #   3. gh-calls-discover.log contains issue edit --add-label in-progress (lock acquisition)
-# Integration layer: fixture + jsonl transcript analysis + gh stub.
+# Skill E2E Test (fixture-based chain): fixture + jsonl transcript analysis + gh stub.
 
 set -u
 set -o pipefail

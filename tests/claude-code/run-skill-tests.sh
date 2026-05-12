@@ -15,8 +15,8 @@
 #   SKILL_TEST_CLAUDE_BIN   -- override claude binary path (default: PATH lookup)
 #   SKILL_TEST_TMPDIR       -- override transcript output dir (default: ~/.claude/projects/)
 #
-# Fast layer: single-turn claude -p calls, no fixture, no skill chain.
-# Integration layer: full workflow replay with fixture project + jsonl transcript analysis.
+# Skill E2E Test (single-turn): single-turn claude -p calls, no fixture, no skill chain.
+# Skill E2E Test (fixture-based chain): full workflow replay with fixture project + jsonl transcript analysis.
 #   Requires python3 for transcript analysis (checked at startup in integration mode).
 #
 # SIGINT/SIGTERM: kills claude subprocess and removes temp transcript, exits 130/143.

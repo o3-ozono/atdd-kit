@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fast-skill-description-lint.sh -- AC5 fast PASS sample
 # Verifies that lint_skill_descriptions.sh exits 0 and reports WARN-only output.
-# Fast layer: no fixture project, no skill chain.
+# Skill E2E Test (single-turn): no fixture project, no skill chain.
 
 set -u
 set -o pipefail

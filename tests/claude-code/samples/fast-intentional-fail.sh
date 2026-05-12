@@ -2,7 +2,7 @@
 # fast-intentional-fail.sh -- AC5 fast FAIL (negative) sample
 # Intentionally asserts a string that will never appear in any output.
 # Purpose: proves that the test framework correctly detects assertion failures.
-# Fast layer: no fixture project, no skill chain.
+# Skill E2E Test (single-turn): no fixture project, no skill chain.
 
 set -u
 set -o pipefail

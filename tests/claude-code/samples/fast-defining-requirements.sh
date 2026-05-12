@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# fast-defining-requirements.sh — Fast-layer Skill Acceptance Test for the
+# fast-defining-requirements.sh — Skill E2E Test (single-turn) for the
 # defining-requirements skill (#188 / #179 Step B1).
 #
 # Verifies that an LLM reading the SKILL.md can recover four behavior

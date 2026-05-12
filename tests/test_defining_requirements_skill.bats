@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # @covers: skills/defining-requirements/SKILL.md
-# Skill Acceptance Test (structural) for the defining-requirements skill
+# Skill E2E Test (structural) for the defining-requirements skill
 # (#188 / #179 Step B1).
 #
 # Scope (agreed in #188 discover): assert only the two gates that protect
@@ -8,7 +8,7 @@
 #   1. Responsibility boundary — output path, downstream skill name, no subagent spawn
 #   2. Line budget — ≤ 200 lines per #216 PRD design rule
 # Everything else (PRD section coverage, trigger keyword spec, dialog
-# discipline, etc.) is verified by the Fast SAT (tests/claude-code/samples/
+# discipline, etc.) is verified by the Skill E2E Test (single-turn) (tests/claude-code/samples/
 # fast-defining-requirements.sh) so the LLM checks semantics rather than
 # brittle wording.
 

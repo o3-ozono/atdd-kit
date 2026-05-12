@@ -2,7 +2,7 @@
 # integration-discover-minimal.sh -- AC5 integration PASS sample
 # Runs claude -p against the minimal-project fixture to verify that
 # basic invocation works and produces a parseable jsonl transcript.
-# Integration layer: uses fixture project + jsonl transcript analysis.
+# Skill E2E Test (fixture-based chain): uses fixture project + jsonl transcript analysis.
 
 set -u
 set -o pipefail

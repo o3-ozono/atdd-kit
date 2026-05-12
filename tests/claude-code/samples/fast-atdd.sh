@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fast-atdd.sh -- AC1: fast L4 test for atdd skill meta-knowledge
 # Verifies that Claude can read atdd's required keywords and ordering.
-# Fast layer: single-turn claude -p, no fixture project, no skill chain.
+# Skill E2E Test (single-turn): single-turn claude -p, no fixture project, no skill chain.
 
 set -u
 set -o pipefail

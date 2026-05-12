@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `scripts/run-skill-e2e.sh`: Skill E2E Test runner with path-based impact mapping. `--changed-files` でファイル変更リストから影響範囲を path-based に算定 (`skills/<X>/` → `tests/e2e/<X>.bats`、`rules/templates/methodology/` → 全 E2E、`lib/scripts/` → 利用元 SKILL.md cite skill)、`--all`、`--dry-run`、`--log-dir` 対応。`tests/e2e/.logs/<run-id>.log` に run-id / git_sha / timestamp / targets / results / summary を出力。(#222)
+- `tests/test_run_skill_e2e_impact.bats`: runner の path-based マッピングと log 必須フィールドを検証する Unit Test 10 case。(#222)
+- `tests/test_skill_terminology_grep.bats`: legacy skill testing terminology (SAT / L1-L3 / Fast layer / Integration layer / BATS gate / Fast SAT / Integration SAT) が active source に残らないことを検証。(#222)
+- `tests/e2e/`: Skill E2E Test 配置ディレクトリ。`.logs/` は gitignore 済み、`.gitkeep` でディレクトリ自体は管理。(#222)
+- `docs/issues/222-skill-test-redesign/`: PRD / user-stories / plan / acceptance-tests。Step 2-3 は B2 (#189) / B3 (#190) skill 未実装のため手動代行。(#222)
+
+### Changed
+- **Renamed: skill testing terminology.** v1.0 で「SAT (Skill Acceptance Test) / L1 BATS gate / L2 Fast SAT / L3 Integration SAT / Fast layer / Integration layer」を全廃し **Unit Test (claude を呼ばない BATS) / Skill E2E Test (実 claude 起動)** の 2 層に統一。`docs/testing-skills.md` が新体系の単一の正典。CHANGELOG.md / `docs/testing-skills.md` の廃止宣言 / `docs/issues/222-*` / `docs/issues/179-*` には移行ガイドとして旧用語を保持。(#222)
+- `docs/testing-skills.md`: 2 層体系 / 影響範囲算定ロジック / 証跡コメント規約 / 1 skill = 1 E2E ファイル構造例で全面書き換え。(#222)
+- `tests/test_defining_requirements_skill.bats`, `tests/claude-code/run-skill-tests.sh`, `tests/claude-code/samples/{fast,integration}-*.sh`: 内部コメントの「Fast layer / Integration layer / Skill Acceptance Test」表記を「Skill E2E Test (single-turn) / Skill E2E Test (fixture-based chain) / Skill E2E Test」に置換。ファイル名のリネームは別 PR。(#222)
+
 - `skills/defining-requirements/SKILL.md`: v1.0 Step 1+2 implementation. 64-line orchestrator that walks the author through the 6 PRD sections (Problem / Why now / Outcome / What / Non-Goals / Open Questions) one question at a time, then writes `docs/issues/<NNN>/prd.md`. Scope ends at the PRD (User Story extraction is owned by `extracting-user-stories` #189). Subagent invocation and `in-progress` label management are explicitly out of scope. (#188)
 - `tests/claude-code/samples/fast-defining-requirements.sh` + `tests/claude-code/fixtures/defining-requirements-keywords.txt`: Fast-layer Skill Acceptance Test. Verifies that an LLM reading the SKILL.md recovers PRD 6 sections, upstream/downstream skill names with correct order, output path and trigger, and dialog discipline. (#188)
 - `tests/test_defining_requirements_skill.bats`: 6 @test gates — responsibility boundary (output path, downstream skill, subagent and label scope) and line budget (≤200). Wording-level checks delegated to the Fast SAT. (#188)
