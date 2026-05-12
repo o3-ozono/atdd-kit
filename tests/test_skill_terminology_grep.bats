@@ -10,6 +10,8 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 #                                legacy terms as deprecated
 #   - docs/issues/222-*        : this Issue itself discusses the deprecated terms
 #   - docs/issues/179-*        : parent epic that historically references SAT
+#   - docs/issues/198-*        : D1+D2 統合 Issue that documents removal of the
+#                                legacy SAT harness (must discuss old terms)
 #   - tests/test_skill_terminology_grep.bats : this file (pattern strings)
 PATTERN='SAT\b|Skill Acceptance|Fast layer|Integration layer|L1 BATS|L2 Fast|L3 Integration|BATS gate|Fast SAT|Integration SAT'
 
@@ -22,6 +24,7 @@ PATTERN='SAT\b|Skill Acceptance|Fast layer|Integration layer|L1 BATS|L2 Fast|L3 
     --exclude='testing-skills.md' \
     --exclude-dir='222-skill-test-redesign' \
     --exclude-dir='179-atdd-kit-v1-redesign' \
+    --exclude-dir='198-tests-claude-code-deprecation' \
     --exclude='test_skill_terminology_grep.bats' \
     . 2>/dev/null || true)
   if [ -n "$hits" ]; then

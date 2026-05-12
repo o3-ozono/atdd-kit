@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # @covers: scripts/lint_skill_descriptions.sh
-# test_l4_lint_skill_descriptions.bats -- AC4: description anti-pattern linter
+# test_skill_description_lint.bats -- skill description anti-pattern linter
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 LINTER="${REPO_ROOT}/scripts/lint_skill_descriptions.sh"
