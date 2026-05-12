@@ -102,6 +102,17 @@ reviewer は次を確認する:
 
 `git_sha` 不一致なら **変更後に再実行が必要**。reviewer はその場で差し戻す。
 
+### コメント運用ルール（最新 1 件を update）
+
+PR 内に **証跡コメントは 1 つだけ** 保持し、追加 commit ごとに同じコメントを update する。複数のログコメントを並べない。
+
+1. 最初の動作実証時に新規コメントを投稿（タイトルは `## Skill E2E Test 証跡`）
+2. 追加 commit ごとに同じコメントを `gh api -X PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}` で update
+3. 古い証跡コメントが残っている場合は `gh api -X DELETE ...` で削除
+4. コメント本文に `Updated: <ISO8601>` と最新 `git_sha` を含めて、history は git ログで追う
+
+ねらい: PR レビュアーが「どれが最新ログか」を判断する手間を取り除く。`git_sha` は 1 件のコメントを見れば一意に決まる。
+
 ### 配布プロジェクトでの扱い
 
 atdd-kit を **適用するプロジェクト**（プラグイン利用者）は本ゲートの対象外。本ゲートは atdd-kit リポジトリ自身の修正 PR にのみ適用される。

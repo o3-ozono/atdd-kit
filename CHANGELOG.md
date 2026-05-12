@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - **Renamed: skill testing terminology.** v1.0 で「SAT (Skill Acceptance Test) / L1 BATS gate / L2 Fast SAT / L3 Integration SAT / Fast layer / Integration layer」を全廃し **Unit Test (claude を呼ばない BATS) / Skill E2E Test (実 claude 起動)** の 2 層に統一。`docs/testing-skills.md` が新体系の単一の正典。CHANGELOG.md / `docs/testing-skills.md` の廃止宣言 / `docs/issues/222-*` / `docs/issues/179-*` には移行ガイドとして旧用語を保持。(#222)
-- `docs/testing-skills.md`: 2 層体系 / 影響範囲算定ロジック / 証跡コメント規約 / 1 skill = 1 E2E ファイル構造例で全面書き換え。(#222)
+- `docs/testing-skills.md`: 2 層体系 / 影響範囲算定ロジック / 証跡コメント規約（最新 1 件 update 運用ルール含む） / 1 skill = 1 E2E ファイル構造例で全面書き換え。(#222)
 - `tests/test_defining_requirements_skill.bats`, `tests/claude-code/run-skill-tests.sh`, `tests/claude-code/samples/{fast,integration}-*.sh`: 内部コメントの「Fast layer / Integration layer / Skill Acceptance Test」表記を「Skill E2E Test (single-turn) / Skill E2E Test (fixture-based chain) / Skill E2E Test」に置換。ファイル名のリネームは別 PR。(#222)
 
 - `skills/defining-requirements/SKILL.md`: v1.0 Step 1+2 implementation. 64-line orchestrator that walks the author through the 6 PRD sections (Problem / Why now / Outcome / What / Non-Goals / Open Questions) one question at a time, then writes `docs/issues/<NNN>/prd.md`. Scope ends at the PRD (User Story extraction is owned by `extracting-user-stories` #189). Subagent invocation and `in-progress` label management are explicitly out of scope. (#188)

@@ -35,7 +35,7 @@
 - [x] [green] AT-005: reviewer handoff log spec documented
   - **Given:** `docs/testing-skills.md` 書き換え後
   - **When:** 「証跡コメント規約」セクションを読む
-  - **Then:** 必須フィールド (`git SHA` / `target list` / `PASS-FAIL summary`)、配置 (PR コメント貼付)、検証側 (`reviewing-deliverables` skill) の 3 点が明示されている
+  - **Then:** 必須フィールド (`git SHA` / `target list` / `PASS-FAIL summary`)、配置 (PR コメント貼付)、検証側 (`reviewing-deliverables` skill)、**コメント運用ルール (最新 1 件を update、旧コメントは delete)** の 4 点が明示されている
 
 ## AT-006: 1 skill = 1 E2E ファイル / 1 US = 1 case 構造の例示 (FS-5)
 
