@@ -32,7 +32,7 @@
 
 ## AT-005: #199 close 連動 (FS-4)
 
-- [ ] [draft] AT-005: PR #225 closes #199
+- [x] [green] AT-005: PR #225 closes #199
   - **Given:** PR #225 description 更新後
   - **When:** `gh pr view 225 --json closingIssuesReferences` を実行
   - **Then:** `closingIssuesReferences` に Issue 番号 198 と 199 の両方が含まれる
@@ -60,7 +60,7 @@
 
 ## AT-009: CI 全 PASS (CS-3)
 
-- [ ] [draft] AT-009: CI all green
+- [x] [green] AT-009: CI all green
   - **Given:** PR #225 が push 完了している
   - **When:** `gh pr checks 225` を実行
   - **Then:** 全 check が success、failure / pending なし
