@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+- **`tests/claude-code/` 配下を完全削除**: 旧 SAT 系ハーネス (`run-skill-tests.sh` / `samples/{fast,integration}-*.sh` 13 件 / `fixtures/` / `test-helpers.sh` / `analyze-token-usage.py` / `README.md`)。`scripts/run-skill-e2e.sh` + `tests/e2e/<skill>.bats` (#222) が完全代替。(#198 / #199 D1+D2 統合)
+- **`tests/test_l4_*.bats` 5 件を削除**: `test_l4_samples` / `test_l4_test_helpers` / `test_l4_run_skill_tests` / `test_l4_analyze_token_usage` / `test_l4_docs`。廃止対象 `tests/claude-code/` を test 対象とする形骸化テスト。(#198 / #199)
+
+### Changed
+- **`tests/test_l4_lint_skill_descriptions.bats` → `tests/test_skill_description_lint.bats`**: rename。`scripts/lint_skill_descriptions.sh` を test 対象とする Unit Test で廃止対象に非依存のため中身ロジックは保持。(#198 / #199)
+- `tests/README.md`: 「L4 Skill Tests (`tests/claude-code/`)」セクションを「Skill E2E Tests (`tests/e2e/`)」に置換。conventions と references の L4 言及も新語彙 (Unit Test / Skill E2E Test) に更新。(#198)
+- `tests/test_skill_terminology_grep.bats`: 許容例外パスに `198-tests-claude-code-deprecation` を追加 (D1+D2 統合 Issue が旧用語の廃止を議論するため)。(#198)
+
 ### Added
 - `scripts/run-skill-e2e.sh`: Skill E2E Test runner with path-based impact mapping. `--changed-files` でファイル変更リストから影響範囲を path-based に算定 (`skills/<X>/` → `tests/e2e/<X>.bats`、`rules/templates/methodology/` → 全 E2E、`lib/scripts/` → 利用元 SKILL.md cite skill)、`--all`、`--dry-run`、`--log-dir` 対応。`tests/e2e/.logs/<run-id>.log` に run-id / git_sha / timestamp / targets / results / summary を出力。(#222)
 - `tests/test_run_skill_e2e_impact.bats`: runner の path-based マッピングと log 必須フィールドを検証する Unit Test 10 case。(#222)

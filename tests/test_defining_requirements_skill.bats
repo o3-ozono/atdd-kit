@@ -8,9 +8,9 @@
 #   1. Responsibility boundary — output path, downstream skill name, no subagent spawn
 #   2. Line budget — ≤ 200 lines per #216 PRD design rule
 # Everything else (PRD section coverage, trigger keyword spec, dialog
-# discipline, etc.) is verified by the Skill E2E Test (single-turn) (tests/claude-code/samples/
-# fast-defining-requirements.sh) so the LLM checks semantics rather than
-# brittle wording.
+# discipline, etc.) is verified by the Skill E2E Test
+# (tests/e2e/defining-requirements.bats) so the LLM checks semantics
+# rather than brittle wording.
 
 SKILL_FILE="skills/defining-requirements/SKILL.md"
 

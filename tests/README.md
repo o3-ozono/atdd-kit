@@ -130,26 +130,17 @@ bats tests/test_discover_autopilot_approval.bats \
 | test_sim_init_guidance.bats | Addon guidance validation |
 | test_sim_pool_docs.bats | sim-pool documentation |
 
-## L4 Skill Tests (`tests/claude-code/`)
+## Skill E2E Tests (`tests/e2e/`)
 
-The `tests/claude-code/` subtree contains a 2-layer (fast / integration) test framework that invokes `claude -p` directly to catch skill-chain drift and description anti-patterns.
+新フロー（#222 確定）の Skill E2E Test は `tests/e2e/<skill>.bats` 構造で、実 `claude` バイナリを起動して 1 User Story = 1 `@test` を回す。実行は `scripts/run-skill-e2e.sh` が path-based 影響範囲算定で対象を絞り込む。
 
-```
-tests/claude-code/
-  test-helpers.sh              # fast-test harness helpers (run_claude, assert_*)
-  run-skill-tests.sh           # fast/integration runner
-  analyze-token-usage.py       # per-agent token/cost breakdown from jsonl
-  samples/                     # sample test scripts (fast-*.sh, integration-*.sh)
-  fixtures/                    # fixture projects for integration tests
-```
-
-Run L4 tests:
 ```bash
-tests/claude-code/run-skill-tests.sh --test skill-description-lint       # fast
-tests/claude-code/run-skill-tests.sh --integration --test discover-minimal  # integration
+scripts/run-skill-e2e.sh --changed-files <list>   # 影響範囲分のみ
+scripts/run-skill-e2e.sh --all                    # 全 skill
+scripts/run-skill-e2e.sh --all --dry-run          # 対象解決のみ（実行なし）
 ```
 
-BATS coverage for L4 infrastructure lives in `tests/test_l4_*.bats` and uses stub claude via `SKILL_TEST_CLAUDE_BIN`. See [tests/claude-code/README.md](claude-code/README.md) for full invocation docs.
+ログは `tests/e2e/.logs/<run-id>.log` に出力される。詳細は [docs/testing-skills.md](../docs/testing-skills.md) を参照。
 
 ## Conventions
 
@@ -157,10 +148,10 @@ BATS coverage for L4 infrastructure lives in `tests/test_l4_*.bats` and uses stu
 - Each test file focuses on one feature or module
 - Tests must pass with zero external dependencies (no network, no npm)
 - iOS addon tests live in `addons/ios/tests/`, not in `tests/`
-- L4 live-LLM tests are guarded by `RUN_INTEGRATION=1`
+- Skill E2E Tests (`tests/e2e/*.bats`) require a real `claude` binary in PATH (or `SKILL_TEST_CLAUDE_BIN` set); authentication is handled by `claude` CLI itself
 
 ## References
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) — Zero dependencies policy
-- [docs/testing-skills.md](../docs/testing-skills.md) — L4 methodology and cost baseline
+- [docs/testing-skills.md](../docs/testing-skills.md) — Unit Test / Skill E2E Test 2 層体系と cost baseline
 - [BATS documentation](https://bats-core.readthedocs.io/)
