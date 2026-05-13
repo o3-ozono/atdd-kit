@@ -18,7 +18,7 @@
 
 ## Finishing
 
-- [ ] `CHANGELOG.md` の `[Unreleased]` に「extracting-user-stories skill 実装 + SAT」エントリ追記
+- [ ] `CHANGELOG.md` の `[Unreleased]` に「extracting-user-stories skill 実装 + Unit Test + Skill E2E Test」エントリ追記
 - [ ] verify: `CHANGELOG.md` を Keep a Changelog 形式で更新
 
 - [ ] ドキュメント整合性チェック（`rules/atdd-kit.md`, `CLAUDE.md` 不要更新）

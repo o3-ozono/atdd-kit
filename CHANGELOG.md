@@ -17,23 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_skill_terminology_grep.bats`: 許容例外パスに `198-tests-claude-code-deprecation` を追加 (D1+D2 統合 Issue が旧用語の廃止を議論するため)。(#198)
 
 ### Added
+- `skills/extracting-user-stories/SKILL.md`: v1.0 Step 2 implementation. Reads `docs/issues/<NNN>/prd.md`, presents Story candidates in **one batch** under `## Functional Story` and `## Constraint Story` headings, and after explicit `ok` writes `docs/issues/<NNN>/user-stories.md`. Output language fixed to Japanese. Scope ends at the User Stories file (Plan + AT owned by `writing-plan-and-tests` #190). Subagent invocation and `in-progress` label management are explicitly out of scope. Persona / INVEST / Story Splitting / Example Mapping are unadopted (#216 / #218). (#189)
+- `tests/e2e/extracting-user-stories.bats`: Skill E2E Test. 1 skill = 1 file / 4 `@test` (F1-F2 + C2-C3; C1 (≤200 行) は構造的不変項のため Unit Test に集約) で実 `claude` を `claude -p --max-turns 1` で呼び出して output path / 出力言語 / persona-less invariant / batch UX 指示の有無を検証。(#189)
+- `tests/test_extracting_user_stories_skill.bats`: Unit Test (13 cases) — responsibility boundary (output path, upstream/downstream skill, subagent/label scope), line budget (≤200), batch UX, output language, persona-less invariant (SKILL.md + template), template structure を検証。(#189)
 - `scripts/run-skill-e2e.sh`: Skill E2E Test runner with path-based impact mapping. `--changed-files` でファイル変更リストから影響範囲を path-based に算定 (`skills/<X>/` → `tests/e2e/<X>.bats`、`rules/templates/methodology/` → 全 E2E、`lib/scripts/` → 利用元 SKILL.md cite skill)、`--all`、`--dry-run`、`--log-dir` 対応。`tests/e2e/.logs/<run-id>.log` に run-id / git_sha / timestamp / targets / results / summary を出力。(#222)
 - `tests/test_run_skill_e2e_impact.bats`: runner の path-based マッピングと log 必須フィールドを検証する Unit Test 10 case。(#222)
 - `tests/test_skill_terminology_grep.bats`: legacy skill testing terminology (SAT / L1-L3 / Fast layer / Integration layer / BATS gate / Fast SAT / Integration SAT) が active source に残らないことを検証。(#222)
 - `tests/e2e/`: Skill E2E Test 配置ディレクトリ。`.logs/` は gitignore 済み、`.gitkeep` でディレクトリ自体は管理。(#222)
 - `tests/e2e/defining-requirements.bats`: Skill E2E Test の最初の実体。1 skill = 1 ファイル、1 User Story = 1 `@test` の構造で、実 claude を `claude -p --max-turns 1` で呼び出して PRD 6 section / upstream→downstream chain order / 出力 path を検証。`scripts/run-skill-e2e.sh --changed-files skills/defining-requirements/SKILL.md` で path-based 影響範囲算定 → 実 claude 実行 → ログ出力までを通しで実証。(#222)
 - `docs/issues/222-skill-test-redesign/`: PRD / user-stories / plan / acceptance-tests。Step 2-3 は B2 (#189) / B3 (#190) skill 未実装のため手動代行。(#222)
+- `skills/defining-requirements/SKILL.md`: v1.0 Step 1+2 implementation. 64-line orchestrator that walks the author through the 6 PRD sections (Problem / Why now / Outcome / What / Non-Goals / Open Questions) one question at a time, then writes `docs/issues/<NNN>/prd.md`. Scope ends at the PRD (User Story extraction is owned by `extracting-user-stories` #189). Subagent invocation and `in-progress` label management are explicitly out of scope. (#188)
+- `tests/test_defining_requirements_skill.bats`: Unit Test (6 cases) — responsibility boundary (output path, downstream skill, subagent and label scope) and line budget (≤200). (#188)
 
 ### Changed
+- `tests/test_v1_skill_skeletons.bats`: `extracting-user-stories` removed from the `SKELETON_SKILLS` array (B2 implemented). (#189)
 - **Renamed: skill testing terminology.** v1.0 で「SAT (Skill Acceptance Test) / L1 BATS gate / L2 Fast SAT / L3 Integration SAT / Fast layer / Integration layer」を全廃し **Unit Test (claude を呼ばない BATS) / Skill E2E Test (実 claude 起動)** の 2 層に統一。`docs/testing-skills.md` が新体系の単一の正典。CHANGELOG.md / `docs/testing-skills.md` の廃止宣言 / `docs/issues/222-*` / `docs/issues/179-*` には移行ガイドとして旧用語を保持。(#222)
 - `docs/testing-skills.md`: 2 層体系 / 影響範囲算定ロジック / 証跡コメント規約（最新 1 件 update 運用ルール含む） / 1 skill = 1 E2E ファイル構造例で全面書き換え。(#222)
 - `tests/test_defining_requirements_skill.bats`, `tests/claude-code/run-skill-tests.sh`, `tests/claude-code/samples/{fast,integration}-*.sh`: 内部コメントの「Fast layer / Integration layer / Skill Acceptance Test」表記を「Skill E2E Test (single-turn) / Skill E2E Test (fixture-based chain) / Skill E2E Test」に置換。ファイル名のリネームは別 PR。(#222)
-
-- `skills/defining-requirements/SKILL.md`: v1.0 Step 1+2 implementation. 64-line orchestrator that walks the author through the 6 PRD sections (Problem / Why now / Outcome / What / Non-Goals / Open Questions) one question at a time, then writes `docs/issues/<NNN>/prd.md`. Scope ends at the PRD (User Story extraction is owned by `extracting-user-stories` #189). Subagent invocation and `in-progress` label management are explicitly out of scope. (#188)
-- `tests/claude-code/samples/fast-defining-requirements.sh` + `tests/claude-code/fixtures/defining-requirements-keywords.txt`: Fast-layer Skill Acceptance Test. Verifies that an LLM reading the SKILL.md recovers PRD 6 sections, upstream/downstream skill names with correct order, output path and trigger, and dialog discipline. (#188)
-- `tests/test_defining_requirements_skill.bats`: 6 @test gates — responsibility boundary (output path, downstream skill, subagent and label scope) and line budget (≤200). Wording-level checks delegated to the Fast SAT. (#188)
-
-### Changed
 - `tests/test_v1_skill_skeletons.bats`: Split `V1_SKILLS` into a skeleton-only `SKELETON_SKILLS` array. `defining-requirements` is removed from the skeleton list. Each future B PR (#189–#195) follows the same one-line removal. (#188)
 
 ### BREAKING Changes (v1.0 — Step E6)

@@ -17,7 +17,6 @@ setup() {
   # Skills still in the skeleton state from #185. Each B PR (B1=#188 …
   # B8=#195) removes its own entry when implemented.
   SKELETON_SKILLS=(
-    extracting-user-stories
     writing-plan-and-tests
     running-atdd-cycle
     reviewing-deliverables
