@@ -27,7 +27,7 @@
 
 - [x] [green] AT-004: no tests/claude-code references
   - **Given:** PR #225 適用後の HEAD
-  - **When:** `grep -r "tests/claude-code" docs/ scripts/ rules/ .github/ tests/ commands/ skills/ 2>&1 | grep -v "docs/issues/198-"` を実行（CHANGELOG.md / `docs/issues/` は除外）
+  - **When:** `grep -r "tests/claude-code" docs/ scripts/ rules/ .github/ tests/ commands/ skills/ 2>&1 | grep -vE "docs/issues/(198|222)-"` を実行（CHANGELOG.md / `docs/issues/198-*` / `docs/issues/222-*`（廃止対象を計画した歴史記録）は除外）
   - **Then:** 0 hit
 
 ## AT-005: #199 close 連動 (FS-4)
