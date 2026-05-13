@@ -27,6 +27,7 @@ Platform-specific addons are in `${CLAUDE_PLUGIN_ROOT}/addons/`. Each addon has 
 
 - Exclusive lock: do not start work on an Issue with `in-progress` label.
 - Test-first, always. 1 PR = 1 thing.
+- **Step B (B1-B8 new skill impl): must read `docs/issues/179-atdd-kit-v1-redesign/step-b-playbook.md` before touching `skills/`, `tests/test_*_skill.bats`, or `tests/e2e/*.bats`. Auto-deprecated when B8 #195 merges.**
 
 ## Commits
 - Conventional Commits: `<type>: <description> (#<issue>)`. Commit after each change.

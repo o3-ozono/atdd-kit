@@ -4,6 +4,29 @@
 
 **スコープ**: B1 (#188 / merged #221) と B2 (#189 / merged #226) で確立した進め方を統合し、B3-B8 (#190-#195) に適用する規準。
 
+## Lifespan（必ず読む）
+
+本 Playbook は **Step B (B1-B8) 進行専用の一時ドキュメント**であり、**B8 #195 merge をもって破棄**する。後継 Playbook は作らない。
+
+| 状態 | 期間 | 参照義務 |
+|---|---|---|
+| **active** | 現在 〜 B8 #195 merge 直前 | Step B Issue (B3-B8) に着手する前に本ファイル全文を必読 |
+| **deprecated** | B8 #195 merge 後 | 参照禁止。下記手順で削除 |
+
+### 破棄手順（B8 #195 merge 後に必ず実行）
+
+1. 新規 Issue を立てる: `chore: Step B 完了に伴い step-b-playbook.md を破棄`
+2. 1 commit で以下を同時に実施:
+   - `git rm docs/issues/179-atdd-kit-v1-redesign/step-b-playbook.md`
+   - `rules/atdd-kit.md` から "Step B Playbook 必読" 行を削除（Step B 完了時に Iron Laws の budget を返す）
+   - `~/.claude/projects/-Users-hiroaki-ozono-github-com-o3-ozono-atdd-kit/memory/project_step_b_playbook.md` を削除
+   - `MEMORY.md` 該当行を削除
+3. PR description に「Step B 全 8 個 (B1-B8) merge 完了を確認」evidence を貼る
+
+### なぜ破棄するか
+
+Step B は v1.0 移行特有のフェーズで、完了後は新フロー 6-step が正規ルートになる。Playbook の内容は新 skill の SKILL.md / `rules/atdd-kit.md` / `docs/testing-skills.md` に吸収済みになるため、一時 docs を残すと真実の所在が分裂する（`feedback_skill_test_terminology.md` の旧用語問題の再発防止）。
+
 ---
 
 ## 0. 大前提（4 行で）
