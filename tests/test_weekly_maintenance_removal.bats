@@ -21,13 +21,15 @@
 }
 
 @test "AC1: no weekly_maintenance references outside commands/ and CHANGELOG" {
-  # grep で weekly_maintenance を検索、commands/ と CHANGELOG.md と tests/ を除外
+  # grep で weekly_maintenance を検索、commands/ と CHANGELOG.md と tests/ を除外。
+  # worktrees/ も除外する: git worktree がリポジトリ配下にファイルの入れ子コピーを
+  # 作るため、recursive な content grep がそこへ降りて false positive を出すのを防ぐ。
   result=$(grep -r 'weekly_maintenance' --include='*.md' --include='*.yml' --include='*.tmpl' --include='*.bats' \
-    --exclude-dir='.git' --exclude-dir='.tmp' . \
-    | grep -v '^./commands/' \
-    | grep -v '^./CHANGELOG.md' \
-    | grep -v '^./tests/test_weekly_maintenance_removal.bats' \
-    | grep -v '^./tests/README.md' \
+    --exclude-dir='.git' --exclude-dir='.tmp' --exclude-dir='worktrees' . \
+    | grep -vE '^(\./)?commands/' \
+    | grep -vE '^(\./)?CHANGELOG\.md' \
+    | grep -vE '^(\./)?tests/test_weekly_maintenance_removal\.bats' \
+    | grep -vE '^(\./)?tests/README\.md' \
     || true)
   [ -z "$result" ]
 }

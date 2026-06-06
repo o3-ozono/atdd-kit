@@ -24,7 +24,7 @@ SKILL_FILE="skills/defining-requirements/SKILL.md"
   grep -q 'templates/docs/issues/prd.md' "$SKILL_FILE"
 }
 
-@test "responsibility: Downstream is extracting-user-stories (Step 3 ownership)" {
+@test "responsibility: Downstream is extracting-user-stories (Step 2 ownership)" {
   grep -qE '\*\*Downstream:\*\*[[:space:]]+`extracting-user-stories`' "$SKILL_FILE"
 }
 

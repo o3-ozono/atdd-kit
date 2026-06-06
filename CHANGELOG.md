@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- `skills/defining-requirements/SKILL.md`: 本文の Step 番号を canonical な 6-step フロー（`rules/atdd-kit.md` Workflow table）と整合。「Step 1+2」→「Step 1」、`extracting-user-stories`「Step 3」→「Step 2」、`writing-plan-and-tests`「Step 4」→「Step 3」、`running-atdd-cycle`「Step 5」→「Step 4」、`reviewing-deliverables`「Step 6」→「Step 5」、"PRD review happens at Step 6"→"Step 5"。#226 reviewer subagent CONCERN の follow-up。(#227)
+- `agents/README.md`: reviewer criteria 数を source of truth（`agents/final-reviewer.md`）と整合。us-reviewer「10」→「7」structural criteria（#218 で削減済み）、final-reviewer「50 criteria total」→「47 criteria total」。(#231)
+- `skills/README.md`: Skill List テーブルの v1.0 行を実装実態と整合。`defining-requirements` / `extracting-user-stories` を「v1.0 skeleton — not yet implemented」→「Implemented」（#221 / #226 マージ済み）、3 列目 step 番号を canonical（Step 1〜6）に修正。(#231)
+- `tests/test_defining_requirements_skill.bats`: test 名「(Step 3 ownership)」→「(Step 2 ownership)」（`extracting-user-stories` は canonical で Step 2）。assertion は Downstream 文字列ベースのため挙動不変。(#231)
+- `tests/test_weekly_maintenance_removal.bats`: AC1 の recursive grep に `--exclude-dir='worktrees'` を追加し、リポジトリ配下の git worktree（ファイルの入れ子コピー）への降下による false positive を防止。除外パターンも `^./X` → `^(\./)?X`（dot escape 付き）へ変更し GNU / BSD / ugrep いずれの prefix 挙動でも機能するよう移植性を改善。(#231)
+
 ### Removed
 - **`tests/claude-code/` 配下を完全削除**: 旧 SAT 系ハーネス (`run-skill-tests.sh` / `samples/{fast,integration}-*.sh` 13 件 / `fixtures/` / `test-helpers.sh` / `analyze-token-usage.py` / `README.md`)。`scripts/run-skill-e2e.sh` + `tests/e2e/<skill>.bats` (#222) が完全代替。(#198 / #199 D1+D2 統合)
 - **`tests/test_l4_*.bats` 5 件を削除**: `test_l4_samples` / `test_l4_test_helpers` / `test_l4_run_skill_tests` / `test_l4_analyze_token_usage` / `test_l4_docs`。廃止対象 `tests/claude-code/` を test 対象とする形骸化テスト。(#198 / #199)
