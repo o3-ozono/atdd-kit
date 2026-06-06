@@ -1,6 +1,6 @@
 # Testing Skills — Impact Scope Detection
 
-`scripts/impact_map.sh` maps a git diff to the set of affected tests, so L4 integration runs and BATS suites only exercise changed surface area.
+`scripts/impact_map.sh` maps a git diff to the set of affected tests, so Skill E2E Test runs and BATS suites only exercise changed surface area.
 
 ## Usage
 
@@ -9,11 +9,11 @@
 ./scripts/impact_map.sh --base origin/main --layer BATS
 
 # diff-based with specific ref
-./scripts/impact_map.sh --base HEAD~1 --layer L4
+./scripts/impact_map.sh --base HEAD~1 --layer skill-e2e
 
 # forced full scan (skips diff analysis)
 ./scripts/impact_map.sh --all --layer BATS
-./scripts/impact_map.sh --all --layer L4
+./scripts/impact_map.sh --all --layer skill-e2e
 
 # explicit config path (default: $PWD/config/impact_rules.yml)
 ./scripts/impact_map.sh --base origin/main --layer BATS --config path/to/rules.yml
@@ -34,7 +34,7 @@ When any changed file matches neither method, the script falls back to full scan
 
 | Layer | Output |
 |-------|--------|
-| `L4` | L4 integration test names (from `l4:` values in `config/impact_rules.yml`) |
+| `skill-e2e` | Skill E2E Test names (from `skill-e2e:` values in `config/impact_rules.yml`) |
 | `BATS` | `.bats` file paths under `tests/` |
 
 ## `@covers` Declaration Format
