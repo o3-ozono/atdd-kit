@@ -4,27 +4,27 @@ issue: "#70"
 status: draft
 ---
 
-This spec is the self-referencing dogfood instance for the US/AC auto-reference mechanism introduced in #70. It is cited by `atdd`, `verify`, and `bug` when working on #70 itself (Continuation Path) per AC6(b) + AC1.
+This spec is the self-referencing dogfood instance for the US/AC auto-reference mechanism introduced in #70. It is cited by `running-atdd-cycle` and `bug` when working on #70 itself (Continuation Path) per AC6(b) + AC1.
 
 > v1.0 (#216 / #218) note: the persona field has been dropped. This spec has been rewritten as persona-less Connextra. The `spec_persona` subcommand has also been removed.
 
 ## User Story
 
-**I want to** have atdd / verify / bug automatically load `docs/specs/<slug>.md` through a helper (`lib/spec_check.sh`) and codified SKILL.md steps,
+**I want to** have running-atdd-cycle / bug automatically load `docs/specs/<slug>.md` through a helper (`lib/spec_check.sh`) and codified SKILL.md steps,
 **so that** "implementation guided by AC" is structurally enforced, and AC-external code, forgotten ACs, and spec/Issue divergence are prevented.
 
 ## Acceptance Criteria
 
-### AC1: atdd loads the spec
+### AC1: running-atdd-cycle loads the spec
 
 - **Given:** Issue #N has `docs/specs/<slug>.md`
-- **When:** atdd passes the State Gate, before the first AC implementation
+- **When:** running-atdd-cycle passes the State Gate, before the first AC implementation
 - **Then:** a `Loaded docs/specs/<slug>.md (AC count: N)` line is emitted; subsequent Outer Loops cite that AC set.
 
-### AC2: verify treats the spec as authoritative (status tiebreak)
+### AC2: spec is treated as authoritative (status tiebreak)
 
 - **Given:** both the spec and Issue comment ACs exist
-- **When:** verify loads ACs
+- **When:** running-atdd-cycle loads ACs
 - **Then:** `status ∈ {approved, implemented}` → spec wins; `status: draft` → Issue comment wins with warning; any divergence is reported diff-style.
 
 ### AC3: bug Classification cites spec ACs
@@ -35,8 +35,8 @@ This spec is the self-referencing dogfood instance for the US/AC auto-reference 
 
 ### AC4: `lib/spec_check.sh` helper is provided
 
-- **Given:** a need for a shared helper across atdd / verify / bug
-- **When:** a developer runs `bash lib/spec_check.sh <function> <args>`
+- **Given:** a need for a shared helper across running-atdd-cycle / bug
+- **When:** running `bash lib/spec_check.sh <function> <args>`
 - **Then:** `derive_slug`, `spec_exists`, `read_acs`, `spec_status`, `get_spec_load_message`, and `get_spec_warn_message` are documented exports; SKILL.md spec-reference steps call through this helper. (Note: `spec_persona` was removed in #218 when persona was dropped.)
 
 ### AC5: slug derivation rule is documented
@@ -48,38 +48,30 @@ This spec is the self-referencing dogfood instance for the US/AC auto-reference 
 ### AC6: fallback for missing / continuation cases
 
 - **Given:** one of — (a) new work without a spec, (b) Continuation Path on a branch whose spec is absent
-- **When:** atdd / verify / bug consult the spec
-- **Then:** (a) BLOCKED as discover-incomplete; (b) warning + Issue comment fallback. All warnings use the `[spec-warn]` terminal prefix.
+- **When:** running-atdd-cycle / bug consult the spec
+- **Then:** (a) BLOCKED as requirements-incomplete (Step 1 not done); (b) warning + Issue comment fallback. All warnings use the `[spec-warn]` terminal prefix.
 
 ### AC7: self-dogfooding on #70
 
 - **Given:** this PR before merge
-- **When:** `docs/specs/llm-us-ac-auto-reference.md` is created inside the PR and autopilot is re-run against #70 (manually)
-- **Then:** a transcript of atdd loading the newly created spec is attached to the PR description. CI automation is out of scope (follow-up Issue).
+- **When:** `docs/specs/llm-us-ac-auto-reference.md` is created inside the PR and running-atdd-cycle is run manually against #70
+- **Then:** a transcript of running-atdd-cycle loading the newly created spec is attached to the PR description. CI automation is out of scope (follow-up Issue).
 
 ### AC8: divergence matrix
 
 - **Given:** the spec and Issue comment ACs disagree
-- **When:** verify runs
-- **Then:** the 5 divergence patterns (AC added / removed / modified / reordered / status drift) each have defined expected behavior in `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix, and AC10 behavioral evals cover each pattern.
+- **When:** running-atdd-cycle loads ACs
+- **Then:** the 5 divergence patterns (AC added / removed / modified / reordered / status drift) each have defined expected behavior in `docs/methodology/us-ac-format.md` § Spec ↔ Issue Divergence Matrix, and the AC9 bats cases cover each pattern.
 
-### AC9: footprint budget
+### AC9: bats structural test
 
-- **Given:** `evals/footprint/baseline.json` (autopilot 21,898 tokens as of 2026-04-17)
-- **When:** `scripts/measure-footprint.sh --check` runs
-- **Then:** atdd / verify / bug SKILL.md token delta ≤ +500 total. `baseline.json` is updated in this PR; `--check` PASSes.
-
-### AC10: behavioral eval + bats structural test
-
-- **Given:** `skills/{atdd,verify,bug}/evals/evals.json` and `tests/test_spec_reference.bats`
-- **When:** each is executed
-- **Then:**
-  - Each evals.json has at least one new spec-reference eval and pass_rate does not regress
-  - bats verifies (a) the spec-load step grep in the 3 SKILL.md files, (b) the `lib/spec_check.sh` function exports, (c) the `rules/atdd-kit.md` invariant, (d) the EN-only reference convention, and all `@test` blocks PASS.
+- **Given:** `tests/test_spec_reference.bats`
+- **When:** the suite runs via `bats tests/`
+- **Then:** bats verifies (a) the spec-load step grep in the running-atdd-cycle / bug SKILL.md files, (b) the `lib/spec_check.sh` function exports, (c) the `rules/atdd-kit.md` invariant, (d) the EN-only reference convention, and all `@test` blocks PASS.
 
 ## Notes
 
-- Scope: Only the mechanism + this one spec. The remaining 8 skills (discover/plan/verify/ship/autopilot/bug/issue/session-start) get specs under a follow-up tracking Issue — one PR per skill.
-- `status: draft` remains until merge; transitions to `implemented` in ship phase after the AC7 dogfood transcript lands in the PR.
+- Scope: Only the mechanism + this one spec. The remaining v1.0 skills (defining-requirements / extracting-user-stories / writing-plan-and-tests / running-atdd-cycle / reviewing-deliverables / merging-and-deploying / bug / session-start) get specs under a follow-up tracking Issue — one PR per skill.
+- `status: draft` remains until merge; transitions to `implemented` during merging-and-deploying (Step 6) after the AC7 dogfood transcript lands in the PR.
 - Slug: `llm-us-ac-auto-reference`. Because the Issue title is Japanese, `SPEC_SLUG_OVERRIDE=llm-us-ac-auto-reference` was supplied (see `docs/methodology/us-ac-format.md` § Slug Derivation Rule).
 - **Updated by #218 (Step E6, 2026-05-11):** persona frontmatter removed, User Story rewritten as persona-less Connextra, AC4 / AC6 references to `spec_persona` / `tbd-persona` cleaned up.

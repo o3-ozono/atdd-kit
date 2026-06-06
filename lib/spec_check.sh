@@ -12,9 +12,9 @@
 # Design:
 #   - Dispatcher with "fn; exit $?" propagation; inner functions use
 #     "return 0/1" to avoid set -e foot-guns.
-#   - Referenced by skills/{atdd,verify,bug}/SKILL.md spec-load / spec-authority /
-#     spec-cite steps. SKILL.md prose is paired with these functions — do not
-#     rely on prose alone.
+#   - Referenced by skills/bug/SKILL.md spec-load / spec-authority / spec-cite
+#     steps. SKILL.md prose is paired with these functions — do not rely on
+#     prose alone.
 #   - v1.0 (#218): spec_persona subcommand removed (persona concept dropped).
 #
 # Environment:
@@ -162,7 +162,7 @@ _spec_status() {
 # ---------------------------------------------------------------------------
 # get_spec_load_message <slug> <ac_count>
 #
-# Canonical "Loaded docs/specs/<slug>.md (AC count: N)" format used by atdd
+# Canonical "Loaded docs/specs/<slug>.md (AC count: N)" format used by the bug
 # SKILL.md spec-load step. AC1 of Issue #70 mandates this exact phrasing.
 # ---------------------------------------------------------------------------
 
@@ -194,7 +194,7 @@ _get_spec_warn_message() {
   fi
   case "$reason" in
     missing)
-      echo "[spec-warn] missing: no spec found at docs/specs/${slug}.md — run discover to create it."
+      echo "[spec-warn] missing: no spec found at docs/specs/${slug}.md — run defining-requirements to create it."
       ;;
     continuation-fallback)
       echo "[spec-warn] continuation-fallback: resuming branch without docs/specs/${slug}.md — falling back to Issue comment ACs."

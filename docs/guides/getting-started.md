@@ -58,17 +58,15 @@ Let's walk through building a small feature using atdd-kit's full workflow.
 
 ### Step 1: Describe What You Want
 
-Just tell Claude what you need in natural language. The **issue** skill auto-detects your intent and creates a GitHub Issue.
+Just tell Claude what you need in natural language. Claude creates a GitHub Issue from your description and starts the first step of the workflow.
 
 ```
 You: I want to add a /health endpoint that returns the app version
 ```
 
-Claude creates a GitHub Issue from your description and automatically starts **discover**.
+### Step 2: defining-requirements — Requirements Exploration
 
-### Step 2: discover — Requirements Exploration
-
-The **discover** skill explores your requirements through dialogue and derives acceptance criteria in Given/When/Then format.
+The **defining-requirements** skill explores your requirements through dialogue and derives acceptance criteria in Given/When/Then format.
 
 ```
 Claude: Let me explore the requirements for the /health endpoint.
@@ -97,23 +95,23 @@ Claude: Here are the proposed acceptance criteria:
 You: Yes
 ```
 
-### Step 3: plan — Implementation Strategy
+### Step 3: extracting-user-stories — User Stories
 
-After you approve the acceptance criteria, **plan** automatically creates a test strategy and implementation strategy.
+The **extracting-user-stories** skill turns the approved acceptance criteria into user stories, capturing the user value behind each criterion before any implementation strategy is decided.
+
+### Step 4: writing-plan-and-tests — Plan + Acceptance Tests
+
+The **writing-plan-and-tests** skill creates the implementation plan and the acceptance tests together.
 
 The plan includes:
 - **Test strategy** — What tests to write and how to verify each acceptance criterion
 - **Implementation strategy** — File changes, implementation order, design decisions
 
-### Step 4: Approval Gate
+Once the plan passes review, the Issue receives the `ready-to-go` label — the green light for implementation.
 
-The plan undergoes review. In manual mode, you review and approve. In autopilot mode, the Dev and QA agents review the plan.
+### Step 5: running-atdd-cycle — Test-First Implementation
 
-Once approved, the Issue receives the `ready-to-go` label — the green light for implementation.
-
-### Step 5: atdd — Test-First Implementation
-
-The **atdd** skill implements your feature using the ATDD double loop:
+The **running-atdd-cycle** skill implements your feature using the ATDD double loop:
 
 1. **Outer loop (E2E)** — Write a failing end-to-end test for each acceptance criterion
 2. **Inner loop (Unit)** — Write unit tests, then implement until all tests pass
@@ -125,24 +123,21 @@ feat: #42 GET /health returns 200 with version (CC1)
 feat: #42 /health requires no authentication (CC2)
 ```
 
-### Step 6: verify — Evidence-Based Verification
+The cycle also collects evidence for each acceptance criterion — confirming all tests pass, that each AC has corresponding test coverage, and that there are no regressions in existing tests.
 
-The **verify** skill runs all tests and collects evidence for each acceptance criterion. It checks:
+### Step 6: reviewing-deliverables — Review
 
-- All tests pass
-- Each AC has corresponding test coverage
-- No regressions in existing tests
+The **reviewing-deliverables** skill reviews the deliverables before merge. It spawns dedicated reviewer subagents (such as `code-reviewer` and `at-reviewer`) to check the implementation and the acceptance tests against the acceptance criteria.
 
-Verify produces an evidence table mapping each AC to its test results.
+### Step 7: merging-and-deploying — PR and Merge
 
-### Step 7: ship — PR and Merge
-
-The **ship** skill finalizes the process:
+The **merging-and-deploying** skill finalizes the process:
 
 1. Creates a pull request (or updates the existing draft)
 2. Adds the `ready-for-PR-review` label
 3. Handles the review cycle (addresses reviewer comments, re-requests review)
 4. Squash merges when approved and CI passes
+5. Runs post-deploy regression checks
 
 ```
 Claude: PR #43 created: feat: #42 add /health endpoint
@@ -152,19 +147,13 @@ Claude: PR #43 created: feat: #42 add /health endpoint
 
 ## Going Further
 
-### Autopilot Mode
+### On-Demand and Utility Skills
 
-Once you're comfortable with the manual workflow, try **autopilot** for hands-off execution:
+Beyond the 6-step chain, atdd-kit provides skills you can reach for when you need them:
 
-```bash
-# Auto-detect an in-progress Issue and run the full workflow
-/atdd-kit:autopilot
-
-# Target a specific Issue
-/atdd-kit:autopilot 42
-```
-
-Autopilot runs main Claude as orchestrator with Dev and QA as Agent Teams teammates. main Claude orchestrates, Dev implements, and QA reviews — all coordinated automatically.
+- **writing-design-doc** — Capture a design doc when a feature needs an explicit design.
+- **launching-preview** — Launch a preview of your change.
+- **session-start** — Session start report (git status, PRs, CI, recommended tasks).
 
 ### Bug Reports
 
@@ -176,7 +165,6 @@ You: The /users endpoint returns 500 when the email contains a plus sign
 
 ### Customization
 
-- **Autonomy levels**: Configure how much human approval is needed (see `docs/workflow/autonomy-levels.md`)
 - **iOS addon**: Platform-specific tooling for iOS projects (auto-detected or via `/atdd-kit:setup-ios`)
 
 ### Reference

@@ -1,6 +1,6 @@
 # Impact Map
 
-> **Loaded by:** discover skill, issue skill
+> **Loaded by:** defining-requirements skill
 
 ## Goal
 
@@ -22,60 +22,60 @@ Each Impact describes a **behavioral change** in an Actor, not a feature. Delive
 
 ---
 
-### Impact 1: Requirements Definition Quality (discover / AC)
+### Impact 1: Requirements Definition Quality (defining-requirements / AC)
 
-> Hiro notices AC gaps during discover, before implementation starts — not after CI fails.
+> Hiro notices AC gaps during defining-requirements, before implementation starts — not after CI fails.
 
 | Deliverable | Issue |
 |-------------|-------|
-| Fix discover COMPLETE → AC Review Round regression | [#162](https://github.com/o3-ozono/atdd-kit/issues/162) |
-| Backlog Refinement = discover skill evolution (Example Mapping + INVEST + Story Splitting) | [#169](https://github.com/o3-ozono/atdd-kit/issues/169) |
-| autopilot SKILL.md AC Review Round with US traceability mention | [#158](https://github.com/o3-ozono/atdd-kit/issues/158) |
-| refactor: discover skill split into 5 flows | [#148](https://github.com/o3-ozono/atdd-kit/issues/148) |
+| Fix defining-requirements COMPLETE → AC Review Round regression | [#162](https://github.com/o3-ozono/atdd-kit/issues/162) |
+| Backlog Refinement = defining-requirements skill evolution (Example Mapping + INVEST + Story Splitting) | [#169](https://github.com/o3-ozono/atdd-kit/issues/169) |
+| reviewing-deliverables AC Review Round with US traceability mention | [#158](https://github.com/o3-ozono/atdd-kit/issues/158) |
+| refactor: defining-requirements skill split into 5 flows | [#148](https://github.com/o3-ozono/atdd-kit/issues/148) |
 | tracking: US/AC spec coverage for remaining 8 skills | [#117](https://github.com/o3-ozono/atdd-kit/issues/117) |
 | feat: AC per fresh sub-agent | [#71](https://github.com/o3-ozono/atdd-kit/issues/71) |
 | epic: ATDD core — persona / User Story / AC system + docs reorganization | [#63](https://github.com/o3-ozono/atdd-kit/issues/63) |
 
 ---
 
-### Impact 2: Flow Automation (autopilot / Projects)
+### Impact 2: Flow Automation (Projects)
 
 > Hiro spends less time manually managing Issue state and more time on actual development.
 
 | Deliverable | Issue |
 |-------------|-------|
 | Phase B — Kanban Board via GitHub Projects v2 | [#168](https://github.com/o3-ozono/atdd-kit/issues/168) |
-| Phase D — Automation (autopilot label → Projects Status sync) | [#170](https://github.com/o3-ozono/atdd-kit/issues/170) |
+| Phase D — Automation (workflow label → Projects Status sync) | [#170](https://github.com/o3-ozono/atdd-kit/issues/170) |
 | Phase E — WIP Limit + DoR Gate | [#171](https://github.com/o3-ozono/atdd-kit/issues/171) |
 | Phase F — Retrospective mechanism | [#172](https://github.com/o3-ozono/atdd-kit/issues/172) |
 | Phase G — Iteration (lightweight milestone operation) | [#173](https://github.com/o3-ozono/atdd-kit/issues/173) |
 
 ---
 
-### Impact 3: Skill Quality Assurance (L4 / test)
+### Impact 3: Skill Quality Assurance (BATS / test)
 
 > Hiro trusts that skills behave correctly after updates, without manual regression checking.
 
 | Deliverable | Issue |
 |-------------|-------|
-| feat: L4 as atdd outer-loop integration into autopilot | [#137](https://github.com/o3-ozono/atdd-kit/issues/137) |
-| test: L4 integration test for verify skill | [#141](https://github.com/o3-ozono/atdd-kit/issues/141) |
-| test: L4 integration test for ship skill | [#142](https://github.com/o3-ozono/atdd-kit/issues/142) |
-| test: L4 integration test for bug skill | [#143](https://github.com/o3-ozono/atdd-kit/issues/143) |
-| test: L4 integration test for debugging skill | [#144](https://github.com/o3-ozono/atdd-kit/issues/144) |
-| test: L4 integration test for ideate skill | [#145](https://github.com/o3-ozono/atdd-kit/issues/145) |
-| test: L4 integration test for issue skill | [#146](https://github.com/o3-ozono/atdd-kit/issues/146) |
-| test: L4 integration test for express skill | [#147](https://github.com/o3-ozono/atdd-kit/issues/147) |
+| feat: BATS coverage for the running-atdd-cycle outer loop | [#137](https://github.com/o3-ozono/atdd-kit/issues/137) |
+| test: BATS integration test for reviewing-deliverables skill | [#141](https://github.com/o3-ozono/atdd-kit/issues/141) |
+| test: BATS integration test for merging-and-deploying skill | [#142](https://github.com/o3-ozono/atdd-kit/issues/142) |
+| test: BATS integration test for bug skill | [#143](https://github.com/o3-ozono/atdd-kit/issues/143) |
+| test: BATS integration test for debugging skill | [#144](https://github.com/o3-ozono/atdd-kit/issues/144) |
+| test: BATS integration test for writing-design-doc skill | [#145](https://github.com/o3-ozono/atdd-kit/issues/145) |
+| test: BATS integration test for extracting-user-stories skill | [#146](https://github.com/o3-ozono/atdd-kit/issues/146) |
+| test: BATS integration test for launching-preview skill | [#147](https://github.com/o3-ozono/atdd-kit/issues/147) |
 
 ---
 
-### Impact 4: Quality Gate Enforcement (CI / eval)
+### Impact 4: Quality Gate Enforcement (CI / test)
 
-> Hiro's PRs are blocked automatically when skill quality degrades — no manual eval needed.
+> Hiro's PRs are blocked automatically when skill quality degrades — no manual checking needed.
 
 | Deliverable | Issue |
 |-------------|-------|
-| feat: CI eval auto-block on pass_rate drop | [#73](https://github.com/o3-ozono/atdd-kit/issues/73) |
+| feat: CI auto-block on BATS test failure | [#73](https://github.com/o3-ozono/atdd-kit/issues/73) |
 
 ---
 
@@ -96,7 +96,7 @@ Each Impact describes a **behavioral change** in an Actor, not a feature. Delive
 
 | Deliverable | Issue |
 |-------------|-------|
-| feat: plan skill mandatory doc-follow step | [#14](https://github.com/o3-ozono/atdd-kit/issues/14) |
+| feat: writing-plan-and-tests skill mandatory doc-follow step | [#14](https://github.com/o3-ozono/atdd-kit/issues/14) |
 
 ---
 

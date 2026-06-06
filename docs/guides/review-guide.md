@@ -1,6 +1,6 @@
 # PR Review Guide
 
-> **Loaded by:** ship, autopilot (QA)
+> **Loaded by:** reviewing-deliverables, merging-and-deploying
 
 ## PR Description Structure
 

@@ -25,8 +25,8 @@ SKILL_FIX_CMD="commands/skill-fix.md"
   [[ -n "$desc" ]]
 }
 
-@test "AC1: SKILL.md has AUTOPILOT-GUARD block" {
-  grep -q '<AUTOPILOT-GUARD>' "$SKILL_FIX_SKILL"
+@test "AC1: SKILL.md has SKILL-FIX-GUARD block" {
+  grep -q '<SKILL-FIX-GUARD>' "$SKILL_FIX_SKILL"
 }
 
 @test "AC1: explicit invocation path leads to interview" {

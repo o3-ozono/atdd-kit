@@ -41,8 +41,3 @@
 @test "AC5: setup-github references type:research label" {
   grep -q 'type:research' commands/setup-github.md
 }
-
-@test "AC5: issue skill references research task type" {
-  grep -q 'research' skills/issue/SKILL.md
-  ! grep -q 'investigation' skills/issue/SKILL.md
-}

@@ -1,6 +1,6 @@
 # Product Goal
 
-> **Loaded by:** discover skill, issue skill
+> **Loaded by:** defining-requirements skill
 
 ## Why atdd-kit Exists
 
@@ -30,18 +30,18 @@ Success is qualitative for now (Phase A). Quantitative metrics will be defined i
 |-----------|-------------|
 | AC gate enforced | No PR merges without AC-verified implementation |
 | Resumability | A session started after a week gap picks up cleanly via session-start |
-| Skill chain stability | skill regressions are caught by L4 tests before merge |
-| Zero skip | Hiro does not bypass discover/plan/atdd even on small changes |
-| Documentation alive | docs/ stays in sync with skill behavior; stale docs are flagged in plan |
+| Skill chain stability | skill regressions are caught by BATS tests before merge |
+| Zero skip | Hiro does not bypass defining-requirements/writing-plan-and-tests/running-atdd-cycle even on small changes |
+| Documentation alive | docs/ stays in sync with skill behavior; stale docs are flagged in writing-plan-and-tests |
 
 ## Current Achievement
 
 | Area | Status |
 |------|--------|
-| Skill chain (discover → plan → atdd → verify → ship) | Operational |
-| AC Review Round (autopilot) | Operational (regression tracked in #162) |
-| L4 integration tests (atdd, discover, plan) | Operational; 5 more skills pending (#141–#147) |
-| CI eval auto-block | Planned (#73) |
+| Skill chain (defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying) | Operational |
+| AC Review Round (reviewing-deliverables) | Operational (regression tracked in #162) |
+| BATS integration tests (running-atdd-cycle, defining-requirements, writing-plan-and-tests) | Operational; more skills pending (#141–#147) |
+| CI test auto-block | Planned (#73) |
 | Kanban Board (GitHub Projects v2) | Planned (#168) |
 | Scrumban methodology docs | This PR (#166) |
 

@@ -1,13 +1,13 @@
 # Error Handling Rules
 
-> **Loaded by:** autopilot (Dev), atdd
+> **Loaded by:** running-atdd-cycle
 
 When an error occurs, **do not jump to a workaround.**
 
 ## Steps
 
 1. **Quick investigation** -- Read the error message carefully. Check official docs and GitHub Issues for known solutions.
-2. **Parallel deep investigation** -- Spawn multiple investigation sub-agents to research the cause and explore alternatives in parallel.
+2. **Deep investigation** -- Research the cause and explore alternatives before changing approach.
 3. **Present to user** -- If the straightforward fix doesn't work, present findings and alternatives to the user for approval.
 
 ## Prohibited

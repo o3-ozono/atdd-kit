@@ -15,7 +15,7 @@ How-to guides and reference materials for day-to-day usage.
 | [getting-started.md](guides/getting-started.md) | First-time user walkthrough from feature to merged PR |
 | [review-guide.md](guides/review-guide.md) | PR review guide for ship and QA |
 | [skill-authoring-guide.md](guides/skill-authoring-guide.md) | Dialogue UX design principles for skill authors |
-| [skill-status-spec.md](guides/skill-status-spec.md) | SKILL_STATUS block field definitions and autopilot action matrix |
+| [skill-status-spec.md](guides/skill-status-spec.md) | SKILL_STATUS block field definitions and action matrix |
 
 ## product/
 
@@ -34,7 +34,7 @@ Deep-dive methodology documents for ATDD, Scrumban, and related practices.
 
 | Document | Description |
 |----------|-------------|
-| [atdd-guide.md](methodology/atdd-guide.md) | ATDD methodology guide for the atdd skill and Issue templates |
+| [atdd-guide.md](methodology/atdd-guide.md) | ATDD methodology guide for the running-atdd-cycle skill and Issue templates |
 | [bug-fix-process.md](methodology/bug-fix-process.md) | Bug fix workflow and triage process |
 | [definition-of-done.md](methodology/definition-of-done.md) | Definition of Done — AC gate, CI gate, PR gate, documentation gate |
 | [definition-of-ready.md](methodology/definition-of-ready.md) | Definition of Ready — criteria for Issue to reach ready-to-go state |
@@ -48,9 +48,8 @@ Workflow reference documents for the full Issue lifecycle.
 
 | Document | Description |
 |----------|-------------|
-| [autonomy-levels.md](workflow/autonomy-levels.md) | Autonomy level definitions and escalation rules |
-| [issue-ready-flow.md](workflow/issue-ready-flow.md) | Issue Ready flow (discover + plan) reference |
-| [workflow-detail.md](workflow/workflow-detail.md) | Full workflow detail for session-start and autopilot |
+| [issue-ready-flow.md](workflow/issue-ready-flow.md) | Issue Ready flow (defining-requirements + writing-plan-and-tests) reference |
+| [workflow-detail.md](workflow/workflow-detail.md) | Full workflow detail for session-start and the 6-step flow |
 
 ## specs/
 

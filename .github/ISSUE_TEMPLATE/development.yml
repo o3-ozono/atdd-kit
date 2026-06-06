@@ -7,11 +7,12 @@ body:
     attributes:
       label: Skill Checklist
       options:
-        - label: "atdd-kit:discover — Derive requirements, approach, and AC"
-        - label: "Confirm test requirements with user"
-        - label: "atdd-kit:atdd — ATDD double-loop TDD"
-        - label: "atdd-kit:verify — Local + CI verification"
-        - label: "atdd-kit:ship — PR creation, review, merge"
+        - label: "atdd-kit:defining-requirements — Derive requirements, approach, and AC"
+        - label: "atdd-kit:extracting-user-stories — Extract user stories"
+        - label: "atdd-kit:writing-plan-and-tests — Plan + acceptance tests"
+        - label: "atdd-kit:running-atdd-cycle — ATDD cycle (RED → GREEN)"
+        - label: "atdd-kit:reviewing-deliverables — Review deliverables"
+        - label: "atdd-kit:merging-and-deploying — Merge & deploy"
   - type: textarea
     id: user-story
     attributes:

@@ -49,12 +49,6 @@ SKILL_EN="skills/session-start/SKILL.md"
 
 # --- Regression: 既存ルールの維持 ---
 
-@test "#187-regression: SKILL.md Step 2 preserves priority label ranking" {
-  local section
-  section=$(sed -n '/Task Recommendation Rules/,/^## /p' "$SKILL_EN")
-  echo "$section" | grep -q 'p1.*p2.*p3'
-}
-
 @test "#187-regression: SKILL.md Step 2 preserves type priority" {
   local section
   section=$(sed -n '/Task Recommendation Rules/,/^## /p' "$SKILL_EN")

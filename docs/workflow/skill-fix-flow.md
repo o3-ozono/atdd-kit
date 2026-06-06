@@ -2,19 +2,16 @@
 
 ## Overview
 
-The `skill-fix` flow allows reporting atdd-kit skill defects during an active session without interrupting the current work. It launches a background subagent that creates a new Issue and drives it to `ready-to-go` using the `--skill-fix` bypass on the discover skill.
+The `skill-fix` flow allows reporting atdd-kit skill defects during an active session without interrupting the current work. It launches a background subagent that creates a new Issue and drives it to `ready-to-go` by invoking `writing-plan-and-tests` with the `--skill-fix` flag (inline plan mode, quality gates retained).
 
-## Strategy: β (Guard Bypass, discover-only)
+## Strategy: β (background subagent, Skill-chain only)
 
-`skills/discover/SKILL.md` AUTOPILOT-GUARD is extended to accept `--skill-fix` in addition to `--autopilot`. The `plan` SKILL.md is **unchanged** (HARD-GATE maintained — see AC10).
+The subagent runs with `isolation: worktree` + `run_in_background: true` and uses the **Skill tool chain only** — it does not use the Agent tool (see Spike Results below). Quality gates are retained throughout:
 
-### HARD-GATE compensation (5 points)
-
-1. **Scope minimization**: only discover is modified, plan is unchanged
-2. **Audit trail**: `<!-- skill-fix-audit: invoked via --skill-fix bypass from parent-issue #N at <ISO-8601> -->` marker in every skill-fix-created Issue body
-3. **Quality gate retention**: MUST-1/2/3 + UX U1-U5 + Interruption I1-I4 all execute under `--skill-fix`
-4. **BLOCKED termination**: gate FAIL → `blocked-ac` label + blocker comment, no `ready-to-go`
-5. **CHANGELOG declaration**: Keep a Changelog "Changed" section explicitly notes the HARD-GATE contract change
+1. **Scope minimization**: the subagent only creates an Issue and runs the target skill plus `writing-plan-and-tests --skill-fix`.
+2. **Audit trail**: every skill-fix-created Issue body carries a `<!-- skill-fix-audit: ... -->` marker.
+3. **Quality gate retention**: MUST-1/2/3 + UX U1-U5 + Interruption I1-I4 all execute under `--skill-fix`.
+4. **BLOCKED termination**: any gate FAIL → `blocked-ac` label + blocker comment, no `ready-to-go`.
 
 ## Trigger Conditions
 
@@ -23,7 +20,7 @@ The `skill-fix` flow allows reporting atdd-kit skill defects during an active se
 | Explicit | User runs `/atdd-kit:skill-fix` | Start interview immediately |
 | Implicit | Message contains skill name + intent verb (both required) | Ask one confirmation question |
 
-**Skill names**: discover / plan / atdd / verify / ship / bug / issue / session-start / autopilot
+**Skill names**: defining-requirements / extracting-user-stories / writing-plan-and-tests / running-atdd-cycle / reviewing-deliverables / merging-and-deploying / bug / session-start
 
 **Intent verbs**: 改善 / 修正 / バグ / おかしい / 直したい / fix / improve / broken / wrong
 
@@ -31,32 +28,31 @@ The `skill-fix` flow allows reporting atdd-kit skill defects during an active se
 
 ```
 (main session)
-  └─ AC1: trigger detected
-      └─ AC2: interview Q1/Q2/Q3
-          └─ AC3: duplicate check (main session, 4-class)
-              └─ AC7: parallel guard check
-                  └─ AC4: dispatch subagent (isolation: worktree, run_in_background: true)
-                      ├─ (subagent) /atdd-kit:issue → new issue <new_n>
-                      ├─ (subagent) append audit marker
-                      ├─ (subagent) AC5: RED baseline or GREEN fallback
-                      ├─ (subagent) post evidence comment
-                      ├─ (subagent) /atdd-kit:discover <new_n> --skill-fix
-                      │    ├─ quality gate PASS → gh issue edit <new_n> --add-label ready-to-go
-                      │    └─ quality gate FAIL → blocked-ac label + blocker comment
-                      └─ (subagent) exit
+  └─ Phase 1: trigger detected → interview Q1/Q2/Q3
+      └─ Phase 2: duplicate check (main session, 4-class)
+          └─ Phase 3: parallel activity guard (inflight registry)
+              └─ Phase 4: dispatch subagent (isolation: worktree, run_in_background: true)
+                  ├─ (subagent) gh issue create → new issue <new_n>
+                  ├─ (subagent) append audit marker
+                  ├─ (subagent) run target skill → RED baseline or GREEN fallback
+                  ├─ (subagent) post evidence comment
+                  ├─ (subagent) /atdd-kit:writing-plan-and-tests <new_n> --skill-fix
+                  │    ├─ quality gate PASS → gh issue edit <new_n> --add-label ready-to-go
+                  │    └─ quality gate FAIL → blocked-ac label + blocker comment
+                  └─ (subagent) exit
 (main session resumes immediately — non-blocking)
-  └─ AC6: at next phase boundary, check <new_n> labels → 1-line report
+  └─ Phase 5: at next phase boundary, check <new_n> labels → 1-line report
 ```
 
-## AC9: Failure Path
+## Failure Path
 
 When subagent exits FAILED/BLOCKED/timeout:
 
 1. Main session reports at next phase boundary: `skill-fix dispatch failed: #N (phase=<last_phase>) / link: <URL>`
 2. `gh issue comment <new_n>` posts `failed: <reason>` (distinct from `blocked-ac`)
-3. Subagent handles worktree/team cleanup before exit
+3. Subagent handles worktree cleanup before exit
 
-## Env Contract (AC8 — Spike-verified)
+## Env Contract (Spike-verified)
 
 | Variable | Behavior | Spike Result |
 |----------|----------|--------------|
@@ -67,16 +63,16 @@ When subagent exits FAILED/BLOCKED/timeout:
 
 ## Spike Results
 
-The following was observed in autopilot-119 worktree with `run_in_background: true` + `isolation: worktree`:
+The following was observed in an isolated worktree with `run_in_background: true` + `isolation: worktree`:
 
 ### (i) run_in_background: true completion notification
 - **OK** — `<task-notification>` delivered to main session on next turn
 
 ### (ii) Nested Agent tool spawn
 - **BLOCKED** — Agent tool not present in child agent's tool set (structural absence, no workaround)
-- This is why α strategy (nested autopilot) was abandoned and β strategy was adopted
+- This is why a nested-Agent strategy was abandoned and the Skill-chain-only β strategy was adopted
 
-### (iii) 3 env inheritance behavior
+### (iii) env inheritance behavior
 - `ATDD_AUTOPILOT_WORKTREE`: **unset** (child worktree path used instead)
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`: `1` (inherited)
 - `GH_TOKEN`: set (inherited)
@@ -99,16 +95,16 @@ The following was observed in autopilot-119 worktree with `run_in_background: tr
 | `commands/skill-fix.md` | Explicit invocation entry |
 | `lib/skill_fix_dispatch.sh` | Shell functions: dispatch, inflight registry, env, cleanup |
 | `templates/workflow/blocked_ac_comment.md` | Blocker comment template |
-| `skills/discover/SKILL.md` | Modified: AUTOPILOT-GUARD + HARD-GATE + Step 7 (legacy; persona auto-select removed in #218) |
+| `skills/writing-plan-and-tests/SKILL.md` | Invoked with `--skill-fix` (inline plan mode, quality gates retained) |
 
 ## Known Limitations
 
-### AC7: Inflight Registry Race Condition (deferred)
+### Inflight Registry Race Condition (deferred)
 
-The inflight registry (`lib/skill_fix_dispatch.sh`) uses a file-based approach with 1-entry-per-line format. Within a single session this is safe (sequential dispatch). However, the following are **out of scope** for this PR and deferred to a follow-up Issue:
+The inflight registry (`lib/skill_fix_dispatch.sh`) uses a file-based approach with 1-entry-per-line format. Within a single session this is safe (sequential dispatch). However, the following are **out of scope** and deferred to a follow-up Issue:
 
 1. **Atomic RMW**: `register_inflight` uses `>>` append (safe for concurrent appends) but `deregister_inflight` uses `sed -i` (non-atomic under concurrent delete). A `flock`-based wrapper would eliminate the race.
-2. **Exact-match query**: `query_inflight` uses `grep "\"skill\": \"${skill}\""` which is exact-match on the field value. The surrounding JSON structure (1 entry per line) prevents prefix collisions (e.g., `plan` vs `planner` are distinct field values).
+2. **Exact-match query**: `query_inflight` uses `grep "\"skill\": \"${skill}\""` which is exact-match on the field value. The surrounding JSON structure (1 entry per line) prevents prefix collisions.
 
 **Design rationale for deferral**: skill-fix is triggered interactively in a single session; the inflight check → dispatch sequence is synchronous. True parallel dispatch from the same session requires the user to simultaneously complete two separate 3-question interviews, which is not a realistic use case.
 

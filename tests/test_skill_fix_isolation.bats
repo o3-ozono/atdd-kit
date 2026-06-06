@@ -25,7 +25,7 @@ DISPATCH_LIB="lib/skill_fix_dispatch.sh"
 
 @test "AC4: dispatch lib generates subagent prompt with isolation context" {
   prompt=$(SKILL_FIX_TIMESTAMP_OVERRIDE="2026-04-21T00:00:00Z" \
-    bash "$DISPATCH_LIB" build_subagent_prompt 42 99 discover "Q3 test info")
+    bash "$DISPATCH_LIB" build_subagent_prompt 42 99 defining-requirements "Q3 test info")
   # Prompt should reference skill-fix subagent role
   echo "$prompt" | grep -qi 'subagent\|skill-fix'
   # Prompt should NOT reference main session worktree

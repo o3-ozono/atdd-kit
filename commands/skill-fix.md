@@ -10,7 +10,7 @@ Explicit entry point for reporting atdd-kit skill defects during an active sessi
 
 1. Starts the skill-fix Interview (Q1/Q2/Q3) immediately
 2. Runs duplicate check in the main session
-3. Dispatches a background subagent that creates a new Issue and runs `/atdd-kit:discover <n> --skill-fix`
+3. Dispatches a background subagent that creates a new Issue and runs `/atdd-kit:writing-plan-and-tests <n> --skill-fix`
 4. Returns control to main session immediately (non-blocking)
 5. Reports 1 line at the next phase boundary
 
@@ -29,7 +29,7 @@ No arguments required. The skill guides you through 3 questions.
 ## Implicit trigger
 
 The skill-fix skill also triggers implicitly when your message contains both:
-- A skill name: `discover / plan / atdd / verify / ship / bug / issue / session-start / autopilot`
+- A skill name: `defining-requirements / extracting-user-stories / writing-plan-and-tests / running-atdd-cycle / reviewing-deliverables / merging-and-deploying / bug / session-start`
 - An intent verb: 改善 / 修正 / バグ / おかしい / 直したい / fix / improve / broken / wrong
 
 In that case, a single confirmation question is asked before starting the interview.

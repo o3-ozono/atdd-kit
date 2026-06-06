@@ -24,10 +24,6 @@
   [[ -z "$result" ]]
 }
 
-@test "AC7: discover SKILL.md uses research instead of investigation for task type" {
-  ! grep -q 'type:investigation' skills/discover/SKILL.md
-}
-
 @test "AC7: debugging SKILL.md has no investigation task type reference" {
   ! grep -q 'type:investigation' skills/debugging/SKILL.md
 }

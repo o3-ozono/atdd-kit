@@ -4,13 +4,13 @@
 # Agents must NOT have pinned model or effort; session-level settings inherit instead.
 
 @test "AC1: no pinned model field in any agent file" {
-  for agent in developer qa researcher tester reviewer writer; do
+  for agent in prd-reviewer us-reviewer plan-reviewer code-reviewer at-reviewer final-reviewer; do
     ! grep -q '^model:' "agents/${agent}.md"
   done
 }
 
 @test "AC2: no pinned effort field in any agent file" {
-  for agent in developer qa researcher tester reviewer writer; do
+  for agent in prd-reviewer us-reviewer plan-reviewer code-reviewer at-reviewer final-reviewer; do
     ! grep -q '^effort:' "agents/${agent}.md"
   done
 }

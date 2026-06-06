@@ -42,28 +42,8 @@
 }
 
 # ---------------------------------------------------------------------------
-# AC4: autopilot Prerequisites Check fallback guidance
-# ---------------------------------------------------------------------------
-
-@test "AC4: autopilot error message mentions CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" {
-  grep -A 3 'not found' commands/autopilot.md | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
-
-@test "AC4: autopilot error message references settings.local.json" {
-  grep -A 3 'not found' commands/autopilot.md | grep -q 'settings\.local\.json'
-}
-
-@test "AC4: autopilot error message instructs to restart session" {
-  grep -A 3 'not found' commands/autopilot.md | grep -q 'restart\|new session'
-}
-
-# ---------------------------------------------------------------------------
 # AC5: Documentation includes prerequisite
 # ---------------------------------------------------------------------------
-
-@test "AC5: autopilot Prerequisites lists env var" {
-  grep -A 5 '## Prerequisites' commands/autopilot.md | grep -q 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'
-}
 
 @test "AC5: workflow-detail.md mentions settings.local.json for env var" {
   grep -q 'settings\.local\.json' docs/workflow/workflow-detail.md

@@ -1,6 +1,6 @@
 # Workflow Detail
 
-> **Loaded by:** session-start, autopilot
+> **Loaded by:** session-start
 
 ## Label Flow
 
@@ -10,7 +10,7 @@
   in-progress --(plan complete)--> ready-for-plan-review
   ready-for-plan-review --(Reviewer PASS)--> ready-to-go
   ready-for-plan-review --(Reviewer: revision needed)--> needs-plan-revision --(fix complete)--> ready-for-plan-review  (loop)
-  ready-to-go --(Implementer picks up)--> in-progress
+  ready-to-go --(implementation starts)--> in-progress
 
 [PR]
   ready-for-PR-review --> needs-pr-revision --(fix complete)--> ready-for-PR-review  (loop)
@@ -22,74 +22,29 @@
 | Label | Meaning | AI Behavior |
 |-------|---------|-------------|
 | `in-progress` | Work in progress (exclusive lock) | Someone is actively working on this Issue. Other processes must skip it. |
-| `ready-for-plan-review` | Plan complete, awaiting review | Reviewer reviews the plan. |
-| `needs-plan-revision` | Plan review found issues | User fixes plan in main session (discover/plan). Implementer does not start. |
-| `ready-for-user-approval` | Plan review passed | Reviewer PASS transitions directly to `ready-to-go`. Retained for autonomy:0 manual approval flow. |
-| `ready-to-go` | Design complete, ready for implementation | Implementer picks it up. |
+| `ready-for-plan-review` | Plan complete, awaiting review | `reviewing-deliverables` reviews the plan. |
+| `needs-plan-revision` | Plan review found issues | User fixes the plan in the main session (`defining-requirements` / `writing-plan-and-tests`). Implementation does not start. |
+| `ready-for-user-approval` | Optional manual approval gate | By default Reviewer PASS transitions directly to `ready-to-go`. Retained for projects that want an explicit user sign-off before implementation. |
+| `ready-to-go` | Design complete, ready for implementation | `running-atdd-cycle` picks it up. |
 | `blocked-ac` | skill-fix quality gate failed | Subagent could not reach `ready-to-go`; MUST/UX/Interruption gate failed. Manual review required before adding `ready-to-go`. |
-| `autonomy:0` | Full Control -- all approval gates active | Default if no autonomy label is set. |
-| `autonomy:1` | Guided -- AC approval + merge approval only | Plan review auto-approval if R1-R6 PASS. |
-| `autonomy:2` | Autonomous -- merge approval only | Plan review and user approval auto-skipped. |
-| `autonomy:3` | Full Auto -- fully automated | All gates auto-approved; user retains revert right. |
 
 ### PR Labels
 
 | Label | Meaning | AI Behavior |
 |-------|---------|-------------|
-| `ready-for-PR-review` | Implementation complete, awaiting review | Reviewer starts PR review. |
+| `ready-for-PR-review` | Implementation complete, awaiting review | PR review starts. |
 | `needs-pr-revision` | PR review comments need to be addressed | Implementer fixes -> confirms CI green -> restores `ready-for-PR-review`. |
-
-## Autonomy Levels
-
-See `docs/workflow/autonomy-levels.md` for full details. Labels `autonomy:0` through `autonomy:3` control approval gate density.
-
-### Auto-approval Path (Level 1+)
-
-When autopilot (QA) completes with R1-R6 all PASS and the Issue has `autonomy:1` or higher:
-- `ready-for-plan-review` → `ready-to-go` (skipping `ready-for-user-approval`)
-- Auto-approval comment posted; user can revert with `needs-plan-revision`
 
 ---
 
 ## Execution Mode
 
-After plan approval, work proceeds via Agent Teams:
+Work proceeds through the 6-step skill chain, each step invoked directly in the user's session:
 
-### Agent Teams Mode
+`defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying`
 
-main Claude acts as the orchestrator (PO role) and drives task-type-specific Agent Teams in the user's session. The team completes the full cycle (plan-review -> implement -> code-review -> merge) and disbands.
-
-**Six agents are available:** Developer, QA, Tester, Reviewer, Researcher, Writer (all sonnet). main Claude directly fulfills the PO orchestrator role. Agent composition is determined by Issue task type — see [commands/autopilot.md](../commands/autopilot.md) for the full composition table.
-
-**Agent Lifecycle:** Task-type-specific agents are spawned once in AC Review Round with `isolation: "worktree"`. All subsequent phases communicate with the same agents via SendMessage — no new Agent generation occurs. This preserves agent context across the full workflow.
-
-**Output Channels:** Agent deliverables flow through two channels — never repository files.
-- **Inter-agent handoff** (e.g., QA strategy consumed by Developer): returned via `SendMessage` reply to main Claude.
-- **Human-facing work log** (AC confirmation, Plan conclusion, review results, research reports): main Claude posts as Issue / PR comments via `gh issue comment` / `gh pr comment`.
-
-Agents must not write deliverables to `docs/decisions/` or any other repository path. Knowledge that deserves long-term reference is graduated into existing docs (`docs/`, `DEVELOPMENT.md`, etc.) by explicit human decision.
-
-**Worktree Isolation:** main Claude enters an isolated worktree (`autopilot-{issue_number}`) at Phase 0.9 via EnterWorktree. Developer and QA agents use `isolation: "worktree"` at spawn time for filesystem-level isolation. This enables safe concurrent autopilot sessions on the same repository. Cleanup happens at Phase 5 via ExitWorktree.
-
-**Mid-phase Resume:** When a session restarts at a mid-phase (Phase 2-4), Phase 0.9 re-spawns the required agents (Developer and/or QA depending on the phase), loads prior phase context by reading Issue/PR comments via `gh`, then continues via SendMessage.
-
-Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start)
-
-Launch with `/atdd-kit:autopilot`:
-
-```
-/atdd-kit:autopilot              # Agent Teams (main Claude + Developer + QA)
-/atdd-kit:autopilot 123          # Target a specific Issue
-/atdd-kit:autopilot search text  # Search for an Issue by keyword
-```
-
-### Manual Utilities
-
-| Utility | How to run | Purpose |
-|---------|-----------|---------|
-| **Planning** (discover → plan) | User runs in main session | Interactive requirements and design |
-| **Sweeper** | `/atdd-kit:auto-sweep` | On-demand state anomaly detection |
-| **Skill Eval** | `/atdd-kit:auto-eval` | Run skill evals and detect quality regressions |
+- **Review step** (`reviewing-deliverables`, Step 5) spawns specialist reviewer subagents (PRD, User Story, Plan, Code, Acceptance Test) serially, then a final aggregator returns a single PASS/FAIL.
+- **Deliverables** flow through Issue / PR comments via `gh issue comment` / `gh pr comment` — never written to ad-hoc repository paths. Knowledge worth long-term reference is graduated into `docs/` or `DEVELOPMENT.md` by explicit human decision.
 
 ### Draft PR Locking
 
@@ -99,6 +54,10 @@ After branching, create an empty commit (`git commit --allow-empty`) and push, t
 
 PR comment for state change notifications.
 
+### skill-fix Background Dispatch
+
+The `skill-fix` skill dispatches a background subagent to file a fix Issue without interrupting current work. It requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json` `env` (auto-configured by session-start).
+
 ## Merge Order Control (blocked-by)
 
 When merge order matters, add `blocked-by: #N` to the Issue/PR body. The Implementer checks that the dependency is closed before merging. If not, skip.
@@ -106,29 +65,13 @@ When merge order matters, add `blocked-by: #N` to the Issue/PR body. The Impleme
 ## Architecture Overview
 
 ```mermaid
-graph LR
-    subgraph "Agent Teams (task-type-specific)"
-        MC["main Claude\n(orchestrator)"]
-        D["Developer"]
-        Q["QA"]
-        T["Tester"]
-        R["Reviewer"]
-        RS["Researcher"]
-        W["Writer"]
-    end
-
-    U["User"] -- "request" --> MC
-    MC -- "discover/plan" --> D
-    MC -- "plan-review" --> R
-    MC -- "bug triage" --> T
-    MC -- "research" --> RS
-    MC -- "docs" --> W
-    D -- "atdd/verify/ship" --> R
-    T -- "fix verify" --> R
-    W -- "docs review" --> R
-    R -- "needs-pr-revision" --> D
-    R -- "approved" --> MC
-    MC -- "merge" --> U
+flowchart LR
+    bug["bug (auto)"] --> dr["defining-requirements"]
+    dr --> us["extracting-user-stories"]
+    us --> plan["writing-plan-and-tests"]
+    plan --> atdd["running-atdd-cycle"]
+    atdd --> review["reviewing-deliverables"]
+    review --> ship["merging-and-deploying"]
 ```
 
 ## Label State Machine
@@ -136,12 +79,12 @@ graph LR
 ```mermaid
 stateDiagram-v2
     [*] --> no_label: Issue created
-    no_label --> in_progress: Work started (discover/plan/implement)
+    no_label --> in_progress: Work started
 
     in_progress --> ready_for_plan_review: Plan complete
     ready_for_plan_review --> ready_to_go: Reviewer PASS
 
-    ready_to_go --> in_progress: Implementer picks up
+    ready_to_go --> in_progress: Implementation starts
     in_progress --> ready_for_PR_review: PR ready
 
     ready_for_PR_review --> needs_revision: Review finds critical issues
@@ -151,27 +94,29 @@ stateDiagram-v2
     merged --> [*]
 ```
 
-## Reviewer Parallel Review Flow
+## Reviewer Aggregation Flow
+
+The review step dispatches five specialist reviewers, then a final reviewer aggregates their verdicts.
 
 ```mermaid
 flowchart TD
-    Start["Detect ready-for-PR-review PR"] --> ReadPR["Read PR: diff + Issue ACs + context"]
-    ReadPR --> Detect["Analyze changed files"]
-    Detect --> Select{"Select review agents"}
+    Start["reviewing-deliverables (Step 5)"] --> Spawn{"Spawn specialist reviewers"}
+    Spawn --> PRD["prd-reviewer (10)"]
+    Spawn --> US["us-reviewer (7)"]
+    Spawn --> PLAN["plan-reviewer (10)"]
+    Spawn --> CODE["code-reviewer (10)"]
+    Spawn --> AT["at-reviewer (10)"]
 
-    Select --> CQ["Code Quality (always)"]
-    Select --> A2["Agent 2 (conditional)"]
-    Select --> AN["Agent N (conditional)"]
+    PRD --> Final
+    US --> Final
+    PLAN --> Final
+    CODE --> Final
+    AT --> Final
 
-    CQ --> Judge
-    A2 --> Judge
-    AN --> Judge
-
-    Judge["Judge agent: integrate + filter"]
-    Judge --> Score["Quality Score calculation"]
-    Score --> Decision{"Score >= 70 and critical == 0?"}
-    Decision -- Yes --> Approved["Merge directly"]
-    Decision -- No --> Revision["needs-pr-revision"]
+    Final["final-reviewer: aggregate 47 criteria"]
+    Final --> Decision{"All criteria satisfied?"}
+    Decision -- Yes --> Pass["PASS -> ready-to-go"]
+    Decision -- No --> Fail["FAIL -> needs-plan-revision"]
 ```
 
 ## Configuration Layers
@@ -187,7 +132,6 @@ graph TB
 
     subgraph "Project (git-managed)"
         CFG[".claude/config.yml"]
-        PDOCS["docs/process/"]
     end
 
     RULES -- "references" --> CFG
@@ -196,6 +140,8 @@ graph TB
 ```
 
 ## Quality Score
+
+PR review scores the diff and merges directly when the score clears the bar.
 
 ```
 Quality Score = 100 - (20 x critical) - (10 x warning) - (3 x suggestion)
@@ -228,7 +174,7 @@ Quality Score = 100 - (20 x critical) - (10 x warning) - (3 x suggestion)
 All work follows this flow. No exceptions.
 
 1. **Create Issue** -- From user request or bug report
-1.5. **Design exploration (optional)** -- `ideate` brainstorms approaches before requirements (skippable)
+1.5. **Design exploration (optional)** -- `writing-design-doc` documents trade-offs and alternatives before requirements (skippable)
 2. **Issue Ready flow** -- Execute the flow for the task type, get approval (see `docs/workflow/issue-ready-flow.md`)
 3. **Branch from main -> Create Draft PR immediately**
    - Branch naming: `<prefix>/<issue-number>-<slug>`

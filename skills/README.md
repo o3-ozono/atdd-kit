@@ -6,62 +6,54 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 
 ## Workflow Chain
 
-**Full chain (default for all non-trivial changes):**
-```
-bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
-```
+The v1.0 ATDD flow is a 6-step chain. Each Issue gets its own directory under `docs/issues/<NNN>/`.
 
-**Express path (trivial changes only, explicit user approval required):**
 ```
-express (explicit /atdd-kit:express <issue>) → implement → CI gate → squash merge
+defining-requirements → extracting-user-stories → writing-plan-and-tests
+  → running-atdd-cycle → reviewing-deliverables → merging-and-deploying
 ```
 
-Express mode bypasses discover/plan/Three Amigos/review. Issue-driven development, CI gate, and DEVELOPMENT.md mandatory processes (version bump, CHANGELOG) are maintained. See `docs/guides/express-mode.md` for OK/NG applicability criteria.
+| Step | Skill | Deliverable in `docs/issues/<NNN>/` |
+|------|-------|-------------------------------------|
+| 1 | `defining-requirements` | `prd.md` |
+| 2 | `extracting-user-stories` | `user-stories.md` |
+| 3 | `writing-plan-and-tests` | `plan.md`, `acceptance-tests.md` |
+| 4 | `running-atdd-cycle` | `tests/acceptance/AT-*.*` (draft → green) |
+| 5 | `reviewing-deliverables` | review notes |
+| 6 | `merging-and-deploying` | merged PR + post-deploy regression |
 
-## State Gate
-
-Skills in the core workflow chain (plan, atdd, verify, ship) include a **State Gate** that verifies GitHub label preconditions before execution. This prevents workflow violations structurally:
-
-| Skill | Required Label | Gate Action on Pass |
-|-------|---------------|-------------------|
-| plan | `in-progress` + discover deliverables | Proceed to planning |
-| atdd | `ready-to-go` | Remove label, add `in-progress` |
-| verify | `in-progress` | Proceed to verification |
-| ship | `in-progress` | Proceed to ship flow |
-
-Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an Issue.
+Resume mid-flow by invoking the skill for the next incomplete step. `skill-gate` routes Issue work to Step 1 (`defining-requirements`) and enforces **Iron Law #1**: no code editing without an Issue. Step 4 (`running-atdd-cycle`) starts from a `ready-to-go` Issue and switches it to `in-progress`.
 
 ## Skill List
 
+### v1.0 Flow
+
 | Skill | Trigger | Workflow Position |
 |-------|---------|-------------------|
-| [atdd](atdd/) | Manually invoked on ready-to-go Issues | Core chain: implementation |
-| [express](express/) | Explicitly invoked via `/atdd-kit:express` for trivial changes | Express path: fast implementation → CI → merge |
-| [bug](bug/) | Auto-triggers on bug/error keywords | Entry point → chains to discover |
+| [defining-requirements](defining-requirements/) | Step 1 of Issue work; routed by skill-gate | Discovery & Definition → PRD |
+| [extracting-user-stories](extracting-user-stories/) | Step 2, chained from defining-requirements | User Story extraction |
+| [writing-plan-and-tests](writing-plan-and-tests/) | Step 3, chained from extracting-user-stories | Plan + Acceptance Tests |
+| [running-atdd-cycle](running-atdd-cycle/) | Step 4, manually invoked on `ready-to-go` Issues | ATDD implementation (draft → green) |
+| [reviewing-deliverables](reviewing-deliverables/) | Step 5, after green | Review (spawns specialist reviewer agents) |
+| [merging-and-deploying](merging-and-deploying/) | Step 6, after review PASS | Merge + post-deploy regression |
+| [writing-design-doc](writing-design-doc/) | On-demand, conditional | Design document for non-trivial trade-offs |
+| [launching-preview](launching-preview/) | On-demand | Local preview |
+
+### Infrastructure
+
+| Skill | Trigger | Workflow Position |
+|-------|---------|-------------------|
+| [skill-gate](skill-gate/) | Auto-triggers on every user message | Skill enforcement gate + Issue routing |
+| [session-start](session-start/) | Auto-invoked at session start | Session initialization |
+| [bug](bug/) | Auto-triggers on bug/error keywords | Bug intake → ATDD flow |
 | [debugging](debugging/) | Auto-triggers on bug reports, errors, crashes | Pre-fix root cause investigation |
-| [discover](discover/) | First step of Issue Ready flow | Core chain: requirements → ACs |
-| [ideate](ideate/) | Auto-triggers on exploratory design requests; also chained from issue | Between issue and discover (optional, skippable) |
-| [issue](issue/) | Auto-triggers on feature/task requests | Entry point → chains to ideate |
-| [plan](plan/) | Second step of Issue Ready flow | Core chain: test & implementation strategy |
-| [session-start](session-start/) | Auto-invoked by other skills | Session initialization |
-| [ship](ship/) | Manually invoked after verify passes | Core chain: PR finalization → merge |
+| [skill-fix](skill-fix/) | Auto-triggers on skill name + intent verb; explicit via `/atdd-kit:skill-fix` | Background skill defect reporting |
 | [sim-pool](sim-pool/) | Auto-triggers before iOS simulator tool calls | iOS simulator access management |
-| [skill-fix](skill-fix/) | Auto-triggers on skill name + intent verb; explicit via `/atdd-kit:skill-fix` | Background skill defect reporting without interrupting current work |
-| [skill-gate](skill-gate/) | Auto-triggers on every user message | Skill enforcement gate |
 | [ui-test-debugging](ui-test-debugging/) | Auto-triggers on CI UI Test failures | CI UI Test failure diagnosis |
-| [verify](verify/) | Manually invoked before claiming completion | Core chain: evidence-based verification |
-| [defining-requirements](defining-requirements/) | Implemented (#179 B1) | v1.0 flow: Step 1 Discovery & Definition |
-| [extracting-user-stories](extracting-user-stories/) | Implemented (#179 B2) | v1.0 flow: Step 2 User Story extraction |
-| [writing-plan-and-tests](writing-plan-and-tests/) | Implemented (#179 B3) | v1.0 flow: Step 3 Plan + Acceptance Tests |
-| [running-atdd-cycle](running-atdd-cycle/) | Implemented (#179 B4) | v1.0 flow: Step 4 ATDD implementation |
-| [reviewing-deliverables](reviewing-deliverables/) | Implemented (#179 B5) | v1.0 flow: Step 5 Review |
-| [merging-and-deploying](merging-and-deploying/) | Implemented (#179 B6) | v1.0 flow: Step 6 Merge + Deploy |
-| [launching-preview](launching-preview/) | v1.0 skeleton — not yet implemented (#179 B7) | v1.0 on-demand: local preview |
-| [writing-design-doc](writing-design-doc/) | v1.0 skeleton — not yet implemented (#179 B8) | v1.0 on-demand: design document |
 
 ## References
 
-- [DEVELOPMENT.md](../DEVELOPMENT.md) — Skills vs Commands, skill description field rules, eval requirements
+- [DEVELOPMENT.md](../DEVELOPMENT.md) — Skills vs Commands, skill description field rules
 - Each skill's `SKILL.md` — Full trigger conditions and instructions
-- [agents/](../agents/) — Role definitions for autopilot (Developer, QA, Tester, Reviewer, Researcher, Writer; main Claude acts as orchestrator)
+- [agents/](../agents/) — Reviewer agents spawned by `reviewing-deliverables` (PRD, User Story, Plan, Code, Acceptance Test, Final)
 - [addons/](../addons/) — Platform-specific addon packages

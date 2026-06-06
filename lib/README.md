@@ -1,26 +1,22 @@
 # lib/
 
-Shell library scripts shared across autopilot and hooks.
+Shell library scripts shared across skills, hooks, and the BATS test suite.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `circuit_breaker.sh` | Three-state circuit breaker for autopilot infinite-loop prevention. States: CLOSED → HALF\_OPEN → OPEN. Persists state to `.claude/cb-state.json` (cwd-relative, worktree-scoped). |
+| `scenario_loader.sh` | Validate and echo a headless skill-chain scenario spec (JSON). See `docs/guides/headless-skill-testing.md`. |
+| `skill_assertion.sh` | Subsequence / strict / forbidden match engine for skill-chain assertions. |
+| `skill_fix_dispatch.sh` | Dispatch, inflight registry, env scrubbing, and cleanup for the `skill-fix` background subagent flow. |
+| `skill_transcript_parser.sh` | Extract Skill `tool_use` events from a stream-json transcript. |
+| `spec_check.sh` | Single source of truth for spec-file detection and slug derivation (US/AC spec files). |
 
 ## Usage
 
+Each script prints its own usage when run without arguments, e.g.:
+
 ```bash
-# Check if autopilot should halt (exits non-zero when OPEN)
-bash lib/circuit_breaker.sh check
-
-# Record events
-bash lib/circuit_breaker.sh record_progress       # skill completed successfully
-bash lib/circuit_breaker.sh record_no_progress    # iteration made no progress
-bash lib/circuit_breaker.sh record_error <fp>     # repeated error fingerprint
-
-# Manual reset after resolving root cause
-bash lib/circuit_breaker.sh reset
+bash lib/spec_check.sh derive_slug <issue-number>
+bash lib/skill_fix_dispatch.sh query_inflight [<skill> <phase>]
 ```
-
-See `docs/guides/circuit-breaker.md` for full specification.
