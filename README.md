@@ -2,9 +2,9 @@
 
 [日本語](README.ja.md)
 
-Run your development process with ATDD (Acceptance Test Driven Development) — from Issue to merge — like autonomous driving for your development process.
+Run your development process with ATDD (Acceptance Test Driven Development) — a structured, test-first path from Issue to merge.
 
-A Claude Code plugin that gives you a complete workflow: create an Issue, explore requirements, derive acceptance criteria, write tests first, implement, verify, and ship.
+A Claude Code plugin that gives you a complete workflow: create an Issue, explore requirements, derive acceptance criteria, write tests first, implement, review, and merge.
 
 ## Why atdd-kit?
 
@@ -19,7 +19,7 @@ atdd-kit solves this by enforcing an **Issue-driven, test-first workflow**:
 
 Design principles: zero dependencies, plugin architecture, pure markdown + bash.
 
-**Autopilot mode** takes the wheel. main Claude acts as the orchestrator, driving task-type-specific teams — Developer, QA, Tester, Reviewer, Researcher, Writer — from Issue to merge. You approve key checkpoints; agents handle the rest.
+**A 6-step flow** carries each Issue from requirements to deploy: define requirements → extract user stories → write the plan + acceptance tests → run the ATDD cycle → review → merge & deploy. Each step is a skill you invoke directly, and the review step spawns specialist reviewer subagents that check every deliverable before merge.
 
 ### The ATDD Double Loop
 
@@ -68,33 +68,42 @@ See [Getting Started](docs/guides/getting-started.md) for a full end-to-end walk
 
 ```mermaid
 flowchart LR
-  bug["bug (auto)"] --> discover
-  issue["issue (auto)"] --> ideate["ideate (optional)"] --> discover
-  discover --> plan --> approval["[approval]"] --> atdd --> verify --> ship
+  bug["bug (auto)"] --> dr
+  dr["defining-requirements"] --> us["extracting-user-stories"]
+  us --> plan["writing-plan-and-tests"]
+  plan --> atdd["running-atdd-cycle"]
+  atdd --> review["reviewing-deliverables"]
+  review --> ship["merging-and-deploying"]
 ```
 
 ### Skills
 
-#### Core Workflow
+#### Core Workflow (6 steps)
+
+| Step | Skill | What it does |
+|------|-------|-------------|
+| 1 | **defining-requirements** | Explore requirements through dialogue, derive Given/When/Then acceptance criteria, produce the PRD |
+| 2 | **extracting-user-stories** | Derive user stories from the PRD |
+| 3 | **writing-plan-and-tests** | Create a test-first implementation plan plus the acceptance tests |
+| 4 | **running-atdd-cycle** | Execute the ATDD double loop — outer acceptance tests, inner unit tests |
+| 5 | **reviewing-deliverables** | Serially review every deliverable (PRD/US/Plan/Code/AT) with specialist reviewer subagents and produce a single PASS/FAIL |
+| 6 | **merging-and-deploying** | Merge → deploy → re-run regression acceptance tests post-deploy |
+
+#### On-demand
 
 | Skill | What it does |
 |-------|-------------|
-| **discover** | Explore requirements through dialogue, derive Given/When/Then acceptance criteria |
-| **plan** | Create a test-first implementation plan from acceptance criteria |
-| **atdd** | Execute the ATDD double loop — outer E2E tests, inner unit tests |
-| **verify** | Verify all acceptance criteria pass with fresh evidence |
-| **ship** | Finalize PR, handle review cycle, squash merge |
+| **writing-design-doc** | Design exploration — trade-offs and alternatives, when a decision needs documenting |
+| **launching-preview** | Build and launch a preview for manual confirmation |
 
 #### Auto-trigger
 
 | Skill | What it does |
 |-------|-------------|
-| **issue** | Auto-detects task requests and starts Issue creation |
 | **bug** | Auto-detects bug reports and starts the triage pipeline |
-| **ideate** | Design exploration -- auto-triggers on exploratory requests, also chains from issue before discover |
 | **debugging** | Auto-detects error reports and starts root cause investigation |
 | **skill-gate** | Ensures relevant skills are invoked before direct work |
-| **skill-fix** | Reports atdd-kit skill defects mid-session; dispatches a background subagent to create a ready-to-go fix Issue without interrupting current work |
+| **skill-fix** | Reports atdd-kit skill defects mid-session; dispatches a background subagent to create a fix Issue without interrupting current work |
 
 #### Utilities
 
@@ -102,74 +111,38 @@ flowchart LR
 |-------|-------------|
 | **session-start** | Reports git status, open PRs/Issues, and recommends next tasks |
 | **sim-pool** | iOS simulator pool management (addon) |
+| **ui-test-debugging** | Diagnose flaky or failing UI tests (addon) |
 
 ### Commands
 
 | Command | What it does |
 |---------|-------------|
-| `/atdd-kit:autopilot` | Autopilot — main Claude orchestrates task-type-specific Agent Teams for end-to-end Issue completion |
-| `/atdd-kit:auto-sweep` | Sweeper utility (manual, on-demand) |
-| `/atdd-kit:auto-eval` | Skill eval runner (detects regressions in skill quality) |
 | `/atdd-kit:setup-github` | Set up GitHub issue/PR templates and labels |
 | `/atdd-kit:setup-ci` | Generate CI workflow from base + addon fragments |
 | `/atdd-kit:setup-ios` | Manually set up iOS addon (MCP servers, hooks, scripts) |
 | `/atdd-kit:setup-web` | Manually set up Web addon (placeholder) |
+| `/atdd-kit:maintenance` | Periodic repo health check (line counts, staleness detection, Issue creation) |
+| `/atdd-kit:skill-fix` | Manually trigger the atdd-kit skill-defect report flow |
 
 ## Architecture
 
-### Workflow Phases
+### Review Subagents
 
-```mermaid
-flowchart TD
-  P1["Phase 1: discover\n(main Claude leads)"] --> P2["Phase 2: plan\n(main Claude orchestrates, task-type agents lead)"]
-  P2 --> P3{"Task type branch"}
-  P3 -->|development / bug| P3a["Developer + QA"]
-  P3 -->|research| P3b["Researcher x N"]
-  P3 -->|documentation| P3c["Writer + Reviewer x N"]
-  P3 -->|refactoring| P3d["Developer + Reviewer x N"]
-  P3a --> P4["Phase 4: PR Review\n(Reviewer x N)"]
-  P3b --> P5["Phase 5: Merge\n(main Claude)"]
-  P3c --> P4
-  P3d --> P4
-  P4 --> P5
-```
+The review step (`reviewing-deliverables`, Step 5) spawns six specialist reviewer subagents serially — each receives an isolated context and checks one deliverable against a fixed set of structural criteria. A final aggregator combines their verdicts into a single PASS/FAIL.
 
-### Agent Teams
-
-main Claude acts as the orchestrator (PO role) and drives task-type-specific teams. Six agents are available:
-
-| Agent | Role | Model |
-|-------|------|-------|
-| **Developer** | ATDD implementation, cannot self-review | sonnet |
-| **QA** | Test strategy and verification, cannot edit code | sonnet |
-| **Tester** | Bug reproduction and fix verification | sonnet |
-| **Reviewer** | Code review across task types, cannot edit code | sonnet |
-| **Researcher** | Research and analysis, cannot edit code | sonnet |
-| **Writer** | Documentation creation, can edit files | sonnet |
-
-**Agent composition by task type** (see [autopilot.md](commands/autopilot.md) for details):
-
-| Task Type | Phase 1 Agents | Phase 2 Agents |
-|-----------|----------------|----------------|
-| development | main Claude, Developer, QA | main Claude, Developer, Reviewer x N |
-| bug | main Claude, Tester, Developer | main Claude, Developer, Tester, Reviewer x N |
-| research | main Claude | main Claude, Researcher x N (min 2 per theme) |
-| documentation | main Claude | main Claude, Writer, Reviewer x N |
-| refactoring | main Claude | main Claude, Developer, Reviewer x N |
-
-```bash
-# Auto-detect in-progress Issue, launch Agent Teams
-/atdd-kit:autopilot
-
-# Target a specific Issue
-/atdd-kit:autopilot 123
-/atdd-kit:autopilot search keywords
-```
+| Agent | Reviews | Criteria |
+|-------|---------|----------|
+| **prd-reviewer** | PRD (`defining-requirements` output) | 10 |
+| **us-reviewer** | User Stories (`extracting-user-stories` output) | 7 |
+| **plan-reviewer** | Implementation Plan | 10 |
+| **code-reviewer** | Production code changes | 10 |
+| **at-reviewer** | Acceptance Tests | 10 |
+| **final-reviewer** | Aggregates the 5 specialist verdicts (47 criteria total) → PASS/FAIL | — |
 
 ### Label Flow
 
 ```
-[Issue]  (no label) → in-progress → ready-for-plan-review → ready-to-go → in-progress
+[Issue]  (no label) → in-progress → ready-to-go → in-progress
 [PR]     ready-for-PR-review → needs-pr-revision (loop) → merge
 ```
 
@@ -192,39 +165,6 @@ Only ~30 lines loaded every turn (kept minimal to save context):
 - PR rules (squash merge)
 
 Detailed guides live in `docs/` and load on-demand.
-
-## Spawn Profile
-
-`/atdd-kit:autopilot` spawns sub-agents (developer / qa / tester / reviewer / researcher / writer) via the Agent tool. You can optionally pin per-role models by editing `.claude/config.yml`:
-
-```yaml
-spawn_profiles:
-  custom:
-    developer:  { model: sonnet }
-    qa:         { model: sonnet }
-    tester:     { model: sonnet }
-    reviewer:   { model: opus }
-    researcher: { model: sonnet }
-    writer:     { model: sonnet }
-```
-
-Model enum: `sonnet`, `opus`, `haiku`. Roles not listed inherit the **session default** (the Agent tool `model` parameter is omitted).
-
-### Invocation paths
-
-| Command | Behavior |
-|---|---|
-| `/atdd-kit:autopilot 123` | Applies `spawn_profiles.custom` automatically if present; otherwise every role falls back to session default. No confirmation gate. |
-| `/atdd-kit:autopilot 123 --profile="reviewer only heavy"` | Overlays NL on top of `custom` — NL wins on role collisions; roles present in neither `custom` nor the NL fall back to session default. A confirmation gate presents the resolved matrix before any Team / worktree is created. |
-
-Main Claude (the orchestrator) always keeps its session default — the profile only applies to sub-agent spawns.
-
-### BREAKING note (Issue #122)
-
-The legacy `--light` / `--heavy` preset flags have been **removed**. Passing either now halts with
-`Unknown flag: --light (removed in BREAKING change; use --profile="..." instead. supported: --profile)` (substituting `--heavy` as appropriate). Replace previous preset usage by defining `spawn_profiles.custom` in `.claude/config.yml` (for sticky defaults) and/or `--profile="..."` (for one-off overrides).
-
-The legacy `.claude/workflow-config.yml` and plugin-side `config/spawn-profiles.yml` have been merged into `.claude/config.yml`. `session-start` auto-migrates projects on the next session.
 
 ## Contributing
 

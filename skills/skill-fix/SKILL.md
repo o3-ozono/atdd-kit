@@ -1,6 +1,6 @@
 ---
 name: skill-fix
-description: "Use when a skill name (discover/plan/atdd/verify/ship/bug/issue/session-start/autopilot) and an intent verb (改善/修正/バグ/おかしい/直したい/fix/improve) both appear in the same message, indicating a skill defect should be reported. Also triggers on explicit /atdd-kit:skill-fix invocation."
+description: "Use when a skill name (defining-requirements/extracting-user-stories/writing-plan-and-tests/running-atdd-cycle/reviewing-deliverables/merging-and-deploying/bug/session-start) and an intent verb (改善/修正/バグ/おかしい/直したい/fix/improve) both appear in the same message, indicating a skill defect should be reported. Also triggers on explicit /atdd-kit:skill-fix invocation."
 ---
 
 ## Session Start Check (required)
@@ -9,12 +9,12 @@ If `session-start` has not run in this session, run `/atdd-kit:session-start` fi
 
 # skill-fix Skill — Background Skill Defect Reporting
 
-<AUTOPILOT-GUARD>
+<SKILL-FIX-GUARD>
 If ARGUMENTS does not contain `--skill-fix` and is not invoked via `/atdd-kit:skill-fix` command:
 - Display message: "skill-fix: direct invocation requires /atdd-kit:skill-fix."
 - **STOP.** Do not proceed with execution.
 If ARGUMENTS contains `--skill-fix` or command is `/atdd-kit:skill-fix`: skip this guard silently.
-</AUTOPILOT-GUARD>
+</SKILL-FIX-GUARD>
 
 ---
 
@@ -25,7 +25,7 @@ Two trigger paths:
 **(a) Explicit invocation:** User runs `/atdd-kit:skill-fix` → proceed immediately to Interview.
 
 **(b) Implicit trigger:** User message contains BOTH:
-- **skill 名** (skill name): one of `discover / plan / atdd / verify / ship / bug / issue / session-start / autopilot`
+- **skill 名** (skill name): one of `defining-requirements / extracting-user-stories / writing-plan-and-tests / running-atdd-cycle / reviewing-deliverables / merging-and-deploying / bug / session-start`
 - **意向動詞** (intent verb): 改善 / 修正 / バグ / おかしい / 直したい / fix / improve / broken / wrong
 
 When BOTH conditions hold: ask ONE 確認質問 (confirmation question):
@@ -42,7 +42,7 @@ When BOTH conditions hold: ask ONE 確認質問 (confirmation question):
 Ask exactly **Q1, Q2, Q3** in sequence. 追加質問は出さない (no additional questions beyond Q3).
 
 **Q1:** どの skill の、どの phase（step）で期待外れでしたか？
-（例: discover の Step 3a-listing で、persona が自動選択されなかった）
+（例: defining-requirements の Step 3 で、AC が Given/When/Then 形式で出力されなかった）
 
 **Q2:** 本来どう進むべきでしたか？（正しい動作を具体的に）
 
@@ -96,12 +96,12 @@ Dispatch a single subagent using `isolation: worktree` + `run_in_background: tru
 **The subagent does NOT use Agent tool.** It uses Skill tool chain only:
 
 ```
-1. /atdd-kit:issue   → creates new issue <new_n>
+1. gh issue create (templates/issue/en/development.yml)  → creates new issue <new_n>
 2. Append audit marker to <new_n> issue body:
    <!-- skill-fix-audit: invoked via --skill-fix bypass from parent-issue #<parent_n> at <ISO-8601 timestamp> -->
 3. Run target skill via Skill tool (blank context) → RED baseline or GREEN fallback (AC5)
 4. Post evidence as gh issue comment on <new_n>
-5. /atdd-kit:discover <new_n> --skill-fix  → inline plan mode, quality gates retained
+5. /atdd-kit:writing-plan-and-tests <new_n> --skill-fix  → inline plan mode, quality gates retained
 6. On MUST/UX/Interruption FAIL: add blocked-ac label + blocker comment, exit (no ready-to-go)
 7. On all gates PASS: gh issue edit <new_n> --add-label ready-to-go
 8. Observe <new_n> label (ready-to-go / blocked-ac / closed) → normal exit
@@ -148,7 +148,7 @@ If subagent exits FAILED / BLOCKED / timeout:
 
 ---
 
-## Status Output (autopilot mode)
+## Status Output
 
 ```skill-status
 SKILL_STATUS: COMPLETE | PENDING | BLOCKED | FAILED

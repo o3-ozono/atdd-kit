@@ -44,7 +44,7 @@ When editing LLM-facing files, apply tight English style to minimize token count
 6. Convert polite instructions ("You MUST/should/need to") to imperatives ("Verify X", "Run Y").
 7. Compress error handling to 1 sentence.
 
-Protected elements: YAML frontmatter fields, code block contents, XML guard tag blocks (`<HARD-GATE>`, `<AUTOPILOT-GUARD>`, `<SUBAGENT-STOP>`) — structure preserved and text inside may be tightened provided BATS-verified strings are not altered, step numbers, and `If X:` conditional structures.
+Protected elements: YAML frontmatter fields, code block contents, XML guard tag blocks (`<HARD-GATE>`, `<SUBAGENT-STOP>`) — structure preserved and text inside may be tightened provided BATS-verified strings are not altered, step numbers, and `If X:` conditional structures.
 
 ### Zero Dependencies
 
@@ -54,7 +54,7 @@ atdd-kit has **zero external dependencies** by design. No npm packages, no exter
 
 `rules/atdd-kit.md` loads on **every turn**. Keep it under **60 lines**. Move anything else to `docs/`.
 
-> The budget was raised from 40 to 60 lines during the v1.0 migration (#179) to accommodate the new 6-step Workflow table. Re-tighten toward 40 lines once Step E removes Iron Laws #4, the legacy Label Flow, and old skill hints.
+> The budget was raised from 40 to 60 lines during the v1.0 migration (#179) to accommodate the 6-step Workflow table. Re-tighten toward 40 lines as legacy hints are pruned.
 
 ### Directory READMEs
 
@@ -64,19 +64,19 @@ Each top-level directory (`skills/`, `commands/`, `hooks/`, `rules/`, `scripts/`
 
 ### Skills vs Commands
 
-- **Skill**: Has `description` for auto-detection, or is part of the workflow chain (discover → plan → atdd → verify → ship)
+- **Skill**: Has `description` for auto-detection, or is part of the 6-step workflow chain (defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying)
 - **Command**: Explicitly invoked by user (`/atdd-kit:*`)
 
 ### Skill Chain
 
 ```
-bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
+bug (auto) → defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying
 ```
 
-- `issue` chains to `ideate`, which chains to `discover` (ideate is skippable)
-- Skills chain forward (discover → plan, atdd → verify → ship)
-- Commands call the chain entry point only (autopilot (Dev) → atdd, not verify)
-- Session-start guard on all 7 core skills
+- `bug` auto-triggers on a bug report and routes into `defining-requirements`
+- Each step chains forward to the next on completion
+- `skill-gate` ensures the relevant step skill is invoked before direct work begins
+- All core skills include a Session Start Check that runs `session-start` if it hasn't yet
 
 ### Addon System
 
@@ -84,7 +84,7 @@ Platform-specific features live in `addons/<platform>/`. Each addon has an `addo
 
 ### Agents
 
-Role definitions for autopilot live in `agents/`. Each agent has YAML frontmatter (`name`, `description`, `model`, `tools`, `skills`) and a system prompt body. See `agents/README.md`.
+Reviewer role definitions live in `agents/`, spawned by the `reviewing-deliverables` skill (Step 5). Each agent has YAML frontmatter (`name`, `description`, `tools`, `skills`) and a system prompt body. See `agents/README.md`.
 
 ### Skill Description Field Rules
 
@@ -100,34 +100,13 @@ description: "ATDD implementation -- creates E2E tests, then unit tests, then im
 description: "Use when implementing a ready-to-go Issue."
 ```
 
-### Skill Changes Require Eval Evidence
+### Skill Changes Require Test Evidence
 
 Skills are **behavior-shaping code**, not prose. Any modification to a skill's SKILL.md requires:
 
-1. Run evals before and after the change
-2. Show before/after pass_rate comparison
-3. If pass_rate drops 10%+, the change is blocked
-4. Do NOT modify Rationalization tables or carefully-tuned enforcement content without eval evidence
-
-## Skill Evals
-
-Skills can have regression tests using the [skill-creator](https://github.com/anthropics/claude-code/tree/main/plugins/skill-creator) eval framework.
-
-### Adding evals to a skill
-
-1. Create `skills/<skill-name>/evals/evals.json` with test cases and assertions (skill-creator compatible format)
-2. Run `/atdd-kit:auto-eval --all` to establish the initial baseline
-3. The baseline is saved to `skills/<skill-name>/evals/baseline.json`
-
-### When evals run
-
-- **On PR review**: `autopilot (QA)` detects `skills/*/SKILL.md` changes and triggers `auto-eval` automatically
-- **Periodic**: `/atdd-kit:autopilot eval` runs every 30 minutes
-- **Manual**: `/atdd-kit:auto-eval` or `/atdd-kit:auto-eval --all`
-
-### Regression detection
-
-If pass_rate drops by 10% or more compared to the baseline, the eval reports a regression and blocks the PR merge.
+1. Run the skill's BATS test (`tests/test_<skill>_skill.bats`) before and after the change
+2. Keep the suite green — a skill edit must not break its pinned structural assertions
+3. Do NOT remove Rationalization tables, `<HARD-GATE>` blocks, or carefully-tuned enforcement content without a corresponding test update that justifies it
 
 ## Release Process
 
@@ -142,21 +121,23 @@ If pass_rate drops by 10% or more compared to the baseline, the eval reports a r
 ```
 atdd-kit/
 ├── .claude-plugin/   # Plugin metadata (plugin.json — single source of truth for version)
-├── skills/           # Skill definitions (SKILL.md + optional evals/)
-│   ├── atdd/
+├── skills/           # Skill definitions (SKILL.md)
 │   ├── bug/
 │   ├── debugging/
-│   ├── discover/
-│   ├── ideate/
-│   ├── issue/
-│   ├── plan/
+│   ├── defining-requirements/
+│   ├── extracting-user-stories/
+│   ├── launching-preview/
+│   ├── merging-and-deploying/
+│   ├── reviewing-deliverables/
+│   ├── running-atdd-cycle/
 │   ├── session-start/
-│   ├── ship/
-│   ├── sim-pool/        # iOS addon skill (in skills/ for framework discovery)
+│   ├── sim-pool/             # iOS addon skill (in skills/ for framework discovery)
+│   ├── skill-fix/
 │   ├── skill-gate/
-│   ├── ui-test-debugging/ # iOS addon skill
-│   └── verify/
-├── agents/           # Agent role definitions (PO, Developer, QA, Tester, Reviewer, Researcher, Writer)
+│   ├── ui-test-debugging/    # iOS addon skill
+│   ├── writing-design-doc/
+│   └── writing-plan-and-tests/
+├── agents/           # Reviewer role definitions (prd/us/plan/code/at/final-reviewer) spawned by reviewing-deliverables
 ├── addons/           # Platform-specific addon packages (ios/, web/)
 │   └── ios/          # iOS addon (addon.yml, scripts/, ci/, tests/)
 ├── commands/         # User-invoked slash commands (/atdd-kit:*)
@@ -164,8 +145,9 @@ atdd-kit/
 ├── docs/             # On-demand reference documents (loaded by skills when needed)
 │   ├── guides/       # How-to guides and reference materials (commit-guide, review-guide, etc.)
 │   ├── methodology/  # Methodology deep-dives (atdd-guide, bug-fix-process)
+│   ├── product/      # Product strategy (product-goal, impact-map, story-map, roadmap)
 │   ├── specs/        # User Story + AC spec files (Living Documentation, persisted beyond Issue closure)
-│   └── workflow/     # Workflow reference (workflow-detail, issue-ready-flow, autonomy-levels)
+│   └── workflow/     # Workflow reference (workflow-detail, issue-ready-flow)
 ├── hooks/            # Claude Code hooks (session-start bootstrap)
 ├── scripts/          # Bash/Node utilities (version check)
 ├── templates/        # Static templates (issue/, pr/, ci/) — no template expansion
@@ -185,13 +167,13 @@ Every skill lives in `skills/<name>/SKILL.md` with two parts:
 
 ```yaml
 ---
-name: discover
+name: defining-requirements
 description: "Explore requirements through dialogue and derive ACs (Given/When/Then)."
 ---
 
 ## Session Start Check (required)
 ...
-# discover Skill -- Requirements Exploration
+# defining-requirements Skill -- Requirements Exploration
 ...
 ```
 
@@ -201,31 +183,26 @@ The `description` field controls auto-trigger behavior. It must contain **trigge
 
 | Type | Trigger | Examples |
 |------|---------|----------|
-| **Auto-trigger** | Claude detects matching user intent from `description` | issue, bug, ideate, debugging, skill-gate |
-| **Workflow chain** | Previous skill chains forward | discover → plan → atdd → verify → ship |
+| **Auto-trigger** | Claude detects matching user intent from `description` | bug, debugging, skill-gate, skill-fix |
+| **Workflow chain** | Previous skill chains forward | defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying |
 | **Manual** | User invokes explicitly | session-start, sim-pool |
 
 ### Skill Chain
 
 ```
-bug/issue (auto) → ideate (optional) → discover → plan → [approval gate] → atdd → verify → ship
+bug (auto) → defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying
 ```
 
-- `issue` chains to `ideate`, which chains to `discover` (ideate is skippable)
-- Each skill chains to the next upon completion (discover → plan, atdd → verify → ship)
-- The approval gate between plan and atdd requires human sign-off (or autopilot AC Review Round)
+- `bug` auto-triggers on a bug report and routes into `defining-requirements`
+- Each skill chains to the next upon completion
 - All core skills include a Session Start Check that runs `session-start` if it hasn't run yet
-- Skills with state gates (atdd, verify, ship) check Issue labels before proceeding
-
-### Evals
-
-Skills can have regression tests in `skills/<name>/evals/`. See the "Skill Evals" section above.
+- Skills with state gates (running-atdd-cycle, merging-and-deploying) check Issue labels before proceeding
 
 ## Adding a New Skill
 
 1. **Create the directory**: `skills/<name>/`
 2. **Write `SKILL.md`** with YAML frontmatter (`name`, `description`) and step-by-step instructions
-3. **Add evals** (recommended): Create `skills/<name>/evals/evals.json` and run `/atdd-kit:auto-eval --all` to establish a baseline
+3. **Add a BATS test** (recommended): Create `tests/test_<name>_skill.bats` pinning the skill's structural assertions
 4. **Update `skills/README.md`** to include the new skill in the directory listing
 5. **Update `CHANGELOG.md`** with the new skill entry
 6. **Bump version** in `.claude-plugin/plugin.json`

@@ -1,11 +1,15 @@
 # SKILL_STATUS Format Specification
 
-This document defines the structured output format that core skills emit at every terminal point,
-enabling autopilot to make phase transition decisions without text heuristics.
+This document defines the structured output format that a skill emits at a terminal point,
+enabling an automated consumer (e.g. the `skill-fix` background dispatch) to make phase
+transition decisions without parsing free-form text.
+
+In v1.0 the format is emitted by the `skill-fix` skill. Any other skill MAY adopt it when it
+needs to be driven programmatically.
 
 ## Format
 
-Skills output a `skill-status` fenced code block as the **last element** of the response at every
+A skill outputs a `skill-status` fenced code block as the **last element** of the response at a
 terminal point (completion, block, or failure):
 
 ```skill-status
@@ -19,8 +23,8 @@ RECOMMENDATION: <one sentence>
 | Field | Type | Description |
 |-------|------|-------------|
 | `SKILL_STATUS` | enum | Outcome status. See valid values below. |
-| `PHASE` | string | Skill name that produced the block (e.g., `discover`, `plan`, `atdd`, `verify`, `ship`). |
-| `RECOMMENDATION` | string | Human-readable next action or error description. **Informational only** — autopilot must NOT use this field for branching logic. |
+| `PHASE` | string | Skill name that produced the block (e.g., `defining-requirements`, `writing-plan-and-tests`, `running-atdd-cycle`, `reviewing-deliverables`, `merging-and-deploying`). |
+| `RECOMMENDATION` | string | Human-readable next action or error description. **Informational only** — the consumer must NOT use this field for branching logic. |
 
 ## Valid Values for SKILL_STATUS
 
@@ -33,8 +37,8 @@ RECOMMENDATION: <one sentence>
 
 ## BLOCKED vs FAILED Distinction
 
-The boundary between BLOCKED and FAILED determines whether autopilot should wait for user action
-or halt entirely.
+The boundary between BLOCKED and FAILED determines whether the consumer should wait for user
+action or halt entirely.
 
 | Situation | Status | Rationale |
 |-----------|--------|-----------|
@@ -57,15 +61,15 @@ or halt entirely.
 
 ```skill-status
 SKILL_STATUS: COMPLETE
-PHASE: discover
-RECOMMENDATION: Proceed to plan with approved ACs
+PHASE: defining-requirements
+RECOMMENDATION: Proceed to writing-plan-and-tests with approved ACs
 ```
 
 ### PENDING (waiting for user approval)
 
 ```skill-status
 SKILL_STATUS: PENDING
-PHASE: discover
+PHASE: defining-requirements
 RECOMMENDATION: Waiting for user approval of AC set
 ```
 
@@ -73,54 +77,44 @@ RECOMMENDATION: Waiting for user approval of AC set
 
 ```skill-status
 SKILL_STATUS: BLOCKED
-PHASE: plan
-RECOMMENDATION: Issue #58 has no discover deliverables. Run discover first.
+PHASE: writing-plan-and-tests
+RECOMMENDATION: Issue #58 has no defining-requirements deliverables. Run defining-requirements first.
 ```
 
 ### FAILED (unrecoverable error)
 
 ```skill-status
 SKILL_STATUS: FAILED
-PHASE: ship
+PHASE: merging-and-deploying
 RECOMMENDATION: gh pr create failed with authentication error. Check GH_TOKEN configuration.
 ```
 
-## Autopilot Action Matrix
+## Action Matrix
 
-When autopilot (PO) receives a SendMessage reply from an agent that ran a skill, it evaluates
-the `skill-status` block to determine the next action.
+When the consumer receives a reply from a skill, it evaluates the `skill-status` block to
+determine the next action.
 
-| SKILL_STATUS | Autopilot Next Action |
+| SKILL_STATUS | Next Action |
 |---|---|
 | `COMPLETE` | Proceed to next phase |
 | `PENDING` | Wait for external input (user approval); do not advance |
 | `BLOCKED` | Stop current phase. Post RECOMMENDATION as Issue comment. STOP and wait for user. |
-| `FAILED` | Stop autopilot. Post RECOMMENDATION as Issue comment. Report to user. |
+| `FAILED` | Stop. Post RECOMMENDATION as Issue comment. Report to user. |
 | (any other value) | Treat as `PENDING` |
 
 ## Fallback: No SKILL_STATUS Block Found
 
 If the received message contains no `skill-status` block:
 
-1. Post a warning Issue comment: "Agent returned output without SKILL_STATUS block. Manual verification required."
+1. Post a warning Issue comment: "Skill returned output without SKILL_STATUS block. Manual verification required."
 2. STOP. Do not advance to the next phase.
-3. Report to user: which agent, which phase, and the raw message received.
+3. Report to user: which skill, which phase, and the raw message received.
 
 **Do NOT** attempt to infer skill completion from message text. Only `skill-status` blocks are authoritative.
 
 ## Scope
 
-This format applies to the 5 core skills only:
-
-- `discover`
-- `plan`
-- `atdd`
-- `verify`
-- `ship`
-
-Non-core skills (bug, issue, ideate, session-start, skill-gate, etc.) do not output `skill-status` blocks.
-
-## Autopilot Mode Only
-
-`skill-status` blocks are output **only when the skill is invoked with `--autopilot` in ARGUMENTS**.
-Standalone invocations (user-facing sessions) do not output this block.
+The format is emitted by the `skill-fix` skill at every terminal point. Other skills (`defining-requirements`,
+`extracting-user-stories`, `writing-plan-and-tests`, `running-atdd-cycle`, `reviewing-deliverables`,
+`merging-and-deploying`, `bug`, `session-start`, etc.) drive their transitions through Issue/PR labels and do
+not emit `skill-status` blocks by default.

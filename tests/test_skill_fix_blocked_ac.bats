@@ -5,7 +5,6 @@
 # negative assert that ready-to-go is NOT added on gate failure.
 
 SKILL_FIX_SKILL="skills/skill-fix/SKILL.md"
-DISCOVER="skills/discover/SKILL.md"
 TEMPLATE="templates/workflow/blocked_ac_comment.md"
 
 # --- blocked_ac_comment template exists ---
@@ -37,13 +36,6 @@ TEMPLATE="templates/workflow/blocked_ac_comment.md"
 }
 
 # --- Negative assert: ready-to-go NOT added on gate failure ---
-
-@test "discover SKILL.md: blocked-ac path does NOT add ready-to-go" {
-  # Verify the blocked-ac section does not include ready-to-go
-  # (gate FAIL branch should stop before adding ready-to-go)
-  blocked_section=$(grep -A5 'blocked-ac' "$DISCOVER" | head -20)
-  ! echo "$blocked_section" | grep -q 'add-label ready-to-go'
-}
 
 @test "skill-fix SKILL.md: blocked-ac path explicitly excludes ready-to-go" {
   grep -q 'no ready-to-go\|ready-to-go.*付与しない\|exit (no ready' "$SKILL_FIX_SKILL"

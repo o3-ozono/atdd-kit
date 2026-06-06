@@ -7,11 +7,12 @@ body:
     attributes:
       label: 適用スキルチェックリスト
       options:
-        - label: "atdd-kit:discover — 要件・方針整理・AC 導出"
-        - label: "テスト要否をユーザーに確認"
-        - label: "atdd-kit:atdd — ATDD ダブルループ TDD"
-        - label: "atdd-kit:verify — ローカル検証 + CI 検証"
-        - label: "atdd-kit:ship — PR 作成・レビュー・マージ"
+        - label: "atdd-kit:defining-requirements — 要件・方針整理・AC 導出"
+        - label: "atdd-kit:extracting-user-stories — ユーザーストーリー抽出"
+        - label: "atdd-kit:writing-plan-and-tests — 実装計画 + 受け入れテスト作成"
+        - label: "atdd-kit:running-atdd-cycle — ATDD サイクル (RED → GREEN)"
+        - label: "atdd-kit:reviewing-deliverables — 成果物レビュー"
+        - label: "atdd-kit:merging-and-deploying — マージ & デプロイ"
   - type: textarea
     id: reporter-raw
     attributes:

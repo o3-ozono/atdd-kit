@@ -29,8 +29,6 @@
   grep -q 'in-progress' docs/workflow/workflow-detail.md
 }
 
-# (label flow is now managed by PO in autopilot.md end-to-end)
-
 @test "issue-ready-flow.md default flow skips ready-for-user-approval" {
   ! grep -q 'ready-for-user-approval' docs/workflow/issue-ready-flow.md
 }
@@ -38,10 +36,6 @@
 # AC6: init skill no longer exists (labels managed by session-start auto-setup)
 @test "init skill directory no longer exists" {
   [[ ! -d skills/init ]]
-}
-
-@test "autopilot does not use review-approved label" {
-  ! grep -q 'review-approved' commands/autopilot.md
 }
 
 @test "workflow-detail PR flow does not mention standalone review-approved" {

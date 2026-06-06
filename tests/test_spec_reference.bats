@@ -3,7 +3,7 @@
 # Issue #70: LLM US/AC auto-reference structural tests.
 #
 # Groups:
-#   Group 1 — SKILL.md spec-load step grep (atdd/verify/bug + persona↔spec order)
+#   Group 1 — SKILL.md spec-load step grep (bug)
 #   Group 2 — lib/spec_check.sh function exports
 #   Group 3 — rules/atdd-kit.md invariant
 #   Group 4 — EN-only reference convention
@@ -101,8 +101,6 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 
 @test "Group 4 / EN-only: SKILL.md spec-load steps reference docs/specs not docs-ja" {
   ! grep -rq 'docs-ja/specs\|docs\.ja/specs' \
-      "$REPO_ROOT/skills/atdd/SKILL.md" \
-      "$REPO_ROOT/skills/verify/SKILL.md" \
       "$REPO_ROOT/skills/bug/SKILL.md"
 }
 

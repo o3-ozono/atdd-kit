@@ -17,7 +17,6 @@ Every PR must verify that documentation stays in sync with the changes. Before m
 | Skills table in README updated | New/renamed/removed skill |
 | Commands table in README updated | New/renamed/removed command |
 | `docs/workflow/workflow-detail.md` updated | New process, label change, or flow change |
-| `commands/autopilot.md` updated | New auto-* command |
 
 ## If You Changed Architecture or Rules
 
@@ -27,15 +26,15 @@ Every PR must verify that documentation stays in sync with the changes. Before m
 | `rules/atdd-kit.md` updated | New workflow rule (stay under 60 lines) |
 | `docs/guides/review-guide.md` updated | New review criteria |
 
-## If You Changed Eval-Related Files
+## If You Changed Skills
 
 | Item | When applicable |
 |------|----------------|
-| `skills/<name>/evals/baseline.json` updated | Eval assertions changed |
-| Eval results verified | SKILL.md modified |
+| BATS tests updated | SKILL.md behavior changed |
+| BATS tests pass | SKILL.md modified |
 
 ## How to Use
 
-This checklist is enforced by the `Documentation Sync` rule in `rules/atdd-kit.md`. Reviewers (both human and `QA (autopilot)`) should verify these items during PR review.
+This checklist is enforced by the `Documentation Sync` rule in `rules/atdd-kit.md`. Reviewers (both human and the reviewer subagents spawned by `reviewing-deliverables`) should verify these items during PR review.
 
 If a doc update is not applicable, no action is needed. The key principle: **a reader of the docs should never be surprised by the current state of the code.**

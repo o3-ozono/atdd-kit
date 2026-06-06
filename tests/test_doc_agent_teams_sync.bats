@@ -19,7 +19,7 @@
   ! grep -q '/atdd-kit:auto-review' README.ja.md
 }
 
-# CC2: README ATDD workflow Mermaid diagram
+# CC2: README ATDD workflow Mermaid diagram (6-step v1.0 flow)
 @test "CC2: README.md contains ATDD workflow mermaid block" {
   grep -q 'flowchart LR' README.md
 }
@@ -28,18 +28,9 @@
   grep -q 'flowchart LR' README.ja.md
 }
 
-# CC3: README Agent Teams Mermaid diagram
-@test "CC3: README.md contains Agent Teams mermaid block with PO" {
-  grep -q 'PO' README.md
-}
-
-@test "CC3: README.md contains Agent Teams flowchart TD" {
-  grep -q 'flowchart TD' README.md
-}
-
-@test "CC3: README.ja.md contains Agent Teams flowchart TD" {
-  grep -q 'flowchart TD' README.ja.md
-}
+# CC3: v3.0.0 (#206/#207) — the README "Agent Teams" mermaid (PO orchestrator /
+# flowchart TD) was removed along with autopilot. The 6-step flow has no PO role,
+# so the Agent Teams diagram assertions no longer apply.
 
 # CC4: DEVELOPMENT.md old references removed
 @test "CC4: DEVELOPMENT.md does not reference auto-implement" {
@@ -58,23 +49,10 @@
   ! grep -q 'auto-review' DEVELOPMENT.ja.md
 }
 
-# CC5: docs/ Loaded by metadata updated
-@test "CC5: error-handling.md Loaded by references autopilot (Dev)" {
-  grep -q 'autopilot (Dev)' docs/guides/error-handling.md
-}
-
-@test "CC5: review-guide.md Loaded by references autopilot (QA)" {
-  grep -q 'autopilot (QA)' docs/guides/review-guide.md
-}
-
-@test "CC5: autonomy-levels.md Loaded by references autopilot (QA)" {
-  grep -q 'autopilot (QA)' docs/workflow/autonomy-levels.md
-}
-
-@test "CC5: workflow-detail.md Loaded by references autopilot" {
-  grep -q 'Loaded by.*autopilot' docs/workflow/workflow-detail.md
-}
-
+# CC5: docs/ English-only invariant
+# v3.0.0 (#206/#207): the "Loaded by ... autopilot" metadata assertions were
+# removed — autopilot was deleted in the v1.0 migration, so docs no longer carry
+# autopilot role annotations. The English-only invariant below still holds.
 @test "CC5: docs/*.ja.md files no longer exist (English-only)" {
   local result
   result=$(find docs/ -maxdepth 1 -name '*.ja.md' 2>/dev/null || true)
@@ -84,10 +62,6 @@
 # CC6: docs/ body text updated
 @test "CC6: workflow-detail.md does not reference auto-review" {
   ! grep -q 'auto-review' docs/workflow/workflow-detail.md
-}
-
-@test "CC6: doc-sync-checklist.md references QA (autopilot)" {
-  grep -q 'QA (autopilot)' docs/guides/doc-sync-checklist.md
 }
 
 # CC7: SKILL.ja.md no longer exists

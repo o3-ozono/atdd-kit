@@ -3,8 +3,7 @@
 # AC1 / AC2 / AC3 / AC6 / AC7: Question design migration tests
 # Verifies that skill-authoring-guide.md exists with all required content,
 # that SKILL.md files use AskUserQuestion at key decision points,
-# that old inline selection patterns are removed from key decision points,
-# and that commands/autopilot.md has not been modified.
+# and that old inline selection patterns are removed from key decision points.
 
 # --- AC1: docs/guides/skill-authoring-guide.md existence and content ---
 
@@ -48,24 +47,19 @@
   grep -qiE '(free.text|free.form|自由記述|Issue.*title|bug.*symptom)' docs/guides/skill-authoring-guide.md
 }
 
-@test "AC1(f): ideate decision points are listed" {
-  grep -qiE 'ideate.{0,30}(approach|アプローチ)' docs/guides/skill-authoring-guide.md
+@test "AC1(f): defining-requirements decision points are listed" {
+  grep -qiE 'defining-requirements.*key decision points' docs/guides/skill-authoring-guide.md
+  grep -qiE 'task.type|approach' docs/guides/skill-authoring-guide.md
 }
 
-@test "AC1(f): discover decision points are listed" {
-  grep -qiE 'discover.{0,30}(task.type|タスクタイプ)' docs/guides/skill-authoring-guide.md
-}
-
-@test "AC1(f): issue decision points are listed" {
-  grep -qiE 'issue.{0,30}(priority|Priority)' docs/guides/skill-authoring-guide.md
-}
-
-@test "AC1(f): plan decision points are listed" {
-  grep -qiE 'plan.{0,30}(test.layer|テスト層)' docs/guides/skill-authoring-guide.md
+@test "AC1(f): writing-plan-and-tests decision points are listed" {
+  grep -qiE 'writing-plan-and-tests.*key decision points' docs/guides/skill-authoring-guide.md
+  grep -qiE 'test.layer' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(f): bug decision points are listed" {
-  grep -qiE 'bug.{0,30}(fix.proposal|Fix Proposal)' docs/guides/skill-authoring-guide.md
+  grep -qiE 'bug.*key decision points' docs/guides/skill-authoring-guide.md
+  grep -qiE 'fix.proposal|Fix Proposal' docs/guides/skill-authoring-guide.md
 }
 
 @test "AC1(g): language policy is documented" {
@@ -88,43 +82,6 @@
 # --- AC6: old inline selection patterns removed from key decision points ---
 # Note: patterns use exact space-separated form to avoid matching template placeholders
 # like "[A / B / C]" (Bug Flow root cause classification template) which are NOT old selection UI.
-
-@test "AC6: ideate SKILL.md has no old inline selection [Yes / Not yet]" {
-  run grep -F '[Yes / Not yet]' skills/ideate/SKILL.md
-  [ "$status" -ne 0 ]
-}
-
-@test "AC6: ideate SKILL.md has no old inline selection [A / B / Suggest alternative]" {
-  run grep -F '[A / B / Suggest alternative]' skills/ideate/SKILL.md
-  [ "$status" -ne 0 ]
-}
-
-@test "AC6: discover SKILL.md has no old inline selection [A / B / Suggest alternative]" {
-  run grep -F '[A / B / Suggest alternative]' skills/discover/SKILL.md
-  [ "$status" -ne 0 ]
-}
-
-@test "AC6: discover SKILL.md has no old inline selection [OK / Suggest revision]" {
-  run grep -F '[OK / Suggest revision]' skills/discover/SKILL.md
-  [ "$status" -ne 0 ]
-}
-
-@test "AC6: discover SKILL.md has no old inline selection Approve/Needs revision in key decision points" {
-  # Allow in template output blocks (issue comment format), not in instruction text
-  # Check that it's not used as an instruction to Claude
-  run grep -n 'Approve? \[Approve / Needs revision\]' skills/discover/SKILL.md
-  [ "$status" -ne 0 ]
-}
-
-@test "AC6: discover SKILL.md has no old [Yes / Needs correction] pattern" {
-  run grep -F '[Yes / Needs correction]' skills/discover/SKILL.md
-  [ "$status" -ne 0 ]
-}
-
-@test "AC6: plan SKILL.md has no old [Split / Continue as-is] inline pattern" {
-  run grep -F 'Split? [Split / Continue as-is' skills/plan/SKILL.md
-  [ "$status" -ne 0 ]
-}
 
 @test "AC6: bug SKILL.md has no old arrow proceed pattern" {
   run grep -F '-> Proceed with fix?' skills/bug/SKILL.md

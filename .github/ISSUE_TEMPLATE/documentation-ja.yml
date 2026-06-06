@@ -7,8 +7,9 @@ body:
     attributes:
       label: 適用スキルチェックリスト
       options:
-        - label: "atdd-kit:discover — 構成・内容の設計"
-        - label: "atdd-kit:verify — リンク切れ・整合性検証"
+        - label: "atdd-kit:defining-requirements — 構成・内容の設計"
+        - label: "atdd-kit:reviewing-deliverables — リンク切れ・整合性検証"
+        - label: "atdd-kit:merging-and-deploying — マージ & デプロイ"
   - type: textarea
     id: summary
     attributes:
