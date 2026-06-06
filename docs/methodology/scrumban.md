@@ -43,28 +43,20 @@ The combination fits the solo developer use case where structure is needed witho
 | reviewing-deliverables | Done confirmation (review + evidence) |
 | merging-and-deploying | Increment delivery (PR merge + changelog) |
 
-### Autopilot Label Correspondence
+### Workflow Label Correspondence
 
-> **Legacy / deferred:** This subsection and the GitHub Project section below describe the
-> GitHub Projects v2 board tooling (`scripts/setup-project.sh` / `verify-project.sh`). That
-> tooling still uses the pre-v1.0 skill names (discover / plan / atdd / verify / ship) and is
-> retained as deferred maintainer-only tooling; see CHANGELOG. The active workflow uses the
-> v1.0 6-step skill chain documented above.
-
-The label system uses GitHub Issue labels to track flow state. Labels map to Kanban columns (implemented in Phase B — #168).
+The label system uses GitHub Issue labels to track flow state.
 
 | Label | State | Description |
 |-------|-------|-------------|
 | `ready-for-plan-review` | Plan Review | Plan awaiting Reviewer check |
 | `ready-to-go` | Ready to Implement | Plan passed review; AC-first implementation can start |
-| `implementing` | In Progress | atdd skill active |
+| `implementing` | In Progress | running-atdd-cycle skill active |
 | `ready-for-PR-review` | PR Review | Implementation complete; PR awaiting review |
 | `needs-plan-revision` | Plan Revision | Reviewer requested plan changes |
 | `needs-pr-revision` | PR Revision | PR review requested changes |
 | `in-progress` | In Progress (generic) | Active work not yet at implementing stage |
 | `blocked-ac` | Blocked | AC ambiguity or conflict blocks progress |
-| `express-mode` | Express | Trivial change on fast path (skips discover/plan) |
-| ~~`ready-to-implement`~~ | **Deprecated** | Superseded by `ready-to-go`. Scheduled for removal in Phase E (#171). |
 
 ## Solo Development Adaptations
 
@@ -94,49 +86,6 @@ An Increment in atdd-kit = **one merged PR that passes all ACs**.
 - The Increment is complete when the Issue is closed.
 
 参考: Scrum Guide 2020 — "An Increment is a concrete stepping stone toward the Product Goal." https://scrumguides.org/scrum-guide.html
-
-## GitHub Project
-
-> **Phase B (#168)** — Kanban Board implemented on GitHub Projects v2.
-
-### Project URL
-
-https://github.com/users/o3-ozono/projects/<TBD>
-
-### Custom Fields
-
-| Field | Type | Creation | Options / Notes |
-|-------|------|----------|-----------------|
-| Status | Single-select | CLI | 8 options: Backlog / Shaped (Pitch済) / Ready (DoR満) / In Discover / In Plan / In ATDD / In Review (PR) / Done |
-| Skill | Single-select | CLI | discover / plan / atdd / verify / ship / bug / issue / express / ideate / debugging / N/A |
-| Phase | Single-select | CLI | discover / plan / atdd / verify / ship |
-| Size | Single-select | CLI | S / M / L / XL |
-| Impact | Text | CLI | Free text referencing Impact Map branch |
-| Epic | Text | CLI | Issue number reference (e.g. #165) |
-| Iteration | Iteration | **Web UI only** | Now (current..+4w) / Next (+4w..+8w) / Later (+8w..+12w) — CLI `gh project field-create` does not support ITERATION type |
-
-### Status ↔ Autopilot Label Mapping
-
-The full autopilot label definitions are in [Autopilot Label Correspondence](#autopilot-label-correspondence) above.
-The table below maps each Status option to the corresponding autopilot label:
-
-| Status option | Autopilot label | Note |
-|--------------|-----------------|------|
-| Backlog | (none) | Not yet picked up |
-| Shaped (Pitch済) | (none) | **Intentional gap** — no autopilot label exists for this pre-DoR state |
-| Ready (DoR満) | `ready-to-go` | DoR passed; ready for implementation |
-| In Discover | `in-progress` | discover skill active |
-| In Plan | `ready-for-plan-review` | plan skill active |
-| In ATDD | `implementing` | atdd skill active |
-| In Review (PR) | `ready-for-PR-review` | PR under review |
-| Done | (closed Issue) | Issue closed = Increment complete |
-
-### Setup and Verification Scripts
-
-- `scripts/setup-project.sh` — idempotent CLI setup (project create → fields → items → bulk-set)
-- `scripts/verify-project.sh <project-number>` — automated AC2/AC5 verification
-
-**Note:** Re-run `setup-project.sh` steps 5+6 (item-add + bulk-set) just before PR merge to capture any Issues opened after initial setup.
 
 ## References
 

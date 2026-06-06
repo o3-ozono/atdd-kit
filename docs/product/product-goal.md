@@ -42,7 +42,7 @@ Success is qualitative for now (Phase A). Quantitative metrics will be defined i
 | AC Review Round (reviewing-deliverables) | Operational (regression tracked in #162) |
 | BATS integration tests (running-atdd-cycle, defining-requirements, writing-plan-and-tests) | Operational; more skills pending (#141–#147) |
 | CI test auto-block | Planned (#73) |
-| Kanban Board (GitHub Projects v2) | Planned (#168) |
+| Kanban Board (GitHub Projects v2) | Dropped — board tooling removed (#238) |
 | Scrumban methodology docs | This PR (#166) |
 
 ## References

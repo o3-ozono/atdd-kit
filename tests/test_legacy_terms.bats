@@ -9,12 +9,12 @@
 }
 
 @test "AC7: no 'ready-to-implement' (or underscore variant) in source files" {
-  # docs/methodology/scrumban.md is the canonical place that documents
-  # `ready-to-implement` as a deprecated label (per Issue #166 Plan Round 1).
-  # Keep scrumban.md as the only allowed mention so Phase D (#170) can
-  # consume the full label correspondence table.
+  # `ready-to-implement` was renamed to `ready-to-go` (#34). Only CHANGELOG.md
+  # retains it as historical record; it must not appear in any other source file.
+  # (The scrumban.md deprecated-label exception was dropped when the GitHub
+  # Projects board tooling was removed in #238.)
   local result
-  result=$(grep -rEn 'ready.to.implement' --include='*.md' --include='*.yml' --include='*.json' --exclude-dir='.claude' --exclude-dir='.git' . | grep -v CHANGELOG.md | grep -v 'docs/methodology/scrumban.md' || true)
+  result=$(grep -rEn 'ready.to.implement' --include='*.md' --include='*.yml' --include='*.json' --exclude-dir='.claude' --exclude-dir='.git' . | grep -v CHANGELOG.md || true)
   [[ -z "$result" ]]
 }
 
