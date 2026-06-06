@@ -45,7 +45,7 @@ After creating the Issue, post a Context Block as an Issue comment:
 | collected_info | [screenshots, logs, stack traces] |
 ```
 
-Enables discover to skip questions already answered during intake.
+Enables defining-requirements to skip questions already answered during intake.
 
 ## Phase 3: Existing Test Check
 
@@ -89,4 +89,4 @@ Recommended: Proceed with fix — reply 'ok' to accept, or provide alternative
 
 ## Next Step
 
-Show "Initial bug triage complete." and invoke discover skill (bug mode) via the Skill tool.
+Show "Initial bug triage complete." and invoke the `defining-requirements` skill via the Skill tool (the bug chain routes into Step 1 of the 6-step flow).
