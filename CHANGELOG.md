@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-06-06
+
+### Changed
+- `skills/reviewing-deliverables/SKILL.md`: Step 5 を **Workflow ツールベースの動的・並列・多人格・複数ラウンドレビュー**へ置換（#234）。従来の固定 6 reviewer subagent **直列**ロスター（`prd`/`us`/`plan`/`code`/`at`/`final-reviewer`、47 criteria）を廃し、埋め込み workflow script で **Scout → Generate → Review → Verify → Aggregate** の 5 phase を駆動。Scout が変更内容（種別・言語・規模・risk surface）を解析し、Generate が **reviewer パネルを動的生成**（常設: functional / clean-code / testability / advocate / skeptic、risk surface に応じて security・performance/load・usability 等を追加）。Review は `pipeline()` で並列、Verify は各 finding を 3 angle で adversarial に多数決検証して偽陽性を抑制、Aggregate が単一 **PASS/FAIL**（日本語）を出力。直列制約は #216 PRD OQ#1 が「後発 Issue で再検討」と先送りしたもので、Workflow tool が `agent()` の context 分離で cross-talk を構造的に解消するため解除。動作確認は AT で完結し manual/preview 非強制。Output language Japanese。(#234)
+- `tests/test_reviewing_deliverables_skill.bats`: Unit Test を #234 の新機構に合わせて全面更新 — Workflow tool 駆動 / 5 phase / 動的パネル生成 / 並列実行 / adversarial 複数ラウンド検証 / 非機能 (security・performance・usability) + clean-code・testability + advocate・skeptic カバレッジ / 単一 PASS/FAIL / responsibility boundary / line budget (≤240) / output language / persona-less を検証。(#234)
+- `tests/e2e/reviewing-deliverables.bats`: Skill E2E Test を #234 の User Story（F1 動的パネル, F2 並列, F3 非機能 risk-surface lens, F4 adversarial 検証, F5 AT 動作確認, C1 aggregate→PASS/FAIL）へ更新。(#234)
+
+### Note
+- 固定 reviewer agents（`agents/{prd,us,plan,code,at,final}-reviewer.md`）は本変更では削除せず温存（`tests/test_reviewer_subagents.bats` 等の対象）。動的生成レビューは prompt ベースで reviewer を起こすため固定 agent に依存しない。整理は別 Issue。(#234)
+
 ## [2.6.0] - 2026-06-06
 
 ### BREAKING Changes (inherited from 2.0.0 — still in effect)

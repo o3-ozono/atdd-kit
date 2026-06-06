@@ -1,53 +1,81 @@
 #!/usr/bin/env bats
 # @covers: skills/reviewing-deliverables/SKILL.md
-# Unit Test for the reviewing-deliverables skill (#192 / #179 Step B5).
+# Unit Test for the reviewing-deliverables skill (#234 / #179 Step B5).
 # Per `docs/testing-skills.md` (#222), this is a Unit Test — `claude` is not
 # invoked; structural / wording-level invariants are checked via grep. LLM
 # behavior is covered by the companion Skill E2E Test at
 # `tests/e2e/reviewing-deliverables.bats`.
 #
-# Scope (per #192 AC): assert the 6-subagent serial review mechanism plus the
-# standard responsibility / budget / language gates.
-#   - 6 specialist + aggregator subagents (PRD/US/Plan/Code/AT/Final)
-#   - SERIAL execution (#216 PRD Open Question #1: context isolation)
-#   - verification completed by Acceptance Tests (no mandatory manual check)
-#   - 47 structural criteria across the 5 specialists (#231 integrity fix)
+# Scope (per #234): the skill replaces the former fixed 6-subagent SERIAL roster
+# with a Workflow-tool review that (a) generates the reviewer panel DYNAMICALLY
+# from the deliverable content, (b) reviews in PARALLEL, (c) verifies findings
+# across multiple ADVERSARIAL rounds, and (d) covers functional + non-functional
+# (security / performance / usability) + clean-code / testability + positive
+# (advocate) / negative (skeptic) stances. Standard responsibility / language /
+# budget gates are retained. The serial constraint is dissolved because the
+# Workflow tool isolates each agent() context (#216 PRD OQ#1 was deferred here).
 
 SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
 
-# --- Subagent roster ------------------------------------------------------
+# --- Workflow-based mechanism ---------------------------------------------
 
-@test "subagents: SKILL.md invokes prd-reviewer" {
-  grep -q 'prd-reviewer' "$SKILL_FILE"
+@test "mechanism: SKILL.md drives the review through the Workflow tool" {
+  grep -q 'Workflow' "$SKILL_FILE"
 }
 
-@test "subagents: SKILL.md invokes us-reviewer" {
-  grep -q 'us-reviewer' "$SKILL_FILE"
+@test "mechanism: SKILL.md embeds a runnable workflow script (export const meta)" {
+  grep -q 'export const meta' "$SKILL_FILE"
 }
 
-@test "subagents: SKILL.md invokes plan-reviewer" {
-  grep -q 'plan-reviewer' "$SKILL_FILE"
+@test "mechanism: the workflow has the five phases Scout/Generate/Review/Verify/Aggregate" {
+  grep -q 'Scout' "$SKILL_FILE"
+  grep -q 'Generate' "$SKILL_FILE"
+  grep -q 'Review' "$SKILL_FILE"
+  grep -q 'Verify' "$SKILL_FILE"
+  grep -q 'Aggregate' "$SKILL_FILE"
 }
 
-@test "subagents: SKILL.md invokes code-reviewer" {
-  grep -q 'code-reviewer' "$SKILL_FILE"
+# --- Dynamic reviewer generation ------------------------------------------
+
+@test "dynamic: reviewers are generated dynamically from the deliverable, not a fixed roster" {
+  grep -qiE 'dynamic' "$SKILL_FILE"
+  grep -qiE 'scout' "$SKILL_FILE"
+  # the panel scales with the change rather than enumerating a fixed list
+  grep -qiE 'scale|derive|generate the reviewer panel|panel' "$SKILL_FILE"
 }
 
-@test "subagents: SKILL.md invokes at-reviewer" {
-  grep -q 'at-reviewer' "$SKILL_FILE"
+# --- Parallel execution (replaces serial) ---------------------------------
+
+@test "execution: SKILL.md runs the reviewers in parallel" {
+  grep -qiE 'parallel|pipeline' "$SKILL_FILE"
 }
 
-@test "subagents: SKILL.md invokes final-reviewer" {
-  grep -q 'final-reviewer' "$SKILL_FILE"
+# --- Multi-round adversarial verification ---------------------------------
+
+@test "verify: findings are challenged across multiple adversarial rounds" {
+  grep -qiE 'adversarial' "$SKILL_FILE"
+  grep -qiE 'round|majority|refute|challenge' "$SKILL_FILE"
 }
 
-# --- Serial execution -----------------------------------------------------
+# --- Multi-perspective coverage (functional + non-functional + stances) ----
 
-@test "execution: SKILL.md runs the reviewer subagents serially" {
-  grep -qiE 'serial|sequential|one at a time|one-at-a-time' "$SKILL_FILE"
+@test "coverage: non-functional lenses (security / performance / usability)" {
+  grep -qiE 'security' "$SKILL_FILE"
+  grep -qiE 'performance' "$SKILL_FILE"
+  grep -qiE 'usability' "$SKILL_FILE"
 }
 
-# --- Verification via AT --------------------------------------------------
+@test "coverage: clean-code and testability lenses" {
+  grep -qiE 'clean-code|clean code|cleanliness' "$SKILL_FILE"
+  grep -qiE 'testability' "$SKILL_FILE"
+}
+
+@test "coverage: positive (advocate) and negative (skeptic) stances" {
+  grep -qiE 'advocate' "$SKILL_FILE"
+  grep -qiE 'skeptic' "$SKILL_FILE"
+}
+
+# --- Verification via AT ---------------------------------------------------
 
 @test "verification: SKILL.md states runtime behavior is verified by Acceptance Tests" {
   grep -qiE 'acceptance test' "$SKILL_FILE"
@@ -58,18 +86,19 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   grep -qiE 'not (require|mandat|force)|no manual|without manual|not mandatory' "$SKILL_FILE"
 }
 
-# --- Criteria count integrity ---------------------------------------------
+# --- Single PASS/FAIL verdict ---------------------------------------------
 
-@test "criteria: SKILL.md references the 47-criteria total across the 5 specialists" {
-  grep -qE '47' "$SKILL_FILE"
+@test "output: the Aggregate phase produces a single PASS / FAIL verdict" {
+  grep -qE 'PASS' "$SKILL_FILE"
+  grep -qE 'FAIL' "$SKILL_FILE"
 }
 
 # --- Line budget ----------------------------------------------------------
 
-@test "line budget: SKILL.md is at most 200 lines (#216 PRD design rule)" {
+@test "line budget: SKILL.md is at most 240 lines (raised for the embedded workflow script)" {
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
-  [ "$n" -le 200 ]
+  [ "$n" -le 240 ]
 }
 
 # --- Responsibility boundary ----------------------------------------------
@@ -92,7 +121,7 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   grep -qE 'Output language:[[:space:]]+Japanese' "$SKILL_FILE"
 }
 
-# --- Persona-less invariant -----------------------------------------------
+# --- Persona-less invariant (User Story form, unrelated to reviewer personas)
 
 @test "no persona: SKILL.md does not introduce 'As a [persona]' line" {
   ! grep -qE '^As a ' "$SKILL_FILE"

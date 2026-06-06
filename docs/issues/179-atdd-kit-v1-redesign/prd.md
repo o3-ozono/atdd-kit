@@ -154,7 +154,7 @@
 
 | # | Question | Resolution |
 |---|----------|------------|
-| 1 | subagent レビューの並列化方法 (Step 5 で developer + qa を同時に走らせるか) | **直列実行** に確定。subagent context 分離 (cross-talk 回避) を優先。並列化は後発 Issue で再検討可能。`agents/*.md` と `skills/reviewing-deliverables/SKILL.md` (#192) に直列前提で記述する。 |
+| 1 | subagent レビューの並列化方法 (Step 5 で developer + qa を同時に走らせるか) | **直列実行** に確定。subagent context 分離 (cross-talk 回避) を優先。並列化は後発 Issue で再検討可能。`agents/*.md` と `skills/reviewing-deliverables/SKILL.md` (#192) に直列前提で記述する。**→ #234 で消化**: Workflow tool（`agent()` の context 分離で cross-talk を構造的に解消）を採用し、Step 5 を動的・並列・複数ラウンドレビューへ移行。 |
 | 2 | 適用先プロジェクトでの dogfood タイミング | **Step E5 完了後** (Breaking Change が一通り適用された v1.0.0-rc 相当の時点)。E6 (persona 廃止) の完了も合わせて待つ。dogfood で発見した不具合は本 epic 外の Issue として扱う。 |
 | 3 | Step 7 の post-deploy regression の具体的な仕組み | **#193 (B6 merging-and-deploying) の discover で確定**。本 PRD では先送りし、AC 文言から「PRD Open Question 解決」参照を削除する (#193 AC 修正タスクを A0 完了後に処理)。 |
 | 4 | launching-preview の手動起動コマンドの最終形 | **#194 (B7 launching-preview) の discover で確定**。本 PRD では先送り。#194 AC 文言の「PRD Open Question 解決」参照を削除する。 |
