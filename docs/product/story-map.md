@@ -50,7 +50,7 @@ The table shows activities (columns) and priority slices (rows). Each cell is a 
 |-------|---------------|----------|------|-----------|------|--------|------|
 | **Walking Skeleton** | Issue + US + ACs created | AC derivation dialogue | Test strategy per AC | Reviewer PASS/FAIL | Double-loop TDD per AC | Evidence per AC | PR merged + changelog |
 | **Next slice** | Impact link required (#169) | Example Mapping (#169) | doc-follow step (#14) | US traceability check (#158) | Fresh sub-agent per AC (#71) | outer-loop coverage (#137) | — |
-| **Later slice** | Projects v2 sync (#170) | INVEST gate (#171) | — | WIP Limit gate (#171) | — | — | — |
+| **Later slice** | — | INVEST gate (#171) | — | WIP Limit gate (#171) | — | — | — |
 
 ## Next Slice — Priority Features
 

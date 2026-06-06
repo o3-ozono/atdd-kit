@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-06-07
+
+### Removed
+
+- GitHub Projects v2 ボード設定 tooling を廃止 (#238)。`scripts/setup-project.sh` / `scripts/verify-project.sh` / `tests/test_github_projects_setup.bats` を削除し、`docs/methodology/scrumban.md` の `## GitHub Project` 節を除去した。ボードは一度も実体化されておらず（Project URL は `<TBD>` のまま）、関連 Issue（#168 / #170 / #171 / #172）は全て CLOSED 済みのため、[3.0.0] で deferred としていたボード taxonomy の再設計は行わず廃止する。これはプラグイン本体機能ではなくメンテナ用 tooling のため SemVer 上は PATCH 相当。
+
+### Changed
+
+- `docs/methodology/scrumban.md`: `### Autopilot Label Correspondence` を `### Workflow Label Correspondence` にリネームし、autopilot / Kanban Board / `#168` への参照と deprecated ラベル行（`express-mode` / `ready-to-implement`）を除去。active なワークフローラベル表は維持。(#238)
+- `tests/test_legacy_terms.bats`: `ready-to-implement` 検査から `docs/methodology/scrumban.md` 例外を撤去し厳格化（scrumban からラベル行を除去したため）。(#238)
+- `docs/product/roadmap.md` / `docs/product/product-goal.md` / `docs/product/story-map.md`: 廃止した Kanban Board / Projects v2 sync (#170) への参照を更新。(#238)
+- `tests/README.md`: 削除した `test_github_projects_setup.bats` の行を除去。(#238)
+
 ## [3.1.0] - 2026-06-07
 
 ### Changed

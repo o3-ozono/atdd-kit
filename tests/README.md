@@ -129,7 +129,6 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_impact_map.bats | scripts/impact_map.sh impact scope detection (Issue #135) |
 | test_run_skill_e2e_impact.bats | scripts/run-skill-e2e.sh path-based impact mapping (Issue #222) |
 | test_check_plugin_version.bats | scripts/check-plugin-version.sh |
-| test_github_projects_setup.bats | GitHub Projects v2 Kanban setup scripts (Issue #168) |
 
 ### Templates, Docs & Config
 

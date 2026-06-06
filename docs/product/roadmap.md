@@ -2,7 +2,7 @@
 
 > **Loaded by:** session-start skill
 
-The roadmap uses **Now / Next / Later** lanes (no fixed dates). Focus areas are updated at a quarterly cadence. Issues within each lane are not ordered — priority is managed via the Kanban Board (Phase B: #168).
+The roadmap uses **Now / Next / Later** lanes (no fixed dates). Focus areas are updated at a quarterly cadence. Issues within each lane are not ordered — priority is managed via lane placement and GitHub Issue labels.
 
 ## Now — Active Focus
 
