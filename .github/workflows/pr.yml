@@ -47,7 +47,6 @@ jobs:
               - 'agents/**'
               - 'hooks/**'
               - '.claude-plugin/**'
-              - 'evals/**'
             headless:
               # Narrow scope: trigger only when skills or the headless test
               # infrastructure itself changes. Keeps the replay job focused

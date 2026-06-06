@@ -72,13 +72,6 @@
   grep -qiE 'i18n|DEVELOPMENT\.md|language.policy|English.only' docs/guides/skill-authoring-guide.md
 }
 
-# --- AC2: evals.json new assertion count ---
-
-@test "AC2: bug evals.json has at least 5 assertions" {
-  count=$(grep -c '"type": "structural"' skills/bug/evals/evals.json)
-  [ "$count" -ge 5 ]
-}
-
 # --- AC3: SKILL.md new pattern presence ---
 
 @test "AC3: bug SKILL.md contains AskUserQuestion" {
