@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 # @covers: skills/reviewing-deliverables/SKILL.md
-# Skill E2E Test for the reviewing-deliverables skill (#192 / #179 Step B5).
+# Skill E2E Test for the reviewing-deliverables skill (#234 / #179 Step B5).
 # Invokes real `claude -p` (single-turn) and verifies the LLM correctly
 # recovers the behavior aspects encoded in SKILL.md.
 #
 # 1 file = 1 skill, 1 @test = 1 User Story (Connextra form).
-# User Stories derived from #192 AC (Step B5).
+# User Stories derived from #234 (Workflow-based dynamic parallel review).
 #
 # Prompts ask the LLM to respond in English so the grep-based assertions stay
 # stable. This is unrelated to the skill's output language policy.
@@ -45,36 +45,57 @@ _run_claude() {
   fi
 }
 
-@test "F1: I want every deliverable reviewed by its specialist subagent, so that PRD/US/Plan/Code/AT each get expert scrutiny" {
+@test "F1: I want the reviewer panel generated from the change, so that reviewers fit the deliverable instead of a fixed roster" {
   prompt="The following is the atdd-kit reviewing-deliverables skill definition. \
-List the reviewer subagents it invokes, by name. Respond in English.
+Is the set of reviewers a fixed predefined roster, or is it generated dynamically from the deliverable content? Respond in English.
 
 --- SKILL.md START ---
 ${SKILL_CONTENT}
 --- SKILL.md END ---"
   out=$(_run_claude "$prompt")
   [ -n "$out" ]
-  echo "$out" | grep -qi "prd-reviewer"
-  echo "$out" | grep -qi "us-reviewer"
-  echo "$out" | grep -qi "plan-reviewer"
-  echo "$out" | grep -qi "code-reviewer"
-  echo "$out" | grep -qi "at-reviewer"
-  echo "$out" | grep -qi "final-reviewer"
+  echo "$out" | grep -qiE "dynamic|generated"
 }
 
-@test "F2: I want the reviewers run one at a time, so that subagent contexts stay isolated and cross-talk is avoided" {
+@test "F2: I want the reviewers run in parallel, so that the review is not bottlenecked by serial execution" {
   prompt="The following is the atdd-kit reviewing-deliverables skill definition. \
-Does it run the reviewer subagents in parallel or serially (one at a time)? Respond in English.
+Does it run the reviewers in parallel or serially (one at a time)? Respond in English.
 
 --- SKILL.md START ---
 ${SKILL_CONTENT}
 --- SKILL.md END ---"
   out=$(_run_claude "$prompt")
   [ -n "$out" ]
-  echo "$out" | grep -qiE "serial|sequential|one at a time|one-at-a-time"
+  echo "$out" | grep -qiE "parallel|concurrent|pipeline"
 }
 
-@test "F3: I want runtime behavior verification handled by Acceptance Tests, so that no manual click-through is mandated" {
+@test "F3: I want non-functional lenses added by risk surface, so that security/performance/usability are covered when relevant" {
+  prompt="The following is the atdd-kit reviewing-deliverables skill definition. \
+Besides functional correctness, what non-functional review perspectives can it apply, and how are they chosen? Respond in English.
+
+--- SKILL.md START ---
+${SKILL_CONTENT}
+--- SKILL.md END ---"
+  out=$(_run_claude "$prompt")
+  [ -n "$out" ]
+  echo "$out" | grep -qiE "security"
+  echo "$out" | grep -qiE "performance|load"
+  echo "$out" | grep -qiE "usability"
+}
+
+@test "F4: I want each finding challenged before it counts, so that false positives are suppressed by adversarial verification" {
+  prompt="The following is the atdd-kit reviewing-deliverables skill definition. \
+What happens to a reviewer's finding before it is included in the verdict? Respond in English.
+
+--- SKILL.md START ---
+${SKILL_CONTENT}
+--- SKILL.md END ---"
+  out=$(_run_claude "$prompt")
+  [ -n "$out" ]
+  echo "$out" | grep -qiE "adversarial|challenge|refute|verif|majority"
+}
+
+@test "F5: I want runtime behavior verification handled by Acceptance Tests, so that no manual click-through is mandated" {
   prompt="The following is the atdd-kit reviewing-deliverables skill definition. \
 How is runtime behavior verified during review — by mandatory manual testing or by Acceptance Tests? Respond in English.
 
@@ -87,9 +108,9 @@ ${SKILL_CONTENT}
   echo "$out" | grep -qiE "not (require|mandat|force)|no manual|without manual|not mandatory"
 }
 
-@test "C1: I want the final reviewer to aggregate the specialist verdicts, so that one PASS/FAIL determination emerges" {
+@test "C1: I want the final phase to aggregate verified findings, so that one PASS/FAIL determination emerges" {
   prompt="The following is the atdd-kit reviewing-deliverables skill definition. \
-What does the final-reviewer subagent do with the specialist verdicts? Respond in English.
+What does the final Aggregate phase do with the verified findings? Respond in English.
 
 --- SKILL.md START ---
 ${SKILL_CONTENT}

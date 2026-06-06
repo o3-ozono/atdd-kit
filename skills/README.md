@@ -34,7 +34,7 @@ Resume mid-flow by invoking the skill for the next incomplete step. `skill-gate`
 | [extracting-user-stories](extracting-user-stories/) | Step 2, chained from defining-requirements | User Story extraction |
 | [writing-plan-and-tests](writing-plan-and-tests/) | Step 3, chained from extracting-user-stories | Plan + Acceptance Tests |
 | [running-atdd-cycle](running-atdd-cycle/) | Step 4, manually invoked on `ready-to-go` Issues | ATDD implementation (draft → green) |
-| [reviewing-deliverables](reviewing-deliverables/) | Step 5, after green | Review (spawns specialist reviewer agents) |
+| [reviewing-deliverables](reviewing-deliverables/) | Step 5, after green | Review (Workflow-based dynamic, parallel, multi-round review) |
 | [merging-and-deploying](merging-and-deploying/) | Step 6, after review PASS | Merge + post-deploy regression |
 | [writing-design-doc](writing-design-doc/) | On-demand, conditional | Design document for non-trivial trade-offs |
 | [launching-preview](launching-preview/) | On-demand | Local preview |
@@ -55,5 +55,5 @@ Resume mid-flow by invoking the skill for the next incomplete step. `skill-gate`
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) — Skills vs Commands, skill description field rules
 - Each skill's `SKILL.md` — Full trigger conditions and instructions
-- [agents/](../agents/) — Reviewer agents spawned by `reviewing-deliverables` (PRD, User Story, Plan, Code, Acceptance Test, Final)
+- [agents/](../agents/) — Retained specialist reviewer agents (PRD, User Story, Plan, Code, Acceptance Test, Final). As of #234, `reviewing-deliverables` generates its reviewer panel dynamically via the Workflow tool rather than spawning this fixed roster; these definitions are kept for reuse.
 - [addons/](../addons/) — Platform-specific addon packages
