@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-06-07
+
+epic #179 v1.0 の残ステップ（D3/D4 + B7/B8 + C1）を一括完了。これにより新フロー対象 **10 skill 全てに Unit Test + Skill E2E Test が揃い**、#179 DoD「全 10 skill にテストが実装され green」を満たした。(#240)
+
+### Added
+
+- **launching-preview skill を本実装**（skeleton → 実装、#179 Step B7 / #194）。on-demand のローカル preview 起動 skill。引数仕様を確定（PRD Open Question #4 解消）: `--port <n>` / `--no-open`、platform は `.claude/config.yml` から自動判定、ローカルのみ（グローバル URL なし）。Unit Test (`tests/test_launching_preview_skill.bats`) + Skill E2E Test (`tests/e2e/launching-preview.bats`) 同梱。
+- **writing-design-doc skill を本実装**（skeleton → 実装、#179 Step B8 / #195）。on-demand・条件付きの design-doc 生成 skill。出力 `docs/issues/<NNN>/design-doc.md`、Ubl 2020 形式（Context / Goals / Non-Goals / Design / Trade-offs / Alternatives / Open Questions）。Unit Test + Skill E2E Test 同梱。
+- **bug / debugging skill のテストを追加**（#179 Step C1 / #196）。`tests/test_bug_skill.bats` / `test_debugging_skill.bats`（Unit）、`tests/e2e/bug.bats` / `debugging.bats`（E2E）。
+- **`tests/test_skill_test_coverage.bats`**: flow 対象 10 skill が Unit Test + Skill E2E Test の両方を持つことを機械検証（#179 DoD の最終証明、#196）。
+
+### Changed
+
+- **`scripts/impact_map.sh` の `--layer` トークンを `L4` → `skill-e2e` にリネーム**（#179 Step D3 / #200）。#222 確定語彙（Skill E2E Test / Unit Test / skill-e2e）に統一。`config/impact_rules.yml` の `l4:` キー → `skill-e2e:`、`scripts/README.md` / `tests/test_impact_map.bats` を追従。`grep -ri l4 scripts/ .github/` = 0。
+- **docs の L4 表記を統一**（#179 Step D4 / #201）。`docs/guides/testing-skills.md` の "L4" 言及を `skill-e2e` / `Skill E2E Test` へ。`grep -r L4 docs/ --exclude-dir=issues` = 0。
+
+### Fixed
+
+- **bug / debugging skill に残っていた廃止済み `discover` skill への stale 参照を `defining-requirements` へ修正**（#179 Step C1 / #196）。v1.0 の canonical chain（bug → defining-requirements）と整合。#203（旧 phase-name skill 削除）の取りこぼし。
+
 ## [3.1.1] - 2026-06-07
 
 ### Removed
