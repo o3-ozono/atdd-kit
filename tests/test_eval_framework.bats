@@ -88,53 +88,6 @@
 }
 
 # ---------------------------------------------------------------------------
-# evals.json structure validation (discover)
-# ---------------------------------------------------------------------------
-
-@test "discover evals.json exists" {
-  [ -f skills/discover/evals/evals.json ]
-}
-
-@test "discover evals.json has correct skill_name" {
-  grep -q '"skill_name": "atdd-kit:discover"' skills/discover/evals/evals.json
-}
-
-@test "discover evals.json has at least 4 eval cases" {
-  count=$(grep -c '"name":' skills/discover/evals/evals.json)
-  [ "$count" -ge 4 ]
-}
-
-@test "discover evals.json has assertions for each eval" {
-  grep -q '"assertions"' skills/discover/evals/evals.json
-}
-
-# ---------------------------------------------------------------------------
-# baseline.json structure validation (discover)
-# ---------------------------------------------------------------------------
-
-@test "discover baseline.json exists" {
-  [ -f skills/discover/evals/baseline.json ]
-}
-
-@test "discover baseline.json has timestamp field" {
-  grep -q '"timestamp"' skills/discover/evals/baseline.json
-}
-
-@test "discover baseline.json has pass_rate field" {
-  grep -q '"pass_rate"' skills/discover/evals/baseline.json
-}
-
-@test "discover baseline.json has results array with eval_name fields" {
-  grep -q '"eval_name"' skills/discover/evals/baseline.json
-}
-
-@test "discover baseline.json results match evals.json eval names" {
-  grep -q '"dev-feature"' skills/discover/evals/baseline.json
-  grep -q '"bug-fix"' skills/discover/evals/baseline.json
-  grep -q '"documentation"' skills/discover/evals/baseline.json
-}
-
-# ---------------------------------------------------------------------------
 # Prerequisite: skill-creator dependency
 # ---------------------------------------------------------------------------
 

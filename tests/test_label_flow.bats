@@ -35,15 +35,6 @@
   ! grep -q 'ready-for-user-approval' docs/workflow/issue-ready-flow.md
 }
 
-# AC4: plan SKILL.md adds ready-for-plan-review and stops
-@test "plan SKILL.md adds ready-for-plan-review label" {
-  grep -q 'ready-for-plan-review' skills/plan/SKILL.md
-}
-
-@test "plan SKILL.md stops after posting plan" {
-  grep -qi 'STOP\|stop here' skills/plan/SKILL.md
-}
-
 # AC6: init skill no longer exists (labels managed by session-start auto-setup)
 @test "init skill directory no longer exists" {
   [[ ! -d skills/init ]]

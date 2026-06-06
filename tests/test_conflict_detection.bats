@@ -12,17 +12,3 @@
 @test "session-start recommends rebase for conflicting PRs" {
   grep -q 'rebase' skills/session-start/SKILL.md
 }
-
-# AC2: ship blocks merge and offers rebase on conflict
-@test "ship checks mergeable before merge" {
-  grep -q 'mergeable' skills/ship/SKILL.md
-}
-
-@test "ship mentions rebase on conflict" {
-  grep -q 'rebase' skills/ship/SKILL.md
-}
-
-# AC4: ship red flags include conflict
-@test "ship red flags include merge conflict" {
-  grep -qi 'conflict' skills/ship/SKILL.md
-}

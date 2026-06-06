@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "atdd-kit",
-      "description": "Acceptance Test Driven Development toolkit for Claude Code: discover → plan → ATDD → verify → ship",
+      "description": "Acceptance Test Driven Development toolkit for Claude Code: define requirements → user stories → plan + acceptance tests → ATDD → review → merge & deploy",
       "source": "./",
       "author": {
         "name": "o3-ozono"

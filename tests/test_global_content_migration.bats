@@ -77,10 +77,6 @@
   grep -qi 'Fix Proposal' docs/methodology/bug-fix-process.md
 }
 
-@test "AC5: issue SKILL.md contains priority table P1/P2/P3" {
-  grep -q 'P1' skills/issue/SKILL.md && grep -q 'P2' skills/issue/SKILL.md && grep -q 'P3' skills/issue/SKILL.md
-}
-
 @test "AC5: bug SKILL.md contains evidence collection table" {
   grep -qi 'evidence' skills/bug/SKILL.md
 }

@@ -26,32 +26,6 @@ TEMPLATE="templates/workflow/blocked_ac_comment.md"
   grep -qE '\$reason|\{\{reason\}\}|REASON|reason' "$TEMPLATE"
 }
 
-# --- discover SKILL.md: blocked-ac gate enforcement ---
-
-@test "discover SKILL.md documents blocked-ac label on gate FAIL" {
-  grep -q 'blocked-ac' "$DISCOVER"
-}
-
-@test "discover SKILL.md: MUST-1 check retained under --skill-fix" {
-  grep -q 'MUST-1' "$DISCOVER"
-}
-
-@test "discover SKILL.md: MUST-2 check retained under --skill-fix" {
-  grep -q 'MUST-2' "$DISCOVER"
-}
-
-@test "discover SKILL.md: MUST-3 check retained under --skill-fix" {
-  grep -q 'MUST-3' "$DISCOVER"
-}
-
-@test "discover SKILL.md: UX U1-U5 retained under --skill-fix" {
-  grep -q 'U1-U5\|U1.*U5\|UX.*check' "$DISCOVER"
-}
-
-@test "discover SKILL.md: Interruption I1-I4 retained under --skill-fix" {
-  grep -q 'I1-I4\|I1.*I4\|Interruption.*check' "$DISCOVER"
-}
-
 # --- skill-fix SKILL.md: quality gates documented ---
 
 @test "skill-fix SKILL.md documents quality gate retention" {

@@ -74,26 +74,6 @@
 
 # --- AC2: evals.json new assertion count ---
 
-@test "AC2: ideate evals.json has at least 10 assertions" {
-  count=$(grep -c '"type": "structural"' skills/ideate/evals/evals.json)
-  [ "$count" -ge 10 ]
-}
-
-@test "AC2: discover evals.json has at least 23 assertions" {
-  count=$(grep -c '"type": "structural"' skills/discover/evals/evals.json)
-  [ "$count" -ge 23 ]
-}
-
-@test "AC2: issue evals.json has at least 13 assertions" {
-  count=$(grep -c '"type": "structural"' skills/issue/evals/evals.json)
-  [ "$count" -ge 13 ]
-}
-
-@test "AC2: plan evals.json has at least 10 assertions" {
-  count=$(grep -c '"type": "structural"' skills/plan/evals/evals.json)
-  [ "$count" -ge 10 ]
-}
-
 @test "AC2: bug evals.json has at least 5 assertions" {
   count=$(grep -c '"type": "structural"' skills/bug/evals/evals.json)
   [ "$count" -ge 5 ]
@@ -101,44 +81,12 @@
 
 # --- AC3: SKILL.md new pattern presence ---
 
-@test "AC3: ideate SKILL.md contains AskUserQuestion" {
-  grep -q 'AskUserQuestion' skills/ideate/SKILL.md
-}
-
-@test "AC3: discover SKILL.md contains AskUserQuestion" {
-  grep -q 'AskUserQuestion' skills/discover/SKILL.md
-}
-
-@test "AC3: issue SKILL.md contains AskUserQuestion" {
-  grep -q 'AskUserQuestion' skills/issue/SKILL.md
-}
-
-@test "AC3: plan SKILL.md contains AskUserQuestion" {
-  grep -q 'AskUserQuestion' skills/plan/SKILL.md
-}
-
 @test "AC3: bug SKILL.md contains AskUserQuestion" {
   grep -q 'AskUserQuestion' skills/bug/SKILL.md
 }
 
 # AC3 + bats AC10 co-existence: Recommended pattern must still be present
 # (required for test_interaction_reduction.bats AC10 compatibility)
-
-@test "AC3: ideate SKILL.md still contains Recommended pattern" {
-  grep -qiE 'Recommended' skills/ideate/SKILL.md
-}
-
-@test "AC3: discover SKILL.md still contains Recommended pattern" {
-  grep -qiE 'Recommended' skills/discover/SKILL.md
-}
-
-@test "AC3: issue SKILL.md still contains Recommended pattern" {
-  grep -qiE 'Recommended' skills/issue/SKILL.md
-}
-
-@test "AC3: plan SKILL.md still contains Recommended pattern" {
-  grep -qiE 'Recommended' skills/plan/SKILL.md
-}
 
 @test "AC3: bug SKILL.md still contains Recommended pattern" {
   grep -qiE 'Recommended' skills/bug/SKILL.md

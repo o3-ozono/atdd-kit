@@ -15,30 +15,9 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 # Group 1 — SKILL.md spec-load step grep
 # =============================================================================
 
-@test "Group 1 / atdd: SKILL.md has spec-load step invoking lib/spec_check.sh" {
-  grep -q 'bash lib/spec_check.sh' "$REPO_ROOT/skills/atdd/SKILL.md"
-}
-
-@test "Group 1 / atdd: SKILL.md documents 'Loaded docs/specs/<slug>.md (AC count: N)' format" {
-  grep -q 'Loaded docs/specs/.*AC count' "$REPO_ROOT/skills/atdd/SKILL.md"
-}
-
 # v1.0 (#218): the "persona check precedes spec check" ordering test was
 # removed when persona was dropped from atdd-kit. The persona machinery
 # (lib/persona_check.sh, Step 3a) is no longer part of the flow.
-
-@test "Group 1 / verify: SKILL.md has spec-authority-check step invoking lib/spec_check.sh" {
-  grep -q 'bash lib/spec_check.sh' "$REPO_ROOT/skills/verify/SKILL.md"
-}
-
-@test "Group 1 / verify: SKILL.md references status tiebreak (approved/implemented vs draft)" {
-  local f="$REPO_ROOT/skills/verify/SKILL.md"
-  grep -qi 'status.*approved.*implemented\|approved.*implemented.*spec.*authoritative\|tiebreak' "$f"
-}
-
-@test "Group 1 / verify: SKILL.md references divergence matrix" {
-  grep -qi 'Divergence Matrix\|divergence' "$REPO_ROOT/skills/verify/SKILL.md"
-}
 
 @test "Group 1 / bug: SKILL.md has spec-cite step invoking lib/spec_check.sh" {
   grep -q 'bash lib/spec_check.sh' "$REPO_ROOT/skills/bug/SKILL.md"
