@@ -5,9 +5,9 @@ description: "Use when starting a new Issue to explore the problem space, define
 
 # Defining Requirements
 
-Step 1+2 of the atdd-kit v1.0 flow. Take an Issue number, walk the author through the 6 PRD sections one question at a time, and write `docs/issues/<NNN>/prd.md` based on `templates/docs/issues/prd.md`.
+Step 1 of the atdd-kit v1.0 flow. Take an Issue number, walk the author through the 6 PRD sections one question at a time, and write `docs/issues/<NNN>/prd.md` based on `templates/docs/issues/prd.md`.
 
-**Scope ends at the PRD.** User Story extraction (incl. persona-less Connextra form and constraint stories) is owned by `extracting-user-stories` (Step 3, #189). This skill does not write User Stories.
+**Scope ends at the PRD.** User Story extraction (incl. persona-less Connextra form and constraint stories) is owned by `extracting-user-stories` (Step 2, #189). This skill does not write User Stories.
 
 ## Trigger
 
@@ -50,13 +50,13 @@ Each section step is one question at a time. Do not bundle multiple sections int
 | Concern | Owner |
 |---------|-------|
 | Issue → PRD | **defining-requirements** (this skill) |
-| PRD → User Stories (persona-less Connextra, constraint stories) | extracting-user-stories (Step 3, #189) |
-| Plan + Acceptance Tests | writing-plan-and-tests (Step 4, #190) |
-| ATDD double-loop implementation | running-atdd-cycle (Step 5, #191) |
-| PRD / US / Plan / Code / AT review | reviewing-deliverables (Step 6, #192) |
+| PRD → User Stories (persona-less Connextra, constraint stories) | extracting-user-stories (Step 2, #189) |
+| Plan + Acceptance Tests | writing-plan-and-tests (Step 3, #190) |
+| ATDD double-loop implementation | running-atdd-cycle (Step 4, #191) |
+| PRD / US / Plan / Code / AT review | reviewing-deliverables (Step 5, #192) |
 | Parallel-session conflict, `in-progress` label management | skill-gate (#197) |
 
-This skill **does not** spawn reviewer subagents — PRD review happens at Step 6. This skill **does not** add or remove the `in-progress` label — that is skill-gate's responsibility.
+This skill **does not** spawn reviewer subagents — PRD review happens at Step 5. This skill **does not** add or remove the `in-progress` label — that is skill-gate's responsibility.
 
 ## Integration
 
