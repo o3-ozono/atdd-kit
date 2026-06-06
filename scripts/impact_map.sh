@@ -2,13 +2,13 @@
 # impact_map.sh — maps git diff to affected tests via path rules and @covers metadata
 #
 # Usage:
-#   impact_map.sh --base <ref> --layer {L4|BATS}
-#   impact_map.sh --all --layer {L4|BATS}
-#   impact_map.sh --base <ref> --all --layer {L4|BATS}
+#   impact_map.sh --base <ref> --layer {skill-e2e|BATS}
+#   impact_map.sh --all --layer {skill-e2e|BATS}
+#   impact_map.sh --base <ref> --all --layer {skill-e2e|BATS}
 #
 # Options:
 #   --base <ref>      git ref to diff against (required unless --all)
-#   --layer <name>    test layer: L4 or BATS (required)
+#   --layer <name>    test layer: skill-e2e or BATS (required)
 #   --all             force full scan (--base optional)
 #   --config <path>   path to impact_rules.yml (default: $PWD/config/impact_rules.yml)
 #
@@ -42,12 +42,12 @@ done
 
 # Validate --layer
 if [[ -z "$OPT_LAYER" ]]; then
-  echo "ERROR: --layer is required. Valid values: L4, BATS" >&2
+  echo "ERROR: --layer is required. Valid values: skill-e2e, BATS" >&2
   exit 1
 fi
 
-if [[ "$OPT_LAYER" != "L4" && "$OPT_LAYER" != "BATS" ]]; then
-  echo "ERROR: invalid --layer '$OPT_LAYER'. Valid values: L4, BATS" >&2
+if [[ "$OPT_LAYER" != "skill-e2e" && "$OPT_LAYER" != "BATS" ]]; then
+  echo "ERROR: invalid --layer '$OPT_LAYER'. Valid values: skill-e2e, BATS" >&2
   exit 1
 fi
 
@@ -63,7 +63,7 @@ fi
 
 # Parallel arrays populated by parse_impact_rules
 path_globs=()
-l4_targets=()
+skill_e2e_targets=()
 bats_tags=()
 
 parse_impact_rules() {
@@ -93,17 +93,17 @@ parse_impact_rules() {
     if [[ $in_rules -eq 1 ]]; then
       if [[ "$line" =~ ^"  - path: "(.+)$ ]]; then
         path_globs+=("${BASH_REMATCH[1]}")
-        l4_targets+=("")
+        skill_e2e_targets+=("")
         bats_tags+=("")
         continue
       fi
-      if [[ "$line" =~ ^"    l4: "(.+)$ ]]; then
+      if [[ "$line" =~ ^"    skill-e2e: "(.+)$ ]]; then
         local idx=$(( ${#path_globs[@]} - 1 ))
         if [[ $idx -lt 0 ]]; then
-          echo "ERROR: malformed YAML '$yml' — 'l4:' without preceding 'path:' at line $line_num" >&2
+          echo "ERROR: malformed YAML '$yml' — 'skill-e2e:' without preceding 'path:' at line $line_num" >&2
           exit 2
         fi
-        l4_targets[$idx]="${BASH_REMATCH[1]}"
+        skill_e2e_targets[$idx]="${BASH_REMATCH[1]}"
         continue
       fi
       if [[ "$line" =~ ^"    bats: "(.*)$ ]]; then
@@ -158,10 +158,10 @@ get_diff_files() {
 # Full layer test sets
 # ---------------------------------------------------------------------------
 
-get_all_l4() {
+get_all_skill_e2e() {
   local i
-  for (( i=0; i<${#l4_targets[@]}; i++ )); do
-    local val="${l4_targets[$i]}"
+  for (( i=0; i<${#skill_e2e_targets[@]}; i++ )); do
+    local val="${skill_e2e_targets[$i]}"
     [[ -z "$val" ]] && continue
     for name in $val; do
       printf '%s\n' "$name"
@@ -213,9 +213,9 @@ resolve_path_rules() {
     # shellcheck disable=SC2254
     if [[ "$changed_file" == $g ]]; then
       case "$layer" in
-        L4)
+        skill-e2e)
           local name
-          for name in ${l4_targets[$i]}; do
+          for name in ${skill_e2e_targets[$i]}; do
             printf '%s\n' "$name"
           done
           ;;
@@ -247,14 +247,14 @@ resolve_path_rules() {
 # Main logic
 # ---------------------------------------------------------------------------
 
-# Load config (needed for full scan L4 too)
+# Load config (needed for full scan skill-e2e too)
 parse_impact_rules "$OPT_CONFIG"
 
 # Full scan mode
 if [[ $OPT_ALL -eq 1 ]]; then
   case "$OPT_LAYER" in
-    L4)   get_all_l4  | sort -u ;;
-    BATS) get_all_bats | sort -u ;;
+    skill-e2e) get_all_skill_e2e | sort -u ;;
+    BATS)      get_all_bats | sort -u ;;
   esac
   exit 0
 fi
@@ -311,8 +311,8 @@ if [[ ${#unmatched[@]} -gt 0 ]]; then
     printf '  %s\n' "$f" >&2
   done
   case "$OPT_LAYER" in
-    L4)   get_all_l4  | sort -u ;;
-    BATS) get_all_bats | sort -u ;;
+    skill-e2e) get_all_skill_e2e | sort -u ;;
+    BATS)      get_all_bats | sort -u ;;
   esac
   exit 0
 fi

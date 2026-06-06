@@ -1,28 +1,28 @@
 rules:
   - path: skills/**
-    l4: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying writing-design-doc launching-preview bug debugging session-start sim-pool skill-fix skill-gate ui-test-debugging
+    skill-e2e: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying writing-design-doc launching-preview bug debugging session-start sim-pool skill-fix skill-gate ui-test-debugging
     bats: "@covers skills"
   - path: lib/**
-    l4: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying writing-design-doc launching-preview bug debugging session-start sim-pool skill-fix skill-gate ui-test-debugging
+    skill-e2e: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying writing-design-doc launching-preview bug debugging session-start sim-pool skill-fix skill-gate ui-test-debugging
     bats: "@covers lib"
   - path: hooks/**
-    l4: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying debugging session-start skill-fix skill-gate
+    skill-e2e: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying debugging session-start skill-fix skill-gate
     bats: "@covers hooks"
   - path: agents/**
-    l4: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying debugging session-start skill-fix skill-gate
+    skill-e2e: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying debugging session-start skill-fix skill-gate
     bats: "@covers agents"
   - path: .claude-plugin/**
-    l4: defining-requirements writing-plan-and-tests
+    skill-e2e: defining-requirements writing-plan-and-tests
     bats: "@covers .claude-plugin"
   - path: scripts/**
-    l4: defining-requirements writing-plan-and-tests
+    skill-e2e: defining-requirements writing-plan-and-tests
     bats: "@covers scripts"
   - path: docs/**
-    l4: defining-requirements
+    skill-e2e: defining-requirements
     bats: "@covers docs"
   - path: tests/**
-    l4: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying bug debugging session-start
+    skill-e2e: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying bug debugging session-start
     bats: "@covers skills"
   - path: tests/claude-code/**
-    l4: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying bug debugging session-start
+    skill-e2e: defining-requirements extracting-user-stories writing-plan-and-tests running-atdd-cycle reviewing-deliverables merging-and-deploying bug debugging session-start
     bats: "@covers tests/claude-code"

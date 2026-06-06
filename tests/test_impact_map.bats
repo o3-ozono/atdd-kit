@@ -27,25 +27,25 @@ _make_minimal_config() {
   cat > "$CONFIG" <<'EOF'
 rules:
   - path: skills/**
-    l4: discover plan atdd verify ship bug
+    skill-e2e: discover plan atdd verify ship bug
     bats: "@covers skills"
   - path: lib/**
-    l4: discover plan atdd verify ship bug
+    skill-e2e: discover plan atdd verify ship bug
     bats: "@covers lib"
   - path: hooks/**
-    l4: discover plan atdd verify ship
+    skill-e2e: discover plan atdd verify ship
     bats: "@covers hooks"
   - path: agents/**
-    l4: discover plan atdd verify ship
+    skill-e2e: discover plan atdd verify ship
     bats: "@covers agents"
   - path: .claude-plugin/**
-    l4: discover plan
+    skill-e2e: discover plan
     bats: "@covers .claude-plugin"
   - path: scripts/**
-    l4: discover plan
+    skill-e2e: discover plan
     bats: "@covers scripts"
   - path: docs/**
-    l4: discover
+    skill-e2e: discover
     bats: "@covers docs"
 EOF
   # commit config so it doesn't appear as an untracked change in later diffs
@@ -68,7 +68,7 @@ EOF
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer XYZ
   [ "$status" -ne 0 ]
   [ -z "$output" ]
-  echo "$stderr" | grep -qE "L4|BATS"
+  echo "$stderr" | grep -qE "skill-e2e|BATS"
 }
 
 @test "AC6: --all without --layer exits non-zero with layer error on stderr and empty stdout" {
@@ -141,9 +141,9 @@ EOF
   echo "$output" | grep -q "test_beta.bats"
 }
 
-@test "AC4: --all --layer L4 lists all L4 names from config and exits 0" {
+@test "AC4: --all --layer skill-e2e lists all skill-e2e names from config and exits 0" {
   _make_minimal_config
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "discover"
   echo "$output" | grep -q "plan"
@@ -153,7 +153,7 @@ EOF
 @test "AC4: --all without --base is valid (--base omission is accepted)" {
   _make_minimal_config
   # No --base provided — should succeed
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --all --layer skill-e2e
   [ "$status" -eq 0 ]
 }
 
@@ -177,9 +177,9 @@ EOF
   [ -z "$stderr" ]
 }
 
-@test "AC8: empty diff with --layer L4 also outputs nothing and exits 0" {
+@test "AC8: empty diff with --layer skill-e2e also outputs nothing and exits 0" {
   _make_minimal_config
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD --layer skill-e2e
   [ "$status" -eq 0 ]
   [ -z "$output" ]
   [ -z "$stderr" ]
@@ -195,10 +195,10 @@ _commit_changed_file() {
   git -C "$WORK" commit -m "change $path" -q
 }
 
-@test "AC1: skills/discover/SKILL.md change with L4 layer lists discover and plan only" {
+@test "AC1: skills/discover/SKILL.md change with skill-e2e layer lists discover and plan only" {
   _make_minimal_config
   _commit_changed_file "skills/discover/SKILL.md"
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$output" | grep -qx "discover"
   echo "$output" | grep -qx "plan"
@@ -216,7 +216,7 @@ _commit_changed_file() {
 @test "AC1: output is sorted and deduplicated" {
   _make_minimal_config
   _commit_changed_file "skills/foo/BAR.md"
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   [ "$output" = "$(echo "$output" | sort -u)" ]
 }
@@ -224,27 +224,27 @@ _commit_changed_file() {
 @test "AC1: exit code is 0" {
   _make_minimal_config
   _commit_changed_file "lib/spec_check.sh"
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
 }
 
-@test "AC1: lib change lists L4 tests matching lib rule" {
+@test "AC1: lib change lists skill-e2e tests matching lib rule" {
   _make_minimal_config
   _commit_changed_file "lib/foo.sh"
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$output" | grep -qx "discover"
 }
 
 # --- AC3: unmatched changes trigger fallback to full scan ---
 
-@test "AC3: unmatched file triggers fallback with full L4 set and stderr reason" {
+@test "AC3: unmatched file triggers fallback with full skill-e2e set and stderr reason" {
   _make_minimal_config
   _commit_changed_file ".github/workflows/foo.yml"
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   # output equals --all output
-  expected=$(bash "$SCRIPT" --config "$CONFIG" --all --layer L4)
+  expected=$(bash "$SCRIPT" --config "$CONFIG" --all --layer skill-e2e)
   [ "$output" = "$expected" ]
   echo "$stderr" | grep -q "FALLBACK"
   echo "$stderr" | grep -q ".github/workflows/foo.yml"
@@ -258,7 +258,7 @@ _commit_changed_file() {
   echo "b" > "$WORK/.github/workflows/ci.yml"
   git -C "$WORK" add .
   git -C "$WORK" commit -m "mixed changes" -q
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
 }
@@ -269,7 +269,7 @@ _commit_changed_file() {
   echo "# modified" >> "$CONFIG"
   git -C "$WORK" add "$CONFIG"
   git -C "$WORK" commit -m "change config" -q
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
 }
@@ -282,7 +282,7 @@ _commit_changed_file() {
   git -C "$WORK" commit -m "add old file" -q
   git -C "$WORK" mv "$WORK/unknown_old.txt" "$WORK/unknown_new.txt"
   git -C "$WORK" commit -m "rename file" -q
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
 }
@@ -303,7 +303,7 @@ _commit_changed_file() {
   git -C "$WORK" commit -m "add file" -q
   git -C "$WORK" rm "$WORK/obsolete_file.txt" -q
   git -C "$WORK" commit -m "delete file" -q
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
   echo "$stderr" | grep -q "obsolete_file.txt"
@@ -318,7 +318,7 @@ _commit_changed_file() {
   printf '\x00\x01\x02binary changed' > "$WORK/image.png"
   git -C "$WORK" add "$WORK/image.png"
   git -C "$WORK" commit -m "change binary" -q
-  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer L4
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
   echo "$stderr" | grep -q "image.png"
@@ -393,7 +393,7 @@ _make_bats_fixture() {
   cat > "$CONFIG" <<'EOF'
 rules:
   - path: scripts/**
-    l4: discover
+    skill-e2e: discover
     bats: "@covers scripts"
 EOF
   git -C "$WORK" add "$CONFIG"
