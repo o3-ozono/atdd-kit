@@ -3,28 +3,6 @@
 # skill_adapters moved to agents/ frontmatter.
 # Tests validate agents/*.md structure and skill-gate governance.
 
-# AC1: Agent definitions have proper frontmatter structure
-
-@test "agents/developer.md has skills field in frontmatter" {
-  grep -q 'skills:' agents/developer.md
-}
-
-@test "agents/developer.md has atdd-kit:atdd skill" {
-  grep -q 'atdd-kit:atdd' agents/developer.md
-}
-
-@test "agents/developer.md has atdd-kit:verify skill" {
-  grep -q 'atdd-kit:verify' agents/developer.md
-}
-
-@test "agents/qa.md has name field in frontmatter" {
-  grep -q 'name:' agents/qa.md
-}
-
-@test "agents/researcher.md has name field in frontmatter" {
-  grep -q 'name:' agents/researcher.md
-}
-
 @test "no workflow-config template with skill_adapters section" {
   [[ ! -f "templates/workflow-config.yml.tmpl" ]]
 }
@@ -69,8 +47,9 @@
   grep -q 'Issue Work Routing' skills/skill-gate/SKILL.md
 }
 
-@test "skill-gate routes Issue work to autopilot" {
-  grep -q 'autopilot' skills/skill-gate/SKILL.md
+@test "skill-gate routes Issue work to the v1.0 flow (defining-requirements)" {
+  grep -q 'defining-requirements' skills/skill-gate/SKILL.md
+  ! grep -q 'autopilot' skills/skill-gate/SKILL.md
 }
 
 @test "skill-gate does not contain adapter evaluation sections" {
@@ -173,12 +152,3 @@
   grep -qi 'no fix\|no code\|do not write.*fix\|prohibition' skills/debugging/SKILL.md
 }
 
-# autopilot agent configuration
-
-@test "autopilot references agents/ directory" {
-  grep -q 'agents/' commands/autopilot.md
-}
-
-@test "autopilot uses team_name for agent spawning" {
-  grep -q 'team_name' commands/autopilot.md
-}

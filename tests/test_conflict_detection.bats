@@ -22,19 +22,6 @@
   grep -q 'rebase' skills/ship/SKILL.md
 }
 
-# AC3: autopilot PO checks mergeable and handles conflict
-@test "autopilot checks mergeable before merge" {
-  grep -q 'mergeable' commands/autopilot.md
-}
-
-@test "autopilot handles needs-pr-revision on conflict" {
-  grep -q 'needs-pr-revision' commands/autopilot.md
-}
-
-@test "autopilot mentions CONFLICTING" {
-  grep -q 'CONFLICTING' commands/autopilot.md
-}
-
 # AC4: ship red flags include conflict
 @test "ship red flags include merge conflict" {
   grep -qi 'conflict' skills/ship/SKILL.md

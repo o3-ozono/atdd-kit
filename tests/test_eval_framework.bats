@@ -135,34 +135,6 @@
 }
 
 # ---------------------------------------------------------------------------
-# Integration: autopilot includes eval option
-# ---------------------------------------------------------------------------
-
-@test "autopilot.md includes eval option" {
-  grep -q 'eval' commands/autopilot.md
-}
-
-@test "autopilot.md maps eval to auto-eval command" {
-  grep -q 'auto-eval' commands/autopilot.md
-}
-
-# ---------------------------------------------------------------------------
-# Integration: auto-review triggers eval on skill changes
-# ---------------------------------------------------------------------------
-
-@test "autopilot QA phase reviews PR changes including skill files" {
-  grep -qi 'QA\|PR.*review\|review.*PR' commands/autopilot.md
-}
-
-@test "autopilot references auto-eval for skill evaluation" {
-  grep -q 'auto-eval' commands/autopilot.md
-}
-
-@test "autopilot utility mode includes eval" {
-  grep -q 'eval' commands/autopilot.md
-}
-
-# ---------------------------------------------------------------------------
 # Prerequisite: skill-creator dependency
 # ---------------------------------------------------------------------------
 

@@ -1,17 +1,11 @@
 # Agents
 
-Role definitions for the autopilot multi-agent workflow. Each agent is a Markdown file with YAML frontmatter defining its capabilities and system prompt.
+Reviewer role definitions spawned by the `reviewing-deliverables` skill (Step 5 of the v1.0 ATDD flow). Each agent is a Markdown file with YAML frontmatter defining its capabilities and system prompt.
 
 ## Available Agents
 
 | Agent | Role | Key Constraints |
 |-------|------|-----------------|
-| `developer.md` | Developer | ATDD implementation. Cannot self-review. |
-| `qa.md` | QA | Test strategy and verification. Cannot edit code. |
-| `tester.md` | Tester | Bug reproduction and fix verification. Cannot edit production code. |
-| `reviewer.md` | Reviewer | Code review across task types. Cannot edit code. |
-| `researcher.md` | Researcher | Research and analysis. Cannot edit code. |
-| `writer.md` | Writer | Documentation creation. Can edit files. |
 | `prd-reviewer.md` | PRD Reviewer | PRD review against 10 structural criteria. Read-only. Cannot edit files. |
 | `us-reviewer.md` | User Story Reviewer | User Story review against 7 structural criteria. Read-only. Cannot edit files. |
 | `plan-reviewer.md` | Plan Reviewer | Plan review against 10 structural criteria. Read-only. Cannot edit files. |
@@ -32,12 +26,4 @@ Role definitions for the autopilot multi-agent workflow. Each agent is a Markdow
 
 ## Usage
 
-### Via Autopilot
-
-`/atdd-kit:autopilot` — main Claude acts as the orchestrator (PO role) and drives task-type-specific agent teams (Developer, QA, Tester, Reviewer, Researcher, Writer) based on the Issue type.
-
-### Standalone
-
-Agents can be invoked directly:
-- `@qa` — QA review outside of autopilot
-- `@developer` — Developer implementation outside of autopilot
+The reviewer agents are spawned by the `reviewing-deliverables` skill during Step 5 of the ATDD flow. The skill dispatches the five specialist reviewers (PRD, User Story, Plan, Code, Acceptance Test) in parallel, then the final reviewer aggregates their verdicts into a single PASS/FAIL determination.

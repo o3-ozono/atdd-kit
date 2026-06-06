@@ -2,11 +2,6 @@
 # @covers: .claude-plugin/**
 # Issue #34 AC4: ready-to-go label (replacing ready-to-implement)
 
-@test "AC4: autopilot.md uses ready-to-go instead of ready-to-implement" {
-  grep -q 'ready-to-go' commands/autopilot.md
-  ! grep -Eq 'ready.to.implement' commands/autopilot.md
-}
-
 @test "AC4: atdd SKILL.md uses ready-to-go" {
   grep -q 'ready-to-go' skills/atdd/SKILL.md
   ! grep -Eq 'ready.to.implement' skills/atdd/SKILL.md

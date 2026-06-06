@@ -77,18 +77,6 @@
   grep -qi 'Fix Proposal' docs/methodology/bug-fix-process.md
 }
 
-@test "AC5: autopilot.md contains Dev implementation phase" {
-  grep -qi 'Phase.*3\|Implementation.*Dev\|Dev.*atdd' commands/autopilot.md
-}
-
-@test "AC5: autopilot.md contains QA review phase" {
-  grep -qi 'Phase.*4\|PR.*Review.*QA\|QA.*review' commands/autopilot.md
-}
-
-@test "AC5: autopilot.md contains PO merge decision" {
-  grep -qi 'Phase.*5\|merge.*decision\|マージ判断' commands/autopilot.md
-}
-
 @test "AC5: issue SKILL.md contains priority table P1/P2/P3" {
   grep -q 'P1' skills/issue/SKILL.md && grep -q 'P2' skills/issue/SKILL.md && grep -q 'P3' skills/issue/SKILL.md
 }

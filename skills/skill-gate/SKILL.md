@@ -14,10 +14,11 @@ Enforce governance rules before any action, including clarifying questions.
 ## Pre-check: Issue Work Routing
 
 1. **Match:** Message contains Issue reference (`#N` or `Issue N`) **AND** a work-start verb ("go ahead", "implement", "fix", "resume", "handle", "do it", "get started", "work on", "start", "continue").
-2. **Matched:** Do NOT invoke discover, plan, or any skill. Guide to autopilot:
+2. **Matched:** Enter the v1.0 6-step flow at Step 1. Guide to `defining-requirements`:
    ```
-   Use `/atdd-kit:autopilot <number>` to work on this Issue.
+   Use `/atdd-kit:defining-requirements <number>` to start the v1.0 flow for this Issue.
    ```
+   The flow then chains Step 1 → 6 (defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying). Resume mid-flow by invoking the skill for the next incomplete step.
 3. **Not matched** (e.g., "What is Issue #16 about?"): Proceed to Governance Rules.
 
 ## Governance Rules
@@ -27,7 +28,7 @@ Enforce governance rules before any action, including clarifying questions.
 If the user requests code edits with no associated Issue:
 
 1. Do NOT edit code. Do not propose changes.
-2. Guide to Issue creation: suggest creating an Issue or invoke issue/bug/discover.
+2. Guide to Issue creation: suggest creating an Issue (invoke `bug` for a bug report), then enter the v1.0 flow via `defining-requirements`.
 3. No exceptions for "quick fixes", "one-liners", or "obvious changes."
 
 ### The 1% Rule
