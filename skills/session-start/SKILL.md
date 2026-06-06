@@ -235,4 +235,3 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
    ```
 2. Remove EXCLUDE_SET from open Issues
 3. Rank remaining: bugs > features > refactoring > research
-4. Apply priority labels: p1 > p2 > p3
