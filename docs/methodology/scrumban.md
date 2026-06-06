@@ -1,6 +1,6 @@
 # Scrumban + ATDD — Integrated Methodology
 
-> **Loaded by:** discover skill, plan skill, session-start skill
+> **Loaded by:** defining-requirements skill, writing-plan-and-tests skill, session-start skill
 
 ## Definition and Adoption Rationale
 
@@ -22,7 +22,7 @@ The combination fits the solo developer use case where structure is needed witho
 |-------------------|---------------|-------|
 | Product Goal | Product Goal | Documented in [product-goal.md](../product/product-goal.md) |
 | Product Backlog | GitHub Issues | Open Issues ordered by roadmap lane |
-| Backlog Refinement | discover skill | Requirement exploration + AC derivation |
+| Backlog Refinement | defining-requirements skill | Requirement exploration + AC derivation |
 | Definition of Ready (DoR) | DoR | See [definition-of-ready.md](./definition-of-ready.md) |
 | Definition of Done (DoD) | DoD | See [definition-of-done.md](./definition-of-done.md) |
 | Increment | PR / merge | One merged PR = one Increment (potentially shippable) |
@@ -35,16 +35,23 @@ The combination fits the solo developer use case where structure is needed witho
 
 | atdd-kit Skill | Workflow Role |
 |----------------|---------------|
-| issue / bug / ideate | Backlog item creation |
-| discover | Backlog Refinement (AC derivation) |
-| plan | Sprint Planning equivalent (test strategy) |
-| atdd | Implementation (double-loop TDD) |
-| verify | Done confirmation (evidence-based) |
-| ship | Increment delivery (PR merge + changelog) |
+| bug / writing-design-doc | Backlog item creation |
+| defining-requirements | Backlog Refinement (AC derivation) |
+| extracting-user-stories | User Story extraction |
+| writing-plan-and-tests | Sprint Planning equivalent (plan + AT strategy) |
+| running-atdd-cycle | Implementation (double-loop TDD) |
+| reviewing-deliverables | Done confirmation (review + evidence) |
+| merging-and-deploying | Increment delivery (PR merge + changelog) |
 
 ### Autopilot Label Correspondence
 
-The autopilot system uses GitHub Issue labels to track flow state. Labels map to Kanban columns (implemented in Phase B — #168).
+> **Legacy / deferred:** This subsection and the GitHub Project section below describe the
+> GitHub Projects v2 board tooling (`scripts/setup-project.sh` / `verify-project.sh`). That
+> tooling still uses the pre-v1.0 skill names (discover / plan / atdd / verify / ship) and is
+> retained as deferred maintainer-only tooling; see CHANGELOG. The active workflow uses the
+> v1.0 6-step skill chain documented above.
+
+The label system uses GitHub Issue labels to track flow state. Labels map to Kanban columns (implemented in Phase B — #168).
 
 | Label | State | Description |
 |-------|-------|-------------|
@@ -70,11 +77,11 @@ Scrum ceremonies designed for teams are adapted or removed for solo use.
 | Definition of Ready | **Kept** | Enforces "ready before start"; see DoR doc |
 | Definition of Done | **Kept** | Enforces "done before close"; see DoD doc |
 | Increment | **Kept** | PR/merge unit — "potentially shippable" after each merge |
-| Backlog Refinement | **Kept** | = discover skill; the primary quality gate |
+| Backlog Refinement | **Kept** | = defining-requirements skill; the primary quality gate |
 | Sprint Goal | **Omitted** | No value for 1-person, 1-Issue flow; replaced by roadmap Now lane |
 | Daily Scrum | **Omitted** | No team to sync with |
-| Sprint Planning | **Omitted** | Replaced by plan skill per Issue |
-| Sprint Review | **Omitted** | Replaced by verify + ship skills |
+| Sprint Planning | **Omitted** | Replaced by writing-plan-and-tests skill per Issue |
+| Sprint Review | **Omitted** | Replaced by reviewing-deliverables + merging-and-deploying skills |
 | Sprint Retrospective | **Planned** | Phase F (#172) — weekly retrospective via methodology |
 
 ## Increment Definition

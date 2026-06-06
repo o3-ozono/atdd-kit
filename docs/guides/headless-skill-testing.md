@@ -15,7 +15,7 @@ What the replay layer catches on every skill-touching PR:
 | `skill-gate` bypassed (first event is not `skill-gate`) | Yes | `expected_skills[0]` mismatch |
 | Transcript schema change (Claude Code updates `tool_use` layout) | Yes | parser schema validation -> exit 2 |
 | Prompt-text quality regression (wording changed) | No | requires live layer / human review |
-| Model quality drift (bad decisions despite correct skill firing) | No | out of scope for skill-chain tests; rely on eval layer |
+| Model quality drift (bad decisions despite correct skill firing) | No | out of scope for skill-chain tests; relies on live re-recording + human review |
 | Subagent-invoked skills (via `Task` tool) | No (MVP) | `parent_tool_use_id` filtered out; covered by follow-up Issue |
 | Parallel `tool_use` in a single assistant message | Partially | ordered by array position; true race conditions not representable |
 | `SKILL.md` 本文品質（説明文・例・ガイドラインの劣化） | **NOT CAUGHT** | requires human review; out of scope for structural skill-chain tests |
@@ -132,7 +132,7 @@ Sonnet 5-hour rate limits are routinely hit during fixture work. Haiku is the Pl
 
 #### Engineered prompt rationale
 
-A natural single-turn input ("start discover for Issue #72") causes `skill-gate` to route the session to `autopilot` (that is the governance behavior of the pre-check), which suppresses a direct `discover` invocation. The recorded `skill-gate → discover` chain therefore uses an **engineered** 2-skill prompt that explicitly names both skills. This is a deliberate test vector, not a claim about typical user behavior. Document this when adding future chain scenarios.
+A natural single-turn input ("start work on Issue #72") causes `skill-gate` to route the session into the v1.0 6-step flow at Step 1 (`defining-requirements`) rather than firing a second named skill directly, so a two-skill chain does not emerge on its own. The recorded chain fixture therefore uses an **engineered** 2-skill prompt that explicitly names both skills. This is a deliberate test vector, not a claim about typical user behavior. Document this when adding future chain scenarios.
 
 ### Sanitize before committing
 

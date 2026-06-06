@@ -80,30 +80,30 @@ _run_dispatch() {
 # --- AC7: inflight registry operations ---
 
 @test "AC7: register_inflight creates registry file" {
-  _run_dispatch register_inflight 99 discover step3
+  _run_dispatch register_inflight 99 defining-requirements step3
   [[ -f "$TEST_REGISTRY" ]]
 }
 
 @test "AC7: register_inflight stores issue number" {
-  _run_dispatch register_inflight 99 discover step3
+  _run_dispatch register_inflight 99 defining-requirements step3
   grep -q '"issue": 99' "$TEST_REGISTRY"
 }
 
 @test "AC7: query_inflight returns 1 when skill matches" {
-  _run_dispatch register_inflight 99 discover step3
-  result=$(_run_dispatch query_inflight discover)
+  _run_dispatch register_inflight 99 defining-requirements step3
+  result=$(_run_dispatch query_inflight defining-requirements)
   [[ "$result" == "1" ]]
 }
 
 @test "AC7: query_inflight returns 0 or empty when skill not registered" {
-  result=$(_run_dispatch query_inflight plan)
+  result=$(_run_dispatch query_inflight running-atdd-cycle)
   [[ "$result" == "0" || "$result" == "[]" || -z "$result" ]]
 }
 
 @test "AC7: deregister_inflight removes entry" {
-  _run_dispatch register_inflight 99 discover step3
+  _run_dispatch register_inflight 99 defining-requirements step3
   _run_dispatch deregister_inflight 99
-  result=$(_run_dispatch query_inflight discover)
+  result=$(_run_dispatch query_inflight defining-requirements)
   [[ "$result" == "0" ]]
 }
 
@@ -179,7 +179,7 @@ SCRIPT
 
 @test "AC9: cleanup_stale preserves fresh entries when stale entry removed (regression)" {
   # Register stale (#99) and fresh (#88) — both in registry
-  _run_dispatch register_inflight 99 discover step3
+  _run_dispatch register_inflight 99 defining-requirements step3
   _run_dispatch register_inflight 88 plan step2
   grep -q '"issue": 99' "$TEST_REGISTRY"
   grep -q '"issue": 88' "$TEST_REGISTRY"

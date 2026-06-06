@@ -119,7 +119,7 @@ Target skill: ${skill}
 
 ## Steps
 
-1. Invoke /atdd-kit:issue via Skill tool → creates new issue and returns issue number.
+1. Create new issue via: gh issue create with templates/issue/en/development.yml → returns issue number.
    (If ${new_n} already set: skip creation.)
 
 2. Append audit marker to issue #${new_n} body:
@@ -132,10 +132,10 @@ Target skill: ${skill}
 
 4. Post evidence: gh issue comment ${new_n} --body "<evidence>"
 
-5. Invoke /atdd-kit:discover ${new_n} --skill-fix via Skill tool.
-   - AUTOPILOT-GUARD passes (--skill-fix flag accepted)
-   - Step 7 user approval skipped
-   - Step 8 inline plan mode forced
+5. Invoke /atdd-kit:writing-plan-and-tests ${new_n} --skill-fix via Skill tool.
+   - SKILL-FIX-GUARD passes (--skill-fix flag accepted)
+   - User approval skipped (plan approval deferred to review in v1.0)
+   - Inline plan mode forced
    - Quality gates (MUST-1/2/3, UX U1-U5, Interruption I1-I4) retained
 
 6. If any quality gate FAIL:

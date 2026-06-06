@@ -2,14 +2,3 @@
 
 platform:
   - other
-
-spawn_profiles:
-  # custom: applied by /atdd-kit:autopilot when no --profile flag is supplied.
-  # reviewer uses opus for deeper review quality; others use sonnet.
-  custom:
-    developer:  { model: sonnet }
-    qa:         { model: sonnet }
-    tester:     { model: sonnet }
-    reviewer:   { model: opus }
-    researcher: { model: sonnet }
-    writer:     { model: sonnet }

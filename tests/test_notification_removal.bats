@@ -39,32 +39,14 @@ EXCLUDE_DIRS="--exclude-dir=.git --exclude-dir=.tmp --exclude-dir=node_modules -
 }
 
 # --- AC2: Skill files have no notification service references ---
-
-@test "AC2: discover/SKILL.md has no notification service references" {
-  ! grep -qi "discord" "$REPO_ROOT/skills/discover/SKILL.md"
-}
-
-@test "AC2: plan/SKILL.md has no notification service references" {
-  ! grep -qi "discord" "$REPO_ROOT/skills/plan/SKILL.md"
-}
-
-@test "AC2: atdd/SKILL.md has no notification service references" {
-  ! grep -qi "discord" "$REPO_ROOT/skills/atdd/SKILL.md"
-}
+# Per-file checks below are kept only for skills that still exist; the
+# repo-wide AC5 grep is the authoritative guard for all other paths.
 
 @test "AC2: session-start/SKILL.md has no notification service references" {
   ! grep -qi "discord" "$REPO_ROOT/skills/session-start/SKILL.md"
 }
 
 # --- AC3: Commands, templates, config have no notification service references ---
-
-@test "AC3: commands/autopilot.md has no notification service references" {
-  ! grep -qi "discord" "$REPO_ROOT/commands/autopilot.md"
-}
-
-@test "AC3: commands/auto-sweep.md has no notification service references" {
-  ! grep -qi "discord" "$REPO_ROOT/commands/auto-sweep.md"
-}
 
 @test "AC3: workflow-config template no longer exists" {
   [[ ! -f "$REPO_ROOT/templates/workflow-config.yml.tmpl" ]]

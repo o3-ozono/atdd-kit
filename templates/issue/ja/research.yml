@@ -7,8 +7,9 @@ body:
     attributes:
       label: 適用スキルチェックリスト
       options:
-        - label: "atdd-kit:discover — 調査の方向性・スコープ設計"
-        - label: "atdd-kit:verify — 調査結果の裏取り・検証"
+        - label: "atdd-kit:defining-requirements — 調査の方向性・スコープ設計"
+        - label: "atdd-kit:reviewing-deliverables — 調査結果の裏取り・検証"
+        - label: "atdd-kit:merging-and-deploying — マージ & デプロイ"
   - type: textarea
     id: summary
     attributes:

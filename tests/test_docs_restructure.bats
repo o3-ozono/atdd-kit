@@ -48,9 +48,9 @@
   [ -f "docs/workflow/issue-ready-flow.md" ]
 }
 
-@test "AC1: workflow/autonomy-levels.md exists" {
-  [ -f "docs/workflow/autonomy-levels.md" ]
-}
+# v3.0.0 (#206/#207): workflow/autonomy-levels.md deleted — autopilot and its
+# autonomy levels were removed in the v1.0 migration. The AC6 old_files guards
+# still list "autonomy-levels" so any stale reference to the deleted doc is caught.
 
 # AC2: 全参照パスが更新される
 

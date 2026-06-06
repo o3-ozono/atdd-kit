@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [2.7.0] - 2026-06-06
+## [3.1.0] - 2026-06-07
 
 ### Changed
 - `skills/reviewing-deliverables/SKILL.md`: Step 5 を **Workflow ツールベースの動的・並列・多人格・複数ラウンドレビュー**へ置換（#234）。従来の固定 6 reviewer subagent **直列**ロスター（`prd`/`us`/`plan`/`code`/`at`/`final-reviewer`、47 criteria）を廃し、埋め込み workflow script で **Scout → Generate → Review → Verify → Aggregate** の 5 phase を駆動。Scout が変更内容（種別・言語・規模・risk surface）を解析し、Generate が **reviewer パネルを動的生成**（常設: functional / clean-code / testability / advocate / skeptic、risk surface に応じて security・performance/load・usability 等を追加）。Review は `pipeline()` で並列、Verify は各 finding を 3 angle で adversarial に多数決検証して偽陽性を抑制、Aggregate が単一 **PASS/FAIL**（日本語）を出力。直列制約は #216 PRD OQ#1 が「後発 Issue で再検討」と先送りしたもので、Workflow tool が `agent()` の context 分離で cross-talk を構造的に解消するため解除。動作確認は AT で完結し manual/preview 非強制。Output language Japanese。(#234)
@@ -16,6 +16,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Note
 - 固定 reviewer agents（`agents/{prd,us,plan,code,at,final}-reviewer.md`）は本変更では削除せず温存（`tests/test_reviewer_subagents.bats` 等の対象）。動的生成レビューは prompt ベースで reviewer を起こすため固定 agent に依存しない。整理は別 Issue。(#234)
+## [3.0.0] - 2026-06-06
+
+v1.0 への確定リリース。autopilot/Agent Teams 機構・旧 phase-name skill・evals・priority タグを全廃し、ワークフローを canonical な 6-step ATDD フロー（defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying）に一本化した。Epic #179 の E フェーズ（#202-207）。
+
+### BREAKING Changes
+
+- **autopilot 機構を完全廃止** (#202)。以下が削除された:
+  - コマンド `/atdd-kit:autopilot`, `/atdd-kit:auto-sweep`
+  - Agent Teams オーケストレーション（main Claude = PO ロール）と `spawn_profiles` 設定
+  - autopilot 用 6 エージェント `developer` / `qa` / `tester` / `reviewer` / `researcher` / `writer`
+  - circuit breaker (`lib/circuit_breaker.sh`) と autonomy levels (`autonomy:0-3` ラベル)
+  - **移行**: 各 Step は対応する skill を直接呼ぶ（`/atdd-kit:defining-requirements <issue>` 等）。skill-gate は v1.0 6-step フローへリルート。レビューは `reviewing-deliverables` が 6 reviewer subagent（`prd-reviewer` / `us-reviewer` / `plan-reviewer` / `code-reviewer` / `at-reviewer` / `final-reviewer`）を直列起動する。
+- **旧 phase-name skill を削除** (#203): `discover` / `plan` / `atdd` / `verify` / `ship` / `issue` / `ideate` / `express` とコマンド `/atdd-kit:express`。
+  - **移行**: `discover`→`defining-requirements` + `extracting-user-stories`、`plan`/`atdd`→`writing-plan-and-tests` + `running-atdd-cycle`、`verify`/`ship`→`reviewing-deliverables` + `merging-and-deploying`。設計探索は `writing-design-doc`（on-demand）へ。
+- **evals システムを廃止** (#204): コマンド `/atdd-kit:auto-eval`、`evals/footprint/`、各 skill の `evals/`（`baseline.json` / `evals.json`）、`scripts/measure-footprint.sh` / `scripts/check-phase5-section.sh`。
+- **priority タグ (`p1` / `p2` / `p3`) 機構を廃止** (#205)。session-start のタスク推薦は bugs > features > refactoring > research の種別順のみで行う。
+
+### Removed
+
+- 旧機構を参照していた形骸化 bats テストを多数削除（autopilot 系 22 本、旧 skill 系 14 本、evals 系 2 本ほか）。(#202-204)
+- 廃止ドキュメント: `docs/guides/circuit-breaker.md`, `docs/guides/express-mode.md`, `docs/workflow/autonomy-levels.md`, `docs/tests/nl-profile-fixtures.md`（削除済み `spawn_profiles` / autopilot `--profile` 機構専用ドキュメント）。(#206)
+
+### Changed
+
+- `config/impact_rules.yml`: `l4` ターゲットを v1.0 skill セットへ更新（削除済み skill 名を除去）。(#206)
+- `skills/skill-fix/SKILL.md` / `lib/skill_fix_dispatch.sh`: Issue 作成を `gh issue create`（`templates/issue/en/development.yml`）に、計画を `writing-plan-and-tests --skill-fix` にリルート。`<AUTOPILOT-GUARD>` → `<SKILL-FIX-GUARD>`。quality-gate / blocked-ac プロトコルは維持。(#206)
+- Issue テンプレート（`templates/issue/` と `.github/ISSUE_TEMPLATE/`）の Skill Checklist を 6-step v1.0 フローへリルート。(#206)
+- `skills/debugging/SKILL.md` / `skills/session-start/SKILL.md`: 削除済み skill / `config/spawn-profiles.yml` への参照を v1.0 skill / `.claude/config.yml` へ更新。(#206)
+- ドキュメント整備 (#207): `README.md` / `README.ja.md`（autopilot / Agent Teams / 旧 skill table / 旧 mermaid を 6-step v1.0 フローへ置換）、`DEVELOPMENT.md` / `DEVELOPMENT.ja.md`（Repository Structure・eval 章 → Test Evidence 章）、`docs/` 配下の prose を v1.0 フローと整合。対象: `docs/README.md`, `docs/product/*`, `docs/guides/*`（`skill-status-spec.md` は skill-fix を唯一の emitter とする実態へ書き換え）, `docs/methodology/*`（`scrumban.md` の GitHub Project ボードセクションは deferred tooling として legacy 注記付きで温存）, `docs/specs/llm-us-ac-auto-reference.md`, `docs/workflow/*`, `commands/README.md` / `lib/README.md`。テスト整備: `tests/README.md` を実在 73 本へ更新、`tests/fixtures/skill-fix/issues.json` のサンプル skill 名を v1.0 へ。
+
+### Notes
+
+- GitHub Projects ボード設定 tooling（`scripts/setup-project.sh` / `scripts/verify-project.sh` / `docs/methodology/scrumban.md` の GitHub Project セクション）は旧 phase 名をボード taxonomy として保持している。これはプラグイン本体の機能ではなくメンテナ用 tooling のため、ボード taxonomy の再設計は別 Issue で扱う。
 
 ## [2.6.0] - 2026-06-06
 

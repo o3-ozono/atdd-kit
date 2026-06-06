@@ -6,7 +6,7 @@
 1. No code edits without an Issue.
 2. No implementation without approved ACs.
 3. No completion claims without fresh verification evidence.
-4. atdd / verify / bug must load `docs/specs/<slug>.md` via `lib/spec_check.sh` before implementation or AC judgement.
+4. bug must load `docs/specs/<slug>.md` via `lib/spec_check.sh` before implementation or AC judgement.
 
 ## Instruction Priority
 1. User's explicit instructions (CLAUDE.md, direct requests) -- highest
@@ -47,6 +47,6 @@ Start with `Closes #<issue-number>`. Merge with `--squash`. Add matching `type:`
 Every change includes doc updates (`${CLAUDE_PLUGIN_ROOT}/docs/guides/doc-sync-checklist.md`). Investigate root cause first -- no workarounds without understanding.
 
 ## Guides
-`${CLAUDE_PLUGIN_ROOT}/docs/guides/commit-guide.md` | `${CLAUDE_PLUGIN_ROOT}/docs/workflow/workflow-detail.md` | `${CLAUDE_PLUGIN_ROOT}/docs/guides/review-guide.md` | Issue Ready: `atdd-kit:discover`
+`${CLAUDE_PLUGIN_ROOT}/docs/guides/commit-guide.md` | `${CLAUDE_PLUGIN_ROOT}/docs/workflow/workflow-detail.md` | `${CLAUDE_PLUGIN_ROOT}/docs/guides/review-guide.md` | Issue Ready: `atdd-kit:defining-requirements`
 
 When EN/JA variants exist (`*.ja.md`, `*-ja.yml`), read EN only. Read JA only when editing or syncing.

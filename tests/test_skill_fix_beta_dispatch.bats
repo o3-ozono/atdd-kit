@@ -59,12 +59,12 @@ SKILL_FIX_SKILL="skills/skill-fix/SKILL.md"
 
 # --- AC4: subagent prompt uses Skill tool chain ---
 
-@test "AC4: dispatch_subagent references /atdd-kit:issue invocation" {
-  grep -q 'atdd-kit:issue\|/atdd-kit:issue' "$DISPATCH_LIB"
+@test "AC4: dispatch_subagent references gh issue create for new Issue" {
+  grep -q 'gh issue create' "$DISPATCH_LIB"
 }
 
-@test "AC4: dispatch_subagent references /atdd-kit:discover with --skill-fix" {
-  grep -q 'discover.*--skill-fix\|--skill-fix.*discover' "$DISPATCH_LIB"
+@test "AC4: dispatch_subagent references /atdd-kit:writing-plan-and-tests with --skill-fix" {
+  grep -q 'writing-plan-and-tests.*--skill-fix\|--skill-fix.*writing-plan-and-tests' "$DISPATCH_LIB"
 }
 
 # --- AC4: audit marker injection ---

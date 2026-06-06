@@ -1,8 +1,8 @@
 # Definition of Done (DoD)
 
-> **Loaded by:** verify skill, ship skill
+> **Loaded by:** running-atdd-cycle (Step 4), reviewing-deliverables (Step 5), merging-and-deploying (Step 6)
 
-An Issue is **Done** when every criterion below is met. The ship skill checks DoD before marking an Issue closed.
+An Issue is **Done** when every criterion below is met. The merging-and-deploying skill (Step 6) checks DoD before marking an Issue closed.
 
 ## DoD Criteria
 
@@ -10,7 +10,7 @@ An Issue is **Done** when every criterion below is met. The ship skill checks Do
 
 | # | Criterion | How to Verify |
 |---|-----------|---------------|
-| D1 | **All ACs implemented** — every Given/When/Then AC has passing tests | verify skill evidence report |
+| D1 | **All ACs implemented** — every Given/When/Then AC has passing tests | running-atdd-cycle evidence report |
 | D2 | **Story Test (Q2) passes** — outer-loop integration/E2E test per AC | CI green on Story Tests |
 | D3 | **Unit Tests (Q1) pass** — inner-loop unit tests for all extracted logic | CI green on unit tests |
 | D4 | **No weakened tests** — no tests mocked away or conditioned to always pass | PR review check |
@@ -23,13 +23,13 @@ For AC-to-test-layer mapping rules, see [test-mapping.md](./test-mapping.md). te
 |---|-----------|---------------|
 | D5 | **CI all green** — all tests pass on the PR branch | GitHub Actions status |
 | D6 | **No linter errors** — static analysis passes | CI linter step |
-| D7 | **Eval pass_rate not regressed** — if skill changed, pass_rate delta < 10% | auto-eval output (see #73 for CI automation) |
+| D7 | **BATS suite green** — if a skill changed, the relevant `tests/*.bats` cover the change and pass | `bats tests/` output |
 
 ### PR Gate
 
 | # | Criterion | How to Verify |
 |---|-----------|---------------|
-| D8 | **PR review approved** — at least one Reviewer PASS (autopilot or human) | GitHub PR review status |
+| D8 | **PR review approved** — at least one specialist reviewer PASS (from reviewing-deliverables, Step 5) or human approval | GitHub PR review status |
 | D9 | **No open review comments** — all threads resolved | GitHub PR threads |
 | D10 | **Issue linked in PR body** — `Closes #NNN` in PR description | PR body check |
 
@@ -47,8 +47,8 @@ When the PR modifies a `skills/*/SKILL.md` file, these additional criteria apply
 
 | # | Criterion | How to Verify |
 |---|-----------|---------------|
-| DS1 | **Eval evidence present** — before/after pass_rate comparison in PR comment | PR comment from auto-eval |
-| DS2 | **Eval marker not manually created** — no hand-crafted eval markers | Git diff shows no `baseline.json` manipulation |
+| DS1 | **BATS coverage present** — the change is covered by a `tests/*.bats` case that asserts the new/changed skill behavior | `bats tests/` includes the relevant test |
+| DS2 | **No weakened skill tests** — no `@test` block deleted or conditioned to always pass to accommodate the change | PR diff review |
 | DS3 | **skills/README.md updated** if skill added or removed | README diff |
 
 ## Increment = Done Issue
@@ -60,14 +60,14 @@ An Increment is complete when:
 
 A merged PR without a closed Issue is not a complete Increment — it may be a partial contribution.
 
-## Relationship to Autopilot Labels
+## Relationship to Scrumban Labels
 
 | Label | DoD Relationship |
 |-------|-----------------|
-| `implementing` | atdd in progress; DoD not yet met |
+| `implementing` | running-atdd-cycle in progress; DoD not yet met |
 | `ready-for-PR-review` | AC gate + CI gate met; awaiting PR review |
 | `needs-pr-revision` | PR gate failed; revision needed |
-| (Issue closed) | Full DoD confirmed; ship complete |
+| (Issue closed) | Full DoD confirmed; merging-and-deploying complete |
 
 See [scrumban.md](./scrumban.md) for the full label correspondence table.
 

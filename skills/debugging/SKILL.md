@@ -72,8 +72,8 @@ Proceed to fix? [Yes / Need more investigation]
 
 ### Step 6: Transition to Fix
 
-- **Type A:** Chain to `atdd-kit:discover` to add missing AC
-- **Type B/C:** Chain to `atdd-kit:atdd` with regression test
+- **Type A:** Chain to `atdd-kit:defining-requirements` to add missing AC
+- **Type B/C:** Chain to `atdd-kit:running-atdd-cycle` with regression test
 
 ## 3-Failure Escalation Rule
 

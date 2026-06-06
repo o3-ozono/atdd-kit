@@ -84,9 +84,9 @@ The following fields require free-text input by nature. Do not replace them with
 
 | Skill | Free-text field |
 |-------|----------------|
-| `issue` | Issue title (Step 2 free input) |
+| `defining-requirements` | Issue title, AC Given/When/Then body text |
 | `bug` | Bug symptom (Phase 1 Q1), reproduction steps (Phase 1 Q3), environment details (Phase 1 Q4), logs/screenshots (Phase 1 Q5) |
-| `discover` | Root Cause `Cause` description (Bug Flow Step 2), AC Given/When/Then body text |
+| `running-atdd-cycle` | Root Cause `Cause` description (Bug Flow) |
 
 **Rule:** If the user must compose a descriptive answer rather than select from a predefined set, use plain text prompting — not AskUserQuestion.
 
@@ -95,40 +95,29 @@ The following fields require free-text input by nature. Do not replace them with
 The following are the **key decision points** where AskUserQuestion must be used.
 All other interaction points (information gathering, free-text fields) follow normal text prompting.
 
-### ideate — key decision points
+### defining-requirements — key decision points
 
 | # | Section | Decision |
 |---|---------|---------|
-| I-1 | Post-Issue Mode: Step 0 Skip offer | Brainstorm or skip to discover? |
-| I-2 | ideate Step 2: Approach selection (Post and Pre mode) | Which approach to pursue? |
-| I-3 | Step 3: Design Decision confirmation | Proceed or revise? |
+| DR-1 | Task Type Detection (when unclear) | Which task type is this? |
+| DR-2 | Approach selection | Which approach? |
+| DR-3 | AC approval | Approve or needs revision? |
 
-### discover — key decision points
-
-| # | Section | Decision |
-|---|---------|---------|
-| D-1 | discover Task Type Detection (when unclear) | Which task type is this? |
-| D-2 | discover Step 2: Approach selection | Which approach? |
-| D-3 | Step 3: User Story confirmation | OK or revise? |
-| D-4 | Step 7: AC approval (Standalone mode) | Approve or needs revision? |
-| D-5 | Bug Flow Step 2: Root Cause confirmation | Analysis correct or needs correction? |
-| D-6 | Docs/Research Flow Step 4: DoD approval | Approve or needs revision? |
-
-### issue — key decision points
-
-| # | Section | Decision |
-|---|---------|---------|
-| IS-1 | issue Step 2/3: Priority confirmation | P1, P2, or P3? |
-
-Note: issue Step 1 task-type auto-detection and Issue title collection are **not** key decision points.
+Note: task-type auto-detection (when clear) and Issue title collection are **not** key decision points.
 Auto-detection proceeds without AskUserQuestion. Title input uses free text.
 
-### plan — key decision points
+### extracting-user-stories — key decision points
 
 | # | Section | Decision |
 |---|---------|---------|
-| P-1 | plan Step 3: Outer Loop test layer selection | E2E or Integration? |
-| P-2 | plan Handling Large Plans: split decision | Split or continue as-is? |
+| US-1 | User Story confirmation | OK or revise? |
+
+### writing-plan-and-tests — key decision points
+
+| # | Section | Decision |
+|---|---------|---------|
+| P-1 | Outer Loop test layer selection | E2E or Integration? |
+| P-2 | Handling Large Plans: split decision | Split or continue as-is? |
 
 ### bug — key decision points
 
@@ -141,7 +130,6 @@ Auto-detection proceeds without AskUserQuestion. Title input uses free text.
 - **Skill authoring guide and all LLM-facing files** (`skills/`, `rules/`, `docs/`, `commands/`, `agents/`): **English only**
 - Follow `DEVELOPMENT.md` i18n rules: no `*.ja.md` for LLM-facing files
 - AskUserQuestion `header` and `options`: English (consistent with SKILL.md language)
-- evals/evals.json `assertion text`: Japanese acceptable (existing convention)
 
 See `DEVELOPMENT.md` § Language for the full language policy.
 
@@ -164,7 +152,7 @@ Recommended: [recommended choice] — reply 'ok' to accept, or provide alternati
 The `Recommended: ... — reply 'ok' to accept` line ensures compatibility with existing
 `test_interaction_reduction.bats` AC10 grep patterns.
 
-## Example: Approach Selection (ideate Step 2)
+## Example: Approach Selection (defining-requirements)
 
 ```markdown
 Use AskUserQuestion with:

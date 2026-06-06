@@ -43,7 +43,7 @@ Run independent information-gathering steps **in parallel**. Phase 0 must comple
 
 ### D. First-Time Setup and Legacy Migration (.claude/config.yml)
 
-This phase handles (a) first-time project setup and (b) migration from the legacy `.claude/workflow-config.yml` to `.claude/config.yml`. The single source of truth for project-side settings is now `.claude/config.yml` (merged from the old `workflow-config.yml` `platform` + the retired plugin-side `config/spawn-profiles.yml`). All migration logic is idempotent and logs its outcome into the Phase 3 sync report (migrated / skipped / merged / no-op).
+This phase handles (a) first-time project setup and (b) migration from the legacy `.claude/workflow-config.yml` to `.claude/config.yml`. The single source of truth for project-side settings is now `.claude/config.yml` (carrying the `platform` field migrated from the old `workflow-config.yml`). All migration logic is idempotent and logs its outcome into the Phase 3 sync report (migrated / skipped / merged / no-op).
 
 #### D-1. Legacy migration branches (AC7)
 
@@ -51,7 +51,7 @@ Evaluate the two files and act per the branch table below. All branches are idem
 
 | `.claude/workflow-config.yml` (old) | `.claude/config.yml` (new) | Action | Sync report |
 |---|---|---|---|
-| present | absent | **old-only** — write new file (AC11 placeholder template included), then delete old. If the write fails, leave old in place (no partial state). | `migrated: workflow-config.yml → config.yml` |
+| present | absent | **old-only** — write new file (platform field, see D-3), then delete old. If the write fails, leave old in place (no partial state). | `migrated: workflow-config.yml → config.yml` |
 | absent | present | **new-only** — no-op. | `skipped: config.yml already present` |
 | present | present, `platform` key present in new | **both-exist, platform present** — delete old only; do not merge (duplicate merge is skipped to avoid silently overwriting a user edit). | `merged-skipped: config.yml already owns platform; deleted old workflow-config.yml` |
 | present | present, `platform` key absent in new | **both-exist, platform absent** — merge the old `platform` value into new, then delete old. | `merged: platform from old workflow-config.yml → config.yml; deleted old` |
@@ -83,38 +83,18 @@ If both `.claude/workflow-config.yml` and `.claude/config.yml` are absent after 
    - **Deploy files**: Copy each `deploy` entry from `${CLAUDE_PLUGIN_ROOT}/addons/<platform>/<src>` to `<dest>`
    - **Hooks**: Add `hooks.PreToolUse` entries to `.claude/settings.json` (preserve existing)
    - **Guidance**: Display the `guidance` text
-4. **Write** `.claude/config.yml` using the AC11 placeholder template spec below.
+4. **Write** `.claude/config.yml` using the template spec in D-3 below.
 5. Continue to Phase 1-E
 
-#### D-3. AC11 — `.claude/config.yml` placeholder template (idempotent)
+#### D-3. `.claude/config.yml` template (idempotent)
 
-Every write to `.claude/config.yml` under D-1 (old-only migration) and D-2 (first-time setup) MUST include the `spawn_profiles` placeholder template unless the file already has a `spawn_profiles` section (commented or active) — skip writing the placeholder in that case so the process is idempotent (running the phase twice never duplicates or overwrites the block).
+Every write to `.claude/config.yml` under D-1 (old-only migration) and D-2 (first-time setup) writes the `platform` field. Skip writing if the file already has a `platform` section so the process is idempotent (running the phase twice never duplicates or overwrites a user edit), and validates as YAML (DoD smoke test: `python3 -c "import yaml; yaml.safe_load(open('.claude/config.yml'))"`).
 
-Requirements the placeholder template must meet:
-
-- Commented-out (every line prefixed with `# `) so YAML parsers ignore it until the user opts in.
-- Enumerates all 6 roles (developer / qa / tester / reviewer / researcher / writer), each with at least one example line illustrating the `{ model: sonnet|opus|haiku }` map shape.
-- Includes a note that unspecified roles inherit the session default (Agent tool `model` parameter omitted), so partial definitions are valid.
-- Yields valid YAML after the user uncomments the lines (verified by the DoD manual smoke test: `python3 -c "import yaml; yaml.safe_load(open('.claude/config.yml'))"`).
-
-Reference template (embed verbatim; the leading `# ` on every line ensures the section stays inert until the user opts in):
+Reference template (embed verbatim):
 
 ```yaml
 platform:
   - <detected-platform>
-
-# spawn_profiles:
-#   # custom: optional per-project spawn profile applied by /atdd-kit:autopilot
-#   # when no --profile flag is supplied. Define only the roles you want to
-#   # override — roles not listed here inherit the session default (model
-#   # parameter omitted from the Agent tool call).
-#   custom:
-#     developer:  { model: sonnet }
-#     qa:         { model: sonnet }
-#     tester:     { model: sonnet }
-#     reviewer:   { model: opus }
-#     researcher: { model: sonnet }
-#     writer:     { model: sonnet }
 ```
 
 ### E. Plugin Version Check
@@ -207,7 +187,7 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 ### Worktree Cleanup  <-- only if stale worktrees were found
 | Worktree | Action |
 |----------|--------|
-| autopilot-123 | Pruned (orphaned) |
+| worktree-123 | Pruned (orphaned) |
 
 ### Open Issues
 | # | Title | Labels |
@@ -235,4 +215,3 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
    ```
 2. Remove EXCLUDE_SET from open Issues
 3. Rank remaining: bugs > features > refactoring > research
-4. Apply priority labels: p1 > p2 > p3
