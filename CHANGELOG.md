@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-06-06
+
+### BREAKING Changes (inherited from 2.0.0 — still in effect)
+- `--light` and `--heavy` flags removed (see [2.0.0] for full migration guide). Use `spawn_profiles.custom` in `.claude/config.yml` or `--profile="..."`. (#122)
+
 ### Fixed
 - `skills/defining-requirements/SKILL.md`: 本文の Step 番号を canonical な 6-step フロー（`rules/atdd-kit.md` Workflow table）と整合。「Step 1+2」→「Step 1」、`extracting-user-stories`「Step 3」→「Step 2」、`writing-plan-and-tests`「Step 4」→「Step 3」、`running-atdd-cycle`「Step 5」→「Step 4」、`reviewing-deliverables`「Step 6」→「Step 5」、"PRD review happens at Step 6"→"Step 5"。#226 reviewer subagent CONCERN の follow-up。(#227)
 - `agents/README.md`: reviewer criteria 数を source of truth（`agents/final-reviewer.md`）と整合。us-reviewer「10」→「7」structural criteria（#218 で削減済み）、final-reviewer「50 criteria total」→「47 criteria total」。(#231)
@@ -24,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_skill_terminology_grep.bats`: 許容例外パスに `198-tests-claude-code-deprecation` を追加 (D1+D2 統合 Issue が旧用語の廃止を議論するため)。(#198)
 
 ### Added
+- `skills/merging-and-deploying/SKILL.md`: v1.0 Step 6 implementation（flow terminus）。review PASS を前提に **merge → deploy → post-deploy regression** の順で ship。post-deploy regression は `tests/acceptance/` の `[regression]` AT を本番ビルドに対して re-run。PASS でない場合は Step 5/4 に差し戻して停止。Output language Japanese。Subagent/label/コード修正は out of scope。(#193)
+- `tests/test_merging_and_deploying_skill.bats`: Unit Test (12 cases) — merge→deploy flow / post-deploy AT re-run (regression, `tests/acceptance/`) / merge 前提 (review PASS) / responsibility boundary / line budget / output language / persona-less を検証。(#193)
+- `tests/e2e/merging-and-deploying.bats`: Skill E2E Test 3 `@test`（F1 flow order, F2 post-deploy AT re-run, F3 merge precondition）。(#193)
+- `skills/reviewing-deliverables/SKILL.md`: v1.0 Step 5 implementation。Step 1-4 成果物 (PRD/US/Plan/Code/AT) を 6 reviewer subagent (`prd-reviewer`/`us-reviewer`/`plan-reviewer`/`code-reviewer`/`at-reviewer`/`final-reviewer`) で **直列レビュー**（#216 PRD OQ#1: context 分離）。5 specialist が計 **47 structural criteria**、`final-reviewer` が集約して単一 PASS/FAIL を出力。動作確認は AT で完結し manual/preview は強制しない。Output language Japanese。(#192)
+- `tests/test_reviewing_deliverables_skill.bats`: Unit Test (16 cases) — 6 subagent roster / serial 実行 / AT 動作確認 (manual 非強制) / 47-criteria 整合 / responsibility boundary / line budget / output language / persona-less を検証。(#192)
+- `tests/e2e/reviewing-deliverables.bats`: Skill E2E Test 4 `@test`（F1 subagent roster, F2 serial, F3 AT 動作確認, C1 final-reviewer aggregate→PASS/FAIL）。(#192)
+- `skills/running-atdd-cycle/SKILL.md`: v1.0 Step 4 implementation。`plan.md` + `acceptance-tests.md` を読み **ATDD double loop**（outer AT loop + nested TDD inner loop）で実装を駆動。実行可能 AT は story 単位で `tests/acceptance/AT-<NNN>.*` に配置、lifecycle `draft → green → regression` を機構として駆動し RED 確認を必須化。C1-C5 ATDD 解釈（Concrete Examples / draft→green / TDD nest / story 単位・unit 単位 / External・Internal 2 feedback loop）を機構強制。Output language Japanese。(#191)
+- `tests/test_running_atdd_cycle_skill.bats`: Unit Test (17 cases) — C1-C5 機構 (Concrete Examples + Given/When/Then / lifecycle + RED / TDD nest / story・unit 粒度 / 2 feedback loop) と responsibility boundary / line budget / output language / persona-less を検証。(#191)
+- `tests/e2e/running-atdd-cycle.bats`: Skill E2E Test 4 `@test`（F1 input/output paths, F2 TDD inner loop nest, F3 AT lifecycle, C4 story 単位/unit 単位）。(#191)
 - `skills/writing-plan-and-tests/SKILL.md`: v1.0 Step 3 implementation. Reads `docs/issues/<NNN>/user-stories.md`, builds a Plan (`docs/issues/<NNN>/plan.md`, 2-5 分粒度タスク + `verify:` ペア, Implementation/Testing/Finishing) と AT 方針 (`docs/issues/<NNN>/acceptance-tests.md`, lifecycle `[planned] → [draft] → [green] → [regression]`) を生成。`design-doc.md` は trade-off / alternatives がある時のみ生成（Ubl 2020）。Output language fixed to Japanese。Scope ends at planning artifacts（実行可能 AT と ATDD double loop は `running-atdd-cycle` #191）。Subagent invocation と `in-progress` label management は out of scope。plan のユーザー承認ゲートは持たず技術レビューは Step 5 に委譲（`workflow-overrides.md`）。(#190)
 - `tests/test_writing_plan_and_tests_skill.bats`: Unit Test (27 cases) — responsibility boundary (input/output paths, template citations, upstream/downstream skill, subagent/label scope), line budget (≤200), plan granularity (2-5 min + verify), AT lifecycle, design-doc conditionality, output language, persona-less invariant (SKILL.md + 両 template), template structure を検証。(#190)
 - `tests/e2e/writing-plan-and-tests.bats`: Skill E2E Test. 1 skill = 1 file / 4 `@test` (F1 input/output paths, F2 2-5 min grain + verify, F3 AT lifecycle, C1 conditional design-doc) で実 `claude` を `claude -p --max-turns 1` で呼び出して SKILL.md の挙動回復性を検証。(#190)
@@ -40,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `tests/test_defining_requirements_skill.bats`: Unit Test (6 cases) — responsibility boundary (output path, downstream skill, subagent and label scope) and line budget (≤200). (#188)
 
 ### Changed
+- `tests/test_v1_skill_skeletons.bats`: `running-atdd-cycle` / `reviewing-deliverables` / `merging-and-deploying` removed from the `SKELETON_SKILLS` array (B4-B6 implemented). (#191 / #192 / #193)
 - `tests/test_v1_skill_skeletons.bats`: `writing-plan-and-tests` removed from the `SKELETON_SKILLS` array (B3 implemented). (#190)
 - `tests/test_v1_skill_skeletons.bats`: `extracting-user-stories` removed from the `SKELETON_SKILLS` array (B2 implemented). (#189)
 - **Renamed: skill testing terminology.** v1.0 で「SAT (Skill Acceptance Test) / L1 BATS gate / L2 Fast SAT / L3 Integration SAT / Fast layer / Integration layer」を全廃し **Unit Test (claude を呼ばない BATS) / Skill E2E Test (実 claude 起動)** の 2 層に統一。`docs/testing-skills.md` が新体系の単一の正典。CHANGELOG.md / `docs/testing-skills.md` の廃止宣言 / `docs/issues/222-*` / `docs/issues/179-*` には移行ガイドとして旧用語を保持。(#222)

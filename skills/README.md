@@ -53,9 +53,9 @@ Additionally, `skill-gate` enforces **Iron Law #1**: no code editing without an 
 | [defining-requirements](defining-requirements/) | Implemented (#179 B1) | v1.0 flow: Step 1 Discovery & Definition |
 | [extracting-user-stories](extracting-user-stories/) | Implemented (#179 B2) | v1.0 flow: Step 2 User Story extraction |
 | [writing-plan-and-tests](writing-plan-and-tests/) | Implemented (#179 B3) | v1.0 flow: Step 3 Plan + Acceptance Tests |
-| [running-atdd-cycle](running-atdd-cycle/) | v1.0 skeleton — not yet implemented (#179 B4) | v1.0 flow: Step 4 ATDD implementation |
-| [reviewing-deliverables](reviewing-deliverables/) | v1.0 skeleton — not yet implemented (#179 B5) | v1.0 flow: Step 5 Review |
-| [merging-and-deploying](merging-and-deploying/) | v1.0 skeleton — not yet implemented (#179 B6) | v1.0 flow: Step 6 Merge + Deploy |
+| [running-atdd-cycle](running-atdd-cycle/) | Implemented (#179 B4) | v1.0 flow: Step 4 ATDD implementation |
+| [reviewing-deliverables](reviewing-deliverables/) | Implemented (#179 B5) | v1.0 flow: Step 5 Review |
+| [merging-and-deploying](merging-and-deploying/) | Implemented (#179 B6) | v1.0 flow: Step 6 Merge + Deploy |
 | [launching-preview](launching-preview/) | v1.0 skeleton — not yet implemented (#179 B7) | v1.0 on-demand: local preview |
 | [writing-design-doc](writing-design-doc/) | v1.0 skeleton — not yet implemented (#179 B8) | v1.0 on-demand: design document |
 
