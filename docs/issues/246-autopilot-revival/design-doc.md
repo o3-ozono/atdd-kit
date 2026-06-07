@@ -56,42 +56,63 @@ discover(人間ゲート: AC承認)
 
 ### 2. 満足オラクル = AND ゲート
 - **AT がある step（plan+AT 以降）**: `AT(RED→GREEN) == green` AND `verdict.overall_correctness == correct` AND `P0/P1 findings == 0`。
-- **AT が無い step（PRD/US）**: `verdict.overall_correctness == correct` AND `P0/P1 == 0`（reviewer のみ。AT backstop 不在を Open Question として明示）。
+- **AT が無い step（PRD/US）**: `verdict.overall_correctness == correct` AND `P0/P1 == 0`（reviewer のみ。AT backstop 不在は §2.1 と Open Question 2 で扱う）。
 - **決定論ゲートは決定論に任せる**: lint/test/AT の合否は **コード/CI が判定**し、LLM に「テストが通るか」を再判定させない（Open SWE のリファクタ教訓）。
+
+#### 2.1 AT 自体の客観性 — AC→AT トレーサビリティゲート（重要）
+AND ゲートの AT は「override 不能な客観 backstop」と称するが、**その AT は同じ autopilot ループ内の AI（Step 3 plan+AT）が書く**。したがって AT が緑でも、それは「**ループが自分で生成した spec に対して**緑」でしかなく、生成 AT が discover で**人間が承認した AC** を忠実・網羅的にエンコードしている保証は別途必要になる（さもなくば「自分の宿題を自分の物差しで採点」）。
+
+そこで backstop の前提として **AC→AT カバレッジ/トレーサビリティゲート**を置く:
+- discover で**人間が承認した AC set は immutable**（autopilot は変更不可）。
+- 生成された `acceptance-tests.md` が、その承認済み AC を**漏れなく**エンコードしているかを、**AT を書いた generator とは別 context** で検証する（各 AC → 対応 AT のトレーサビリティ、未カバー AC = P0 finding）。
+- immutability は「AI が AT を書いた**後**に固定される」ものなので、**固定前のカバレッジ検証**が客観性の前提である点を明記する。
+- このゲートが緑になって初めて、以降の step で AT を客観 backstop として信頼する。
+
+これにより「AT を持つ step では循環参照で false-green を防げない」という穴を正面から塞ぐ（人間承認 AC という外部アンカーに接地させる）。eval による定量裏付けは Open Question 4 に残す。
 
 ### 3. 構造化 verdict schema（Codex 式）
 `reviewing-deliverables` の Aggregate 出力を機械可読に拡張:
 ```
 { overall_correctness: "correct"|"incorrect",
   findings: [ { priority: 0-3, confidence: 0-1, file, line_range,
-               detail, evidence_path } ] }   // evidence_path = 失敗 AT/ログのパス（必須）
+               detail, evidence_ref } ] }   // evidence_ref は必須（型は step 種別で異なる、下記）
 ```
-ループ exit 条件 = AT 全緑 AND `overall_correctness=correct` AND P0/P1 ゼロ。canonical verdict 行を fail-closed パース。
+**`evidence_ref` の型（裏付けの無い指摘を弾くため必須、step 種別ごとに定義）**:
+- **AT がある step**: 失敗 AT 名 / ログのパス（実行可能な証拠）。
+- **AT が無い step（PRD/US）**: immutable な PRD / 承認済み AC からの **引用行（source quote + 行番号）**。
+- **人間差し戻し由来の finding（§7）**: 人間コメントの URL / 引用。
 
-### 4. 収束 / 安全レール（research の最大リスク #2 対策）
+ループ exit 条件 = （AT step なら AT 全緑 AND）`overall_correctness=correct` AND P0/P1 ゼロ。canonical verdict 行を fail-closed パース。
+
+### 4. 収束 / 安全レール（ループ非収束・livelock 対策）
 - **MAX_ITERATIONS**（step ごと, 例: 実装 8 / 設計系 4。Ralph=10, sandbox=20 を参考）。
 - **sameness-detector**: 失敗の正規化 fingerprint（sha256）が **2 連続同一で halt**（dantodor）。
 - **stuck 検出**: window=3 で進捗なし → halt（SWE-AF）。
 - **COMPLETED_WITH_DEBT 退避**: 予算到達時は未解決 finding を debt として記録し人間へ。
 - 非収束時は **exit 非ゼロ + human escalation**（"review manually: <理由>"）。
 
-### 5. レビュアーの独立性 / 反幻覚（最大リスク #1 false-green 対策）
+### 5. レビュアーの独立性 / 反幻覚（false-green 対策）
 - reviewer を **別 context / read-only** で実行（generator と盲点を共有させない）。
 - **immutable な `acceptance-tests.md` / AC set にアンカー**（sandbox の :ro mount 相当）。
-- 各 finding に **失敗 AT/ログのパス引用を強制**（裏付けの無い指摘を弾く）。
+- 各 finding に **`evidence_ref` を強制**（§3: 失敗 AT/ログ、または AC/PRD の引用行、または人間コメント — 裏付けの無い指摘を弾く）。
 - **detect-then-validate**（フレッシュ agent で再検証, Anthropic）+ **false-positive denylist** + **引用ファイルを開いて行番号検証**（yeameen）。
 - **precision over recall**: P0/P1 のみブロック、minor/nit は pass-with-notes（OpenAI/Anthropic の共通選択）。
 
-### 6. 監査整合性（リスク #5 silent fake-green 対策）
+### 6. 監査整合性（silent fake-green 対策）
 - **裏付けレビュアーコメントの無い PASS は自動降格 + 再実行**（RyanAmundson）を hard rule 化。
 - 各反復の verdict を `docs/issues/<NNN>/autopilot-log.jsonl` に **JSONL 永続化**（fresh-context-per-iteration の外部真実源 / 監査証跡）。
 
-### 7. 人間差し戻しのループ内取り込み（リスク #6）
+### 7. 人間差し戻しのループ内取り込み（人間コメントの取り込み）
 - 人間コメントを **「もう一つの finding」として反復に再投入**。判定は timestamp cutoff でなく「**Addressed 返信が無い**」で（RyanAmundson）。fire-and-forget にしない（途中介入可能）。
+- **ループ・ライフサイクル上の再投入点**（全体像のループは収束後に exit している点に注意）:
+  1. 人間コメントが付くのは主に **merge ゲート**（near-green を人間が確認する時点）か、ループ実行中の途中介入。
+  2. コメントを finding 化し、**対象成果物に対応する step のループを再開**する（対象が特定できなければ直近 step）。
+  3. 再開時は **MAX_ITERATIONS を再起動**（人間介入は新しい収束サイクルの開始とみなす）。ただし sameness-detector の履歴は保持し、同一失敗の再発は引き続き検出する。
+  4. 人間 finding の `evidence_ref` は **人間コメントの URL / 引用**（§3 と整合、必須要件を満たす）。
 
-### 8. リスク段階化 / コスト（リスク #3, #4）
+### 8. リスク段階化 / コスト（コスト・false-positive 疲労対策）
 - 変更規模 / keyword（auth/migration/secrets）で **レビュアー強度・反復予算を tier**（1/2/3 パス）。小変更に full-council コストを払わせない。
-- **model-tier routing**（haiku=gating, opus=bug/logic, Anthropic）。
+- **model-tier routing**（haiku=gating, opus=bug/logic）— 本設計の提案手法（安価モデルで足切り、強モデルで bug/logic 判断）。
 
 ### 9. 既存資産との接続
 - `skills/reviewing-deliverables/`（#235 Workflow primitive、#241 doc lens）をそのまま呼ぶ。
@@ -104,7 +125,8 @@ discover(人間ゲート: AC承認)
 | 採用する設計 | 代償・限界 |
 |--------------|-----------|
 | 並列マルチレビュアー × 反復ループ | **コスト増**（adversarial-review=6 calls/反復, SWE-AF≈$19/run）。→ tiering / model-routing で緩和するが、小変更でも単純フローよりは高い。 |
-| AND(AT, verdict) を hard ゲート | AT が無い step（PRD/US）では backstop が reviewer のみになり、false-green リスクが相対的に残る。 |
+| AND(AT, verdict) を hard ゲート | AT が無い step（PRD/US）では backstop が reviewer のみになり、false-green リスクが相対的に残る（§2.1 / OQ2）。 |
+| AC→AT トレーサビリティゲート（§2.1）で AT の客観性を担保 | 追加の独立検証 step が要る（コスト・実装複雑性増）。また「人間承認 AC が網羅的・正確」であることに依存する（AC 自体の品質は discover の人間ゲートに帰着）。 |
 | 前倒し収束（置換でなく拡張） | 「人間レビュー完全消去」という当初仮説より一段控えめ。人間は merge ゲートで最終確認する負荷が残る（ただしエビデンスはこれを支持）。 |
 | 薄い orchestrator + 安全レール | 非収束時は「完成しない」ことがある（COMPLETED_WITH_DEBT/escalation）。"必ず緑になる" は保証しない。 |
 | fresh-context-per-iteration + JSONL 外部真実源 | 実装が状態管理を持つぶん複雑。ただし監査性と引き換え。 |
@@ -119,9 +141,9 @@ discover(人間ゲート: AC承認)
 ## Open Questions
 
 1. **スコープの最終確定（要ユーザー判断）**: 本 Design は「前倒し収束（merge は人間）」を推奨するが、ユーザー当初仮説は「人間レビュー置換」。どこまで人間を外すか（merge ゲートを残すか）は最終的にユーザーの意思決定。
-2. **PRD/US step の backstop**: AT が無い step で false-green をどう抑えるか（人間 1 点確認を残す / 別種の客観チェックを足す / reviewer 多重化のみで許容するか）。
+2. **PRD/US step の backstop**: AT が無い step で false-green をどう抑えるか（§2.1 の AC アンカー + 引用 evidence で一定担保するが、さらに人間 1 点確認を残す / 別種の客観チェックを足す / reviewer 多重化のみで許容するか）。
 3. **成果物形態**: orchestrator を Workflow script / `/atdd-kit:autopilot` command / 新 skill のどれで実装するか。
-4. **信頼度を上げる eval（リスク #8）**: 本番代替の独立エビデンスが無いため、`comment→change 率` / `post-merge defect 率` / `loop 収束率・平均反復数・コスト` を自前 eval で測り、段階的に人間ゲートを緩める。閾値をどう置くか。
+4. **信頼度を上げる eval（research.md「穴」#5: 本番代替の独立エビデンス不足）**: 本番代替の独立エビデンスが無いため、`comment→change 率` / `post-merge defect 率` / `loop 収束率・平均反復数・コスト` を自前 eval で測り、段階的に人間ゲートを緩める。閾値をどう置くか。
 5. **コスト上限**: 1 Issue あたりの token/コスト ceiling と、超過時の挙動（COMPLETED_WITH_DEBT で止める）。
 
 ## 推奨次アクション
