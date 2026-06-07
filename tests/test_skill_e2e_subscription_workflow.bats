@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# @covers: .github/workflows/skill-e2e-subscription.yml
 # tests/test_skill_e2e_subscription_workflow.bats
 # Policy-critical invariants of .github/workflows/skill-e2e-subscription.yml
 # (subscription-only Skill E2E CI). Locks the guards structurally so a future
