@@ -120,6 +120,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_headless_runner.bats | scripts/test-skills-headless.sh replay runner |
 | test_headless_exit_codes.bats | Headless runner exit-code contract |
 | test_pr_workflow_headless.bats | CI path-filter wiring for headless replay (Issue #72) |
+| test_pr_workflow_skill_e2e.bats | CI skill-e2e-test job (dry-run) + skill-e2e-live.yml wiring (Step G1 / #208) |
 
 ### Hooks & Scripts
 
