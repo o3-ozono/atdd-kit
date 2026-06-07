@@ -70,6 +70,22 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   grep -qiE 'testability' "$SKILL_FILE"
 }
 
+@test "coverage: documentation lens is an ALWAYS-include lens (#241)" {
+  grep -qiE 'documentation' "$SKILL_FILE"
+  # the ALWAYS-include list in the Generate prompt names documentation
+  grep -qE 'ALWAYS include these lenses:.*documentation' "$SKILL_FILE"
+}
+
+@test "coverage: documentation lens checks accuracy, consistency, and follow-through/sync (#241)" {
+  grep -qiE 'accuracy' "$SKILL_FILE"
+  grep -qiE 'consistency' "$SKILL_FILE"
+  grep -qiE 'follow-through|sync' "$SKILL_FILE"
+  # the DEVELOPMENT.md README/CHANGELOG/version follow-through invariant
+  grep -qE 'README' "$SKILL_FILE"
+  grep -qiE 'CHANGELOG' "$SKILL_FILE"
+  grep -qE 'plugin\.json' "$SKILL_FILE"
+}
+
 @test "coverage: positive (advocate) and negative (skeptic) stances" {
   grep -qiE 'advocate' "$SKILL_FILE"
   grep -qiE 'skeptic' "$SKILL_FILE"
