@@ -23,11 +23,17 @@
 3. **既存 primitive の再利用**: `reviewing-deliverables`(#235) を **single-pass primitive のまま**使い、autopilot はその上の薄い loop orchestrator に徹する（Codex/Anthropic の「ループとレビュアーを分離せよ」原則）。
 4. **満足オラクル = AND(実行可能 AT, レビュアー verdict)**: atdd-kit の構造的差別化。AT の RED→GREEN を **override 不能な客観 backstop** とし、LLM verdict と AND でゲートする。
 5. **安全に失敗する**: 非収束・予算超過・同一失敗反復を検出し、人間へ escalation して停止する（無限ループ・silent fake-green を構造的に防ぐ）。
+6. **要件確定（Step 1）は逆に人間×AI の壁打ちを"厚く"する**: 下流を自律化する分、AC=外部アンカーを生む **defining-requirements は自律ループの対象外**とし、人間の本当の要求（暗黙知・言語化前の意図）を引き出して見極める **brainstorming / 壁打ち役**に徹する。ここの質が下流全自律ループの正しさを決めるため、最も人間×AI 協働を投資する。
+
+## スコープ決定（OQ1 確定 / 2026-06-07）
+
+ユーザー合意により本提案のスコープは **「前倒し収束（merge は人間ゲートを残す）」＋ 慣らし運転（conservative start → eval で段階緩和）** に確定。さらに **AC 承認（discover）は最後まで残す人間ゲート**とし、その要件確定フェーズは「ゲート」ではなく **能動的な壁打ち**にする（下記 Design §0）。完全置換（自動マージ）は当面の非ゴール。
 
 ## Non-Goals
 
 - **自動マージはしない**。merge は人間ゲートのまま（Anthropic *"does not approve or block PRs"* / OpenAI *"not a replacement"* と整合）。
 - **人間レビューの完全消去はしない**。人間ゲートは **discover(AC 承認)** と **merge** の 2 点に固定（Open SWE / 全候補 / 既存 `workflow-overrides` と一致）。
+- **要件確定（Step 1 defining-requirements）を自律ループ化しない**。ここだけは generate→review→fix の自律収束に**乗せず**、人間×AI の対話的な壁打ち（§0）に留める。要求の見極めは暗黙知の引き出しであり、自己ループでは代替できない。
 - **legacy の自律 refactor は約束しない**。この種ループは well-specified / greenfield 向き（Ralph/Huntley が明言）。
 - **旧 autopilot の逐語復活はしない**（Agent Teams orchestration / persona / autonomy-levels / circuit_breaker.sh は復活させない）。新基盤（Workflow/AT）に載せ替える。
 
@@ -36,8 +42,9 @@
 ### 全体像
 
 ```
-discover(人間ゲート: AC承認)
-  └→ [autopilot orchestrator]
+[要件確定: defining-requirements] ← 自律ループの対象外。人間×AI の壁打ち（§0）
+  └→ 人間ゲート: AC 承認（immutable な外部アンカーを確定）
+  └→ [autopilot orchestrator]  ← ここから自律
         各 step S in {US, plan+AT, ATDD実装}:
           loop (最大 N_S 回):
             1. S の skill で成果物を generate/修正
@@ -50,6 +57,18 @@ discover(人間ゲート: AC承認)
   └→ reviewing-deliverables 最終 PASS（near-green）
   └→ merge(人間ゲート)
 ```
+
+### 0. 要件確定フェーズ — 壁打ち / 要求の見極め（自律ループの外）
+autopilot が回り始める**前**の `defining-requirements`(Step 1) は、自律 generate→review→fix に**乗せない**。ここは人間の本当の要求を引き出して見極める **対話的 brainstorming（壁打ち）** にする。AC は全自律ループの外部アンカーなので、ここの質が下流すべての正しさを規定する（§2.1 と表裏一体）。
+
+「良い壁打ち」の要件（defining-requirements skill に反映する想定）:
+- **要求を急いで AC に落とさない**。まず *なぜ・誰の・どの痛み* を Socratic に掘る（言語化前の意図・暗黙知の表面化）。
+- **前提を疑い、代替案を提示**して反応を見る（Yes/No でなく選択肢で意図を炙り出す）。チェックリスト的詰問にしない。
+- **矛盾・抜け・過剰要求を指摘**して交渉する（人間が気づいていない非機能要求・エッジを足す）。
+- 収束したら **AC（Given/When/Then）に翻訳して人間承認**を取る。承認後 AC は immutable（autopilot は変更不可）。
+- ここは「合意形成の速さ」でなく「**要求の見極めの正確さ**」を最適化する（下流の自律ループが速いぶん、入口で間違えると綺麗に間違える）。
+
+→ 人間×AI の協働を**最も厚くする唯一のフェーズ**。下流（§1 以降）の自律化と意図的に対をなす。
 
 ### 1. loop と primitive の分離
 `reviewing-deliverables` は変更しない（single-pass の Workflow primitive）。autopilot は「いつ回すか・verdict をどう解釈してループするか」だけを担う薄い orchestrator（Workflow script or command）。これにより primitive の進化と loop の進化が独立する。
@@ -140,8 +159,8 @@ AND ゲートの AT は「override 不能な客観 backstop」と称するが、
 
 ## Open Questions
 
-1. **スコープの最終確定（要ユーザー判断）**: 本 Design は「前倒し収束（merge は人間）」を推奨するが、ユーザー当初仮説は「人間レビュー置換」。どこまで人間を外すか（merge ゲートを残すか）は最終的にユーザーの意思決定。
-2. **PRD/US step の backstop**: AT が無い step で false-green をどう抑えるか（§2.1 の AC アンカー + 引用 evidence で一定担保するが、さらに人間 1 点確認を残す / 別種の客観チェックを足す / reviewer 多重化のみで許容するか）。
+1. ~~**スコープの最終確定**~~ → **確定済み（2026-06-07）**: 前倒し収束（merge は人間ゲート維持）+ 慣らし運転、AC 承認は最後まで残す人間ゲート、要件確定は壁打ち化（§0 / スコープ決定セクション参照）。完全置換は当面非ゴール。
+2. **PRD/US step の backstop**: AT が無い step で false-green をどう抑えるか。要件確定(Step 1)は §0 の壁打ち + 人間 AC 承認で担保される。残るは **US(Step 2) の backstop**（§2.1 の AC アンカー + 引用 evidence で一定担保するが、さらに人間 1 点確認を残すか / reviewer 多重化のみで許容するか）。
 3. **成果物形態**: orchestrator を Workflow script / `/atdd-kit:autopilot` command / 新 skill のどれで実装するか。
 4. **信頼度を上げる eval（research.md「穴」#5: 本番代替の独立エビデンス不足）**: 本番代替の独立エビデンスが無いため、`comment→change 率` / `post-merge defect 率` / `loop 収束率・平均反復数・コスト` を自前 eval で測り、段階的に人間ゲートを緩める。閾値をどう置くか。
 5. **コスト上限**: 1 Issue あたりの token/コスト ceiling と、超過時の挙動（COMPLETED_WITH_DEBT で止める）。
@@ -149,8 +168,9 @@ AND ゲートの AT は「override 不能な客観 backstop」と称するが、
 ## 推奨次アクション
 
 本 Design を承認後、**段階実装**を別 Issue で:
-- Phase 1: 構造化 verdict schema を `reviewing-deliverables` 出力に追加（後方互換）。
-- Phase 2: 薄い orchestrator（1 step ぶんの generate→review→fix ループ + 安全レール）を最小実装し、`defining-requirements`(PRD) で dogfood。
-- Phase 3: 全 step へ展開 + eval 計測 + tiering。
+- Phase 0: `defining-requirements` を **壁打ち強化**（§0 の要件を skill に反映 — 要求を急いで AC に落とさない / 前提を疑い代替案を出す / 矛盾・抜け・過剰を指摘 / 見極めの正確さを最適化）。自律ループとは独立に先行可能。
+- Phase 1: 構造化 verdict schema（§3 `evidence_ref` 含む）を `reviewing-deliverables` 出力に追加（後方互換）。
+- Phase 2: 薄い orchestrator（1 step ぶんの generate→review→fix ループ + 安全レール）を最小実装し、**最初の自律 step = `extracting-user-stories`(US) で dogfood**（defining-requirements は非ループのため対象外）。AC→AT トレーサビリティゲート(§2.1)は plan+AT step 導入時に追加。
+- Phase 3: 全自律 step（US→plan+AT→ATDD）へ展開 + eval 計測 + tiering。
 
-各 Phase は atdd-kit 自身の 6-step フローで進める（ATDD 自己適用）。
+各 Phase は atdd-kit 自身の 6-step フローで進める（ATDD 自己適用）。要件確定（Step 1）は §0 の壁打ちで人間と詰める。
