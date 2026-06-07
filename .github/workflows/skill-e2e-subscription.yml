@@ -1,0 +1,71 @@
+name: Skill E2E (subscription / self-hosted)
+
+# Skill E2E Test を「サブスク課金内のみ」で実行する。
+# - 認証は self-hosted runner 上の Claude サブスク資格情報（macOS Keychain）。
+# - ANTHROPIC_API_KEY は置かない（置くと従量課金 API に流れる）。Guard で物理的に防ぐ。
+# - public repo のため workflow_dispatch 限定（write 権限者のみ起動可・fork からは起動不可）。
+# 詳細: docs/testing-skills.md (j) / Issue #243
+
+on:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "全 skill E2E を実行 (--all)"
+        type: boolean
+        default: false
+      changed_files:
+        description: "影響範囲算定の対象ファイル（カンマ区切り）。all=false かつ未指定なら HEAD~1..HEAD の差分"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-e2e-subscription
+  cancel-in-progress: false
+
+jobs:
+  skill-e2e:
+    runs-on: [self-hosted, macOS, atdd-kit-e2e]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # HEAD~1 差分算定のため
+
+      - name: Guard — ANTHROPIC_API_KEY が無い（従量課金を物理的に防ぐ）
+        run: |
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_API_KEY is set on the runner — subscription-only policy violation. Unset it."
+            exit 1
+          fi
+          echo "OK: ANTHROPIC_API_KEY unset"
+
+      - name: Guard — claude(サブスク/Keychain) と bats が使える
+        run: |
+          command -v claude  >/dev/null || { echo "::error::claude not found in PATH"; exit 1; }
+          command -v bats    >/dev/null || { echo "::error::bats not found (brew install bats-core)"; exit 1; }
+          claude --version
+          # サブスク資格情報が Keychain にあるか（無ければ runner で 'claude' を一度起動し /login）
+          security find-generic-password -s "Claude Code-credentials" -a "$USER" >/dev/null 2>&1 \
+            || { echo "::error::Claude not logged in on this runner. Run 'claude' once and /login (Pro/Max)."; exit 1; }
+          echo "OK: claude + bats + subscription credentials present"
+
+      - name: Run Skill E2E Test (subscription credit pool)
+        run: |
+          if [ "${{ inputs.all }}" = "true" ]; then
+            bash scripts/run-skill-e2e.sh --all
+          elif [ -n "${{ inputs.changed_files }}" ]; then
+            bash scripts/run-skill-e2e.sh --changed-files "${{ inputs.changed_files }}"
+          else
+            CHANGED="$(git diff --name-only HEAD~1 HEAD | paste -sd, -)"
+            echo "changed (HEAD~1..HEAD): ${CHANGED:-<none>}"
+            bash scripts/run-skill-e2e.sh --changed-files "$CHANGED"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: skill-e2e-logs
+          path: tests/e2e/.logs/
+          if-no-files-found: ignore

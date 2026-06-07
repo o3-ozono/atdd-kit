@@ -123,6 +123,8 @@ v1.0 への確定リリース。autopilot/Agent Teams 機構・旧 phase-name sk
 - `tests/test_skill_terminology_grep.bats`: 許容例外パスに `198-tests-claude-code-deprecation` を追加 (D1+D2 統合 Issue が旧用語の廃止を議論するため)。(#198)
 
 ### Added
+- `.github/workflows/skill-e2e-subscription.yml`: Skill E2E Test を self-hosted runner 上で **サブスク課金内のみ**（macOS Keychain のサブスク資格情報・`ANTHROPIC_API_KEY` 不使用）で実行する `workflow_dispatch` 限定ワークフロー。Guard ステップで API キー混入・未ログイン・bats 未設置を検出。`scripts/run-skill-e2e.sh` の影響範囲算定をそのまま使用。(#243)
+- `docs/testing-skills.md` (j) サブスク内 CI 実行: 課金方針（サブスクのみ・APIキー禁止・overflow OFF）、self-hosted runner 登録手順（リポジトリ単位 / ラベル `atdd-kit-e2e` / **`SessionCreate` を付けない**＝login keychain 遮断回避, #243 検証済み）、複数マシン（iMac + MacBook Air）同一ラベル運用を追記。(#243)
 - `skills/merging-and-deploying/SKILL.md`: v1.0 Step 6 implementation（flow terminus）。review PASS を前提に **merge → deploy → post-deploy regression** の順で ship。post-deploy regression は `tests/acceptance/` の `[regression]` AT を本番ビルドに対して re-run。PASS でない場合は Step 5/4 に差し戻して停止。Output language Japanese。Subagent/label/コード修正は out of scope。(#193)
 - `tests/test_merging_and_deploying_skill.bats`: Unit Test (12 cases) — merge→deploy flow / post-deploy AT re-run (regression, `tests/acceptance/`) / merge 前提 (review PASS) / responsibility boundary / line budget / output language / persona-less を検証。(#193)
 - `tests/e2e/merging-and-deploying.bats`: Skill E2E Test 3 `@test`（F1 flow order, F2 post-deploy AT re-run, F3 merge precondition）。(#193)
