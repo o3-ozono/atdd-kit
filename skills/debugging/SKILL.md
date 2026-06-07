@@ -55,7 +55,7 @@ Run reproduction steps with diagnostics. Record: actual vs. expected, where dive
 
 | Class | Description | Next Step |
 |-------|-------------|-----------|
-| **A: AC Gap** | Not covered by any AC | Add AC via `discover`, then fix |
+| **A: AC Gap** | Not covered by any AC | Add AC via `defining-requirements`, then fix |
 | **B: Test Gap** | AC exists, tests insufficient | Write missing test, then fix |
 | **C: Logic Error** | Tests exist, implementation wrong | Write regression test, then fix |
 

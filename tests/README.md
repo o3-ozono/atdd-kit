@@ -44,7 +44,12 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_running_atdd_cycle_skill.bats | running-atdd-cycle skill (Step 4, ATDD double loop) |
 | test_reviewing_deliverables_skill.bats | reviewing-deliverables skill (Step 5) |
 | test_merging_and_deploying_skill.bats | merging-and-deploying skill (Step 6) |
-| test_v1_skill_skeletons.bats | v1.0 skill skeleton structure across all 6 steps + on-demand skills |
+| test_launching_preview_skill.bats | launching-preview skill (on-demand, Step B7 / #194) |
+| test_writing_design_doc_skill.bats | writing-design-doc skill (on-demand, Step B8 / #195) |
+| test_bug_skill.bats | bug skill (special flow, Step C1 / #196) |
+| test_debugging_skill.bats | debugging skill (special flow, Step C1 / #196) |
+| test_skill_test_coverage.bats | all 10 flow skills have both Unit Test + Skill E2E Test (Step C1 / #196) |
+| test_v1_skill_skeletons.bats | v1.0 skill structure across all 6 steps + on-demand skills (skeleton set now empty) |
 | test_reviewer_subagents.bats | 6 specialist reviewer subagent definitions (agents/*.md, Issue #186) |
 
 ### Skill Structure & Quality
@@ -115,6 +120,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_headless_runner.bats | scripts/test-skills-headless.sh replay runner |
 | test_headless_exit_codes.bats | Headless runner exit-code contract |
 | test_pr_workflow_headless.bats | CI path-filter wiring for headless replay (Issue #72) |
+| test_pr_workflow_skill_e2e.bats | CI skill-e2e-test job (dry-run) + skill-e2e-live.yml wiring (Step G1 / #208) |
 
 ### Hooks & Scripts
 
@@ -177,7 +183,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 
 ## Skill E2E Tests (`tests/e2e/`)
 
-新フロー（#222 確定）の Skill E2E Test は `tests/e2e/<skill>.bats` 構造で、実 `claude` バイナリを起動して 1 User Story = 1 `@test` を回す。実行は `scripts/run-skill-e2e.sh` が path-based 影響範囲算定で対象を絞り込む。
+新フロー（#222 確定）の Skill E2E Test は `tests/e2e/<skill>.bats` 構造で、実 `claude` バイナリを起動して 1 User Story = 1 `@test` を回す。実行は `scripts/run-skill-e2e.sh` が path-based 影響範囲算定で対象を絞り込む。flow 対象 10 skill（6-step flow + on-demand 2: launching-preview / writing-design-doc + 特殊 2: bug / debugging）すべてに E2E が揃っており、`test_skill_test_coverage.bats` が Unit+E2E の揃いを機械検証する（#196）。
 
 ```bash
 scripts/run-skill-e2e.sh --changed-files <list>   # 影響範囲分のみ

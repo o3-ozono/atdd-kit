@@ -15,11 +15,11 @@ setup() {
     writing-design-doc
   )
   # Skills still in the skeleton state from #185. Each B PR (B1=#188 …
-  # B8=#195) removes its own entry when implemented.
-  SKELETON_SKILLS=(
-    launching-preview
-    writing-design-doc
-  )
+  # B8=#195) removed its own entry when implemented. As of B7 (#194) and
+  # B8 (#195) all 8 v1 skills are implemented, so this set is empty and the
+  # skeleton-specific assertions below are inert. The V1_SKILLS structural
+  # checks (existence, naming, "Use when", Integration section) still apply.
+  SKELETON_SKILLS=()
 }
 
 # --- AC1: All 8 skeleton SKILL.md files exist ---

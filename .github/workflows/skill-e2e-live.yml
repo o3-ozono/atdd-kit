@@ -1,0 +1,74 @@
+name: Skill E2E Test (Live)
+
+# Live Skill E2E verification. Runs `scripts/run-skill-e2e.sh`, whose
+# tests/e2e/<skill>.bats invoke real `claude -p` and spend tokens; therefore
+# gated to manual dispatch. The PR flow (pr.yml / skill-e2e-test) covers
+# structural verification in --dry-run mode with zero token spend — this
+# workflow exists for periodic full live runs and drift checks.
+
+on:
+  workflow_dispatch:
+    inputs:
+      changed_files:
+        description: "Comma-separated changed files (path-based impact mapping). Leave blank to run --all."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Verify API key present
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is required for live runs."
+            exit 1
+          fi
+
+      - name: Install BATS
+        run: |
+          EXPECTED_SHA="b640ec3cf2c7c9cfc9e6351479261186f76eeec8" # v1.11.1
+          git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git /tmp/bats
+          cd /tmp/bats
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::BATS integrity check failed: expected $EXPECTED_SHA, got $ACTUAL_SHA"
+            exit 1
+          fi
+          sudo ./install.sh /usr/local
+
+      - name: Install Claude Code CLI
+        # See headless-live.yml: claude.ai/install.sh is the only supported
+        # distribution channel (no SHA-pinned release assets published).
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify claude binary
+        run: claude --version
+
+      - name: Run Skill E2E Tests (live)
+        run: |
+          changed="${{ inputs.changed_files }}"
+          if [ -n "$changed" ]; then
+            scripts/run-skill-e2e.sh --changed-files "$changed"
+          else
+            scripts/run-skill-e2e.sh --all
+          fi
+
+      - name: Upload Skill E2E Test logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: skill-e2e-live-logs
+          path: tests/e2e/.logs/*.log
+          if-no-files-found: ignore
+          retention-days: 7
