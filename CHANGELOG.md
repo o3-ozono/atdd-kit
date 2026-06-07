@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-06-07
+
+### Changed
+
+- **reviewing-deliverables: `documentation` lens を動的パネルの ALWAYS-include に常設化**（#241）。これまで documentation は Scout が拾う risk surface 依存で、doc 比率の高い変更では散文ドキュメント（README / CHANGELOG / `docs/`）の正確性・整合性・追従性がレビューの穴になっていた（PR #240 のレビューで顕在化）。documentation lens の focus は (a) **accuracy**（prose が実変更と一致）、(b) **consistency**（cross-doc 一貫性。例: `skills/README.md` が全 skill を列挙）、(c) **follow-through / sync**（DEVELOPMENT.md の不変条件を diff に対し検証 — top-level dir 変更時の同 PR README 更新、feature 変更の CHANGELOG エントリ + `plugin.json` version bump。必須の doc 更新漏れは severity major）。`tests/test_reviewing_deliverables_skill.bats` に常設を pin。
+
 ## [3.2.0] - 2026-06-07
 
 epic #179 v1.0 の残ステップ（D3/D4 + B7/B8 + C1）を一括完了。これにより新フロー対象 **10 skill 全てに Unit Test + Skill E2E Test が揃い**、#179 DoD「全 10 skill にテストが実装され green」を満たした。(#240)
