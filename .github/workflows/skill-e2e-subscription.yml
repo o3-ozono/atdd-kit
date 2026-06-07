@@ -1,0 +1,83 @@
+name: Skill E2E (subscription / self-hosted)
+
+# Skill E2E Test を「サブスク課金内のみ」で実行する。
+# - 認証は self-hosted runner 上の Claude サブスク資格情報（macOS Keychain）。API キー不使用。
+# - Guard ロジックは scripts/ci/skill-e2e-guard.sh に単一ソース化し、bats で挙動検証する。
+# - public repo の self-hosted runner: main ref 限定（accidental 非 main を排除）。
+#   ※ write 権限保有者は ref/guard を編集可能なため、真の信頼境界は write 権限。docs (j) accept-risk 参照。
+# - workflow_dispatch 限定（write 権限者のみ起動可・fork からは起動不可）。
+# - ユーザー入力は env 化し run: に直接展開しない（スクリプトインジェクション防止）。
+# 詳細: docs/testing-skills.md (j) / Issue #243
+
+on:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "全 skill E2E を実行 (--all)"
+        type: boolean
+        default: false
+      changed_files:
+        description: "影響範囲対象（カンマ区切り）。all=false かつ未指定なら HEAD~1..HEAD 差分"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-e2e-subscription
+  cancel-in-progress: false
+
+jobs:
+  skill-e2e:
+    runs-on: [self-hosted, macOS, atdd-kit-e2e]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 2  # HEAD~1 差分算定のため
+
+      - name: Guard — main ref 限定（accidental 非 main を排除）
+        env:
+          GH_REF: ${{ github.ref }}
+        run: bash scripts/ci/skill-e2e-guard.sh main-ref "$GH_REF"
+
+      - name: Guard — 課金リダイレクト env が無い（サブスク以外に課金させない）
+        run: bash scripts/ci/skill-e2e-guard.sh billing-env
+
+      - name: Guard — claude(サブスク/Keychain) と bats が使える
+        run: |
+          set -euo pipefail
+          command -v claude >/dev/null || { echo "::error::claude not found in PATH"; exit 1; }
+          command -v bats   >/dev/null || { echo "::error::bats not found (brew install bats-core)"; exit 1; }
+          claude --version
+          security find-generic-password -s "Claude Code-credentials" -a "$USER" >/dev/null 2>&1 \
+            || { echo "::error::Claude not logged in on this runner. Run 'claude' once and /login (Pro/Max)."; exit 1; }
+          echo "OK: claude + bats + subscription credentials present"
+
+      - name: Run Skill E2E Test (subscription credit pool)
+        env:
+          INPUT_ALL: ${{ inputs.all }}
+          INPUT_CHANGED: ${{ inputs.changed_files }}
+        run: |
+          set -euo pipefail
+          if [ "$INPUT_ALL" = "true" ]; then
+            bash scripts/run-skill-e2e.sh --all
+          elif [ -n "$INPUT_CHANGED" ]; then
+            bash scripts/run-skill-e2e.sh --changed-files "$INPUT_CHANGED"
+          else
+            CHANGED="$(git diff --name-only HEAD~1 HEAD | paste -sd, -)"
+            if [ -z "$CHANGED" ]; then
+              echo "No changes in HEAD~1..HEAD — nothing to test (no-op)."
+              exit 0
+            fi
+            echo "changed (HEAD~1..HEAD): $CHANGED"
+            bash scripts/run-skill-e2e.sh --changed-files "$CHANGED"
+          fi
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: skill-e2e-logs
+          path: tests/e2e/.logs/
+          if-no-files-found: ignore
