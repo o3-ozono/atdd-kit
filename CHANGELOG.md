@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-06-07
+
+### Added
+- `.github/workflows/skill-e2e-subscription.yml`: Skill E2E Test を self-hosted runner 上で **サブスク課金内のみ**（macOS Keychain のサブスク資格情報・API キー不使用）で実行する `workflow_dispatch` 限定ワークフロー。`skill-e2e-live.yml`（#208, 従量課金）のサブスク版正系。`scripts/run-skill-e2e.sh` の影響範囲算定を使用。(#243)
+- `scripts/ci/skill-e2e-guard.sh`: サブスク限定 CI の Guard ロジック（課金リダイレクト env ブロックリスト ＋ main-ref 信頼境界）の**単一ソース**。ワークフローが委譲し、bats が**挙動検証**する（grep ではなく実行検証）。(#243)
+- `tests/test_skill_e2e_guard.bats`: 上記 Guard の**挙動検証** Unit Test 8 case — 7 課金 env それぞれで非ゼロ終了 / 非 main ref・tag・空 ref の拒否 / clean env で 0。反転・gut を検知する。(#243)
+- `tests/test_skill_e2e_subscription_workflow.bats`: ワークフローの構造 invariants 9 case（dispatch 限定 / 最小権限（write 昇格禁止）/ 専用ラベル / 入力 env 化 / SHA pin（40hex anchored）/ timeout / no-op / Guard スクリプトへの委譲）。(#243)
+- `docs/testing-skills.md` (j) サブスク内 CI 実行: 課金方針（サブスクのみ・APIキー禁止・overflow OFF）、self-hosted runner 登録手順（リポジトリ単位 / ラベル `atdd-kit-e2e` / **`SessionCreate` を付けない**）、複数マシン同一ラベル運用、ハードニング、**accept-risk（write 権限＝信頼境界。main-ref は accidental 排除の safety rail）**、metered 版 `skill-e2e-live.yml` との関係。(#243)
+
 ## [3.4.0] - 2026-06-07
 
 epic #179 の最後のサブステップ **C2（#197）** を完了。これで epic #179 の全サブ Issue がクローズされる。
@@ -123,9 +132,6 @@ v1.0 への確定リリース。autopilot/Agent Teams 機構・旧 phase-name sk
 - `tests/test_skill_terminology_grep.bats`: 許容例外パスに `198-tests-claude-code-deprecation` を追加 (D1+D2 統合 Issue が旧用語の廃止を議論するため)。(#198)
 
 ### Added
-- `.github/workflows/skill-e2e-subscription.yml`: Skill E2E Test を self-hosted runner 上で **サブスク課金内のみ**（macOS Keychain のサブスク資格情報・API キー不使用）で実行する `workflow_dispatch` 限定ワークフロー。`skill-e2e-live.yml`（#208, 従量課金）のサブスク版正系。セキュリティレビュー（reviewing-deliverables FAIL→改修）反映: 入力の env 化（スクリプトインジェクション防止）、課金リダイレクト env を全弾き（`ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` / Bedrock / Vertex 等）、**main ref 限定**（未レビュー任意ブランチを self-hosted で実行させない）、Action の SHA pin、`timeout-minutes`、空 diff を no-op(exit 0)化。`scripts/run-skill-e2e.sh` の影響範囲算定を使用。(#243)
-- `tests/test_skill_e2e_subscription_workflow.bats`: 上記ワークフローの課金方針・信頼境界 invariants（dispatch 限定 / 最小権限 / 専用ラベル / env 化 / 課金 env 全弾き / main ref 限定 / SHA pin / timeout / no-op）を構造的に固定する Unit Test 11 case。リファクタで方針が green CI のまま反転するのを防ぐ。(#243)
-- `docs/testing-skills.md` (j) サブスク内 CI 実行: 課金方針（サブスクのみ・APIキー禁止・overflow OFF）、self-hosted runner 登録手順（リポジトリ単位 / ラベル `atdd-kit-e2e` / **`SessionCreate` を付けない**＝login keychain 遮断回避, #243 検証済み）、複数マシン（iMac + MacBook Air）同一ラベル運用、ハードニング項目、**accept-risk（public repo × self-hosted × login Keychain を main ref 限定で受容）**、metered 版 `skill-e2e-live.yml` との関係を追記。(#243)
 - `skills/merging-and-deploying/SKILL.md`: v1.0 Step 6 implementation（flow terminus）。review PASS を前提に **merge → deploy → post-deploy regression** の順で ship。post-deploy regression は `tests/acceptance/` の `[regression]` AT を本番ビルドに対して re-run。PASS でない場合は Step 5/4 に差し戻して停止。Output language Japanese。Subagent/label/コード修正は out of scope。(#193)
 - `tests/test_merging_and_deploying_skill.bats`: Unit Test (12 cases) — merge→deploy flow / post-deploy AT re-run (regression, `tests/acceptance/`) / merge 前提 (review PASS) / responsibility boundary / line budget / output language / persona-less を検証。(#193)
 - `tests/e2e/merging-and-deploying.bats`: Skill E2E Test 3 `@test`（F1 flow order, F2 post-deploy AT re-run, F3 merge precondition）。(#193)
