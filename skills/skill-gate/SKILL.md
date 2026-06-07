@@ -34,6 +34,8 @@ scripts/check-issue-collision.sh --issue <N>
 
 Different Issues run in parallel freely; the check only blocks two worktrees on the **same** Issue.
 
+This check is **best-effort and advisory**: it is a point-in-time scan and cannot prevent a true simultaneous-start race (TOCTOU). A clean (exit 0) result means "no collision seen right now", not a hard guarantee — when two sessions start the same Issue at the same instant, both may pass.
+
 ## Governance Rules
 
 ### Iron Law #1: No Code Without an Issue

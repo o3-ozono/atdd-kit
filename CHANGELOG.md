@@ -13,7 +13,10 @@ epic #179 の最後のサブステップ **C2（#197）** を完了。これで 
 
 ### Added
 
-- **skill-gate に並列衝突検出を追加**（#179 Step C2 / #197）。新スクリプト `scripts/check-issue-collision.sh --issue <N>` が全 git worktree を走査し、別 worktree が同一 Issue の成果物（`docs/issues/<N>/`、`docs/issues/<N>-<slug>/`）を in-progress で書いている（未コミット/未追跡の変更、または base からの差分コミット）場合に衝突を検出し、`Issue #<N> is already in-progress in worktree <path>` を emit して exit 1 する。異なる Issue 同士の並列実行は通過（false positive なし）。`skills/skill-gate/SKILL.md` に Pre-check として配線。BATS `tests/test_skill_gate_collision.bats`（11 件）で検証。
+- **skill-gate に並列衝突検出を追加**（#179 Step C2 / #197）。新スクリプト `scripts/check-issue-collision.sh --issue <N>` が全 git worktree を走査し、別 worktree が同一 Issue の成果物（`docs/issues/<N>/`、`docs/issues/<N>-<slug>/`）を in-progress で書いている（未コミット/未追跡の変更、または base からの差分コミット）場合に衝突を検出し、`Issue #<N> is already in-progress in worktree <path>` を emit して exit 1 する。`skills/skill-gate/SKILL.md` に Pre-check として配線。BATS `tests/test_skill_gate_collision.bats`（20 件）で検証。
+  - パス一致は境界アンカー付き（`mydocs/issues/<N>/` 等の部分文字列で誤検出しない／`197` が `1970` に一致しない）で **false positive なし**。
+  - committed-work 検出の base ref は worktree ごとに自動判定（`origin/HEAD` → `main`/`master`/`trunk`）。`--base` 明示も可。default branch が `main` 以外の利用先でも false-negative しない。
+  - point-in-time の **best-effort / advisory** スキャン（同時開始 race は防げない旨を SKILL.md に明記）。peer worktree の git 失敗は警告を出す（無言の fail-open をしない）。
 
 ## [3.3.0] - 2026-06-07
 

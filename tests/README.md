@@ -134,6 +134,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_check_bats_covers.bats | scripts/check_bats_covers.sh annotation validator |
 | test_impact_map.bats | scripts/impact_map.sh impact scope detection (Issue #135) |
 | test_run_skill_e2e_impact.bats | scripts/run-skill-e2e.sh path-based impact mapping (Issue #222) |
+| test_skill_gate_collision.bats | scripts/check-issue-collision.sh + skill-gate parallel collision detection (Step C2 / #197) |
 | test_check_plugin_version.bats | scripts/check-plugin-version.sh |
 
 ### Templates, Docs & Config

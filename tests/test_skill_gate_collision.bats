@@ -115,3 +115,76 @@ teardown() {
 @test "wiring: skill-gate SKILL.md documents the parallel collision guidance" {
   grep -qiE "collision|parallel|worktree" "$REPO_ROOT/skills/skill-gate/SKILL.md"
 }
+
+@test "wiring: skill-gate SKILL.md labels the check best-effort/advisory (TOCTOU)" {
+  grep -qiE "best-effort|advisory|race|point-in-time" "$REPO_ROOT/skills/skill-gate/SKILL.md"
+}
+
+# --- Review hardening (#197 review findings) ------------------------------
+
+# A perl-based timeout so a regressed infinite-loop hang FAILS the test
+# instead of hanging the whole suite (macOS lacks GNU `timeout`).
+_run_to() {
+  local secs="$1"; shift
+  run perl -e 'alarm shift; exec @ARGV or exit 127' "$secs" "$@"
+}
+
+@test "review: trailing value-less --issue exits 3 and does NOT hang" {
+  _run_to 5 bash "$SCRIPT" --self "$MAIN" --issue
+  [ "$status" -eq 3 ]
+}
+
+@test "review: trailing value-less --base exits 3 and does NOT hang" {
+  _run_to 5 bash "$SCRIPT" --issue 197 --self "$MAIN" --base
+  [ "$status" -eq 3 ]
+}
+
+@test "review: unknown argument exits 3" {
+  run bash "$SCRIPT" --issue 197 --self "$MAIN" --bogus
+  [ "$status" -eq 3 ]
+}
+
+@test "review: slug-form docs/issues/<N>-<slug>/ is detected (production-dominant)" {
+  mkdir -p "$WT_A/docs/issues/197-collision-detection"
+  echo "prd" > "$WT_A/docs/issues/197-collision-detection/prd.md"
+  run --separate-stderr bash "$SCRIPT" --issue 197 --self "$MAIN"
+  [ "$status" -eq 1 ]
+  echo "$stderr" | grep -qE "Issue #197"
+}
+
+@test "review: numeric-prefix sibling (1970) does NOT false-match issue 197" {
+  mkdir -p "$WT_A/docs/issues/1970"
+  echo "prd" > "$WT_A/docs/issues/1970/prd.md"
+  run --separate-stderr bash "$SCRIPT" --issue 197 --self "$MAIN"
+  [ "$status" -eq 0 ]
+}
+
+@test "review: substring path (mydocs/issues/197) does NOT false-positive" {
+  mkdir -p "$WT_A/mydocs/issues/197"
+  echo "x" > "$WT_A/mydocs/issues/197/prd.md"
+  run --separate-stderr bash "$SCRIPT" --issue 197 --self "$MAIN"
+  [ "$status" -eq 0 ]
+}
+
+@test "review: committed work detected when default branch is master (no --base)" {
+  MASTER="$WORK/master-repo"
+  mkdir -p "$MASTER"
+  git -C "$MASTER" init -b master -q
+  git -C "$MASTER" config user.email "t@e.com"
+  git -C "$MASTER" config user.name "t"
+  echo base > "$MASTER/README.md"
+  git -C "$MASTER" add -A && git -C "$MASTER" commit -q -m base
+  git -C "$MASTER" worktree add -q "$WORK/m-wt" -b feat/m
+  mkdir -p "$WORK/m-wt/docs/issues/197"
+  echo prd > "$WORK/m-wt/docs/issues/197/prd.md"
+  git -C "$WORK/m-wt" add -A && git -C "$WORK/m-wt" commit -q -m "wip 197"
+  run --separate-stderr bash "$SCRIPT" --issue 197 --self "$MASTER"
+  [ "$status" -eq 1 ]
+  echo "$stderr" | grep -qE "Issue #197"
+}
+
+@test "review: --help does not leak the shebang line" {
+  run bash "$SCRIPT" --help
+  [ "$status" -eq 0 ]
+  ! echo "$output" | grep -qE '/usr/bin/env bash'
+}

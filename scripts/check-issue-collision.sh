@@ -8,6 +8,10 @@
 # touching docs/issues/<N>/ (or docs/issues/<N>-<slug>/) — and reports a
 # collision so skill-gate can stop before a second session starts the same Issue.
 #
+# This is a BEST-EFFORT, point-in-time advisory scan: it cannot prevent a true
+# simultaneous-start race (TOCTOU). Treat a clean result as "no collision seen
+# right now", not a hard guarantee.
+#
 # Usage:
 #   check-issue-collision.sh --issue <N> [--self <path>] [--base <ref>]
 #
@@ -15,7 +19,8 @@
 #   --issue <N>    Issue number to check (required, numeric).
 #   --self <path>  The current worktree to exclude from the scan
 #                  (default: git toplevel of $PWD).
-#   --base <ref>   Base ref for the committed-work check (default: main).
+#   --base <ref>   Base ref for the committed-work check. Default: auto-detect
+#                  per worktree (origin/HEAD, else main/master/trunk).
 #
 # Exit codes:
 #   0  no collision (safe to proceed)
@@ -23,33 +28,50 @@
 #   3  usage / infra error
 set -uo pipefail
 
+usage() {
+  cat <<'EOF'
+check-issue-collision.sh — detect parallel work on the same Issue across git worktrees.
+
+Usage:
+  check-issue-collision.sh --issue <N> [--self <path>] [--base <ref>]
+
+Options:
+  --issue <N>    Issue number to check (required, numeric).
+  --self <path>  Worktree to exclude from the scan (default: git toplevel of $PWD).
+  --base <ref>   Base ref for the committed-work check (default: auto-detect).
+
+Exit codes:
+  0  no collision     1  collision detected     3  usage / infra error
+EOF
+}
+
 OPT_ISSUE=""
 OPT_SELF=""
-OPT_BASE="main"
+OPT_BASE=""
+OPT_BASE_SET=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --issue) OPT_ISSUE="${2:-}"; shift 2 ;;
-    --self)  OPT_SELF="${2:-}";  shift 2 ;;
-    --base)  OPT_BASE="${2:-}";  shift 2 ;;
+    --issue)
+      [ $# -ge 2 ] || { echo "ERROR: --issue requires a value" >&2; exit 3; }
+      OPT_ISSUE="$2"; shift 2 ;;
+    --self)
+      [ $# -ge 2 ] || { echo "ERROR: --self requires a value" >&2; exit 3; }
+      OPT_SELF="$2"; shift 2 ;;
+    --base)
+      [ $# -ge 2 ] || { echo "ERROR: --base requires a value" >&2; exit 3; }
+      OPT_BASE="$2"; OPT_BASE_SET=1; shift 2 ;;
     -h|--help)
-      grep '^#' "$0" | sed 's/^# \{0,1\}//'
-      exit 0
-      ;;
+      usage; exit 0 ;;
     *) echo "ERROR: unknown argument: $1" >&2; exit 3 ;;
   esac
 done
 
-# --- Validate --issue (required, numeric) ---
-if [ -z "$OPT_ISSUE" ]; then
-  echo "ERROR: --issue <N> is required" >&2
-  exit 3
-fi
-if ! printf '%s' "$OPT_ISSUE" | grep -qE '^[0-9]+$'; then
-  echo "ERROR: --issue must be numeric, got '$OPT_ISSUE'" >&2
-  exit 3
-fi
-
+# --- Validate --issue (required, single-line numeric) ---
+case "$OPT_ISSUE" in
+  "") echo "ERROR: --issue <N> is required" >&2; exit 3 ;;
+  *[!0-9]*) echo "ERROR: --issue must be numeric, got '$OPT_ISSUE'" >&2; exit 3 ;;
+esac
 N="$OPT_ISSUE"
 
 # --- Resolve self worktree (excluded from the scan) ---
@@ -64,20 +86,35 @@ if [ -z "$SELF" ] || [ ! -d "$SELF" ]; then
 fi
 
 _realpath() {
-  # Portable realpath (BSD/GNU). Falls back to the input if resolution fails.
-  ( cd "$1" 2>/dev/null && pwd -P ) || printf '%s' "$1"
+  ( cd -- "$1" 2>/dev/null && pwd -P ) || printf '%s' "$1"
 }
 SELF_REAL="$(_realpath "$SELF")"
 
 # Paths under docs/issues/ that belong to Issue N: bare "<N>/" or slugged "<N>-...".
-# A trailing [/-] guard prevents prefix false-positives (197 vs 1970).
-ISSUE_RE="docs/issues/${N}[/-]"
+# Anchored to a path boundary (start-of-line or after a space/slash) so that an
+# unrelated substring like "mydocs/issues/<N>/" or "old-docs/issues/<N>/" does
+# NOT false-positive. The trailing [/-] guard prevents 197 matching 1970.
+ISSUE_RE="(^|[ /])docs/issues/${N}[/-]"
+
+# Resolve the base ref for the committed-work check in a given worktree.
+# Explicit --base wins; else origin/HEAD; else the first existing of main/master/trunk.
+resolve_base() {
+  local wt="$1" ref b
+  if [ "$OPT_BASE_SET" -eq 1 ]; then printf '%s' "$OPT_BASE"; return; fi
+  ref="$(git -C "$wt" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  if [ -n "$ref" ]; then printf '%s' "$ref"; return; fi
+  for b in main master trunk; do
+    if git -C "$wt" rev-parse --verify --quiet "$b" >/dev/null 2>&1; then
+      printf '%s' "$b"; return
+    fi
+  done
+  printf '%s' ""
+}
 
 # --- Enumerate worktrees (from self's git dir) ---
 WT_LIST="$(git -C "$SELF" worktree list --porcelain 2>/dev/null || true)"
 if [ -z "$WT_LIST" ]; then
-  # Not a git repo / no worktrees → nothing to collide with.
-  exit 0
+  exit 0  # not a git repo / no worktrees → nothing to collide with
 fi
 
 found=0
@@ -93,19 +130,28 @@ while IFS= read -r line; do
 
   hit=""
 
-  # (a) uncommitted / staged / untracked changes under docs/issues/<N>/
+  # (a) uncommitted / staged / untracked changes under docs/issues/<N>/.
   # --untracked-files=all lists individual untracked files instead of collapsing
   # them to the top untracked dir (e.g. "?? docs/"), so nested new files match.
-  status_out="$(git -C "$wt" status --porcelain --untracked-files=all 2>/dev/null || true)"
+  status_out="$(git -C "$wt" status --porcelain --untracked-files=all 2>/dev/null)"
+  status_rc=$?
+  if [ "$status_rc" -ne 0 ]; then
+    echo "WARNING: could not inspect worktree '$wt' (git status exit $status_rc); collision check is best-effort and may miss a real collision here." >&2
+  fi
   if printf '%s\n' "$status_out" | grep -qE "$ISSUE_RE"; then
     hit="yes"
   fi
 
   # (b) committed work ahead of base touching docs/issues/<N>/
-  if [ -z "$hit" ] && git -C "$wt" rev-parse --verify --quiet "$OPT_BASE" >/dev/null 2>&1; then
-    diff_out="$(git -C "$wt" diff --name-only "${OPT_BASE}...HEAD" 2>/dev/null || true)"
-    if printf '%s\n' "$diff_out" | grep -qE "$ISSUE_RE"; then
-      hit="yes"
+  if [ -z "$hit" ]; then
+    base="$(resolve_base "$wt")"
+    if [ -n "$base" ] && git -C "$wt" rev-parse --verify --quiet "$base" >/dev/null 2>&1; then
+      diff_out="$(git -C "$wt" diff --name-only "${base}...HEAD" 2>/dev/null)"
+      if printf '%s\n' "$diff_out" | grep -qE "$ISSUE_RE"; then
+        hit="yes"
+      fi
+    else
+      echo "WARNING: could not resolve a base ref for worktree '$wt'; committed-work collision check skipped (best-effort). Pass --base <ref> to force." >&2
     fi
   fi
 
