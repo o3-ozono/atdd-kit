@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-06-07
+
+epic #179 の最後のサブステップ **C2（#197）** を完了。これで epic #179 の全サブ Issue がクローズされる。
+
+### Added
+
+- **skill-gate に並列衝突検出を追加**（#179 Step C2 / #197）。新スクリプト `scripts/check-issue-collision.sh --issue <N>` が全 git worktree を走査し、別 worktree が同一 Issue の成果物（`docs/issues/<N>/`、`docs/issues/<N>-<slug>/`）を in-progress で書いている（未コミット/未追跡の変更、または base からの差分コミット）場合に衝突を検出し、`Issue #<N> is already in-progress in worktree <path>` を emit して exit 1 する。異なる Issue 同士の並列実行は通過（false positive なし）。`skills/skill-gate/SKILL.md` に Pre-check として配線。BATS `tests/test_skill_gate_collision.bats`（11 件）で検証。
+
 ## [3.3.0] - 2026-06-07
 
 ### Changed

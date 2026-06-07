@@ -21,6 +21,19 @@ Enforce governance rules before any action, including clarifying questions.
    The flow then chains Step 1 → 6 (defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying). Resume mid-flow by invoking the skill for the next incomplete step.
 3. **Not matched** (e.g., "What is Issue #16 about?"): Proceed to Governance Rules.
 
+## Pre-check: Parallel Collision Detection
+
+Before starting work on Issue `#N` (a matched work-start above), check that no other worktree is already working the same Issue:
+
+```
+scripts/check-issue-collision.sh --issue <N>
+```
+
+- **Exit 0:** safe — proceed into the v1.0 flow.
+- **Exit 1 (collision):** another worktree is already writing `docs/issues/<N>/`. STOP. Surface the emitted guidance (`Issue #N is already in-progress in worktree X`) and do not start a second parallel session on the same Issue — finish/hand off the other worktree or pick a different Issue.
+
+Different Issues run in parallel freely; the check only blocks two worktrees on the **same** Issue.
+
 ## Governance Rules
 
 ### Iron Law #1: No Code Without an Issue
