@@ -121,6 +121,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_headless_exit_codes.bats | Headless runner exit-code contract |
 | test_pr_workflow_headless.bats | CI path-filter wiring for headless replay (Issue #72) |
 | test_pr_workflow_skill_e2e.bats | CI skill-e2e-test job (dry-run) + skill-e2e-live.yml wiring (Step G1 / #208) |
+| test_skill_e2e_subscription_workflow.bats | skill-e2e-subscription.yml の課金方針・信頼境界 invariants（env 化 / 課金 env 全弾き / main ref 限定 / SHA pin / no-op）(#243) |
 
 ### Hooks & Scripts
 
