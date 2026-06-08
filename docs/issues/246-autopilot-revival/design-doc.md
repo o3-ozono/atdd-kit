@@ -139,6 +139,21 @@ AND ゲートの AT は「override 不能な客観 backstop」と称するが、
 - `.claude/rules/workflow-overrides.md`（plan 承認省略 + ユーザー差し戻し権）= 人間ゲート配置の既存ポリシーと一致。
 - `skill-gate`(#197) の衝突検出 = 並列 autopilot 実行時の安全装置。
 
+## autopilot 専用 Iron Law（#246・実装で確定）
+
+標準 Iron Law（`rules/atdd-kit.md`）は人間駆動の前提（1 Issue 1 PR、各 AC を人間承認）に立つが、autopilot はそれと構造的に相反する（人間が各反復の AC を承認しない／1 収束サイクルで複数成果物を作る）。この相反を「逸脱」として禁じるのではなく**許容**し、autopilot モードのときだけ標準を上書きする **autopilot 専用 Iron Law（AL-1〜6）** を新設する。本文は `docs/methodology/autopilot-iron-law.md`。
+
+- **AL-1** 人間ゲートは AC 承認 / merge の2点に固定。
+- **AL-2** 各反復は immutable な承認済み AC へのトレーサビリティで正当化（標準 #2 の置換、AC→AT カバレッジゲート §2.1 が前提）。
+- **AL-3** 完了 = 満足オラクル AND ゲート（標準 #3 の強化、§2）。
+- **AL-4** evidence_ref 必須・裏付けなき PASS は自動降格・verdict は JSONL 永続化（§3/§6）。
+- **AL-5** 非収束 / 予算超過 / 同一失敗反復で human escalation（§4）。
+- **AL-6** 1 収束サイクルで複数成果物を許容（標準「1 PR=1 thing」の緩和）。
+
+**重要な設計原則（ユーザー確定 / 2026-06-08）**: autopilot は**既存 skill を恒久変更しない**。flow skill のコードは不変で、変わるのは「人間ゲートがどこに立つか」という**役割のみ**であり、それも **autopilot を使った場合のみ**。ゆえに autopilot は既存 skill を順に呼ぶ薄い orchestrator（`converging-deliverables`）として実装し、skill 本体を書き換えない。`reviewing-deliverables` の構造化 verdict も**後方互換の追加**（通常モードは従来の PASS/FAIL のまま）であり、`defining-requirements` の壁打ち強化（旧 Phase 0）は本 Issue では行わない（Non-Goal）。
+
+> 本 PR 自体が AL-2 / AL-6 の最初の適用例（design-doc を AC アンカーに、設計＋全実装を1 PR で完遂）。
+
 ## Trade-offs
 
 | 採用する設計 | 代償・限界 |

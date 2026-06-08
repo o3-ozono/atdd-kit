@@ -142,3 +142,23 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
 @test "no persona: SKILL.md does not introduce 'As a [persona]' line" {
   ! grep -qE '^As a ' "$SKILL_FILE"
 }
+
+# --- Structured verdict for autopilot loop control (#246) ------------------
+# The Aggregate output is extended (backward-compatibly) so converging-deliverables
+# can drive its satisfaction-oracle loop from a machine-readable verdict.
+
+@test "structured verdict: AGG_SCHEMA carries overall_correctness (#246)" {
+  grep -qE 'overall_correctness' "$SKILL_FILE"
+}
+
+@test "structured verdict: findings carry priority, confidence and evidence_ref (#246)" {
+  grep -qE 'evidence_ref' "$SKILL_FILE"
+  grep -qE 'priority' "$SKILL_FILE"
+  grep -qE 'confidence' "$SKILL_FILE"
+}
+
+@test "structured verdict: backward-compatible — verdict/summary/byLens retained (#246)" {
+  grep -qE "verdict:" "$SKILL_FILE"
+  grep -qE 'summary' "$SKILL_FILE"
+  grep -qE 'byLens' "$SKILL_FILE"
+}

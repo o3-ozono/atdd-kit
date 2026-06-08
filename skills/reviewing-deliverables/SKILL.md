@@ -43,7 +43,7 @@ Five phases:
 2. **Generate** — one agent turns the scout report into a **dynamic** review panel. It ALWAYS includes functional-correctness, clean-code, testability, **documentation**, and a positive **advocate** + a negative **skeptic**; it ADDS a non-functional lens (security, performance / load, usability, …) **only for each risk surface the scout actually found**. Panel size and personas therefore scale with the change. The **documentation** lens is always present because every change can drift its docs: it judges (a) **accuracy** — prose (README / CHANGELOG / `docs/`) matches what actually changed; (b) **consistency** — cross-doc coherence (e.g. `skills/README.md` lists every skill); and (c) **follow-through / sync** — the DEVELOPMENT.md invariants verified against the diff: if files under a top-level dir (`skills/`, `scripts/`, `tests/`, `hooks/`, `rules/`, `commands/`, `templates/`, `agents/`) changed, that dir's `README.md` is updated in the same PR, and a feature change carries a `CHANGELOG.md` entry plus a `.claude-plugin/plugin.json` version bump.
 3. **Review (parallel)** — each generated lens reviews its target deliverable concurrently, returning findings with severity and location.
 4. **Verify (multi-round, adversarial)** — each finding is independently challenged by several skeptics across diverse angles; a finding survives only on **majority** confirmation. This suppresses false positives.
-5. **Aggregate** — one agent consolidates the surviving findings and per-lens notes into a single **PASS / FAIL** verdict, written in Japanese.
+5. **Aggregate** — one agent consolidates the surviving findings and per-lens notes into a single **PASS / FAIL** verdict, written in Japanese. It additionally emits a backward-compatible machine-readable verdict (`overall_correctness` plus `findings[]` carrying `priority` / `confidence` / `evidence_ref`) that `converging-deliverables` (#246) consumes to drive its satisfaction-oracle loop; non-autopilot callers ignore the extra fields.
 
 ```js
 export const meta = {
@@ -170,10 +170,26 @@ const AGG_SCHEMA = {
     verdict: { type: 'string' }, // PASS | FAIL
     summary: { type: 'string' }, // Japanese
     byLens: { type: 'array', items: { type: 'object' } },
+    // #246: machine-readable verdict for autopilot loop control (backward-compatible, optional)
+    overall_correctness: { type: 'string' }, // correct | incorrect
+    findings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          priority: { type: 'integer' },    // 0=blocker 1=major 2=minor 3=nit (P0/P1 block)
+          confidence: { type: 'number' },   // 0-1
+          file: { type: 'string' },
+          line_range: { type: 'string' },
+          detail: { type: 'string' },
+          evidence_ref: { type: 'string' }, // failing-AT/log, AC/PRD quote, or human-comment URL
+        },
+      },
+    },
   },
 }
 return await agent(
-  `Aggregate these verified findings into one verdict for Issue #${NNN}. Rule: FAIL if any surviving finding is severity "blocker" or "major"; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
+  `Aggregate these verified findings into one verdict for Issue #${NNN}. Rule: FAIL if any surviving finding is severity "blocker" or "major"; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nAlso emit a machine-readable verdict for autopilot loop control (backward-compatible): set overall_correctness to "correct" when verdict is PASS, else "incorrect"; and normalize each surviving finding into findings[] with priority (0=blocker,1=major,2=minor,3=nit), confidence (0-1), file, line_range, detail, and a REQUIRED evidence_ref (a failing Acceptance Test name / log path, OR a quoted line from the immutable AC/PRD, OR a human-comment URL). Drop any finding that has no evidence_ref rather than blocking on it.\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
   { phase: 'Aggregate', schema: AGG_SCHEMA }
 )
 ```
