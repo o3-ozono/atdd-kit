@@ -1,0 +1,4 @@
+lib/autopilot_convergence.sh: line 32: tr: command not found
+lib/autopilot_convergence.sh: line 32: tr: command not found
+lib/autopilot_convergence.sh: line 32: sed: command not found
+autopilot_convergence: no sha256 tool found

@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
 ## [3.6.0] - 2026-06-08
 
 autopilot を **復活**（#246）。ただし旧 autopilot（Agent Teams orchestration、v3.0.0 で廃止）の逐語復活ではなく、**既存の 6-step flow skill をそのまま使う「半自動運転」モード**として再設計した。autopilot を atdd-kit 自身の 6-step フローで自己適用（dogfood）して実装した。
