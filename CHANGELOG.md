@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-06-07
+
+### Added
+- `.github/workflows/skill-e2e-subscription.yml`: Skill E2E Test を self-hosted runner 上で **サブスク課金内のみ**（macOS Keychain のサブスク資格情報・API キー不使用）で実行する `workflow_dispatch` 限定ワークフロー。`skill-e2e-live.yml`（#208, 従量課金）のサブスク版正系。`scripts/run-skill-e2e.sh` の影響範囲算定を使用。(#243)
+- `scripts/ci/skill-e2e-guard.sh`: サブスク限定 CI の Guard ロジック（課金リダイレクト env ブロックリスト ＋ main-ref 信頼境界）の**単一ソース**。ワークフローが委譲し、bats が**挙動検証**する（grep ではなく実行検証）。(#243)
+- `tests/test_skill_e2e_guard.bats`: 上記 Guard の**挙動検証** Unit Test 8 case — 7 課金 env それぞれで非ゼロ終了 / 非 main ref・tag・空 ref の拒否 / clean env で 0。反転・gut を検知する。(#243)
+- `tests/test_skill_e2e_subscription_workflow.bats`: ワークフローの構造 invariants 9 case（dispatch 限定 / 最小権限（write 昇格禁止）/ 専用ラベル / 入力 env 化 / SHA pin（40hex anchored）/ timeout / no-op / Guard スクリプトへの委譲）。(#243)
+- `docs/testing-skills.md` (j) サブスク内 CI 実行: 課金方針（サブスクのみ・APIキー禁止・overflow OFF）、self-hosted runner 登録手順（リポジトリ単位 / ラベル `atdd-kit-e2e` / **`SessionCreate` を付けない**）、複数マシン同一ラベル運用、ハードニング、**accept-risk（write 権限＝信頼境界。main-ref は accidental 排除の safety rail）**、metered 版 `skill-e2e-live.yml` との関係。(#243)
+
 ## [3.4.0] - 2026-06-07
 
 epic #179 の最後のサブステップ **C2（#197）** を完了。これで epic #179 の全サブ Issue がクローズされる。

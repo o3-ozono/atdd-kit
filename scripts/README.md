@@ -15,6 +15,7 @@ Utility scripts used by commands, skills, and CI. All scripts are pure bash (or 
 | [impact_map.sh](impact_map.sh) | Maps git diff to affected tests via path rules and `@covers` metadata | `impact_map.sh --base <ref> --layer {skill-e2e\|BATS}` |
 | [lint_skill_descriptions.sh](lint_skill_descriptions.sh) | Scans `skills/*/SKILL.md` for description anti-patterns (step-chain, length > 200, dash-separator lists). WARN-only, exit 0. | `scripts/lint_skill_descriptions.sh` |
 | [check-issue-collision.sh](check-issue-collision.sh) | Detects parallel work on the same Issue across git worktrees (in-progress writes under `docs/issues/<N>/`). Used by `skill-gate`. Exit 1 on collision. | `scripts/check-issue-collision.sh --issue <N>` |
+| [ci/skill-e2e-guard.sh](ci/skill-e2e-guard.sh) | Subscription-only Skill E2E CI guards (billing-redirect env blocklist + main-ref trust boundary); single-source, behaviorally tested. | `ci/skill-e2e-guard.sh {billing-env\|main-ref <ref>}` |
 
 iOS-specific scripts are in `addons/ios/scripts/`. See [addons/ios/README.md](../addons/ios/README.md).
 
