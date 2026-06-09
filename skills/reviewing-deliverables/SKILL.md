@@ -176,20 +176,21 @@ const AGG_SCHEMA = {
       type: 'array',
       items: {
         type: 'object',
+        required: ['priority', 'evidence_ref'], // #246: never let the autopilot oracle read an undefined priority as "not blocking"
         properties: {
           priority: { type: 'integer' },    // 0=blocker 1=major 2=minor 3=nit (P0/P1 block)
           confidence: { type: 'number' },   // 0-1
           file: { type: 'string' },
           line_range: { type: 'string' },
           detail: { type: 'string' },
-          evidence_ref: { type: 'string' }, // failing-AT/log, AC/PRD quote, or human-comment URL
+          evidence_ref: { type: 'string' }, // failing-AT/log, AC/PRD quote, human-comment URL, or "unverified"
         },
       },
     },
   },
 }
 return await agent(
-  `Aggregate these verified findings into one verdict for Issue #${NNN}. Rule: FAIL if any surviving finding is severity "blocker" or "major"; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nAlso emit a machine-readable verdict for autopilot loop control (backward-compatible): set overall_correctness to "correct" when verdict is PASS, else "incorrect"; and normalize each surviving finding into findings[] with priority (0=blocker,1=major,2=minor,3=nit), confidence (0-1), file, line_range, detail, and a REQUIRED evidence_ref (a failing Acceptance Test name / log path, OR a quoted line from the immutable AC/PRD, OR a human-comment URL). Drop any finding that has no evidence_ref rather than blocking on it.\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
+  `Aggregate these verified findings into one verdict for Issue #${NNN}. Rule: FAIL if any surviving finding is severity "blocker" or "major"; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nAlso emit a machine-readable verdict for autopilot loop control (backward-compatible): set overall_correctness to "correct" when verdict is PASS, else "incorrect"; and normalize EVERY surviving finding into findings[] with priority (0=blocker,1=major,2=minor,3=nit), confidence (0-1), file, line_range, detail, and a REQUIRED evidence_ref (a failing Acceptance Test name / log path, OR a quoted line from the immutable AC/PRD, OR a human-comment URL). If a confirmed finding has no objective backing, set evidence_ref to "unverified" and KEEP it — never drop a confirmed P0/P1, and never report overall_correctness "correct" while one survives (AL-4 is fail-safe, not fail-open).\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
   { phase: 'Aggregate', schema: AGG_SCHEMA }
 )
 ```

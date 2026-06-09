@@ -112,3 +112,34 @@ SKILL_FILE="skills/converging-deliverables/SKILL.md"
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
   [ "$n" -le 240 ]
 }
+
+# --- Code-deep oracle (#246 review: rails/oracle must be code, not just prose)
+
+@test "oracle: AT-green is DETERMINISTIC (test exit code), not an LLM opinion (AL-3)" {
+  grep -qiE 'deterministic AT gate' "$SKILL_FILE"
+  grep -qiE 'exit code' "$SKILL_FILE"
+  grep -qE 'AL-3' "$SKILL_FILE"
+  # the inert "!verdict.atRequired || verdict.atGreen" leg (always-true) must be gone
+  ! grep -qE '!verdict\.atRequired' "$SKILL_FILE"
+}
+
+@test "oracle: AC→AT coverage gate is wired and run in a separate context (AL-2)" {
+  grep -qiE 'coverage gate' "$SKILL_FILE"
+  grep -qiE 'separate from the AT author' "$SKILL_FILE"
+  grep -qE 'AL-2' "$SKILL_FILE"
+}
+
+@test "oracle: fail-safe — confirmed P0/P1 blocks regardless of evidence_ref" {
+  grep -qiE 'fail-safe' "$SKILL_FILE"
+  grep -qE 'priorityOf' "$SKILL_FILE"
+  # the old fail-OPEN filter (required evidence_ref to even count as blocking) must be gone
+  ! grep -qE 'f\.evidence_ref && f\.priority' "$SKILL_FILE"
+}
+
+@test "oracle: consumer schema requires priority + evidence_ref in findings items" {
+  grep -qE "required: \['priority', 'evidence_ref'\]" "$SKILL_FILE"
+}
+
+@test "rails: a non-zero record_iteration (corrupt/empty fingerprint) is itself a halt" {
+  grep -qiE 'record-error' "$SKILL_FILE"
+}

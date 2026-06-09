@@ -162,3 +162,20 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   grep -qE 'summary' "$SKILL_FILE"
   grep -qE 'byLens' "$SKILL_FILE"
 }
+
+@test "structured verdict: autopilot fields stay OPTIONAL — top-level required excludes them (#246)" {
+  # the machine-readable additions must not enter AGG_SCHEMA's top-level required,
+  # or non-autopilot callers that omit them would fail validation (backward break).
+  grep -qE "required: \['verdict', 'summary', 'byLens'\]" "$SKILL_FILE"
+  ! grep -qE "required: \[[^]]*overall_correctness" "$SKILL_FILE"
+  ! grep -qE "required: \['verdict', 'summary', 'byLens'[^]]*findings" "$SKILL_FILE"
+}
+
+@test "structured verdict: findings items require priority + evidence_ref so the oracle can't read undefined as non-blocking (#246)" {
+  grep -qE "required: \['priority', 'evidence_ref'\]" "$SKILL_FILE"
+}
+
+@test "fail-safe: aggregate never drops a confirmed P0/P1; the old fail-open drop is gone (#246)" {
+  grep -qiE 'never drop a confirmed P0/P1|fail-safe, not fail-open' "$SKILL_FILE"
+  ! grep -qE 'Drop any finding that has no evidence_ref' "$SKILL_FILE"
+}
