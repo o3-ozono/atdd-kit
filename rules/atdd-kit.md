@@ -8,6 +8,8 @@
 3. No completion claims without fresh verification evidence.
 4. bug must load `docs/specs/<slug>.md` via `lib/spec_check.sh` before implementation or AC judgement.
 
+**autopilot mode:** while `converging-deliverables` runs, the autopilot Iron Law (`${CLAUDE_PLUGIN_ROOT}/docs/methodology/autopilot-iron-law.md`, AL-1…AL-6) overrides the conflicting standard laws above; outside autopilot these laws are supreme.
+
 ## Instruction Priority
 1. User's explicit instructions (CLAUDE.md, direct requests) -- highest
 2. atdd-kit skills -- override default behavior / 3. Default system prompt -- lowest

@@ -62,10 +62,15 @@ setup() {
   grep -F "CHANGELOG.md" "$CLAUDE_FILE"
 }
 
-# --- AC3: autopilot mentions are fully removed (case-insensitive regression guard) ---
+# --- AC3 (#246 supersedes #187): autopilot is revived as a GOVERNED mode ---
+# #187 fully removed the legacy autopilot and guarded against its return. #246
+# deliberately reverses that: autopilot is reintroduced as the converging-deliverables
+# orchestrator, governed by the autopilot Iron Law. The guard is inverted — rules/
+# now references autopilot ONLY via the autopilot Iron Law doc, so the revival stays
+# governed and no ad-hoc / legacy autopilot rules creep back in.
 
-@test "AC3: no autopilot mentions in rules/ or CLAUDE.md (case-insensitive)" {
-  ! grep -rni "autopilot" rules/ "$CLAUDE_FILE"
+@test "AC3 (#246): rules/atdd-kit.md references the autopilot Iron Law" {
+  grep -qE 'autopilot-iron-law' "$RULES_FILE"
 }
 
 # --- AC4: 1 Issue = 1 worktree = 1 Draft PR discipline is stated verbatim ---
