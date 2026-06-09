@@ -16,7 +16,7 @@ The flow skills are **not permanently changed**; their role (specifically, where
 While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridden by the **autopilot Iron Law** (`docs/methodology/autopilot-iron-law.md`, AL-1…AL-6):
 
 - **AL-1** human gates = AC approval + merge, fixed.
-- **AL-2** iterations anchor to the immutable approved AC instead of re-approving each loop (precondition: AC→AT coverage gate green).
+- **AL-2** iterations anchor to the immutable approved AC instead of re-approving each loop, **enforced** by a sha256 pin of the approved AC taken at loop start and re-checked every iteration (drift → halt); precondition: AC→AT coverage gate green.
 - **AL-3** "done" = the satisfaction-oracle AND gate; deterministic gates decide AT/lint/test.
 - **AL-4** every finding needs an `evidence_ref`; an unbacked PASS auto-demotes; verdicts persist to JSONL.
 - **AL-5** the loop fails safe via the rails below.
@@ -82,6 +82,10 @@ if (!STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS
 // number. The audit step resolves it by glob at write time and appends the log
 // inside it; using the bare ${NNN} would write to a phantom dir and break AL-4.
 const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
+// AL-2 anchor: the human-approved AC fingerprint is pinned ONCE at loop start
+// (see freeze step below) and re-checked every iteration so the loop can never
+// weaken the AC it grades itself against.
+const PIN_GLOB = `docs/issues/${NNN}-*/autopilot-ac.pin`
 
 // Consumer schema. findings items REQUIRE priority + evidence_ref so the oracle
 // can never read an undefined priority as "not blocking" (fail-open). atGreen
@@ -115,6 +119,12 @@ const priorityOf = (f) => {
   const m = String(f.priority ?? '').match(/\d+/)
   return m ? Number(m[0]) : 0
 }
+
+// FREEZE (AL-2) — pin the human-approved AC fingerprint ONCE, before any
+// iteration. The approved AC is the human-frozen anchor (prd.md + user-stories.md),
+// NOT the loop-mutable acceptance-tests.md. If the pin can't be written, refuse.
+const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and pin the immutable approved AC (AL-2) via lib/autopilot_convergence.sh: \`cat <dir>/prd.md <dir>/user-stories.md | pin_anchor "<dir>/autopilot-ac.pin"\` (${PIN_GLOB}). Report pinned = (pin_anchor exit code === 0).`, { label: 'freeze:AC', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
+if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'ac-pin-failed' }
 
 for (const step of STEPS) {
   const max = MAX_ITERATIONS[step] || 4
@@ -153,8 +163,8 @@ for (const step of STEPS) {
     // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
     //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
     //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
-    const r = await agent(`Against the resolved autopilot-log.jsonl, run via lib/autopilot_convergence.sh: check_max_iterations ${it} ${max}; check_sameness "<log>"; check_stuck "<log>" 3. Report each one's integer exit code.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['maxIterExit', 'samenessExit', 'stuckExit'], properties: { maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' } } } })
-    const halt = r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
+    const r = await agent(`Via lib/autopilot_convergence.sh, run all four and report each one's integer exit code: (a) AC drift — \`cur="$(cat <dir>/prd.md <dir>/user-stories.md | fingerprint)"; check_pin "<dir>/autopilot-ac.pin" "$cur"\` (AL-2: the approved AC must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>"; (d) check_stuck "<log>" 3.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' } } } })
+    const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
     // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
     if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
   }
@@ -162,7 +172,7 @@ for (const step of STEPS) {
 return { status: 'CONVERGED', steps: STEPS }
 ```
 
-The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
+The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
 
 ## Responsibility Boundary
 

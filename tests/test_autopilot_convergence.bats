@@ -223,3 +223,36 @@ _assert_valid_jsonl() {
   run check_stuck "$JSONL" "3; echo PWNED"
   [ "$status" -ne 0 ]
 }
+
+# --- AL-2 immutable-AC anchor (pin / drift) -------------------------------
+
+@test "pin_anchor + check_pin: unchanged AC passes, drifted AC halts" {
+  PIN="$TMP/ac.pin"
+  printf 'AC: the approved acceptance criteria\n' | pin_anchor "$PIN"
+  [ -s "$PIN" ]
+  same=$(printf 'AC: the approved acceptance criteria\n' | fingerprint)
+  run check_pin "$PIN" "$same"
+  [ "$status" -eq 0 ]                       # unchanged AC → continue
+  drifted=$(printf 'AC: the WEAKENED criteria\n' | fingerprint)
+  run check_pin "$PIN" "$drifted"
+  [ "$status" -ne 0 ]                       # loop edited its own anchor → halt
+}
+
+@test "pin_anchor: refuses to overwrite an existing pin (anchor frozen for the run)" {
+  PIN="$TMP/ac.pin"
+  printf 'AC v1\n' | pin_anchor "$PIN"
+  run bash -c "source '$LIB'; printf 'AC v2\n' | pin_anchor '$PIN'"
+  [ "$status" -ne 0 ]
+}
+
+@test "check_pin: a missing pin halts (cannot prove the anchor)" {
+  run check_pin "$TMP/nonexistent.pin" "abc123"
+  [ "$status" -ne 0 ]
+}
+
+@test "check_pin: an empty current fingerprint halts (cannot prove no-drift)" {
+  PIN="$TMP/ac.pin"
+  printf 'AC\n' | pin_anchor "$PIN"
+  run check_pin "$PIN" ""
+  [ "$status" -ne 0 ]
+}

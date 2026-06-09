@@ -12,6 +12,8 @@
 #   check_sameness <jsonl>                   non-zero if the last 2 iterations share a fingerprint
 #   check_stuck <jsonl> <window>             non-zero if the last <window> iterations show no progress
 #   check_max_iterations <current> <max>     non-zero if current >= max
+#   pin_anchor <pinfile>                     pin the approved-AC fingerprint once at loop start (AL-2)
+#   check_pin <pinfile> <current-fp>         non-zero if the AC anchor drifted from the pin (AL-2)
 #
 # Hardening (#246 review): record_iteration validates its inputs and refuses
 # to write a corrupt or empty line. A missing hash tool, or a fingerprint that
@@ -136,4 +138,29 @@ check_max_iterations() {
   case "$current" in '' | *[!0-9]*) echo "autopilot_convergence: invalid current: '$current'" >&2; return 2 ;; esac
   case "$max" in '' | *[!0-9]*) echo "autopilot_convergence: invalid max: '$max'" >&2; return 2 ;; esac
   [ "$current" -lt "$max" ]
+}
+
+# AL-2 immutable-AC anchor — pin the fingerprint of the human-approved AC
+# (read from stdin) ONCE at loop start. Refuses to overwrite an existing pin so
+# the anchor is frozen for the whole run; the loop can never re-baseline the AC
+# it grades itself against.
+pin_anchor() {
+  local pinfile="$1" fp
+  [ -n "$pinfile" ] || { echo "autopilot_convergence: pin_anchor needs a pinfile" >&2; return 2; }
+  [ -f "$pinfile" ] && { echo "autopilot_convergence: AC pin already exists: '$pinfile'" >&2; return 2; }
+  fp=$(fingerprint) || return $?
+  case "$fp" in '' | *[!A-Za-z0-9._:-]*) echo "autopilot_convergence: invalid AC fingerprint" >&2; return 2 ;; esac
+  printf '%s\n' "$fp" > "$pinfile"
+}
+
+# AL-2 drift check — compare the CURRENT approved-AC fingerprint against the pin.
+# Non-zero (halt) when the anchor drifted, the pin is missing, or the current
+# fingerprint is empty/unsafe — autopilot must never edit its own frozen AC.
+check_pin() {
+  local pinfile="$1" current="$2" pinned
+  [ -f "$pinfile" ] || { echo "autopilot_convergence: missing AC pin: '$pinfile'" >&2; return 2; }
+  case "$current" in '' | *[!A-Za-z0-9._:-]*) echo "autopilot_convergence: invalid current AC fp: '$current'" >&2; return 2 ;; esac
+  pinned=$(cat "$pinfile")
+  [ "$pinned" = "$current" ] || return 1
+  return 0
 }

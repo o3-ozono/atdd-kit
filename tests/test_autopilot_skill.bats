@@ -166,3 +166,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # the rails prompt must pass <jsonl> <it> <step> <verdict> <fp>, not 2 args
   grep -qE 'record_iteration "<resolved-log-path>" \$\{it\} \$\{step\}' "$SKILL_FILE"
 }
+
+@test "AL-2: the approved AC is pinned at loop start and drift halts the loop (enforced freeze)" {
+  grep -qE 'pin_anchor' "$SKILL_FILE"
+  grep -qE 'check_pin' "$SKILL_FILE"
+  grep -qiE 'ac-drift' "$SKILL_FILE"
+  # the freeze pins the human-approved source (prd + user-stories), not the loop-mutable AT
+  grep -qE 'prd\.md .*user-stories\.md' "$SKILL_FILE"
+}
