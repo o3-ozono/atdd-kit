@@ -46,5 +46,17 @@
 - [x] verify: 該当 3 項目が記載
 - [x] README.md / README.ja.md の skill 一覧に converging-deliverables を sync
 - [x] verify: 両 README に新 skill が記載
-- [ ] ドキュメント整合性チェック（reviewing-deliverables Workflow で最終レビュー）
-- [ ] verify: 関連ドキュメントが変更内容と整合
+- [x] ドキュメント整合性チェック（reviewing-deliverables Workflow で1回目レビュー → FAIL、指摘反映）
+- [ ] verify: reviewing-deliverables 再レビューで PASS（#246 review 指摘の解消確認）
+
+## Review Hardening（#246 review 反映 — 満足オラクル/レールの code-deep 化）
+
+1回目の reviewing-deliverables（157 agents）で FAIL（blocker 6 / major 8）。核心は「AL-2〜5 の安全保証がプロンプト文言止まりでコード強制されていない」。以下を修正:
+
+- [x] **Theme A（核心オラクル）**: AT緑レッグを決定論ゲート化（exit code, AL-3）/ AC→AT カバレッジゲートを別コンテキストで配線（AL-2）/ oracle を fail-safe 化（確認済み P0/P1 は evidence_ref 有無に関わらず block・priorityOf で正規化, AL-4）/ VERDICT・AGG schema の findings item を priority/evidence_ref required 化
+- [x] verify: converging/reviewing skill テストに配線・撤去・後方互換アサーション追加、green
+- [x] **Theme B（lib 堅牢化）**: record_iteration の入力検証+JSONエスケープ（空/不正 fingerprint 拒否）/ check_stuck の振動(A,B,A,B)検出。負例テスト7件
+- [x] verify: test_autopilot_convergence.bats green（20 case）
+- [x] **Theme D（docs ゲート）**: tests/README.md に autopilot 3テスト追記（DEVELOPMENT.md:61）/ AT-007 ハイフン誤記修正 / CHANGELOG 反映 / F14 accept-risk 明記
+- [x] **E（コマンド）**: `/atdd-kit:autopilot <issue>` 新設（ユーザー要望）
+- [x] verify: コア BATS 全 1070 件 green
