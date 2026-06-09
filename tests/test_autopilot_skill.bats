@@ -1,23 +1,23 @@
 #!/usr/bin/env bats
-# @covers: skills/converging-deliverables/SKILL.md
-# Unit Test for the converging-deliverables skill (autopilot orchestrator, #246).
+# @covers: skills/autopilot/SKILL.md
+# Unit Test for the autopilot skill (autopilot orchestrator, #246).
 # claude is NOT invoked; structural / wording invariants are checked via grep.
-# LLM behavior is covered by tests/e2e/converging-deliverables.bats.
+# LLM behavior is covered by tests/e2e/autopilot.bats.
 #
-# Scope (#246): converging-deliverables is the autopilot MODE — a thin orchestrator
+# Scope (#246): autopilot is the autopilot MODE — a thin orchestrator
 # that runs the EXISTING flow skills, narrows the human gates to two (AC approval at
 # the start, merge at the end), and loops generate→review→fix until a satisfaction
 # oracle (AND of green AT, reviewer verdict, zero P0/P1) holds, with safety rails.
 # It does NOT permanently change the flow skills; their role changes only under autopilot.
 
-SKILL_FILE="skills/converging-deliverables/SKILL.md"
+SKILL_FILE="skills/autopilot/SKILL.md"
 
 # --- Identity -------------------------------------------------------------
 
 @test "identity: name field matches directory (kebab-case)" {
   local name
   name=$(grep '^name:' "$SKILL_FILE" | sed 's/^name:[[:space:]]*//')
-  [ "$name" = "converging-deliverables" ]
+  [ "$name" = "autopilot" ]
 }
 
 @test "identity: description starts with Use when (trigger-only)" {
@@ -142,4 +142,27 @@ SKILL_FILE="skills/converging-deliverables/SKILL.md"
 
 @test "rails: a non-zero record_iteration (corrupt/empty fingerprint) is itself a halt" {
   grep -qiE 'record-error' "$SKILL_FILE"
+}
+
+# --- round-2 hardening regression guards (#246 second review) -------------
+
+@test "audit: the log path uses the slug-suffixed issue dir, not the bare number" {
+  # regression guard for the round-2 blocker: docs/issues/<NNN>/ would write to a
+  # phantom dir and break AL-4. It must resolve docs/issues/<NNN>-*/ like the gate.
+  grep -qE 'docs/issues/\$\{NNN\}-\*' "$SKILL_FILE"
+  ! grep -qE 'docs/issues/\$\{NNN\}/autopilot-log' "$SKILL_FILE"
+}
+
+@test "config: AT_STEP must be one of STEPS (fail-closed, gates can't silently vanish)" {
+  grep -qE 'STEPS\.includes\(AT_STEP\)' "$SKILL_FILE"
+}
+
+@test "rails: the halt is computed in JS from raw exit codes, not summarized by the LLM" {
+  grep -qE 'maxIterExit|samenessExit|stuckExit' "$SKILL_FILE"
+  grep -qE "halt = .*MAX_ITERATIONS" "$SKILL_FILE"
+}
+
+@test "audit: record_iteration is invoked with its full 5-arg signature" {
+  # the rails prompt must pass <jsonl> <it> <step> <verdict> <fp>, not 2 args
+  grep -qE 'record_iteration "<resolved-log-path>" \$\{it\} \$\{step\}' "$SKILL_FILE"
 }

@@ -2,7 +2,7 @@
 # autopilot convergence safety rails (#246).
 #
 # Pure bash + coreutils (zero external dependencies). Sourced by the BATS
-# suite and, conceptually, by the converging-deliverables orchestrator to
+# suite and, conceptually, by the autopilot orchestrator to
 # bound the autonomous loop. A NON-ZERO return from a check_* function means
 # "halt and escalate to a human" (autopilot Iron Law AL-5).
 #
@@ -34,17 +34,21 @@ _sha256() {
 
 # Normalize whitespace, then hash: collapse every run of whitespace (incl.
 # newlines) to a single space and trim, so cosmetic jitter in a failure
-# message does not change the fingerprint.
+# message does not change the fingerprint. LC_ALL=C makes the byte pipeline
+# locale-independent: under a UTF-8 locale `tr` aborts on invalid bytes and
+# would silently emit the empty-string hash (false sameness / nondeterminism).
 fingerprint() {
-  tr '[:space:]' ' ' | tr -s ' ' | sed 's/^ *//; s/ *$//' | _sha256
+  LC_ALL=C tr '[:space:]' ' ' | LC_ALL=C tr -s ' ' | LC_ALL=C sed 's/^ *//; s/ *$//' | _sha256
 }
 
 # JSON-escape a string body (no surrounding quotes): escape backslash and
-# double-quote, and collapse control characters (newline / carriage-return /
-# tab) to a space so a hostile or accidental value cannot break out of the
-# JSON string or split the JSONL record across physical lines.
+# double-quote, then collapse EVERY C0 control character (0x00-0x1f, incl.
+# newline / CR / tab / form-feed / ESC / NUL) to a space. RFC 8259 forbids raw
+# control characters inside a JSON string, so a hostile or accidental value
+# cannot break out of the string, split the JSONL record, or write a line a
+# strict parser rejects.
 _json_escape() {
-  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr '\n\r\t' '   '
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | LC_ALL=C tr '[:cntrl:]' ' '
 }
 
 # Append one audit line to the JSONL log — the external source of truth for a
@@ -59,6 +63,9 @@ record_iteration() {
       return 2
       ;;
   esac
+  # Normalize via base-10 so a leading-zero value ("007") becomes a valid JSON
+  # number (7) rather than the invalid literal `007` a strict parser rejects.
+  iteration=$((10#$iteration))
   # fingerprint must be non-empty and JSON-safe (no quotes / backslashes /
   # whitespace). fingerprint() always yields hex; an empty or unsafe value
   # here means a missing hash tool or a raw finding string leaked through —
@@ -102,6 +109,14 @@ check_sameness() {
 # check_sameness (last-two only) also misses.
 check_stuck() {
   local jsonl="$1" window="${2:-3}" fps n tail_fps count distinct
+  # A non-numeric window would make the integer test / tail error out yet still
+  # return 0 (fail-OPEN, silently disabling the rail). Validate → halt instead.
+  case "$window" in
+    '' | *[!0-9]*)
+      echo "autopilot_convergence: invalid window: '$window'" >&2
+      return 2
+      ;;
+  esac
   fps=$(_fingerprints "$jsonl")
   [ -z "$fps" ] && return 0
   n=$(printf '%s\n' "$fps" | grep -c .)
@@ -114,7 +129,11 @@ check_stuck() {
 }
 
 # max-iterations: halt (non-zero) when the current count reaches the ceiling.
+# Both args are validated as integers: an empty `current` would otherwise be
+# coerced to 0 by test(1) and continue forever (fail-OPEN on the budget rail).
 check_max_iterations() {
   local current="$1" max="$2"
+  case "$current" in '' | *[!0-9]*) echo "autopilot_convergence: invalid current: '$current'" >&2; return 2 ;; esac
+  case "$max" in '' | *[!0-9]*) echo "autopilot_convergence: invalid max: '$max'" >&2; return 2 ;; esac
   [ "$current" -lt "$max" ]
 }

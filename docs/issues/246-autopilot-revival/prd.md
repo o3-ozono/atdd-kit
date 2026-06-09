@@ -1,4 +1,4 @@
-# PRD: autopilot 復活 — 自律収束ループ（converging-deliverables）
+# PRD: autopilot 復活 — 自律収束ループ（autopilot）
 
 ## Problem
 
@@ -19,7 +19,7 @@ atdd-kit の 6-step フローでは、各成果物（PRD / User Stories / Plan /
 
 **MVP が動く実装完了基準**（運用 KPI は Phase 3 / 別 Issue）:
 
-- 新 skill `converging-deliverables`（autopilot orchestrator）が実装され、**既存の 6-step skill を使って** 1 step の成果物を**満足オラクル** `AND(実行可能 AT 緑, reviewing-deliverables verdict = correct, P0/P1 findings = 0)` まで自律収束させる end-to-end が動く。
+- 新 skill `autopilot`（autopilot orchestrator）が実装され、**既存の 6-step skill を使って** 1 step の成果物を**満足オラクル** `AND(実行可能 AT 緑, reviewing-deliverables verdict = correct, P0/P1 findings = 0)` まで自律収束させる end-to-end が動く。
 - **autopilot 専用 Iron Law** が明文化され、人間ゲートを「最初（AC 承認）と最後（merge）」の2点に絞ることが正当化される。
 - Unit Test + Skill E2E Test + `reviewing-deliverables` の Workflow レビューが全 green。
 - 各反復の verdict が `docs/issues/<NNN>/autopilot-log.jsonl` に永続化される（監査基盤）。
@@ -30,7 +30,7 @@ atdd-kit の 6-step フローでは、各成果物（PRD / User Stories / Plan /
 
 in-scope:
 
-- **E — `converging-deliverables` skill（薄い orchestrator）**: 既存 skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）を順に呼び、中間を `generate → review → fix` で満足オラクルまで自律ループ。安全レール（MAX_ITERATIONS / sameness-detector(sha256) / stuck 検出(window=3) / COMPLETED_WITH_DEBT / JSONL 永続化 / 非収束時 human escalation）。
+- **E — `autopilot` skill（薄い orchestrator）**: 既存 skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）を順に呼び、中間を `generate → review → fix` で満足オラクルまで自律ループ。安全レール（MAX_ITERATIONS / sameness-detector(sha256) / stuck 検出(window=3) / COMPLETED_WITH_DEBT / JSONL 永続化 / 非収束時 human escalation）。
 - **C — autopilot 専用 Iron Law（AL-1〜6）の明文化**: `docs/methodology/autopilot-iron-law.md` + `rules/atdd-kit.md` の1行参照 + skill 要約。標準 Iron Law を **autopilot モードのときだけ**上書きし、人間ゲート2点を正当化。「skill は autopilot を使った場合のみ役割が変わる（恒久改造しない）」原則を明記。
 - **B — `reviewing-deliverables` の verdict を後方互換で構造化**: autopilot がループ判定に使う `findings[]` / `overall_correctness` / `evidence_ref` を追加。**通常モードの PASS/FAIL 出力は維持**（autopilot を使った場合のみ役割が変わる枠）。
 - **A — design-doc 設計確定**: autopilot Iron Law 節 + autopilot の定義（半自動運転・人間ゲート2点・skill は autopilot モードのみ役割変更）を追記。

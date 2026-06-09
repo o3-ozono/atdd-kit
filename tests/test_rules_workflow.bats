@@ -64,13 +64,20 @@ setup() {
 
 # --- AC3 (#246 supersedes #187): autopilot is revived as a GOVERNED mode ---
 # #187 fully removed the legacy autopilot and guarded against its return. #246
-# deliberately reverses that: autopilot is reintroduced as the converging-deliverables
+# deliberately reverses that: autopilot is reintroduced as the autopilot
 # orchestrator, governed by the autopilot Iron Law. The guard is inverted — rules/
 # now references autopilot ONLY via the autopilot Iron Law doc, so the revival stays
 # governed and no ad-hoc / legacy autopilot rules creep back in.
 
-@test "AC3 (#246): rules/atdd-kit.md references the autopilot Iron Law" {
+@test "AC3 (#246): rules/atdd-kit.md references the autopilot Iron Law as a SCOPED override" {
+  # Not a vacuous existence check: the reference must (a) point at the iron-law
+  # doc, (b) state it OVERRIDES the standard laws, and (c) SCOPE that override to
+  # while autopilot runs — so a stray ad-hoc ungoverned autopilot rule could not
+  # satisfy all three.
   grep -qE 'autopilot-iron-law' "$RULES_FILE"
+  grep -qiE 'autopilot.*overrides?' "$RULES_FILE"
+  grep -qiE 'while `?autopilot`? runs' "$RULES_FILE"
+  grep -qiE 'outside autopilot these laws are supreme' "$RULES_FILE"
 }
 
 # --- AC4: 1 Issue = 1 worktree = 1 Draft PR discipline is stated verbatim ---

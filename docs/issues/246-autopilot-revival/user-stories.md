@@ -1,10 +1,10 @@
-# User Stories: autopilot 復活 — 自律収束ループ（converging-deliverables）
+# User Stories: autopilot 復活 — 自律収束ループ（autopilot）
 
 ## Functional Story
 
 ### F1: 半自動運転オーケストレーション
 
-**I want to** `converging-deliverables` を起動すると既存の 6-step skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）が順に自動実行され、人間の介入が「最初（AC 承認）」と「最後（merge）」の2点に絞られる,
+**I want to** `autopilot` を起動すると既存の 6-step skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）が順に自動実行され、人間の介入が「最初（AC 承認）」と「最後（merge）」の2点に絞られる,
 **so that** 各 step を手で起動・レビューする労力が前倒しで収束し、人間は near-green を確認するだけになる.
 
 ### F2: 満足オラクルによる自律収束
@@ -31,10 +31,10 @@
 
 ### C2: ゼロ依存 + 行数規律
 
-**I want to** 安全レール（sameness-detector の sha256 等）が pure bash + 標準ツールで実装され外部依存がなく、`skills/converging-deliverables/SKILL.md` が埋め込み Workflow script 込みで妥当な行数 budget に収まる,
+**I want to** 安全レール（sameness-detector の sha256 等）が pure bash + 標準ツールで実装され外部依存がなく、`skills/autopilot/SKILL.md` が埋め込み Workflow script 込みで妥当な行数 budget に収まる,
 **so that** atdd-kit のゼロ依存原則と skill 粒度（レビュー単位の見やすさ）が保たれる.
 
 ### C3: skill 変更のテスト証拠
 
-**I want to** `converging-deliverables` に Unit Test + Skill E2E Test が付き、`reviewing-deliverables` の verdict 拡張に BATS アサーションが付く,
+**I want to** `autopilot` に Unit Test + Skill E2E Test が付き、`reviewing-deliverables` の verdict 拡張に BATS アサーションが付く,
 **so that** skill 変更が構造的に検証され、回帰しない（DEVELOPMENT.md「Skill Changes Require Test Evidence」）.

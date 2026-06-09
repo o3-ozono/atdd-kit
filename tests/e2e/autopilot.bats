@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
-# @covers: skills/converging-deliverables/SKILL.md
-# Skill E2E Test for the converging-deliverables skill (autopilot orchestrator, #246).
+# @covers: skills/autopilot/SKILL.md
+# Skill E2E Test for the autopilot skill (autopilot orchestrator, #246).
 # Invokes real `claude -p` (single-turn) and verifies the LLM correctly recovers
 # the behavior aspects encoded in SKILL.md.
 #
@@ -11,7 +11,7 @@
 # stable. This is unrelated to the skill's output language policy.
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-SKILL_FILE="${REPO_ROOT}/skills/converging-deliverables/SKILL.md"
+SKILL_FILE="${REPO_ROOT}/skills/autopilot/SKILL.md"
 TIMEOUT_SECS="${SKILL_E2E_TIMEOUT_SECS:-120}"
 
 setup() {
@@ -46,7 +46,7 @@ _run_claude() {
 }
 
 @test "F1: I want human involvement narrowed to two gates, so that the flow runs half-automated" {
-  prompt="The following is the atdd-kit converging-deliverables (autopilot) skill definition. \
+  prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 Under this skill, at which points does a human stay involved in the loop? Respond in English.
 
 --- SKILL.md START ---
@@ -59,7 +59,7 @@ ${SKILL_CONTENT}
 }
 
 @test "F2: I want a satisfaction oracle, so that a deliverable advances only when objectively converged" {
-  prompt="The following is the atdd-kit converging-deliverables (autopilot) skill definition. \
+  prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 What is the condition (the satisfaction oracle) for a deliverable to count as done and advance to the next step? Respond in English.
 
 --- SKILL.md START ---
@@ -73,7 +73,7 @@ ${SKILL_CONTENT}
 }
 
 @test "F3: I want the loop to fail safe, so that non-convergence escalates to a human instead of looping forever" {
-  prompt="The following is the atdd-kit converging-deliverables (autopilot) skill definition. \
+  prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 What does the loop do when it cannot converge — repeated identical failures, no progress, or too many iterations? Respond in English.
 
 --- SKILL.md START ---
@@ -86,7 +86,7 @@ ${SKILL_CONTENT}
 }
 
 @test "F4: I want the autopilot Iron Law to override the standard one, so that AC-anchored autonomy is legitimate" {
-  prompt="The following is the atdd-kit converging-deliverables (autopilot) skill definition. \
+  prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 Under autopilot, how is the standard rule 'no implementation without human-approved ACs' handled? Respond in English.
 
 --- SKILL.md START ---
@@ -98,7 +98,7 @@ ${SKILL_CONTENT}
 }
 
 @test "C1: I want the flow skills left unchanged, so that autopilot only changes their role in this mode" {
-  prompt="The following is the atdd-kit converging-deliverables (autopilot) skill definition. \
+  prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 Does this skill permanently rewrite the existing flow skills, or do they keep their normal behavior outside autopilot? Respond in English.
 
 --- SKILL.md START ---

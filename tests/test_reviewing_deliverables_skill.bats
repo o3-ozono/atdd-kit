@@ -144,7 +144,7 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
 }
 
 # --- Structured verdict for autopilot loop control (#246) ------------------
-# The Aggregate output is extended (backward-compatibly) so converging-deliverables
+# The Aggregate output is extended (backward-compatibly) so autopilot
 # can drive its satisfaction-oracle loop from a machine-readable verdict.
 
 @test "structured verdict: AGG_SCHEMA carries overall_correctness (#246)" {

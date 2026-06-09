@@ -38,7 +38,7 @@ Resume mid-flow by invoking the skill for the next incomplete step. `skill-gate`
 | [merging-and-deploying](merging-and-deploying/) | Step 6, after review PASS | Merge + post-deploy regression |
 | [writing-design-doc](writing-design-doc/) | On-demand, conditional | Design document for non-trivial trade-offs |
 | [launching-preview](launching-preview/) | On-demand | Local preview |
-| [converging-deliverables](converging-deliverables/) | On-demand (autopilot) | Autonomous convergence loop over the flow skills — human gates only at AC approval (start) and merge (end) |
+| [autopilot](autopilot/) | On-demand (autopilot) | Autonomous convergence loop over the flow skills — human gates only at AC approval (start) and merge (end) |
 
 ### Infrastructure
 

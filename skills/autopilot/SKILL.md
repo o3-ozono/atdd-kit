@@ -1,9 +1,9 @@
 ---
-name: converging-deliverables
+name: autopilot
 description: "Use when you want to run an Issue in autopilot — autonomously converging its deliverables to near-green, with human involvement only at the start (AC approval) and the end (merge)."
 ---
 
-# Converging Deliverables (autopilot)
+# Autopilot
 
 The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables` — and narrows human involvement to **two gates only**: **AC approval** at the start and **merge** at the end. Everything between is looped `generate → review → fix` until a satisfaction oracle holds.
 
@@ -24,8 +24,8 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 
 ## Trigger
 
-- **Explicit:** `/atdd-kit:autopilot <issue-number>` (e.g. `autopilot 24`) — the canonical entry point — or `/atdd-kit:converging-deliverables <issue-number>`.
-- **Keyword-detected (confirm first):** on autopilot / 半自動運転 / 自律収束 intent, ask `Run converging-deliverables (autopilot) on <issue>? Y/n` before starting.
+- **Explicit:** `/atdd-kit:autopilot <issue-number>` (e.g. `autopilot 24`).
+- **Keyword-detected (confirm first):** on autopilot / 半自動運転 / 自律収束 intent, ask `Run autopilot on <issue>? Y/n` before starting.
 
 ## Input
 
@@ -41,7 +41,7 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 | Artifact | Form |
 |----------|------|
 | Converged deliverables | the flow skills' artifacts, looped to the satisfaction oracle |
-| Audit trail | `docs/issues/<NNN>/autopilot-log.jsonl` (one JSONL line per iteration, AL-4) |
+| Audit trail | `docs/issues/<NNN>-<slug>/autopilot-log.jsonl` (one JSONL line per iteration, AL-4) |
 
 **Output language: Japanese (fixed).** Structural tokens (PASS/FAIL, AL ids, oracle terms) are kept verbatim.
 
@@ -60,7 +60,7 @@ Invoking this skill opts into the **Workflow tool**. For each step S in `[extrac
 
 ```js
 export const meta = {
-  name: 'converging-deliverables',
+  name: 'autopilot',
   description: 'autopilot: loop the flow skills generate→review→fix until the satisfaction oracle holds, with safety rails',
   phases: [{ title: 'Generate' }, { title: 'Review' }, { title: 'AT-gate' }, { title: 'Coverage-gate' }, { title: 'Rails' }],
 }
@@ -74,7 +74,14 @@ const MAX_ITERATIONS = args.maxIterations || {
 // deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
 const AT_STEP = args.atStep || 'running-atdd-cycle'
 const AT_COMMAND = args.atCommand || "the project's Acceptance Test command (e.g. `bats tests/acceptance/`)"
-const LOG = `docs/issues/${NNN}/autopilot-log.jsonl`
+// Fail-closed precondition: the AT step must be one of the looped STEPS. If it
+// is not, atRequired is false for every step and the AT + coverage gates vanish,
+// degrading the oracle to a pure LLM opinion — so refuse to run.
+if (!STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
+// The issue directory is slug-suffixed (docs/issues/<NNN>-<slug>/), not the bare
+// number. The audit step resolves it by glob at write time and appends the log
+// inside it; using the bare ${NNN} would write to a phantom dir and break AL-4.
+const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
 
 // Consumer schema. findings items REQUIRE priority + evidence_ref so the oracle
 // can never read an undefined priority as "not blocking" (fail-open). atGreen
@@ -132,19 +139,24 @@ for (const step of STEPS) {
       const cov = await agent(`In a context SEPARATE from the AT author, verify the executable Acceptance Tests for Issue #${NNN} encode EVERY approved AC in the immutable AC set (docs/issues/${NNN}-*/acceptance-tests.md + the approved AC). List uncovered AC; each is a P0.`, { label: `coverage:${step}`, phase: 'Coverage-gate', schema: { type: 'object', required: ['allCovered', 'uncovered'], properties: { allCovered: { type: 'boolean' }, uncovered: { type: 'array', items: { type: 'string' } } } } })
       coverageOk = cov.allCovered === true && (cov.uncovered || []).length === 0
     }
+    const blocking = (verdict.findings || []).filter((f) => priorityOf(f) <= 1)
     // 5. satisfaction oracle — AL-3 deterministic AT AND AL-2 coverage AND
     //    reviewer correctness AND zero confirmed P0/P1 (fail-safe, not fail-open).
-    const blocking = (verdict.findings || []).filter((f) => priorityOf(f) <= 1)
-    if (atGreen && coverageOk && verdict.overall_correctness === 'correct' && blocking.length === 0) {
-      log(`${step}: converged at iteration ${it}`); break
-    }
-    // 6. safety rails — record then check; a NON-ZERO record_iteration (corrupt /
-    //    empty fingerprint) is itself a halt. Halt + escalate on any (bash lib).
-    const rails = await agent(`Append this iteration to ${LOG} via lib/autopilot_convergence.sh: pipe the blocking findings through fingerprint, then record_iteration ${it} ${step} (a NON-ZERO return = corrupt/empty fingerprint = halt 'record-error'), then check_max_iterations ${it} ${max}, check_sameness, check_stuck (window 3). Report which rail returned non-zero — value: MAX_ITERATIONS | sameness-detector | stuck | record-error | none.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['halt'], properties: { halt: { type: 'string' } } } })
-    if (rails.halt !== 'none') {
-      // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
-      return { status: 'COMPLETED_WITH_DEBT', step, reason: rails.halt, verdict }
-    }
+    const converged = atGreen && coverageOk && verdict.overall_correctness === 'correct' && blocking.length === 0
+    // 6. AUDIT FIRST (AL-4) — record EVERY iteration (incl. the converged one)
+    //    before deciding, so the JSONL is the complete external source of truth.
+    //    record_iteration's full signature is <jsonl> <iteration> <step> <verdict> <fp>;
+    //    a non-zero return (corrupt / empty fingerprint) is itself a halt.
+    const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. Run EXACTLY: \`fp="$(printf '%s' "<the blocking findings text, verbatim>" | fingerprint)"\` then \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`. Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
+    if (rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
+    if (converged) { log(`${step}: converged at iteration ${it}`); break }
+    // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
+    //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
+    //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
+    const r = await agent(`Against the resolved autopilot-log.jsonl, run via lib/autopilot_convergence.sh: check_max_iterations ${it} ${max}; check_sameness "<log>"; check_stuck "<log>" 3. Report each one's integer exit code.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['maxIterExit', 'samenessExit', 'stuckExit'], properties: { maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' } } } })
+    const halt = r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
+    // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
+    if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
   }
 }
 return { status: 'CONVERGED', steps: STEPS }
@@ -156,7 +168,7 @@ The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck`
 
 | Concern | Owner |
 |---------|-------|
-| Looping the flow skills to the satisfaction oracle | **converging-deliverables** (this skill) |
+| Looping the flow skills to the satisfaction oracle | **autopilot** (this skill) |
 | Each artifact's generation | the flow skills (unchanged) |
 | The review verdict | reviewing-deliverables (single-pass primitive) |
 | AC approval / merge (the two human gates) | the human |

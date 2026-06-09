@@ -150,7 +150,7 @@ AND ゲートの AT は「override 不能な客観 backstop」と称するが、
 - **AL-5** 非収束 / 予算超過 / 同一失敗反復で human escalation（§4）。
 - **AL-6** 1 収束サイクルで複数成果物を許容（標準「1 PR=1 thing」の緩和）。
 
-**重要な設計原則（ユーザー確定 / 2026-06-08）**: autopilot は**既存 skill を恒久変更しない**。flow skill のコードは不変で、変わるのは「人間ゲートがどこに立つか」という**役割のみ**であり、それも **autopilot を使った場合のみ**。ゆえに autopilot は既存 skill を順に呼ぶ薄い orchestrator（`converging-deliverables`）として実装し、skill 本体を書き換えない。`reviewing-deliverables` の構造化 verdict も**後方互換の追加**（通常モードは従来の PASS/FAIL のまま）であり、`defining-requirements` の壁打ち強化（旧 Phase 0）は本 Issue では行わない（Non-Goal）。
+**重要な設計原則（ユーザー確定 / 2026-06-08）**: autopilot は**既存 skill を恒久変更しない**。flow skill のコードは不変で、変わるのは「人間ゲートがどこに立つか」という**役割のみ**であり、それも **autopilot を使った場合のみ**。ゆえに autopilot は既存 skill を順に呼ぶ薄い orchestrator（`autopilot`）として実装し、skill 本体を書き換えない。`reviewing-deliverables` の構造化 verdict も**後方互換の追加**（通常モードは従来の PASS/FAIL のまま）であり、`defining-requirements` の壁打ち強化（旧 Phase 0）は本 Issue では行わない（Non-Goal）。
 
 > 本 PR 自体が AL-2 / AL-6 の最初の適用例（design-doc を AC アンカーに、設計＋全実装を1 PR で完遂）。
 

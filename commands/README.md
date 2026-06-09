@@ -8,7 +8,6 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 
 | Command | Purpose | Invocation |
 |---------|---------|------------|
-| [autopilot](autopilot.md) | Run an Issue in autopilot — autonomously converge its deliverables to near-green (invokes `converging-deliverables`) | `/atdd-kit:autopilot <issue>` |
 | [maintenance](maintenance.md) | On-demand rule and documentation health check; creates/updates maintenance Issue | `/atdd-kit:maintenance` |
 | [skill-fix](skill-fix.md) | Manually trigger the atdd-kit skill-defect report flow | `/atdd-kit:skill-fix` |
 | [setup-github](setup-github.md) | Set up GitHub issue/PR templates and labels | `/atdd-kit:setup-github` |

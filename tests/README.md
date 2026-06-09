@@ -52,15 +52,15 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_v1_skill_skeletons.bats | v1.0 skill structure across all 6 steps + on-demand skills (skeleton set now empty) |
 | test_reviewer_subagents.bats | 6 specialist reviewer subagent definitions (agents/*.md, Issue #186) |
 
-### autopilot — converging-deliverables (#246)
+### autopilot — autopilot (#246)
 
 Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_converging_deliverables_skill.bats | converging-deliverables skill (autopilot orchestrator) — oracle / rails / two human gates / iron-law wiring |
+| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / two human gates / iron-law wiring |
 | test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations) |
-| e2e/converging-deliverables.bats | converging-deliverables Skill E2E Test |
+| e2e/autopilot.bats | autopilot Skill E2E Test |
 
 ### Skill Structure & Quality
 

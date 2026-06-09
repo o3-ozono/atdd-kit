@@ -185,3 +185,41 @@ _assert_valid_jsonl() {
   run check_sameness "$JSONL"
   [ "$status" -ne 0 ]
 }
+
+# --- round-2 hardening (#246 second review) -------------------------------
+
+@test "record_iteration: a C0 control char (form-feed) in step is collapsed, log stays valid JSON" {
+  record_iteration "$JSONL" 1 "$(printf 'US\fevil')" "FAIL" "abc123"
+  _assert_valid_jsonl "$JSONL"
+}
+
+@test "record_iteration: a backslash-bearing fingerprint is refused" {
+  run record_iteration "$JSONL" 1 "US" "FAIL" 'abc\def'
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "record_iteration: a leading-zero iteration is normalized to a valid JSON number" {
+  record_iteration "$JSONL" 007 "US" "FAIL" "abc123"
+  _assert_valid_jsonl "$JSONL"
+  run python3 -c 'import json,sys; print(json.loads(open(sys.argv[1]).readline())["iteration"])' "$JSONL"
+  [ "$output" = "7" ]
+}
+
+@test "check_max_iterations: an empty current halts instead of fail-open continue" {
+  run check_max_iterations "" 8
+  [ "$status" -ne 0 ]
+}
+
+@test "check_max_iterations: a non-numeric arg halts" {
+  run check_max_iterations "abc" 8
+  [ "$status" -ne 0 ]
+}
+
+@test "check_stuck: a non-numeric window halts instead of silently disabling the rail" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "x"
+  record_iteration "$JSONL" 2 "US" "FAIL" "x"
+  record_iteration "$JSONL" 3 "US" "FAIL" "x"
+  run check_stuck "$JSONL" "3; echo PWNED"
+  [ "$status" -ne 0 ]
+}
