@@ -4,7 +4,9 @@
      Unit Test（tests/test_*.bats, claude 非起動の構造検証）と Skill E2E Test
      （tests/e2e/*.bats, claude が SKILL.md を読んで挙動を再現）の 2 層で検証する。 -->
 
-> 状態（2026-06-08）: **Unit Test 全 green**（test_converging_deliverables_skill 15 / test_autopilot_convergence 11 / test_reviewing_deliverables_skill の #246 アサーション 3）。**Skill E2E** は `run-skill-e2e.sh --dry-run` で構造解決済み（converging-deliverables.bats / reviewing-deliverables.bats）、実 claude 実行は CI（`skill-e2e-subscription`, self-hosted サブスク内）。
+> 状態（2026-06-09 更新, #246 review 反映後）: **Unit Test 全 green**（test_converging_deliverables_skill 20 / test_autopilot_convergence 20 / test_reviewing_deliverables_skill の #246 アサーション 7）。**Skill E2E** は `run-skill-e2e.sh --dry-run` で構造解決済み（converging-deliverables.bats / reviewing-deliverables.bats）、実 claude 実行は CI（`skill-e2e-subscription`, self-hosted サブスク内）。
+>
+> **Accept-risk（F14, #246 review）**: PR ゲートの `skill-e2e-test` は dry-run（構造解決）のみで、実 claude を起動する統合検証は `skill-e2e-subscription`（self-hosted・サブスク内・`workflow_dispatch`）に委譲する。これは #243 で確定した「Skill E2E は従量課金 CI で常時回さずサブスク内で手動キック」という既存方針に従ったもので、本 PR 固有の退行ではない。マージ前の統合検証が必要な場合は当該ワークフローを dispatch する。
 
 ## AT-001: 半自動運転オーケストレーション (F1)
 
@@ -53,7 +55,7 @@
 - [x] [green] AT-007: Unit + Skill E2E + lib + verdict の BATS が存在
   - Given: `tests/`
   - When: ファイルを確認（Unit）
-  - Then: `tests/test_converging-deliverables_skill.bats` / `tests/e2e/converging-deliverables.bats` / `tests/test_autopilot_convergence.bats` が存在し、`tests/test_reviewing_deliverables_skill.bats` に verdict アサーションがある
+  - Then: `tests/test_converging_deliverables_skill.bats` / `tests/e2e/converging-deliverables.bats` / `tests/test_autopilot_convergence.bats` が存在し、`tests/test_reviewing_deliverables_skill.bats` に verdict アサーションがある
 
 ## ライフサイクル例
 

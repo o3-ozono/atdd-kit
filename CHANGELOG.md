@@ -7,19 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.6.0] - 2026-06-08
+## [3.6.0] - 2026-06-09
 
-autopilot を **復活**（#246）。ただし旧 autopilot（Agent Teams orchestration、v3.0.0 で廃止）の逐語復活ではなく、**既存の 6-step flow skill をそのまま使う「半自動運転」モード**として再設計した。autopilot を atdd-kit 自身の 6-step フローで自己適用（dogfood）して実装した。
+autopilot を **復活**（#246）。ただし旧 autopilot（Agent Teams orchestration、v3.0.0 で廃止）の逐語復活ではなく、**既存の 6-step flow skill をそのまま使う「半自動運転」モード**として再設計した。autopilot を atdd-kit 自身の 6-step フローで自己適用（dogfood）して実装し、その自前レビュー（reviewing-deliverables の多人格・並列・敵対的レビュー）の指摘を反映して満足オラクルと安全レールを **code-deep 化**した。
 
 ### Added
 
-- **`converging-deliverables` skill を新設 — autopilot orchestrator**（#246）。既存の flow skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）を順に呼び、人間ゲートを「最初（AC 承認）」と「最後（merge）」の2点に絞る半自動運転。中間を `generate → review → fix` で満足オラクル `AND(実行可能 AT 緑, reviewer verdict = correct, P0/P1 = 0)` まで自律反復する薄い orchestrator。flow skill は恒久変更せず、役割が変わるのは autopilot モードのときのみ。Unit Test (`tests/test_converging_deliverables_skill.bats`、15 case) + Skill E2E Test (`tests/e2e/converging-deliverables.bats`、5 case) 同梱。
-- **autopilot 専用 Iron Law を新設**（`docs/methodology/autopilot-iron-law.md`、AL-1〜6）。autopilot モードのときだけ標準 Iron Law（`rules/atdd-kit.md`）を上書きし、人間ゲート2点（AL-1）/ immutable AC アンカー（AL-2、標準 #2 の置換）/ 満足オラクル AND ゲート（AL-3、標準 #3 の強化）/ evidence_ref 必須・裏付けなき PASS の自動降格（AL-4）/ 非収束時 human escalation（AL-5）/ 1 収束サイクルで複数成果物（AL-6）を定める。標準 Iron Law との相反を「逸脱」でなく「許容」する設計判断を明文化。`docs/methodology/README.md` に登録。
-- **`lib/autopilot_convergence.sh`**: autopilot の収束安全レール（正規化 fingerprint の sameness-detector、stuck 検出、max-iterations、JSONL 監査ログ）。pure bash + coreutils（ゼロ依存）。`tests/test_autopilot_convergence.bats` で挙動検証（11 case）。
+- **`converging-deliverables` skill を新設 — autopilot orchestrator**（#246）。既存の flow skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）を順に呼び、人間ゲートを「最初（AC 承認）」と「最後（merge）」の2点に絞る半自動運転。中間を `generate → review → fix` で満足オラクル `AND(決定論 AT 緑, AC→AT カバレッジ緑, reviewer verdict = correct, 確認済み P0/P1 = 0)` まで自律反復する薄い orchestrator。**AT 緑はテストの exit code から取得（LLM 判定にしない, AL-3）**、**AC→AT カバレッジゲートを AT author と別コンテキストで実行（AL-2）**、オラクルは fail-safe（確認済み P0/P1 は evidence_ref 有無に関わらず block）。flow skill は恒久変更せず、役割が変わるのは autopilot モードのときのみ。Unit Test (`tests/test_converging_deliverables_skill.bats`、20 case) + Skill E2E Test (`tests/e2e/converging-deliverables.bats`、5 case) 同梱。
+- **autopilot 専用 Iron Law を新設**（`docs/methodology/autopilot-iron-law.md`、AL-1〜6）。autopilot モードのときだけ標準 Iron Law（`rules/atdd-kit.md`）を上書きし、人間ゲート2点（AL-1）/ immutable AC アンカー（AL-2、標準 #2 の置換）/ 満足オラクル AND ゲート（AL-3、標準 #3 の強化）/ evidence_ref 必須・裏付けなき PASS の自動降格（AL-4）/ 非収束時 human escalation（AL-5）/ 1 収束サイクルで複数成果物（AL-6）を定める。標準 Iron Law との相反を「逸脱」でなく「許容」する設計判断を明文化。`rules/atdd-kit.md` に上書き参照の1行、`docs/methodology/README.md` に登録。
+- **`lib/autopilot_convergence.sh`**: autopilot の収束安全レール（正規化 fingerprint の sameness-detector、stuck 検出、max-iterations、JSONL 監査ログ）。pure bash + coreutils（ゼロ依存）。`record_iteration` は入力を JSON エスケープ・検証し（不正・空 fingerprint は非ゼロで拒否＝監査ログ破損とレール無効化を防止）、`check_stuck` は window 内の重複検出で A,B,A,B 振動も捕捉する。`tests/test_autopilot_convergence.bats` で挙動検証（20 case、JSON-injection・空/改行/引用符 fp・振動の負例含む）。
 
 ### Changed
 
-- **`reviewing-deliverables` の verdict を後方互換で構造化**（#246）。`AGG_SCHEMA` に `overall_correctness` と evidence_ref 付き `findings[]`（priority / confidence / file / line_range / detail）を追加し、autopilot がループ判定（P0/P1 ゲート・evidence_ref 強制）に使えるようにした。既存の `verdict` / `summary` / `byLens`（PASS/FAIL）は維持し、**通常モードの挙動は不変**。`tests/test_reviewing_deliverables_skill.bats` に pin。
+- **`reviewing-deliverables` の verdict を後方互換で構造化**（#246）。`AGG_SCHEMA` に `overall_correctness` と evidence_ref 付き `findings[]`（priority / confidence / file / line_range / detail、items は priority/evidence_ref を required）を追加し、autopilot がループ判定（P0/P1 ゲート）に使えるようにした。Aggregate は確認済み P0/P1 を drop せず、裏付けなき finding は `evidence_ref="unverified"` で保持する **fail-safe**（旧 fail-open の drop 指示を撤廃）。既存の `verdict` / `summary` / `byLens`（PASS/FAIL）と top-level required は維持し、**通常モードの挙動は不変**。`tests/test_reviewing_deliverables_skill.bats` に pin（後方互換 = autopilot フィールドが top-level required に入らないことを含む）。
+- **`rules/atdd-kit.md` の autopilot 回帰ガードを反転**（#246, 旧 #187 を supersede）。#187 は autopilot を完全廃止し「rules に autopilot 言及なし」を回帰ガードしていたが、本リリースが governed mode として復活させるため、`tests/test_rules_workflow.bats` の AC3 を「autopilot-iron-law 参照の確認」へ反転。
 
 ## [3.5.0] - 2026-06-07
 
