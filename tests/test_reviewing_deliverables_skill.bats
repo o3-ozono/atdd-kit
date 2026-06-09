@@ -142,3 +142,40 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
 @test "no persona: SKILL.md does not introduce 'As a [persona]' line" {
   ! grep -qE '^As a ' "$SKILL_FILE"
 }
+
+# --- Structured verdict for autopilot loop control (#246) ------------------
+# The Aggregate output is extended (backward-compatibly) so autopilot
+# can drive its satisfaction-oracle loop from a machine-readable verdict.
+
+@test "structured verdict: AGG_SCHEMA carries overall_correctness (#246)" {
+  grep -qE 'overall_correctness' "$SKILL_FILE"
+}
+
+@test "structured verdict: findings carry priority, confidence and evidence_ref (#246)" {
+  grep -qE 'evidence_ref' "$SKILL_FILE"
+  grep -qE 'priority' "$SKILL_FILE"
+  grep -qE 'confidence' "$SKILL_FILE"
+}
+
+@test "structured verdict: backward-compatible — verdict/summary/byLens retained (#246)" {
+  grep -qE "verdict:" "$SKILL_FILE"
+  grep -qE 'summary' "$SKILL_FILE"
+  grep -qE 'byLens' "$SKILL_FILE"
+}
+
+@test "structured verdict: autopilot fields stay OPTIONAL — top-level required excludes them (#246)" {
+  # the machine-readable additions must not enter AGG_SCHEMA's top-level required,
+  # or non-autopilot callers that omit them would fail validation (backward break).
+  grep -qE "required: \['verdict', 'summary', 'byLens'\]" "$SKILL_FILE"
+  ! grep -qE "required: \[[^]]*overall_correctness" "$SKILL_FILE"
+  ! grep -qE "required: \['verdict', 'summary', 'byLens'[^]]*findings" "$SKILL_FILE"
+}
+
+@test "structured verdict: findings items require priority + evidence_ref so the oracle can't read undefined as non-blocking (#246)" {
+  grep -qE "required: \['priority', 'evidence_ref'\]" "$SKILL_FILE"
+}
+
+@test "fail-safe: aggregate never drops a confirmed P0/P1; the old fail-open drop is gone (#246)" {
+  grep -qiE 'never drop a confirmed P0/P1|fail-safe, not fail-open' "$SKILL_FILE"
+  ! grep -qE 'Drop any finding that has no evidence_ref' "$SKILL_FILE"
+}

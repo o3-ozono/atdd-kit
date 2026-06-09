@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-06-09
+
+autopilot を **復活**（#246）。ただし旧 autopilot（Agent Teams orchestration、v3.0.0 で廃止）の逐語復活ではなく、**既存の 6-step flow skill をそのまま使う「半自動運転」モード**として再設計した。autopilot を atdd-kit 自身の 6-step フローで自己適用（dogfood）して実装し、その自前レビュー（reviewing-deliverables の多人格・並列・敵対的レビュー）の指摘を反映して満足オラクルと安全レールを **code-deep 化**した。
+
+### Added
+
+- **`autopilot` skill を新設 — autopilot orchestrator**（#246）。既存の flow skill（`extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables`）を順に呼び、人間ゲートを「最初（AC 承認）」と「最後（merge）」の2点に絞る半自動運転。中間を `generate → review → fix` で満足オラクル `AND(決定論 AT 緑, AC→AT カバレッジ緑, reviewer verdict = correct, 確認済み P0/P1 = 0)` まで自律反復する薄い orchestrator。**AT 緑はテストの exit code から取得（LLM 判定にしない, AL-3）**、**AC→AT カバレッジゲートを AT author と別コンテキストで実行（AL-2）**、オラクルは fail-safe（確認済み P0/P1 は evidence_ref 有無に関わらず block）。flow skill は恒久変更せず、役割が変わるのは autopilot モードのときのみ。`/atdd-kit:autopilot <issue>`（例 `autopilot 24`）で起動する。監査ログは slug 付き Issue ディレクトリ `docs/issues/<NNN>-<slug>/autopilot-log.jsonl` に毎 iteration 追記し、収束レールは exit code を JS 側で判定する（LLM 要約に委ねない）。**AL-2 の AC immutability は宣言でなく強制**：承認済み AC（prd.md + user-stories.md）の sha256 をループ開始時に pin（`pin_anchor`）し毎 iteration で `check_pin`、ドリフトしたら `ac-drift` で halt する（ループが自身のアンカーを書き換えられない）。Unit Test (`tests/test_autopilot_skill.bats`、28 case) + Skill E2E Test (`tests/e2e/autopilot.bats`、5 case) 同梱。
+- **autopilot 専用 Iron Law を新設**（`docs/methodology/autopilot-iron-law.md`、AL-1〜6）。autopilot モードのときだけ標準 Iron Law（`rules/atdd-kit.md`）を上書きし、人間ゲート2点（AL-1）/ immutable AC アンカー（AL-2、標準 #2 の置換）/ 満足オラクル AND ゲート（AL-3、標準 #3 の強化）/ evidence_ref 必須・裏付けなき PASS の自動降格（AL-4）/ 非収束時 human escalation（AL-5）/ 1 収束サイクルで複数成果物（AL-6）を定める。標準 Iron Law との相反を「逸脱」でなく「許容」する設計判断を明文化。`rules/atdd-kit.md` に上書き参照の1行、`docs/methodology/README.md` に登録。
+- **`lib/autopilot_convergence.sh`**: autopilot の収束安全レール（正規化 fingerprint の sameness-detector、stuck 検出、max-iterations、JSONL 監査ログ）。pure bash + coreutils（ゼロ依存）。`record_iteration` は入力を JSON エスケープ・検証し（全 C0 制御文字を畳み込み、不正・空・改行・引用符・バックスラッシュ fingerprint は非ゼロで拒否、先頭ゼロ iteration は base-10 正規化＝監査ログ破損とレール無効化を防止）、`fingerprint` は `LC_ALL=C` でロケール非依存、`check_stuck` は window 内の重複検出で A,B,A,B 振動も捕捉し非数値 window で halt、`check_max_iterations` は空/非数値引数で halt（fail-open を排除）。AL-2 強制用に `pin_anchor`（承認 AC の sha256 を一度だけ pin、上書き拒否）と `check_pin`（ドリフト/pin 欠如/空 fp で halt）を追加。`tests/test_autopilot_convergence.bats` で挙動検証（30 case、JSON-injection・C0 制御文字・空/改行/引用符/バックスラッシュ fp・振動・引数検証・AC pin/ドリフトの負例含む）。
+
+### Changed
+
+- **`reviewing-deliverables` の verdict を後方互換で構造化**（#246）。`AGG_SCHEMA` に `overall_correctness` と evidence_ref 付き `findings[]`（priority / confidence / file / line_range / detail、items は priority/evidence_ref を required）を追加し、autopilot がループ判定（P0/P1 ゲート）に使えるようにした。Aggregate は確認済み P0/P1 を drop せず、裏付けなき finding は `evidence_ref="unverified"` で保持する **fail-safe**（旧 fail-open の drop 指示を撤廃）。既存の `verdict` / `summary` / `byLens`（PASS/FAIL）と top-level required は維持し、**通常モードの挙動は不変**。`tests/test_reviewing_deliverables_skill.bats` に pin（後方互換 = autopilot フィールドが top-level required に入らないことを含む）。
+- **`rules/atdd-kit.md` の autopilot 回帰ガードを反転**（#246, 旧 #187 を supersede）。#187 は autopilot を完全廃止し「rules に autopilot 言及なし」を回帰ガードしていたが、本リリースが governed mode として復活させるため、`tests/test_rules_workflow.bats` の AC3 を「autopilot-iron-law 参照の確認」へ反転。
+
 ## [3.5.0] - 2026-06-07
 
 ### Added

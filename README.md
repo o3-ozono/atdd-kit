@@ -95,6 +95,7 @@ flowchart LR
 |-------|-------------|
 | **writing-design-doc** | Design exploration — trade-offs and alternatives, when a decision needs documenting |
 | **launching-preview** | Build and launch a preview for manual confirmation |
+| **autopilot** | Autopilot — autonomously converge an Issue's deliverables to near-green by looping the flow skills, with human gates only at AC approval (start) and merge (end) |
 
 #### Auto-trigger
 

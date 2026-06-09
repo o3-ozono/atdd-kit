@@ -7,6 +7,7 @@ Methodology deep-dives: detailed guidance on ATDD, User Story quality, Scrumban 
 | File | Description |
 |------|-------------|
 | [atdd-guide.md](atdd-guide.md) | ATDD double-loop TDD process, AC format rules, and test layer selection |
+| [autopilot-iron-law.md](autopilot-iron-law.md) | The autopilot Iron Law (AL-1…AL-6) — overrides the standard Iron Law while autopilot (`autopilot`) runs |
 | [bug-fix-process.md](bug-fix-process.md) | Bug fix classification (A/B/C) and step-by-step repair process |
 | [definition-of-done.md](definition-of-done.md) | Definition of Done — AC gate, CI gate, PR gate, documentation gate |
 | [definition-of-ready.md](definition-of-ready.md) | Definition of Ready — criteria for an Issue to enter ready-to-go state |

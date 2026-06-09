@@ -10,7 +10,7 @@ Rules are markdown files loaded into Claude Code's context on every turn. They d
 
 | File | Purpose |
 |------|---------|
-| [atdd-kit.md](atdd-kit.md) | Core rules for atdd-kit users: Issue-driven workflow, commit conventions, PR rules, label flow |
+| [atdd-kit.md](atdd-kit.md) | Core rules for atdd-kit users: Issue-driven workflow, commit conventions, PR rules, label flow. Includes a one-line pointer to the **autopilot Iron Law** (`docs/methodology/autopilot-iron-law.md`), which overrides the conflicting standard Iron Laws only while the `autopilot` skill runs. |
 
 ## References
 
