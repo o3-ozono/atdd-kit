@@ -24,7 +24,7 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 
 ## Trigger
 
-- **Explicit:** `/atdd-kit:converging-deliverables <issue-number>` (colloquially "autopilot <issue>").
+- **Explicit:** `/atdd-kit:autopilot <issue-number>` (e.g. `autopilot 24`) — the canonical entry point — or `/atdd-kit:converging-deliverables <issue-number>`.
 - **Keyword-detected (confirm first):** on autopilot / 半自動運転 / 自律収束 intent, ask `Run converging-deliverables (autopilot) on <issue>? Y/n` before starting.
 
 ## Input
