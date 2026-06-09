@@ -84,12 +84,35 @@ teardown() {
   [ "$status" -ne 0 ]
 }
 
-@test "check_stuck: progress (a differing fingerprint) within the window continues" {
+@test "check_stuck: genuine progress (all-distinct fingerprints) within the window continues" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "x"
+  record_iteration "$JSONL" 2 "US" "FAIL" "y"
+  record_iteration "$JSONL" 3 "US" "FAIL" "z"
+  run check_stuck "$JSONL" 3
+  [ "$status" -eq 0 ]
+}
+
+# A repeat ANYWHERE in the window = revisiting a prior state = no progress.
+# This is the non-adjacent duplicate that check_sameness (last-two) misses.
+@test "check_stuck: a non-adjacent repeat within the window halts (x,y,x)" {
   record_iteration "$JSONL" 1 "US" "FAIL" "x"
   record_iteration "$JSONL" 2 "US" "FAIL" "y"
   record_iteration "$JSONL" 3 "US" "FAIL" "x"
   run check_stuck "$JSONL" 3
-  [ "$status" -eq 0 ]
+  [ "$status" -ne 0 ]
+}
+
+# A,B,A,B oscillation (fix-one / break-another) evades check_sameness because
+# the last two are always different; check_stuck must still catch it.
+@test "check_stuck: A,B,A,B oscillation halts (regression guard, #246 review)" {
+  record_iteration "$JSONL" 1 "plan" "FAIL" "A"
+  record_iteration "$JSONL" 2 "plan" "FAIL" "B"
+  record_iteration "$JSONL" 3 "plan" "FAIL" "A"
+  record_iteration "$JSONL" 4 "plan" "FAIL" "B"
+  run check_sameness "$JSONL"
+  [ "$status" -eq 0 ]   # sameness (last two A,B differ) does NOT catch it
+  run check_stuck "$JSONL" 3
+  [ "$status" -ne 0 ]   # stuck DOES catch it (window B,A,B has a repeat)
 }
 
 # --- max-iterations -------------------------------------------------------
@@ -102,4 +125,63 @@ teardown() {
 @test "check_max_iterations: current < max continues (zero)" {
   run check_max_iterations 3 8
   [ "$status" -eq 0 ]
+}
+
+# --- input hardening: the audit log must stay valid + the rails must not go dark
+
+# Round-trip every recorded line through a real JSON parser, not a substring
+# match — a substring assertion passes on malformed JSON, hiding injection.
+_assert_valid_jsonl() {
+  run python3 -c 'import json,sys
+[json.loads(l) for l in open(sys.argv[1]) if l.strip()]' "$1"
+  [ "$status" -eq 0 ]
+}
+
+@test "record_iteration: a double-quote in step/verdict is escaped, log stays valid JSON" {
+  record_iteration "$JSONL" 1 'US"evil' 'FAIL"injected' "abc123"
+  _assert_valid_jsonl "$JSONL"
+  # the quote round-trips as data inside the field, it does not break the JSON
+  run python3 -c 'import json,sys; print(json.loads(open(sys.argv[1]).readline())["verdict"])' "$JSONL"
+  [ "$output" = 'FAIL"injected' ]
+}
+
+@test "record_iteration: a forged-key injection via step cannot create extra JSON keys" {
+  record_iteration "$JSONL" 1 'US","verdict":"PASS","fingerprint":"FORGED' "FAIL" "realfp"
+  _assert_valid_jsonl "$JSONL"
+  # the real fingerprint is the only one extracted — no FORGED key leaks in
+  run _fingerprints "$JSONL"
+  [ "$output" = "realfp" ]
+}
+
+@test "record_iteration: an empty fingerprint (missing hash tool) is refused, not written dark" {
+  run record_iteration "$JSONL" 1 "US" "FAIL" ""
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "record_iteration: a newline-bearing fingerprint is refused (would split the JSONL line)" {
+  run record_iteration "$JSONL" 1 "US" "FAIL" "$(printf 'a\nb')"
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "record_iteration: a quote-bearing fingerprint is refused (would break parse/forge)" {
+  run record_iteration "$JSONL" 1 "US" "FAIL" 'abc"def'
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "record_iteration: a non-numeric iteration is refused (invalid JSON number)" {
+  run record_iteration "$JSONL" "1; rm" "US" "FAIL" "abc123"
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "rails do not go dark: refused records leave no empty-fingerprint line behind" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "samefp" || true
+  record_iteration "$JSONL" 2 "US" "FAIL" "" || true   # refused — not written
+  record_iteration "$JSONL" 3 "US" "FAIL" "samefp" || true
+  # only the two valid samefp lines exist, so sameness still fires
+  run check_sameness "$JSONL"
+  [ "$status" -ne 0 ]
 }
