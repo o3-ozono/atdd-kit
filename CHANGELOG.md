@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.7.1] - 2026-06-10
+
+### Fixed
+
+- **main-branch-guard の偽陽性 2 モードを解消 — 判定を「プロジェクトリポジトリ × 対象 worktree ブランチ」基準に変更**（#251）。旧実装はセッション cwd のブランチだけで deny を決めていたため、cwd が main のとき (1) **別リポジトリ**（dotfiles 等）のファイル編集、(2) **同一リポジトリの feature worktree** 配下への編集まで deny する偽陽性があった（逆に cwd が feature のときは sh の早期 return で main worktree 内ファイルへの編集が素通り）。新判定フロー: 対象ファイルを canonicalize（新規ファイルは最近接の既存祖先ディレクトリで解決）→ (a) フック cwd の `git rev-parse --git-common-dir` が解決不能 → fail-safe allow → (b) 対象ファイルの common dir が cwd 側と不一致（プロジェクトリポジトリ外）→ allow → (c) 一致だが**対象側 worktree** のブランチが main/master 以外（detached HEAD 含む）→ allow → (d) main/master → 既存 allow-list 照合 → deny。`main-branch-guard.sh` は入力読取り・`git`/`python3` 存在確認・fail-safe のみへ役割縮小し、ブランチ判定を含む全ロジックを `main_branch_guard.py` に集約。allow-list・フック登録方式・deny メッセージは不変。`tests/test_main_branch_guard.bats` はテストリポジトリを allow-list 外（`$HOME` 直下の mktemp ベース）へ移設し、偽陽性 2 モードの真の負例（AT-001/AT-002、修正前実装で red を確認済み）・対象ファイル基準の真陽性（AT-004）・fail-safe 回帰（AT-006、git/python3 不在は空ディレクトリ + 必要コマンドのみ symlink した stub PATH 方式）を追加（65 case）。`hooks/README.md` / `tests/README.md` を同期。
+
 ## [3.7.0] - 2026-06-10
 
 ### Changed

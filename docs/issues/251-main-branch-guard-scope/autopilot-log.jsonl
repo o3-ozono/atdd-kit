@@ -1,0 +1,5 @@
+{"iteration":1,"step":"extracting-user-stories","verdict":"PASS","fingerprint":"c627c09c14e58e44bc51622dac392958ec88244e414b508020634f53cfcd1e69"}
+{"iteration":1,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"7e86a3458d0411d81f22a00daf1a1e54543ee586d2dc63be34ac7d769fd58342"}
+{"iteration":2,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"0cf2dff2223a1e9819dc771de1242249c0b2e7b3f64289b862481125d58dc20e"}
+{"iteration":3,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"c627c09c14e58e44bc51622dac392958ec88244e414b508020634f53cfcd1e69"}
+{"iteration":1,"step":"running-atdd-cycle","verdict":"PASS","fingerprint":"c627c09c14e58e44bc51622dac392958ec88244e414b508020634f53cfcd1e69"}

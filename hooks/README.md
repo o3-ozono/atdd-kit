@@ -15,26 +15,24 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 |------|-------|---------|
 | [hooks.json](hooks.json) | — | Hook definitions — maps events to shell commands |
 | [session-start](session-start) | SessionStart | Checks if `.claude/config.yml` (or legacy `workflow-config.yml`) exists; guides first-time setup |
-| [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit on `main`/`master` branches |
+| [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit of project-repo files whose worktree is on `main`/`master` |
 | [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal (timeout=10s: balances normalization benefit vs hook overhead; large outputs complete in <1s on typical hardware) |
 
 ### main-branch-guard.sh + main_branch_guard.py
 
-Enforces the Issue-driven workflow rule that direct edits on `main`/`master` are not allowed for repository-managed files:
+Enforces the Issue-driven workflow rule that direct edits on `main`/`master` are not allowed — scoped to the **project repository** and decided by the **target file's worktree branch**, not the session cwd branch (#251):
 
 1. Intercepts Edit, Write, MultiEdit, and NotebookEdit tool calls via PreToolUse hook
-2. Reads the current git branch with `git branch --show-current`
-3. If the branch is not `main` or `master` (case-sensitive exact match), passes through immediately with `{}`
-4. On `main`/`master`, delegates to `main_branch_guard.py` which:
-   - Parses `tool_input.file_path` (or `tool_input.notebook_path` for NotebookEdit) from the hook JSON
-   - Canonicalizes the path via `~` expansion + `os.path.realpath`
-   - Checks against an allow-list: `/tmp`, `/private/tmp`, `/var/folders`, `/private/var/folders`, `/dev/null`, `~/.claude/`, `~/.config/`
-   - Allow-list match → `{}` exit 0 (edit permitted)
-   - No match → `permissionDecision: "deny"` JSON exit 0
-5. Deny message instructs users to create a feature branch and use the Issue-driven workflow (no skill names)
-6. All unexpected conditions (non-git directory, detached HEAD, git unavailable, python3 unavailable, malformed JSON) pass through safely with `{}`
+2. `main-branch-guard.sh` only reads the hook input, verifies `git`/`python3` are available (otherwise fail-safe `{}`), and delegates to `main_branch_guard.py` — all decision logic lives on the Python side
+3. `main_branch_guard.py` parses `tool_input.file_path` (or `tool_input.notebook_path` for NotebookEdit), canonicalizes it via `~` expansion + `os.path.realpath` (new files resolve through the nearest existing ancestor directory), then decides in three stages:
+   - **(a)** The project repository is the repo of the hook `cwd`, identified by `git rev-parse --git-common-dir` (worktrees share the common dir). If it cannot be resolved → fail-safe `{}`
+   - **(b)** The target file's common dir cannot be resolved, or differs from the cwd's → the file is **outside the project repository** → `{}` (e.g. dotfiles repos, other projects)
+   - **(c)** Common dirs match but the **target-side worktree** branch is not `main`/`master` (case-sensitive exact match; detached HEAD counts as non-main) → `{}` (e.g. feature worktrees while cwd is on main)
+   - **(d)** Target worktree is on `main`/`master` → allow-list check: `/tmp`, `/private/tmp`, `/var/folders`, `/private/var/folders`, `/dev/null`, `~/.claude/`, `~/.config/`. Match → `{}`; no match → `permissionDecision: "deny"` JSON exit 0
+4. Deny message instructs users to create a feature branch and use the Issue-driven workflow (no skill names)
+5. All unexpected conditions (non-git directory, git unavailable, python3 unavailable, malformed JSON) pass through safely with `{}`
 
-**Fail-safe design:** Any error condition returns `{}` + exit 0. The hook never blocks edits due to unexpected failures — only explicit `main`/`master` branch matches with non-allow-list paths trigger a deny.
+**Fail-safe design:** Any error condition returns `{}` + exit 0. The hook never blocks edits due to unexpected failures — only project-repo files whose worktree is on `main`/`master` and that miss the allow-list trigger a deny.
 
 #### Emergency Recovery (if the hook misbehaves)
 
