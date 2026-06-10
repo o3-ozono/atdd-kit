@@ -137,7 +137,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_main_branch_guard.bats | main-branch-guard PreToolUse hook (Issue #38 / #181) |
+| test_main_branch_guard.bats | main-branch-guard PreToolUse hook (Issue #38 / #181 / #251) |
 | test_bash_output_normalizer.bats | Bash PostToolUse output normalizer (Issue #85) |
 | test_hook_distribution.bats | PostToolUse hook plugin distribution (Issue #85) |
 | test_token_measurement_tooling.bats | Token reduction measurement tooling (Issue #85) |
