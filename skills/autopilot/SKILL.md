@@ -77,37 +77,37 @@ export const meta = {
   phases: [{ title: 'Generate' }, { title: 'Review' }, { title: 'AT-gate' }, { title: 'Coverage-gate' }, { title: 'Rails' }],
 }
 
-const NNN = args.issue
+// Defensive args parse (#252/#256): the harness may deliver args as a JSON
+// string; running with issue=undefined breaks AL-2 anchoring — fail closed.
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+const NNN = A.issue
+if (!Number.isInteger(NNN)) throw new Error('args.issue missing or non-integer — refusing to run with an unresolvable issue dir')
 // Two-phase split (#249): 'design' converges US + plan/AT and ends at the human
 // design-approval gate; 'impl' runs only after that gate has passed.
-const PHASE = args.phase === 'impl' ? 'impl' : 'design'
-const STEPS = args.steps || (PHASE === 'design'
+const PHASE = A.phase === 'impl' ? 'impl' : 'design'
+const STEPS = A.steps || (PHASE === 'design'
   ? ['extracting-user-stories', 'writing-plan-and-tests']
   : ['running-atdd-cycle'])
-const MAX_ITERATIONS = args.maxIterations || {
+const MAX_ITERATIONS = A.maxIterations || {
   'extracting-user-stories': 4, 'writing-plan-and-tests': 4, 'running-atdd-cycle': 8,
 }
 // The step that produces an executable AT suite. For it (and only it) the
 // deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
-const AT_STEP = args.atStep || 'running-atdd-cycle'
-const AT_COMMAND = args.atCommand || "the project's Acceptance Test command (e.g. `bats tests/acceptance/`)"
-// Fail-closed preconditions. impl: the AT step must be one of the looped STEPS,
-// or the AT + coverage gates silently vanish and the oracle degrades to a pure
-// LLM opinion — refuse to run. design: the AT step must NOT be looped — ATDD
-// belongs after the human design-approval gate (AL-1), never before it.
+const AT_STEP = A.atStep || 'running-atdd-cycle'
+const AT_COMMAND = A.atCommand || "the project's Acceptance Test command (e.g. `bats tests/acceptance/`)"
+// Fail-closed preconditions. impl: the AT step must be looped, or the AT +
+// coverage gates silently vanish (oracle degrades to LLM opinion). design: the
+// AT step must NOT be looped — ATDD runs only after the design-approval gate (AL-1).
 if (PHASE === 'impl' && !STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
 if (PHASE === 'design' && STEPS.includes(AT_STEP)) throw new Error(`design phase must not loop ${AT_STEP} — ATDD runs only after the design-approval gate`)
-// The issue directory is slug-suffixed (docs/issues/<NNN>-<slug>/), not the bare
-// number. The audit step resolves it by glob at write time and appends the log
-// inside it; using the bare ${NNN} would write to a phantom dir and break AL-4.
+// The issue dir is slug-suffixed (docs/issues/<NNN>-<slug>/); the audit step
+// resolves it by glob at write time — a bare-number dir would break AL-4.
 const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
 // AL-2 anchor, per phase. The pin covers ONLY artifacts a human approved BEFORE
 // this phase — never an artifact this phase's loop may edit (#249: pinning
-// user-stories.md while looping extracting-user-stories guaranteed a false
-// ac-drift halt). design: the approved PRD. impl: the design-gate-approved
-// prd.md + user-stories.md. acceptance-tests.md is NOT pinned — running-atdd-cycle
-// advances its lifecycle markers ([draft]→[green]); its content is guarded by
-// the AC→AT coverage gate instead.
+// looped user-stories.md guaranteed a false ac-drift halt). design: approved PRD.
+// impl: design-gate-approved prd.md + user-stories.md. The loop-mutable
+// acceptance-tests.md is NOT pinned; the AC→AT coverage gate guards it.
 const PIN_NAME = PHASE === 'design' ? 'autopilot-prd.pin' : 'autopilot-design.pin'
 const ANCHOR_CAT = PHASE === 'design' ? 'cat <dir>/prd.md' : 'cat <dir>/prd.md <dir>/user-stories.md'
 
@@ -144,10 +144,18 @@ const priorityOf = (f) => {
   return m ? Number(m[0]) : 0
 }
 
+// Review scope per phase × step (#252): without it the design-phase review
+// flagged missing production code / executable AT as P0 (unconvergeable), and
+// the US-step review drew findings against plan.md it had not yet produced.
+const reviewScope = (step) => PHASE === 'impl'
+  ? 'Scope: the impl deliverables (production code, executable AT, doc sync).'
+  : `Scope (design phase): ${step === 'extracting-user-stories'
+    ? 'judge ONLY prd.md vs user-stories.md consistency; do NOT return findings on plan.md / acceptance-tests.md (later steps own them).'
+    : 'judge the planning set (user-stories.md / plan.md / acceptance-tests.md).'} Production code and an executable AT suite do NOT exist yet BY DESIGN — their absence is NOT a finding.`
+
 // FREEZE (AL-2) — pin this phase's human-approved anchor ONCE, before any
-// iteration. On re-entry (a design-gate rejection re-runs the design phase) the
-// pin already exists: verify it still matches instead of failing the freeze —
-// immutability is kept, re-runs are not bricked. Refuse on mismatch or write failure.
+// iteration. On re-entry (design-gate rejection) the pin already exists: verify
+// it still matches instead of failing the freeze. Refuse on mismatch / write failure.
 const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and freeze this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh. If "<dir>/${PIN_NAME}" does not exist: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\` (pins once). If it already exists: \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (the anchor must still match the frozen pin). Report pinned = (that command's exit code === 0).`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
 if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'anchor-pin-failed' }
 
@@ -155,12 +163,18 @@ for (const step of STEPS) {
   const max = MAX_ITERATIONS[step] || 4
   const atRequired = step === AT_STEP
   let it = 0
+  // #252: carry the previous verdict's findings into the next generate call —
+  // a fresh-context gen agent cannot "fix them verbatim" without their text.
+  let prevFindings = null
   for (;;) {
     it++
-    // 1. generate / fix — run the EXISTING flow skill (not rewritten)
-    await agent(`Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor. If a prior review left findings, fix them verbatim.`, { label: `gen:${step}`, phase: 'Generate' })
-    // 2. review — single-pass primitive, structured verdict
-    const verdict = await agent(`Run reviewing-deliverables for Issue #${NNN}; return its structured verdict (overall_correctness + findings[], each with priority and evidence_ref).`, { label: `review:${step}`, phase: 'Review', schema: VERDICT_SCHEMA })
+    // 1. generate / fix — run the EXISTING flow skill (not rewritten). From
+    //    iteration 2 the prior findings are embedded verbatim (JSON).
+    await agent(prevFindings
+      ? `Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor. Fix these previous review findings verbatim:\n${JSON.stringify(prevFindings)}`
+      : `Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor. If a prior review left findings, fix them verbatim.`, { label: `gen:${step}`, phase: 'Generate' })
+    // 2. review — single-pass primitive, structured verdict, phase×step scope
+    const verdict = await agent(`Run reviewing-deliverables for Issue #${NNN} (phase: ${PHASE}, step: ${step}). ${reviewScope(step)} Return its structured verdict (overall_correctness + findings[], each with priority and evidence_ref).`, { label: `review:${step}`, phase: 'Review', schema: VERDICT_SCHEMA })
     // 3. DETERMINISTIC AT gate (AL-3) — atGreen is the test command's EXIT CODE,
     //    never an LLM opinion. Default false when AT is required and not run.
     let atGreen = !atRequired
@@ -182,7 +196,13 @@ for (const step of STEPS) {
     //    before deciding, so the JSONL is the complete external source of truth.
     //    record_iteration's full signature is <jsonl> <iteration> <step> <verdict> <fp>;
     //    a non-zero return (corrupt / empty fingerprint) is itself a halt.
-    const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. Run EXACTLY: \`fp="$(printf '%s' "<the blocking findings text, verbatim>" | fingerprint)"\` then \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`. Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
+    //    #252: the payload is embedded verbatim (JSON.stringify) — a literal
+    //    placeholder would otherwise get hashed as-is (the 2aed7ea6… incident).
+    const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. The blocking-findings payload to fingerprint is the exact text between the two marker lines below (hash the payload only, never the markers):
+BEGIN-PAYLOAD
+${JSON.stringify(blocking)}
+END-PAYLOAD
+Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`. Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
     if (rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
     if (converged) { log(`${step}: converged at iteration ${it}`); break }
     // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
@@ -192,6 +212,7 @@ for (const step of STEPS) {
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
     // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
     if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
+    prevFindings = verdict.findings || []
   }
 }
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }

@@ -212,3 +212,38 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # so the freeze must fall back to check_pin against the existing pin
   grep -qiE 'already exists.*check_pin' "$SKILL_FILE"
 }
+
+# --- #252 prompt-defect regression guards ----------------------------------
+
+@test "audit (#252): the placeholder fingerprint instruction is gone (AC1)" {
+  # the literal placeholder used to be hashed as-is (constant 2aed7ea6… in the log)
+  ! grep -qF '<the blocking findings text, verbatim>' "$SKILL_FILE"
+  ! grep -q 'Run EXACTLY' "$SKILL_FILE"
+}
+
+@test "audit (#252): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
+  grep -q 'BEGIN-PAYLOAD' "$SKILL_FILE"
+  grep -q 'END-PAYLOAD' "$SKILL_FILE"
+  grep -qE 'JSON\.stringify\(blocking\)' "$SKILL_FILE"
+  grep -qi 'quoted heredoc' "$SKILL_FILE"
+}
+
+@test "review (#252): scope is phase x step aware — design phase never demands production code (AC2)" {
+  grep -qE 'reviewScope' "$SKILL_FILE"
+  # design phase: absence of production code / executable AT is NOT a finding
+  grep -qE 'their absence is NOT a finding' "$SKILL_FILE"
+  # the review prompt concatenates the scope helper
+  grep -qE '\$\{reviewScope\(step\)\}' "$SKILL_FILE"
+}
+
+@test "review (#252): US step scope excludes plan.md / acceptance-tests.md (AC3)" {
+  grep -qE 'do NOT return findings on plan\.md / acceptance-tests\.md' "$SKILL_FILE"
+}
+
+@test "gen (#252): iteration 2+ embeds the previous findings text verbatim (AC4)" {
+  # the gen call branches on prevFindings: iteration 1 keeps the legacy wording,
+  # later iterations embed the findings JSON — never a body-less "fix them verbatim"
+  grep -qE 'await agent\(prevFindings' "$SKILL_FILE"
+  grep -qE 'JSON\.stringify\(prevFindings\)' "$SKILL_FILE"
+  grep -qE 'prevFindings = verdict\.findings' "$SKILL_FILE"
+}
