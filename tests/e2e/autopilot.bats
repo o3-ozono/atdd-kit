@@ -45,7 +45,7 @@ _run_claude() {
   fi
 }
 
-@test "F1: I want human involvement narrowed to two gates, so that the flow runs half-automated" {
+@test "F1: I want human involvement narrowed to three gates (requirements, design, merge), so that ATDD runs only after I approve the design" {
   prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 Under this skill, at which points does a human stay involved in the loop? Respond in English.
 
@@ -54,7 +54,8 @@ ${SKILL_CONTENT}
 --- SKILL.md END ---"
   out=$(_run_claude "$prompt")
   [ -n "$out" ]
-  echo "$out" | grep -qiE "AC|approv"
+  echo "$out" | grep -qiE "requirement|PRD|approv"
+  echo "$out" | grep -qiE "design"
   echo "$out" | grep -qiE "merge"
 }
 

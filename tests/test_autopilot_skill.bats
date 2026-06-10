@@ -4,10 +4,11 @@
 # claude is NOT invoked; structural / wording invariants are checked via grep.
 # LLM behavior is covered by tests/e2e/autopilot.bats.
 #
-# Scope (#246): autopilot is the autopilot MODE — a thin orchestrator
-# that runs the EXISTING flow skills, narrows the human gates to two (AC approval at
-# the start, merge at the end), and loops generate→review→fix until a satisfaction
-# oracle (AND of green AT, reviewer verdict, zero P0/P1) holds, with safety rails.
+# Scope (#246, gates re-placed in #249): autopilot is the autopilot MODE — a thin
+# orchestrator that runs the EXISTING flow skills, narrows the human gates to three
+# (requirements approval at the start, design approval before ATDD, merge at the
+# end), and loops generate→review→fix until a satisfaction oracle (AND of green AT,
+# reviewer verdict, zero P0/P1) holds, with safety rails.
 # It does NOT permanently change the flow skills; their role changes only under autopilot.
 
 SKILL_FILE="skills/autopilot/SKILL.md"
@@ -35,10 +36,28 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -q 'reviewing-deliverables' "$SKILL_FILE"
 }
 
-@test "orchestration: human gates fixed to two points — AC approval and merge (F1/AL-1)" {
+@test "orchestration: human gates fixed to three points — requirements, design approval, merge (F1/AL-1, #249)" {
   grep -qiE 'human gate|人間ゲート' "$SKILL_FILE"
-  grep -qiE 'AC approval|AC 承認|defining-requirements' "$SKILL_FILE"
+  grep -qiE 'requirements approval|defining-requirements' "$SKILL_FILE"
+  grep -qiE 'design approval|design-approval' "$SKILL_FILE"
   grep -qiE 'merge' "$SKILL_FILE"
+  grep -qiE 'exactly three' "$SKILL_FILE"
+  # the old two-gate contract must be gone
+  ! grep -qiE 'exactly two|two gates only' "$SKILL_FILE"
+}
+
+@test "gates (#249): ATDD never starts before the design-approval gate" {
+  # the user-expected flow: 壁打ち → design review → approval → ATDD
+  grep -qiE 'ATDD never starts before (this|the design-approval) gate' "$SKILL_FILE"
+  # design phase loops only the design steps; running-atdd-cycle is impl-only
+  grep -qE "\['extracting-user-stories', 'writing-plan-and-tests'\]" "$SKILL_FILE"
+  grep -qE "\['running-atdd-cycle'\]" "$SKILL_FILE"
+  # fail-closed: looping the AT step inside the design phase must throw
+  grep -qE "PHASE === 'design' && STEPS\.includes\(AT_STEP\)" "$SKILL_FILE"
+}
+
+@test "gates (#249): design-gate rejection comments re-enter the design loop as findings" {
+  grep -qiE 'evidence_ref.*human comment|human comment.*evidence_ref' "$SKILL_FILE"
 }
 
 @test "non-goal: flow skills are not permanently changed (role changes only under autopilot, C1)" {
@@ -167,10 +186,23 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -qE 'record_iteration "<resolved-log-path>" \$\{it\} \$\{step\}' "$SKILL_FILE"
 }
 
-@test "AL-2: the approved AC is pinned at loop start and drift halts the loop (enforced freeze)" {
+@test "AL-2: the approved anchor is pinned at phase start and drift halts the loop (enforced freeze)" {
   grep -qE 'pin_anchor' "$SKILL_FILE"
   grep -qE 'check_pin' "$SKILL_FILE"
   grep -qiE 'ac-drift' "$SKILL_FILE"
-  # the freeze pins the human-approved source (prd + user-stories), not the loop-mutable AT
+  # the impl freeze pins the human-approved source (prd + user-stories), not the loop-mutable AT
   grep -qE 'prd\.md .*user-stories\.md' "$SKILL_FILE"
+}
+
+@test "AL-2 (#249): one pin per phase — design anchors to PRD, impl to the design-gate-approved set" {
+  # design phase pin: prd.md only (the loop edits user-stories.md, so pinning it
+  # there would guarantee a false ac-drift halt — the #249 contradiction)
+  grep -qE 'autopilot-prd\.pin' "$SKILL_FILE"
+  grep -qE 'autopilot-design\.pin' "$SKILL_FILE"
+  # a pin must never cover an artifact the same phase's loop may edit
+  grep -qiE 'never an artifact (this|the same) phase' "$SKILL_FILE"
+  # acceptance-tests.md is NOT pinned (lifecycle markers move); coverage gate guards it
+  grep -qiE 'acceptance-tests\.md is NOT pinned' "$SKILL_FILE"
+  # the single-pin two-gate freeze must be gone
+  ! grep -qE 'autopilot-ac\.pin' "$SKILL_FILE"
 }

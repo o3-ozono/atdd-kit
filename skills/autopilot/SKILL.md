@@ -1,11 +1,11 @@
 ---
 name: autopilot
-description: "Use when you want to run an Issue in autopilot — autonomously converging its deliverables to near-green, with human involvement only at the start (AC approval) and the end (merge)."
+description: "Use when you want to run an Issue in autopilot — autonomously converging its deliverables to near-green, with human gates at requirements approval (start), design approval (before ATDD), and merge (end)."
 ---
 
 # Autopilot
 
-The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle` → `reviewing-deliverables` — and narrows human involvement to **two gates only**: **AC approval** at the start and **merge** at the end. Everything between is looped `generate → review → fix` until a satisfaction oracle holds.
+The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle`, with `reviewing-deliverables` as the in-loop reviewer — and narrows human involvement to **three gates**: **requirements approval** at the start, **design approval** before any implementation, and **merge** at the end. Between gates, everything is looped `generate → review → fix` until a satisfaction oracle holds.
 
 The flow skills are **not permanently changed**; their role (specifically, where the human gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`.
 
@@ -15,12 +15,12 @@ The flow skills are **not permanently changed**; their role (specifically, where
 
 While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridden by the **autopilot Iron Law** (`docs/methodology/autopilot-iron-law.md`, AL-1…AL-6):
 
-- **AL-1** human gates = AC approval + merge, fixed.
-- **AL-2** iterations anchor to the immutable approved AC instead of re-approving each loop, **enforced** by a sha256 pin of the approved AC taken at loop start and re-checked every iteration (drift → halt); precondition: AC→AT coverage gate green.
+- **AL-1** human gates = requirements approval + design approval + merge, fixed.
+- **AL-2** iterations anchor to the immutable artifacts a human approved **before the current phase**, **enforced** by a sha256 pin per phase (design: prd.md → `autopilot-prd.pin`; impl: prd.md + user-stories.md → `autopilot-design.pin`, taken at the design-approval gate) re-checked every iteration (drift → halt); impl precondition: AC→AT coverage gate green.
 - **AL-3** "done" = the satisfaction-oracle AND gate; deterministic gates decide AT/lint/test.
 - **AL-4** every finding needs an `evidence_ref`; an unbacked PASS auto-demotes; verdicts persist to JSONL.
 - **AL-5** the loop fails safe via the rails below.
-- **AL-6** one convergence cycle may produce a whole Issue's deliverables.
+- **AL-6** one convergence cycle may produce a whole phase's deliverable set.
 
 ## Trigger
 
@@ -29,30 +29,42 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 
 ## Input
 
-- Issue number, with a **human-approved, immutable AC set** already produced via `defining-requirements` (壁打ち) + `extracting-user-stories` — the first human gate. If the AC is not approved, stop and route to that gate. autopilot never invents or approves its own AC.
+- Issue number, with a **human-approved PRD** already produced via `defining-requirements` (壁打ち) — the first human gate. If the PRD is not approved, stop and route to that gate. autopilot never invents or approves its own requirements.
 
-## Human gates (exactly two — AL-1)
+## Human gates (exactly three — AL-1)
 
-1. **Start — AC approval.** `defining-requirements` engages the human, the human approves the AC, and it is frozen as the immutable anchor.
-2. **End — merge.** A human reviews the near-green result and merges. autopilot never merges.
+1. **Start — requirements approval.** `defining-requirements` engages the human in 壁打ち, the human approves the PRD, and it is frozen as the design phase's immutable anchor.
+2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human**. Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
+3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges.
 
 ## Output
 
 | Artifact | Form |
 |----------|------|
 | Converged deliverables | the flow skills' artifacts, looped to the satisfaction oracle |
+| Phase anchors | `docs/issues/<NNN>-<slug>/autopilot-prd.pin` / `autopilot-design.pin` (AL-2) |
 | Audit trail | `docs/issues/<NNN>-<slug>/autopilot-log.jsonl` (one JSONL line per iteration, AL-4) |
 
 **Output language: Japanese (fixed).** Structural tokens (PASS/FAIL, AL ids, oracle terms) are kept verbatim.
 
-## Mechanism — a Workflow loop over the flow skills
+## Flow — two convergence phases around the design-approval gate
 
-Invoking this skill opts into the **Workflow tool**. For each step S in `[extracting-user-stories, writing-plan-and-tests, running-atdd-cycle]`, loop `generate → review → fix`:
+1. **Precondition.** The approved PRD exists at `docs/issues/<NNN>-*/prd.md`. Missing or unapproved → stop and route to `defining-requirements`.
+2. **Design phase (autonomous).** Invoke the Workflow script below with `args = { issue: NNN, phase: 'design' }` — converges `extracting-user-stories` then `writing-plan-and-tests`, anchored to the pinned PRD. No executable AT suite exists yet, so the AT / coverage gates are off and the oracle is reviewer-only.
+3. **Design-approval gate (human).** Present the near-green `user-stories.md` / `plan.md` / `acceptance-tests.md` and ask:
+   > `設計成果物（user-stories / plan / acceptance-tests）を承認しますか? 'ok' で ATDD（impl phase）へ進みます。修正点があればコメントしてください。`
+   Comments become findings (`evidence_ref` = the human comment) fed verbatim into a re-run of the design phase. Do not proceed without an explicit `ok`.
+4. **Impl phase (autonomous).** Invoke the script with `args = { issue: NNN, phase: 'impl' }` — it pins the design-gate-approved anchor and converges `running-atdd-cycle` under the deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2).
+5. **Hand off.** The near-green Issue goes to the human merge gate (`merging-and-deploying`).
 
-1. **generate** — run S's flow skill to produce or repair its artifact, anchored to the immutable approved AC.
+## Mechanism — one Workflow loop, invoked once per phase
+
+Invoking this skill opts into the **Workflow tool**. For each step S of the current phase, loop `generate → review → fix`:
+
+1. **generate** — run S's flow skill to produce or repair its artifact, anchored to this phase's immutable approved anchor.
 2. **review** — run `reviewing-deliverables` (single-pass primitive, unchanged) → its structured verdict (`overall_correctness` + `findings[]`, each carrying `priority` and `evidence_ref`).
-3. **deterministic AT gate (AL-3)** — when S produces an executable AT suite, `atGreen` is set from the **test command's exit code**, captured by running it — never from an LLM opinion of whether tests "would" pass.
-4. **AC→AT coverage gate (AL-2)** — when S produces AT, a check **run in a context separate from the AT author** confirms the AT encode every approved AC; any uncovered AC is a P0. This is the external anchor that stops the loop from grading its own AT.
+3. **deterministic AT gate (AL-3)** — impl phase only: `atGreen` is set from the **test command's exit code**, captured by running it — never from an LLM opinion of whether tests "would" pass.
+4. **AC→AT coverage gate (AL-2)** — impl phase only: a check **run in a context separate from the AT author** confirms the AT encode every approved AC; any uncovered AC is a P0. This is the external anchor that stops the loop from grading its own AT.
 5. **satisfaction oracle** — `AND(atGreen [deterministic], coverageOk, overall_correctness == "correct", confirmed P0/P1 == 0)`. A finding with an absent / non-numeric `priority` is treated as **blocking** (fail-safe), and a confirmed P0/P1 blocks **regardless of `evidence_ref`** — AL-4 is fail-safe, never fail-open.
    - satisfied → advance to the next step.
    - not satisfied → feed the findings **verbatim** back into generate (fix) and re-loop.
@@ -66,7 +78,12 @@ export const meta = {
 }
 
 const NNN = args.issue
-const STEPS = args.steps || ['extracting-user-stories', 'writing-plan-and-tests', 'running-atdd-cycle']
+// Two-phase split (#249): 'design' converges US + plan/AT and ends at the human
+// design-approval gate; 'impl' runs only after that gate has passed.
+const PHASE = args.phase === 'impl' ? 'impl' : 'design'
+const STEPS = args.steps || (PHASE === 'design'
+  ? ['extracting-user-stories', 'writing-plan-and-tests']
+  : ['running-atdd-cycle'])
 const MAX_ITERATIONS = args.maxIterations || {
   'extracting-user-stories': 4, 'writing-plan-and-tests': 4, 'running-atdd-cycle': 8,
 }
@@ -74,18 +91,25 @@ const MAX_ITERATIONS = args.maxIterations || {
 // deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
 const AT_STEP = args.atStep || 'running-atdd-cycle'
 const AT_COMMAND = args.atCommand || "the project's Acceptance Test command (e.g. `bats tests/acceptance/`)"
-// Fail-closed precondition: the AT step must be one of the looped STEPS. If it
-// is not, atRequired is false for every step and the AT + coverage gates vanish,
-// degrading the oracle to a pure LLM opinion — so refuse to run.
-if (!STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
+// Fail-closed preconditions. impl: the AT step must be one of the looped STEPS,
+// or the AT + coverage gates silently vanish and the oracle degrades to a pure
+// LLM opinion — refuse to run. design: the AT step must NOT be looped — ATDD
+// belongs after the human design-approval gate (AL-1), never before it.
+if (PHASE === 'impl' && !STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
+if (PHASE === 'design' && STEPS.includes(AT_STEP)) throw new Error(`design phase must not loop ${AT_STEP} — ATDD runs only after the design-approval gate`)
 // The issue directory is slug-suffixed (docs/issues/<NNN>-<slug>/), not the bare
 // number. The audit step resolves it by glob at write time and appends the log
 // inside it; using the bare ${NNN} would write to a phantom dir and break AL-4.
 const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
-// AL-2 anchor: the human-approved AC fingerprint is pinned ONCE at loop start
-// (see freeze step below) and re-checked every iteration so the loop can never
-// weaken the AC it grades itself against.
-const PIN_GLOB = `docs/issues/${NNN}-*/autopilot-ac.pin`
+// AL-2 anchor, per phase. The pin covers ONLY artifacts a human approved BEFORE
+// this phase — never an artifact this phase's loop may edit (#249: pinning
+// user-stories.md while looping extracting-user-stories guaranteed a false
+// ac-drift halt). design: the approved PRD. impl: the design-gate-approved
+// prd.md + user-stories.md. acceptance-tests.md is NOT pinned — running-atdd-cycle
+// advances its lifecycle markers ([draft]→[green]); its content is guarded by
+// the AC→AT coverage gate instead.
+const PIN_NAME = PHASE === 'design' ? 'autopilot-prd.pin' : 'autopilot-design.pin'
+const ANCHOR_CAT = PHASE === 'design' ? 'cat <dir>/prd.md' : 'cat <dir>/prd.md <dir>/user-stories.md'
 
 // Consumer schema. findings items REQUIRE priority + evidence_ref so the oracle
 // can never read an undefined priority as "not blocking" (fail-open). atGreen
@@ -120,11 +144,10 @@ const priorityOf = (f) => {
   return m ? Number(m[0]) : 0
 }
 
-// FREEZE (AL-2) — pin the human-approved AC fingerprint ONCE, before any
-// iteration. The approved AC is the human-frozen anchor (prd.md + user-stories.md),
-// NOT the loop-mutable acceptance-tests.md. If the pin can't be written, refuse.
-const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and pin the immutable approved AC (AL-2) via lib/autopilot_convergence.sh: \`cat <dir>/prd.md <dir>/user-stories.md | pin_anchor "<dir>/autopilot-ac.pin"\` (${PIN_GLOB}). Report pinned = (pin_anchor exit code === 0).`, { label: 'freeze:AC', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
-if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'ac-pin-failed' }
+// FREEZE (AL-2) — pin this phase's human-approved anchor ONCE, before any
+// iteration. If the pin can't be written, refuse.
+const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and pin this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\`. Report pinned = (pin_anchor exit code === 0).`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
+if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'anchor-pin-failed' }
 
 for (const step of STEPS) {
   const max = MAX_ITERATIONS[step] || 4
@@ -133,7 +156,7 @@ for (const step of STEPS) {
   for (;;) {
     it++
     // 1. generate / fix — run the EXISTING flow skill (not rewritten)
-    await agent(`Run the ${step} flow skill for Issue #${NNN}, anchored to the immutable approved AC. If a prior review left findings, fix them verbatim.`, { label: `gen:${step}`, phase: 'Generate' })
+    await agent(`Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor. If a prior review left findings, fix them verbatim.`, { label: `gen:${step}`, phase: 'Generate' })
     // 2. review — single-pass primitive, structured verdict
     const verdict = await agent(`Run reviewing-deliverables for Issue #${NNN}; return its structured verdict (overall_correctness + findings[], each with priority and evidence_ref).`, { label: `review:${step}`, phase: 'Review', schema: VERDICT_SCHEMA })
     // 3. DETERMINISTIC AT gate (AL-3) — atGreen is the test command's EXIT CODE,
@@ -146,7 +169,7 @@ for (const step of STEPS) {
     // 4. AC→AT coverage gate (AL-2) — separate context from the AT author.
     let coverageOk = !atRequired
     if (atRequired) {
-      const cov = await agent(`In a context SEPARATE from the AT author, verify the executable Acceptance Tests for Issue #${NNN} encode EVERY approved AC in the immutable AC set (docs/issues/${NNN}-*/acceptance-tests.md + the approved AC). List uncovered AC; each is a P0.`, { label: `coverage:${step}`, phase: 'Coverage-gate', schema: { type: 'object', required: ['allCovered', 'uncovered'], properties: { allCovered: { type: 'boolean' }, uncovered: { type: 'array', items: { type: 'string' } } } } })
+      const cov = await agent(`In a context SEPARATE from the AT author, verify the executable Acceptance Tests for Issue #${NNN} encode EVERY approved AC in the immutable design anchor (docs/issues/${NNN}-*/acceptance-tests.md + the design-gate-approved AC). List uncovered AC; each is a P0.`, { label: `coverage:${step}`, phase: 'Coverage-gate', schema: { type: 'object', required: ['allCovered', 'uncovered'], properties: { allCovered: { type: 'boolean' }, uncovered: { type: 'array', items: { type: 'string' } } } } })
       coverageOk = cov.allCovered === true && (cov.uncovered || []).length === 0
     }
     const blocking = (verdict.findings || []).filter((f) => priorityOf(f) <= 1)
@@ -163,13 +186,13 @@ for (const step of STEPS) {
     // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
     //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
     //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
-    const r = await agent(`Via lib/autopilot_convergence.sh, run all four and report each one's integer exit code: (a) AC drift — \`cur="$(cat <dir>/prd.md <dir>/user-stories.md | fingerprint)"; check_pin "<dir>/autopilot-ac.pin" "$cur"\` (AL-2: the approved AC must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>"; (d) check_stuck "<log>" 3.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' } } } })
+    const r = await agent(`Via lib/autopilot_convergence.sh, run all four and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>"; (d) check_stuck "<log>" 3.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' } } } })
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
     // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
     if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
   }
 }
-return { status: 'CONVERGED', steps: STEPS }
+return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
 
 The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
@@ -181,12 +204,13 @@ The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck`
 | Looping the flow skills to the satisfaction oracle | **autopilot** (this skill) |
 | Each artifact's generation | the flow skills (unchanged) |
 | The review verdict | reviewing-deliverables (single-pass primitive) |
-| AC approval / merge (the two human gates) | the human |
+| Requirements approval / design approval / merge (the three human gates) | the human |
 | Parallel-session conflict, `in-progress` label | skill-gate |
 
-This skill **does not** permanently change the flow skills, **does not** approve its own AC, and **does not** merge — merging is the human gate (AL-1).
+This skill **does not** permanently change the flow skills, **does not** approve its own requirements or design, and **does not** merge — merging is the human gate (AL-1).
 
 ## Integration
 
-- **Upstream:** `defining-requirements` (the approved, immutable AC — the first human gate)
+- **Upstream:** `defining-requirements` (the approved PRD — the first human gate)
+- **Mid-flow:** the design-approval gate (the human approves the converged design deliverables before ATDD)
 - **Downstream:** `merging-and-deploying` (the human merge gate, on a near-green Issue)
