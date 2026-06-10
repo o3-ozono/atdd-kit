@@ -256,3 +256,14 @@ _assert_valid_jsonl() {
   run check_pin "$PIN" ""
   [ "$status" -ne 0 ]
 }
+
+# --- #252: placeholder fingerprint regression pin ---------------------------
+
+@test "placeholder fingerprint (#252): the literal placeholder hashes to the incident constant and is absent from the skill (AC5)" {
+  # recompute the constant recorded by the #251 incident — pins that THIS string
+  # is the bad input the audit prompt must never instruct an agent to hash
+  fp=$(printf '%s' "<the blocking findings text, verbatim>" | fingerprint)
+  [ "$fp" = "2aed7ea6d4c79d81da29da31fe975d762c64b1e15c211769880c3c6a92ccce2a" ]
+  # the instruction path that hashed the placeholder must not exist anymore
+  ! grep -qF '<the blocking findings text, verbatim>' "skills/autopilot/SKILL.md"
+}
