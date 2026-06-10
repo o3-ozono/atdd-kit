@@ -145,8 +145,10 @@ const priorityOf = (f) => {
 }
 
 // FREEZE (AL-2) — pin this phase's human-approved anchor ONCE, before any
-// iteration. If the pin can't be written, refuse.
-const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and pin this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\`. Report pinned = (pin_anchor exit code === 0).`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
+// iteration. On re-entry (a design-gate rejection re-runs the design phase) the
+// pin already exists: verify it still matches instead of failing the freeze —
+// immutability is kept, re-runs are not bricked. Refuse on mismatch or write failure.
+const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and freeze this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh. If "<dir>/${PIN_NAME}" does not exist: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\` (pins once). If it already exists: \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (the anchor must still match the frozen pin). Report pinned = (that command's exit code === 0).`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
 if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'anchor-pin-failed' }
 
 for (const step of STEPS) {

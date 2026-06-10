@@ -206,3 +206,9 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # the single-pin two-gate freeze must be gone
   ! grep -qE 'autopilot-ac\.pin' "$SKILL_FILE"
 }
+
+@test "AL-2 (#249): phase re-entry verifies the existing pin instead of bricking the freeze" {
+  # a design-gate rejection re-runs the design phase; pin_anchor refuses overwrite,
+  # so the freeze must fall back to check_pin against the existing pin
+  grep -qiE 'already exists.*check_pin' "$SKILL_FILE"
+}
