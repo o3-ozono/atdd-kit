@@ -247,3 +247,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -qE 'JSON\.stringify\(prevFindings\)' "$SKILL_FILE"
   grep -qE 'prevFindings = verdict\.findings' "$SKILL_FILE"
 }
+
+@test "args (#252, refs #256): defensive parse + fail-closed integer guard are pinned" {
+  # the harness may deliver Workflow args as a JSON string (#256 incident:
+  # issue=undefined ran the loop against a phantom dir) — both guards must stay
+  grep -qE "typeof args === 'string' \? JSON\.parse\(args\)" "$SKILL_FILE"
+  grep -qE 'Number\.isInteger\(NNN\)' "$SKILL_FILE"
+  grep -qE 'refusing to run with an unresolvable issue dir' "$SKILL_FILE"
+}

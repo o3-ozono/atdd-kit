@@ -212,7 +212,7 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
     // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
     if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
-    prevFindings = verdict.findings || []
+    prevFindings = verdict.findings?.length ? verdict.findings : null
   }
 }
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
