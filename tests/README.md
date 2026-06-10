@@ -58,7 +58,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / two human gates / iron-law wiring |
+| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring |
 | test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations) |
 | e2e/autopilot.bats | autopilot Skill E2E Test |
 
