@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.7.2] - 2026-06-10
+
+### Fixed
+
+- **autopilot 収束ループのプロンプト欠陥 3 点を修正**（#252）。#251 の初回実運用で発覚した欠陥への対処: (1) **placeholder fingerprint** — `audit:` プロンプトの `Run EXACTLY: printf '%s' "<the blocking findings text, verbatim>" | fingerprint` が逐語実行され、毎イテレーション同一の定数ハッシュ `2aed7ea6…` が記録されて sameness / stuck レールが実質無効化していた。blocking findings の JSON（`JSON.stringify(blocking)`）を `BEGIN-PAYLOAD` / `END-PAYLOAD` マーカー付きでプロンプトに直接埋め込み、quoted heredoc で一時ファイルへ書き出してから `fingerprint` に渡す手順へ書き換え。 (2) **review スコープ未指定** — design phase のレビューが「プロダクションコード不在・実行可能 AT 不在」を P0 として返し収束不能だった。phase × step のスコープ節を返す `reviewScope` ヘルパーを追加し `review:` プロンプトに連結（`extracting-user-stories` ステップは prd.md ↔ user-stories.md の整合のみ）。 (3) **findings 不伝達** — fresh-context の gen エージェントに「fix them verbatim」とだけ指示して findings 本文を渡していなかった。iteration 2 以降は前回 `verdict.findings` の JSON を gen プロンプトに埋め込む分岐を追加（iteration 1 は従来文言を維持）。あわせて **args の防御パース**（#256 の先行対処）: Workflow `args` が JSON 文字列で届いた場合の正規化と、`Number.isInteger(args.issue)` の fail-closed 検証（不正なら throw）を冒頭に追加。回帰 pin として `tests/test_autopilot_skill.bats` に 5 件、`tests/test_autopilot_convergence.bats` に placeholder 定数の再計算 pin 1 件を追加。`lib/autopilot_convergence.sh` は無変更。
+
 ## [3.7.1] - 2026-06-10
 
 ### Fixed
