@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-06-10
+
+### Changed
+
+- **autopilot の人間ゲートを 2 点から 3 点に再配置 — 設計承認ゲートを新設**（#249）。ユーザーの期待フロー「設計まで壁打ち → 成果物レビュー → 承認後に ATDD」に合わせ、収束ループを **design phase**（`extracting-user-stories` → `writing-plan-and-tests`、anchor = 承認済み prd.md → `autopilot-prd.pin`）と **impl phase**（`running-atdd-cycle`、anchor = 設計承認時に凍結した prd.md + user-stories.md → `autopilot-design.pin`）に分割。design phase が near-green に収束したら autopilot は**停止して設計成果物（user-stories / plan / acceptance-tests）を人間に提示**し、明示承認（差し戻しコメントは evidence_ref 付き finding として design loop に再投入）を得てからのみ ATDD に入る。これは同時に #246 実装の構造矛盾の修正でもある: 旧実装は `prd.md + user-stories.md` をループ開始前に単一 pin（`autopilot-ac.pin`）しながら `extracting-user-stories` を自律ループ内で回していたため、US への修正が入った瞬間 `check_pin` が偽 `ac-drift` halt を起こした。pin はフェーズ開始前に人間が承認した成果物のみを対象とし、同一フェーズのループが編集し得る成果物は含めない（`acceptance-tests.md` は lifecycle marker が動くため pin せず、内容は AC→AT coverage gate が守る）。design phase で AT_STEP がループに混入したら throw する fail-closed を追加。`docs/methodology/autopilot-iron-law.md` の AL-1（3 ゲート固定）/ AL-2（フェーズ別 immutable anchor）を更新し、`tests/test_autopilot_skill.bats`（3 ゲート・2 段 pin・fail-closed の pin 追加）/ `tests/e2e/autopilot.bats`（F1 を 3 ゲート検証へ）/ README ×3 / `tests/README.md` を同期。flow skill 本体と `lib/autopilot_convergence.sh` は無変更。
+
 ## [3.6.0] - 2026-06-09
 
 autopilot を **復活**（#246）。ただし旧 autopilot（Agent Teams orchestration、v3.0.0 で廃止）の逐語復活ではなく、**既存の 6-step flow skill をそのまま使う「半自動運転」モード**として再設計した。autopilot を atdd-kit 自身の 6-step フローで自己適用（dogfood）して実装し、その自前レビュー（reviewing-deliverables の多人格・並列・敵対的レビュー）の指摘を反映して満足オラクルと安全レールを **code-deep 化**した。
