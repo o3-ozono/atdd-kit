@@ -34,7 +34,7 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 ## Human gates (exactly three — AL-1)
 
 1. **Start — requirements approval.** `defining-requirements` engages the human in 壁打ち (run it per Dialog economy below), the human approves the PRD, and it is frozen as the design phase's immutable anchor.
-2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human** (one batch presentation — Dialog economy below). Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
+2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human** (one batch presentation — Dialog economy below). Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment), carried into the design-phase re-invocation as `rejectionFindings` args (#261, Flow step 3); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
 3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges.
 
 ## Dialog economy — all human-facing dialog under autopilot (#254)
@@ -61,7 +61,7 @@ This governs all human-facing dialog under autopilot: the Gate ① requirements 
 2. **Design phase (autonomous).** Invoke the Workflow script below with `args = { issue: NNN, phase: 'design' }` — pass `args` as a JSON object（文字列化した JSON を渡さない, #256）. Converges `extracting-user-stories` then `writing-plan-and-tests`, anchored to the pinned PRD. No executable AT suite exists yet, so the AT / coverage gates are off and the oracle is reviewer-only.
 3. **Design-approval gate (human).** Present the near-green `user-stories.md` / `plan.md` / `acceptance-tests.md` and ask:
    > `設計成果物（user-stories / plan / acceptance-tests）を承認しますか? 'ok' で ATDD（impl phase）へ進みます。修正点があればコメントしてください。`
-   Comments become findings (`evidence_ref` = the human comment) fed verbatim into a re-run of the design phase. Do not proceed without an explicit `ok`.
+   Do not proceed without an explicit `ok`. Any non-`ok` response — including partial approval like「A は ok / B は要修正」— rejects the **whole deliverable set**（部分承認は承認ではない）; never enter the impl phase on it (#261). On rejection: split the comment セクション単位 into findings（1 セクションの指摘 = 1 finding — never collapse multiple points into one）, each with `priority`（0 = blocker unless the human states a severity）and `evidence_ref` = that section's human comment verbatim, then re-invoke the Workflow with `args = { issue: NNN, phase: 'design', rejectionFindings: [...] }` (a JSON object, #256) so they reach iteration 1's generate verbatim.
 4. **Impl phase (autonomous).** Invoke the script with `args = { issue: NNN, phase: 'impl' }` — pass `args` as a JSON object（文字列化した JSON を渡さない, #256）. It pins the design-gate-approved anchor and converges `running-atdd-cycle` under the deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2).
 5. **Hand off.** The near-green Issue goes to the human merge gate (`merging-and-deploying`).
 
@@ -94,6 +94,15 @@ if (!Number.isInteger(NNN)) throw new Error('args.issue missing or non-integer �
 // No default (#256): stringified args left A.phase undefined and silently ran impl as design.
 if (A.phase !== 'design' && A.phase !== 'impl') throw new Error('args.phase missing or invalid — refusing to default to design')
 const PHASE = A.phase
+// #261: a gate rejection re-runs the phase as a NEW Workflow call where prevFindings
+// re-initializes to null — human rejection comments must ride in via args or they
+// are silently dropped before iteration 1. Fail-closed, validated before the freeze.
+if (A.rejectionFindings !== undefined) {
+  if (!Array.isArray(A.rejectionFindings)) throw new Error('args.rejectionFindings must be an array')
+  if (A.rejectionFindings.some((f) => typeof f?.evidence_ref !== 'string' || f.evidence_ref === '')) throw new Error('every rejectionFindings item needs a non-empty evidence_ref (AL-4)')
+  if (PHASE !== 'design') throw new Error('rejectionFindings is design-gate plumbing — refusing it outside the design phase')
+}
+const REJECTION_FINDINGS = A.rejectionFindings || null
 const STEPS = A.steps || (PHASE === 'design'
   ? ['extracting-user-stories', 'writing-plan-and-tests']
   : ['running-atdd-cycle'])
@@ -174,7 +183,8 @@ for (const step of STEPS) {
   let it = 0
   // #252: carry the previous verdict's findings into the next generate call —
   // a fresh-context gen agent cannot "fix them verbatim" without their text.
-  let prevFindings = null
+  // #261: gate-rejection findings seed iteration 1; absent priority → 0 = blocker (fail-safe).
+  let prevFindings = REJECTION_FINDINGS ? REJECTION_FINDINGS.map((f) => ({ ...f, priority: priorityOf(f) })) : null
   for (;;) {
     it++
     // 1. generate / fix — run the EXISTING flow skill (not rewritten). From
