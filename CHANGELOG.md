@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-06-11
+
+### Added
+
+- **autopilot 設計ゲート差し戻しコメントを再実行へ運ぶ `rejectionFindings` 配管と全体差し戻し規律を追加**（#261）。従来、design-approval ゲートの差し戻しコメントは「findings として design phase 再実行に投入される」と宣言されていたが、再実行は**新規 Workflow 呼び出し**で `prevFindings` が `null` 初期化されるため、コメントを generate に届ける配管が存在せず握り潰されていた。`skills/autopilot/SKILL.md` の埋め込み Workflow script に (1) **`rejectionFindings` args**: args parse 直後（FREEZE より前）の fail-closed バリデーション — 非配列で throw / 各要素に非空文字列 `evidence_ref` 必須（AL-4）/ `phase !== 'design'` で throw（design ゲート専用配管・不正 args では 1 イテレーションも走らない）、(2) **iteration 1 シード**: `prevFindings` の `null` 固定初期化を `REJECTION_FINDINGS` シードに置換し、既存 `priorityOf` 正規化（priority 無指定 → 0 = blocker、fail-safe）を適用して既存の `JSON.stringify(prevFindings)` 分岐で generate プロンプトに verbatim 到達させる — を追加。あわせて Flow step 3 に差し戻し規律を明文化: **部分承認（「A は ok / B は要修正」等）は承認ではなく成果物セット全体の差し戻し**（impl phase へ進まない）、コメントは**セクション単位**で分割（1 セクションの指摘 = 1 finding）、各 finding の `evidence_ref` = 該当部分の人間コメント verbatim、`args = { issue: NNN, phase: 'design', rejectionFindings: [...] }` で再呼び出し。`tests/test_autopilot_skill.bats` に pin 4 件（AT-001〜AT-005: 配管・バリデーション・priorityOf 正規化・規律文言）を追加。`lib/autopilot_convergence.sh`・`reviewing-deliverables`・Workflow ツール側は無変更。`skills/README.md` / `tests/README.md` を同期。
+
 ## [3.9.0] - 2026-06-11
 
 ### Added
