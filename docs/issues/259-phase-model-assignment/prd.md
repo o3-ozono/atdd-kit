@@ -30,6 +30,6 @@
 
 ## Open Questions
 
-- What 1〜3 の採用範囲（Gate ① で人間が指定）
+- ~~What 1〜3 の採用範囲（Gate ① で人間が指定）~~ → **回答（Gate ① 承認時）: What 1〜3 すべて採用**
 - escalation のトリガー定義（何イテレーション FAIL で昇格するか等）→ plan で決定
-- ベンチ成果物（/tmp/atdd-bench-issues/ — セッションローカル）の要点を docs に残すか
+- ベンチ成果物（/tmp/atdd-bench-issues/ — セッションローカル）の要点を docs に残すか → plan で決定
