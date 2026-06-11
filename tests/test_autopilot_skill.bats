@@ -345,6 +345,31 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qi 'autopilot' skills/defining-requirements/SKILL.md
 }
 
+# --- Presentation channel (#267) ---------------------------------------------
+# Deliverable bodies travel as the Draft PR diff at both human gates; the
+# terminal / comments carry the PR link + decision points only.
+
+@test "presentation channel (#267): AT-003 both gates present deliverable bodies as the Draft PR diff" {
+  local section
+  section=$(sed -n '/^## Dialog economy/,/^## Output/p' "$SKILL_FILE")
+  echo "$section" | grep -q 'Draft PR diff'
+  echo "$section" | grep -q 'Gate ①'
+  echo "$section" | grep -q 'Gate ②'
+}
+
+@test "presentation channel (#267): AT-004 terminal carries the PR link + decision points only" {
+  local section
+  section=$(sed -n '/^## Dialog economy/,/^## Output/p' "$SKILL_FILE")
+  echo "$section" | grep -qi 'PR link'
+  echo "$section" | grep -qi 'never the full deliverable body'
+}
+
+@test "presentation channel (#267): full-channel sync of approval requests / state notifications is kept" {
+  local section
+  section=$(sed -n '/^## Dialog economy/,/^## Output/p' "$SKILL_FILE")
+  echo "$section" | grep -qi 'full-channel sync'
+}
+
 # --- Model assignment (#259) -------------------------------------------------
 # impl / review subagents default to Sonnet (bench-verified); design phase and
 # the orchestrator stay on the session model; escalation is one-way per Issue.

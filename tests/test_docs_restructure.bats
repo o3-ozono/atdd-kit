@@ -155,3 +155,17 @@
 @test "AC6: no old docs/ flat references in rules/atdd-kit.md" {
   ! grep -q 'docs/commit-guide\.md\|docs/review-guide\.md\|docs/doc-sync-checklist\.md' rules/atdd-kit.md
 }
+
+# #267 AT-001: deliverable presentation is Draft-PR based (US-1)
+# Given: docs/workflow/workflow-detail.md
+# When: the Execution Mode deliverable rule is inspected
+# Then: the legacy comment-based rule is gone and the Draft-PR-diff rule exists
+
+@test "#267 AT-001: legacy comment-based deliverable rule is gone from workflow-detail.md" {
+  ! grep -q 'never written to ad-hoc repository paths' docs/workflow/workflow-detail.md
+}
+
+@test "#267 AT-001: Draft PR diff rule + comments-as-notifications-only rule exist in workflow-detail.md" {
+  grep -q 'Draft PR diff' docs/workflow/workflow-detail.md
+  grep -q 'state-change notifications and approval requests only' docs/workflow/workflow-detail.md
+}

@@ -38,7 +38,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 
 | Test File | Target |
 |-----------|--------|
-| test_defining_requirements_skill.bats | defining-requirements skill (Step 1, produces PRD) |
+| test_defining_requirements_skill.bats | defining-requirements skill (Step 1, produces PRD) — Draft-PR-based presentation (#267: write draft → commit/push/Draft PR → approval gate order; PR link + decision points only, mode-independent) |
 | test_extracting_user_stories_skill.bats | extracting-user-stories skill (Step 2) |
 | test_writing_plan_and_tests_skill.bats | writing-plan-and-tests skill (Step 3, plan + acceptance tests) |
 | test_running_atdd_cycle_skill.bats | running-atdd-cycle skill (Step 4, ATDD double loop) |
@@ -58,7 +58,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) / design-gate rejection plumbing (#261: `rejectionFindings` validation + iteration-1 seed, whole-set rejection discipline) / model assignment (#259: impl subagents Sonnet, one-way escalation, design phase excluded) |
+| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) / design-gate rejection plumbing (#261: `rejectionFindings` validation + iteration-1 seed, whole-set rejection discipline) / model assignment (#259: impl subagents Sonnet, one-way escalation, design phase excluded) / presentation channel (#267: Gate ①/② deliverable bodies as the Draft PR diff, terminal = PR link + decision points only, full-channel sync kept) |
 | test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) |
 | e2e/autopilot.bats | autopilot Skill E2E Test |
 
@@ -156,7 +156,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_docs_issues_templates.bats | docs/issues/ per-Issue templates (prd.md headings, etc.) |
 | test_template_sync.bats | templates/ and .github/ copy sync verification |
 | test_changelog_format.bats | CHANGELOG.md format compliance |
-| test_docs_restructure.bats | docs/ directory restructure (Issue #64) |
+| test_docs_restructure.bats | docs/ directory restructure (Issue #64) — Draft-PR-based deliverable rule in workflow-detail.md (#267) |
 | test_doc_agent_teams_sync.bats | Documentation / Agent Teams doc sync (Issue #146) |
 | test_gh_field_audit.bats | docs gh --json usage audit (Issue #85) |
 | test_workflow_config_fields.bats | workflow-config.yml platform-only validation |
