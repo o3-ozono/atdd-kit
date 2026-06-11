@@ -178,6 +178,14 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 > Some files cover more than one area; they are listed under their primary concern. The authoritative list is always `ls tests/*.bats`. Each file declares its scope via a `@covers:` header annotation (see below).
 
+## Acceptance Tests (`tests/acceptance/`)
+
+Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named `AT-<NNN>.bats`. Each encodes the approved AC of `docs/issues/<NNN>-*/acceptance-tests.md` and stays as a regression suite after merge.
+
+| Test File | Target |
+|-----------|--------|
+| AT-269.bats | workflow-detail.md review description aligned to the #234 dynamic parallel Workflow panel — legacy terms absent, current phase terms present, release discipline, doc-side change scope (Issue #269) |
+
 ## iOS Addon Tests (addons/ios/tests/)
 
 | Test File | Target |

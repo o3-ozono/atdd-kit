@@ -206,6 +206,15 @@
   grep -q 'Aggregate' docs/workflow/workflow-detail.md
 }
 
+@test "#269 AT-001: 'adversarially verified' + 'per-lens notes' are present in workflow-detail.md" {
+  grep -q 'adversarially verified' docs/workflow/workflow-detail.md
+  grep -q 'per-lens notes' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-002: 'Verify (adversarial' qualifier is present in workflow-detail.md" {
+  grep -qF 'Verify (adversarial' docs/workflow/workflow-detail.md
+}
+
 @test "#269 AT-003: heading changed from Reviewer Aggregation Flow to Review Workflow Flow" {
   ! grep -q '## Reviewer Aggregation Flow' docs/workflow/workflow-detail.md
   grep -q '## Review Workflow Flow' docs/workflow/workflow-detail.md

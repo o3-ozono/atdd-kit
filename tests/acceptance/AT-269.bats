@@ -33,6 +33,18 @@
   grep -q 'Aggregate' docs/workflow/workflow-detail.md
 }
 
+@test "#269 AT-001: 'adversarially verified' is present in workflow-detail.md" {
+  grep -q 'adversarially verified' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-001: 'PASS/FAIL' is present in workflow-detail.md" {
+  grep -q 'PASS/FAIL' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-001: 'per-lens notes' is present in workflow-detail.md" {
+  grep -q 'per-lens notes' docs/workflow/workflow-detail.md
+}
+
 # AT-002: Review Workflow section mermaid diagram depicts current phase structure (US-2)
 #
 # Given: docs/workflow/workflow-detail.md former Reviewer Aggregation Flow section
@@ -83,6 +95,10 @@
 
 @test "#269 AT-002: 'Verify' phase node is present in workflow-detail.md" {
   grep -q 'Verify' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-002: 'Verify (adversarial' qualifier is present in workflow-detail.md" {
+  grep -qF 'Verify (adversarial' docs/workflow/workflow-detail.md
 }
 
 @test "#269 AT-002: 'ready-to-go' branch is present in mermaid diagram" {
@@ -146,7 +162,14 @@
 #
 # Given: Diff between working branch and main
 # When:  Changed file list is inspected (git diff main --name-only)
-# Then:  skills/reviewing-deliverables/SKILL.md and agents/ directory unchanged
+# Then:  Changes limited to the allowlist (workflow-detail.md / CHANGELOG.md /
+#        plugin.json / tests/ / docs/issues/269-*); in particular
+#        skills/reviewing-deliverables/SKILL.md and agents/ directory unchanged
+
+@test "#269 AT-005: changes vs main are limited to the documentation-side allowlist" {
+  run bash -c "git diff main --name-only | grep -vE '^(docs/workflow/workflow-detail\.md|CHANGELOG\.md|\.claude-plugin/plugin\.json|tests/|docs/issues/269-)'"
+  [ -z "$output" ]
+}
 
 @test "#269 AT-005: skills/reviewing-deliverables/SKILL.md is not changed vs main" {
   ! git diff main --name-only | grep -q 'skills/reviewing-deliverables/SKILL\.md'
