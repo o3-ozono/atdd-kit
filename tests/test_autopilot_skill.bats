@@ -271,6 +271,32 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   [ "$(grep -c '文字列化した JSON を渡さない' "$SKILL_FILE")" -eq 2 ]
 }
 
+# --- #262: 監査ログ fail-closed ガードの配管 --------------------------------
+# check_sameness / check_stuck はログ前提のため、ログ削除・巻き戻しで黙って
+# 無効化される（fail-open）。orchestrator がメモリ上で期待行数を追跡し、
+# rails の check_log_integrity に渡す配管を pin する。
+
+# AT-006: rails が新ガードを呼び、halt 理由 'log-integrity' を持つ
+@test "rails (#262): check_log_integrity is wired into the rails call (AT-006)" {
+  # rails prompt は orchestrator 追跡の期待行数 ${recorded} を渡す
+  grep -qE 'check_log_integrity "<log>" \$\{recorded\}' "$SKILL_FILE"
+  # schema は生の exit code を返す（LLM 要約ではなく JS 側で halt 判定）
+  grep -qE 'logIntegrityExit' "$SKILL_FILE"
+  # halt 理由 'log-integrity' が存在し、acDriftExit 判定の直後に来る
+  # （sameness / stuck はログを前提とするため、それらより先に理由判定する）
+  grep -qE "acDriftExit !== 0 \? 'ac-drift' : r\.logIntegrityExit !== 0 \? 'log-integrity'" "$SKILL_FILE"
+}
+
+# AT-007: 期待行数の真実が freeze（baseline）→ audit（increment）で一貫維持される
+@test "freeze/audit (#262): logLines baseline + recorded counter survive freeze to audit (AT-007)" {
+  # freeze agent はログの現在行数を logLines として報告する（再入・phase 跨ぎ吸収）
+  grep -qE 'logLines' "$SKILL_FILE"
+  # baseline 吸収: recorded は frozen.logLines で初期化される
+  grep -qE 'let recorded = frozen\.logLines' "$SKILL_FILE"
+  # record_iteration 成功 = ログ +1 行をメモリ側の真実に反映する
+  grep -qE 'recorded\+\+' "$SKILL_FILE"
+}
+
 # --- Dialog economy (#254) -------------------------------------------------
 
 @test "dialog economy (#254): asks only human-only decisions (US-1)" {
@@ -350,4 +376,48 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   echo "$section" | grep -qE 'extracting-user-stories'
   echo "$section" | grep -qE 'writing-plan-and-tests'
   echo "$section" | grep -qiE 'orchestrator'
+}
+
+# --- #261 design-gate rejection plumbing pins -------------------------------
+
+@test "rejection (#261): rejectionFindings args reach iteration 1 via the prevFindings seed (AT-001)" {
+  # a gate rejection re-runs the phase as a NEW Workflow call where prevFindings
+  # starts null — without this plumbing the human comments are silently dropped
+  grep -qE 'const REJECTION_FINDINGS' "$SKILL_FILE"
+  # the null-fixed init is replaced by the seed; the existing JSON.stringify
+  # branch then embeds the human comments verbatim into iteration 1's generate
+  grep -qE 'prevFindings = REJECTION_FINDINGS' "$SKILL_FILE"
+  ! grep -qE 'let prevFindings = null$' "$SKILL_FILE"
+}
+
+@test "rejection (#261): rejectionFindings validation is fail-closed and sits before the freeze (AT-002)" {
+  # (a) non-array throws
+  grep -qE 'Array\.isArray\(A\.rejectionFindings\)' "$SKILL_FILE"
+  # (b) every item needs a non-empty string evidence_ref (AL-4)
+  grep -qE 'non-empty evidence_ref' "$SKILL_FILE"
+  # (c) design-phase-only — impl must never receive gate-rejection plumbing
+  grep -qE "PHASE !== 'design'" "$SKILL_FILE"
+  # all three guards run before freeze:anchor — bad args never start an iteration
+  local vline fline
+  vline=$(grep -n 'Array\.isArray(A\.rejectionFindings)' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  fline=$(grep -n 'freeze:anchor' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$vline" ] && [ -n "$fline" ] && [ "$vline" -lt "$fline" ]
+}
+
+@test "rejection (#261): seeded findings get priorityOf normalization — absent priority = blocker (AT-003)" {
+  # fail-safe: a human comment without an explicit severity is priority 0
+  grep -qE 'prevFindings = REJECTION_FINDINGS \? REJECTION_FINDINGS\.map\(\(f\) => \(\{ \.\.\.f, priority: priorityOf\(f\) \}\)\) : null' "$SKILL_FILE"
+}
+
+@test "rejection (#261): partial approval is rejection of the whole set, split per section (AT-004/AT-005)" {
+  # AT-004: non-'ok' (incl. partial approval) = whole-set rejection; never enter impl
+  grep -q '部分承認は承認ではない' "$SKILL_FILE"
+  grep -qiE 'whole deliverable set' "$SKILL_FILE"
+  # AT-004: re-invocation args carry the findings
+  grep -qE "phase: 'design', rejectionFindings: \[\.\.\.\]" "$SKILL_FILE"
+  # AT-005: split the comment per section — 1 section's point = 1 finding,
+  # evidence_ref = that section's human comment verbatim
+  grep -q 'セクション単位' "$SKILL_FILE"
+  grep -q '1 セクションの指摘 = 1 finding' "$SKILL_FILE"
+  grep -qiE "evidence_ref.*(human comment|verbatim)" "$SKILL_FILE"
 }

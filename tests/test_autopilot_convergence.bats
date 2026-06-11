@@ -224,6 +224,73 @@ _assert_valid_jsonl() {
   [ "$status" -ne 0 ]
 }
 
+# --- #262: 監査ログ完全一致ガード check_log_integrity（fail-closed） -------
+# orchestrator がメモリ上で追跡する期待行数（baseline + 記録数）と、ログの
+# 実際の非空行数の完全一致を検証する。不一致 = 削除・巻き戻し・外部追記。
+
+# AT-002: 記録済みのはずのログが消えていたら halt する（run 途中の削除）
+@test "check_log_integrity (#262): expected>0 with a missing log halts (mid-run deletion)" {
+  run check_log_integrity "$JSONL" 1
+  [ "$status" -ne 0 ]
+  run check_log_integrity "$JSONL" 5
+  [ "$status" -ne 0 ]
+}
+
+# AT-003: 行数が期待より少ないログは halt する（truncate / 巻き戻し）
+@test "check_log_integrity (#262): actual < expected halts (rollback / truncate)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "fp1"
+  record_iteration "$JSONL" 2 "US" "FAIL" "fp2"
+  # 3 行記録したはずが 2 行しかない（1 行巻き戻された）
+  run check_log_integrity "$JSONL" 3
+  [ "$status" -ne 0 ]
+  # 全行削除して空ファイルにした truncate も検出する
+  : > "$JSONL"
+  run check_log_integrity "$JSONL" 2
+  [ "$status" -ne 0 ]
+}
+
+# AT-004: 行数が期待より多いログは halt する（外部追記 — 完全一致の両方向）
+@test "check_log_integrity (#262): actual > expected halts (external append)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "fp1"
+  echo '{"iteration":99,"step":"forged","verdict":"PASS","fingerprint":"ff"}' >> "$JSONL"
+  run check_log_integrity "$JSONL" 1
+  [ "$status" -ne 0 ]
+}
+
+# AT-005: expected が空・非数値・コマンド注入文字列なら fail-closed（status 2）
+@test "check_log_integrity (#262): an empty expected emits stderr and returns status 2" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "fp1"
+  run check_log_integrity "$JSONL" ""
+  [ "$status" -eq 2 ]
+  [ -n "$output" ]   # レールを黙って無効化しない（check_stuck の window 検証と同等）
+}
+
+@test "check_log_integrity (#262): a non-numeric expected returns status 2" {
+  run check_log_integrity "$JSONL" "abc"
+  [ "$status" -eq 2 ]
+}
+
+@test "check_log_integrity (#262): a command-injection expected returns status 2" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "fp1"
+  run check_log_integrity "$JSONL" "3; echo PWNED"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"invalid"* ]]   # 検証エラーであり、注入文字列は実行されない
+}
+
+# AT-001: 正当な初回（ログ未存在 + expected=0）と行数一致は誤検出ゼロ
+@test "check_log_integrity (#262): missing log + expected=0 passes (legitimate first run)" {
+  run check_log_integrity "$JSONL" 0
+  [ "$status" -eq 0 ]
+}
+
+@test "check_log_integrity (#262): actual == expected passes (zero false positives)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "fp1"
+  record_iteration "$JSONL" 2 "US" "FAIL" "fp2"
+  record_iteration "$JSONL" 3 "US" "PASS" "fp3"
+  run check_log_integrity "$JSONL" 3
+  [ "$status" -eq 0 ]
+}
+
 # --- AL-2 immutable-AC anchor (pin / drift) -------------------------------
 
 @test "pin_anchor + check_pin: unchanged AC passes, drifted AC halts" {
