@@ -34,5 +34,7 @@
 
 ## Open Questions
 
-1. **Reviewer Aggregation Flow 節をスコープに含めるか** — Issue 本文が明示するのは Execution Mode 節 line 46 だが、Reviewer Aggregation Flow 節は同一の旧機構を mermaid 図で描いており、line 46 のみ直すとドキュメント内矛盾が残る。本 PRD は「含める」を提案（推奨）。
-2. **agents/ 配下のレガシー記述の扱い** — 本 PRD は Non-Goals（別 Issue 化）を提案。承認時に別 Issue を起票するかの判断を求める。
+1. **Reviewer Aggregation Flow 節をスコープに含めるか** — Issue 本文が明示するのは Execution Mode 節 line 46 だが、Reviewer Aggregation Flow 節は同一の旧機構を mermaid 図で描いており、line 46 のみ直すとドキュメント内矛盾が残る。
+   → **Resolved（Gate ① 承認, 2026-06-11）**: 含める。
+2. **agents/ 配下のレガシー記述の扱い** — Non-Goals（別 Issue 化）を提案。
+   → **Resolved（Gate ① 承認, 2026-06-11）**: Non-Goals 確定。別 Issue を起票して追跡する。
