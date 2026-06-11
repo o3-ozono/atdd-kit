@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-06-11
+
+### Added
+
+- **autopilot に Dialog economy 指針を新設 — 人間への質問を「人間にしか決められない点」のみに限定**（#254）。#251 の初回実運用で Gate ① の壁打ちが `defining-requirements` の通常フロー設計（6 セクション逐次確認）のまま走り、自明なセクションにも毎回 ok 応答が必要だったフィードバックへの対処。`skills/autopilot/SKILL.md` に `## Dialog economy — all human-facing dialog under autopilot` セクションを追加し、(a) **聞くべき**: 設計判断が分かれるトレードオフ・割り切り / スコープ増減 / Outcome 合否基準のみ（ask ONLY、最少の質問数に束ねる）、(b) **聞かない**: Issue 本文・文脈から自明に導けるドラフトの逐次確認（never ask section-by-section）— ドラフトは一括提示（batch-present）し固定ゲート（PRD 承認 / 設計承認 / merge）で各 1 回承認・差し戻し、を明文化。`defining-requirements` の「one question at a time」は通常フロー設計として不変で、autopilot 下でのみ本指針がオーバーライドする（C1: flow skill 本体は無変更）。ゲートは AL-1 の 3 点固定のまま（削減はゲート間・ゲート内のマイクロ確認のみ）。`tests/test_autopilot_skill.bats` に pin 4 件（US-1/US-2/US-3/CS-1）を追加し、line budget を 240 → 260 行に更新（根拠コメント付き）。`tests/README.md` を同期。
+
 ## [3.7.3] - 2026-06-11
 
 ### Fixed
