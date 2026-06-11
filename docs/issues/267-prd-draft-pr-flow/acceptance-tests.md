@@ -23,7 +23,7 @@
 
 ## AT-002: defining-requirements の Flow が draft 書き込み → commit/push → Draft PR → 承認ゲートの順序になっている（US-2）
 
-- [ ] [planned] AT-002: Flow の順序が承認前書き込み + Draft PR 提示に変更されている
+- [x] [green] AT-002: Flow の順序が承認前書き込み + Draft PR 提示に変更されている
   - Given: `skills/defining-requirements/SKILL.md` の Flow 節
   - When: draft 書き込みステップ / commit・push・Draft PR 作成ステップ / 承認ゲートステップの出現行番号を比較する
   - Then: 行番号が「draft 書き込み < commit/push/Draft PR 作成 < 承認ゲート」の順であり、承認ゲートが PR 上のレビューを前提とした文言になっている。規定は**モード非依存**（どの呼び出し元から実行されても同一の順序）として記述され、`skills/defining-requirements/SKILL.md` は 'autopilot' の語を含まない（既存 C1 pin `! grep -qi 'autopilot' skills/defining-requirements/SKILL.md` が無変更のまま green）
@@ -37,7 +37,7 @@
 
 ## AT-004: ターミナル提示は PR リンク + 判断が必要な点のみ（CS-1）
 
-- [ ] [planned] AT-004: 全文展開禁止の規定が両スキルに存在する
+- [ ] [draft] AT-004: 全文展開禁止の規定が両スキルに存在する
   - Given: `skills/defining-requirements/SKILL.md` の承認ゲート規定と `skills/autopilot/SKILL.md` の Dialog economy 節
   - When: ターミナル出力に関する規定を grep で検査する
   - Then: いずれにも「ターミナルには PR リンクと判断が必要な点のみを提示し、成果物の全文展開をしない」を意味する規定が存在する

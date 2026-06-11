@@ -27,7 +27,7 @@ No other inputs. No Context Block. No resume of existing `docs/issues/<NNN>/prd.
 |----------|------|
 | PRD file | `docs/issues/<NNN>/prd.md` (copied from `templates/docs/issues/prd.md`, filled in) |
 
-No Issue comment, no `skill-status` fenced block.
+No Issue comment, no `skill-status` fenced block. The PRD draft is committed and pushed **before** approval and presented as the Draft PR diff (mode-independent — the same order regardless of the caller).
 
 ## Flow
 
@@ -38,10 +38,11 @@ No Issue comment, no `skill-status` fenced block.
 5. **Section 4 — What** (one question): "List in-scope features or changes."
 6. **Section 5 — Non-Goals** (one question): "List intentionally excluded items with one-line rationale each."
 7. **Section 6 — Open Questions** (one question): "List unresolved decisions, or state 'none remain'."
-8. **Approval gate.** Present all 6 sections merged into the PRD template structure, then ask:
-   > `Approve PRD? Reply 'ok' to write, or name a section to revise.`
-   Revisions loop back to that section. Do not proceed without explicit `ok`.
-9. **Write artifact.** `cp templates/docs/issues/prd.md docs/issues/<NNN>/prd.md`, then fill in each section in place.
+8. **Write draft.** `cp templates/docs/issues/prd.md docs/issues/<NNN>/prd.md`, then fill in each section in place.
+9. **Commit / push / Draft PR.** Commit the draft to the Issue's work branch (Conventional Commits), push, and if no Draft PR exists open one with `gh pr create --draft`.
+10. **Approval gate (on the PR).** In the terminal present only the PR link + the points needing a human decision — never the full PRD body — then ask:
+    > `Approve PRD? Reply 'ok' to approve, or name a section to revise.`
+    Revisions loop back to that section; commit and push each revision so the Draft PR diff stays current. Do not proceed without explicit `ok`.
 
 Each section step is one question at a time. Do not bundle multiple sections into a single prompt.
 
