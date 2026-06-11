@@ -58,8 +58,8 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) |
-| test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations) |
+| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) |
+| test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) |
 | e2e/autopilot.bats | autopilot Skill E2E Test |
 
 ### Skill Structure & Quality

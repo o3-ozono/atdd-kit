@@ -14,6 +14,7 @@
 #   check_max_iterations <current> <max>     non-zero if current >= max
 #   pin_anchor <pinfile>                     pin the approved-AC fingerprint once at loop start (AL-2)
 #   check_pin <pinfile> <current-fp>         non-zero if the AC anchor drifted from the pin (AL-2)
+#   check_log_integrity <jsonl> <expected-lines>   non-zero if the audit log was deleted / rolled back mid-run (#262)
 #
 # Hardening (#246 review): record_iteration validates its inputs and refuses
 # to write a corrupt or empty line. A missing hash tool, or a fingerprint that
@@ -138,6 +139,38 @@ check_max_iterations() {
   case "$current" in '' | *[!0-9]*) echo "autopilot_convergence: invalid current: '$current'" >&2; return 2 ;; esac
   case "$max" in '' | *[!0-9]*) echo "autopilot_convergence: invalid max: '$max'" >&2; return 2 ;; esac
   [ "$current" -lt "$max" ]
+}
+
+# #262 audit-log continuity guard — the orchestrator tracks the EXPECTED line
+# count in process memory (freeze baseline + one per successful record_iteration)
+# and passes it here every rails check. check_sameness / check_stuck read their
+# history from the JSONL, so a deleted / truncated log silently resets them
+# (fail-OPEN); this guard demands an EXACT match (actual == expected) — the
+# orchestrator is the only legitimate writer, so a shortfall (deletion /
+# rollback) AND an excess (external append) both halt (fail-closed, #256).
+check_log_integrity() {
+  local jsonl="$1" expected="$2" actual
+  # An empty / non-numeric expected would silently disable the rail (fail-OPEN)
+  # or eval an injected string. Validate → halt, like check_stuck's window.
+  case "$expected" in
+    '' | *[!0-9]*)
+      echo "autopilot_convergence: invalid expected-lines: '$expected'" >&2
+      return 2
+      ;;
+  esac
+  expected=$((10#$expected))
+  if [ ! -f "$jsonl" ]; then
+    # Missing log is legitimate ONLY before anything was recorded (first run).
+    [ "$expected" -eq 0 ] && return 0
+    echo "autopilot_convergence: audit log missing but $expected line(s) were recorded: '$jsonl'" >&2
+    return 1
+  fi
+  actual=$(grep -c . "$jsonl")
+  if [ "$actual" -ne "$expected" ]; then
+    echo "autopilot_convergence: audit log has $actual line(s), expected $expected: '$jsonl'" >&2
+    return 1
+  fi
+  return 0
 }
 
 # AL-2 immutable-AC anchor — pin the fingerprint of the human-approved AC

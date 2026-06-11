@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-06-11
+
+### Added
+
+- **autopilot 監査ログに fail-closed ガード `check_log_integrity` を追加 — ログ削除・巻き戻しで sameness / stuck が無音リセットされる fail-open を解消**（#262）。`check_sameness` / `check_stuck` は `autopilot-log.jsonl` の履歴に依存するため、run 途中のログ削除・truncate でレールが黙って return 0 していた。機構は**イテレーション連続性検証**（design-doc 案 A）: orchestrator（Workflow script）が期待行数を**プロセスメモリ上**で追跡し（freeze 時に `logLines` baseline を取得 → `record_iteration` 成功ごとに `recorded++`）、rails の 5 項目目として `check_log_integrity <jsonl> <expected-lines>` に渡す。真実をディスク外に置くことで「ログを消す操作では期待値を消せない」を構造的に保証。検証は**完全一致**（actual == expected）— 削除・巻き戻しに加え外部追記も両方向 halt（fail-closed, #256 原則）。ログ未存在は expected=0（正当な初回）のみ通過し、再入（design-gate 差し戻し）・phase 跨ぎの既存行は baseline 吸収で誤検出ゼロ。expected が空・非数値・注入文字列なら stderr + status 2（`check_stuck` の window 検証と同等）。halt 理由 `log-integrity` は `ac-drift` 直後・sameness / stuck より先に判定（両者はログ前提のため）。`tests/test_autopilot_convergence.bats` に検出・非検出 8 件、`tests/test_autopilot_skill.bats` に配管 pin 2 件（AT-006/AT-007）を追加し、`tests/README.md` を同期。
+
 ## [3.8.1] - 2026-06-11
 
 ### Fixed
