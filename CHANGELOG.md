@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.3] - 2026-06-12
+
+### Fixed
+
+- **`check_sameness` / `check_stuck` の step スコープ化と audit fingerprint への oracle 状態込み拡張 — 偽 sameness halt（#269 再現）の解消**（#272）。(1) `lib/autopilot_convergence.sh` の `_fingerprints` に省略可能な第 2 引数 `step` を追加: 非空のとき `grep -F "\"step\":\"<step>\""` で該当 step の行に絞り込み、クロス step fingerprint の混入を防ぐ。`check_sameness <jsonl> [step]` / `check_stuck <jsonl> <window> [step]` がそれぞれ `_fingerprints` に step を透過。step 省略時は現行挙動（ログ全体を単一系列）を維持（後方互換）。(2) `skills/autopilot/SKILL.md` の rails ステップを `check_sameness "<log>" "${step}"` / `check_stuck "<log>" 3 "${step}"` に更新し、常に現在の step を渡す。(3) audit ステップの fingerprint payload を `${JSON.stringify(blocking)}` 単独から `${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}` に拡張（oracle gate 状態の変化だけで fingerprint が変わり、偽 sameness を防ぐ）。`uncovered` 変数をループスコープに持ち上げて audit から参照可能にした。(4) 回帰 BATS pin を `tests/test_autopilot_convergence.bats`（AT-001〜004c: 6 件）と `tests/test_autopilot_skill.bats`（AT-005〜006: 2 件）に追加し、全 100 件 green を確認。
+
 ## [3.11.2] - 2026-06-11
 
 ### Fixed

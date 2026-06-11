@@ -226,7 +226,10 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 @test "audit (#252): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
   grep -q 'BEGIN-PAYLOAD' "$SKILL_FILE"
   grep -q 'END-PAYLOAD' "$SKILL_FILE"
-  grep -qE 'JSON\.stringify\(blocking\)' "$SKILL_FILE"
+  # #272: payload が oracle 状態込みの新形式であること（blocking を含む）
+  grep -qE 'JSON\.stringify\(\{ atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
+  # 旧 JSON.stringify(blocking) 単独 payload が残っていないこと
+  ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
   grep -qi 'quoted heredoc' "$SKILL_FILE"
 }
 
@@ -445,4 +448,34 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -q 'セクション単位' "$SKILL_FILE"
   grep -q '1 セクションの指摘 = 1 finding' "$SKILL_FILE"
   grep -qiE "evidence_ref.*(human comment|verbatim)" "$SKILL_FILE"
+}
+
+# --- #272: step スコープ化と oracle 状態込み fingerprint の構造 pin ----------
+
+@test "AT-005 (#272): rails call passes current step to check_sameness and check_stuck" {
+  # Given: SKILL.md の canonical Workflow script（rails ステップ）
+  # When: 構造 pin（grep）を実行する
+  # Then: check_sameness / check_stuck に step 引数 "${step}" が渡されており、
+  #       step なし旧形式（check_sameness "<log>"; / check_stuck "<log>" 3;）が残っていない
+  grep -qE 'check_sameness "<log>" "\$\{step\}"' "$SKILL_FILE"
+  grep -qE 'check_stuck "<log>" 3 "\$\{step\}"' "$SKILL_FILE"
+  # step なしの旧形式呼び出しが script 内に残っていないことを確認する
+  # （rails プロンプト文字列の (c)/(d) 節に旧形式が使われていてはいけない）
+  ! grep -qE '\(c\) check_sameness "<log>";' "$SKILL_FILE"
+  ! grep -qE '\(d\) check_stuck "<log>" 3;' "$SKILL_FILE"
+}
+
+@test "AT-006 (#272): audit payload includes oracle state (atGreen, coverageOk, uncovered, blocking)" {
+  # Given: SKILL.md の audit ステップ（label: audit:step）
+  # When: 構造 pin（grep）を実行する
+  # Then: payload が JSON.stringify({ atGreen, coverageOk, uncovered, blocking }) であり、
+  #       旧 JSON.stringify(blocking) 単独 payload が残っていない
+  grep -qF 'JSON.stringify({ atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
+  # 旧 JSON.stringify(blocking) 単独（中括弧なし）が BEGIN-PAYLOAD 直後に残っていないこと
+  ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
+  # uncovered が payload より前にループスコープで宣言・代入されていること
+  local uline pline
+  uline=$(grep -n 'let uncovered' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  pline=$(grep -nF 'JSON.stringify({ atGreen' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$uline" ] && [ -n "$pline" ] && [ "$uline" -lt "$pline" ]
 }
