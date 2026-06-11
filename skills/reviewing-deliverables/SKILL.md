@@ -45,6 +45,8 @@ Five phases:
 4. **Verify (multi-round, adversarial)** — each finding is independently challenged by several skeptics across diverse angles; a finding survives only on **majority** confirmation. This suppresses false positives.
 5. **Aggregate** — one agent consolidates the surviving findings and per-lens notes into a single **PASS / FAIL** verdict, written in Japanese. It additionally emits a backward-compatible machine-readable verdict (`overall_correctness` plus `findings[]` carrying `priority` / `confidence` / `evidence_ref`) that `autopilot` (#246) consumes to drive its satisfaction-oracle loop; non-autopilot callers ignore the extra fields.
 
+**Model assignment (#259):** the Scout〜Verify `agent()` calls pin `model: 'sonnet'` (bench #259: equal functional quality at ~1/4 the cost); only Aggregate inherits the session model, so the final PASS/FAIL judgment stays on the strongest model.
+
 ```js
 export const meta = {
   name: 'review-deliverables',
@@ -76,7 +78,7 @@ const SCOUT_SCHEMA = {
 }
 const scout = await agent(
   `Analyze the deliverables for Issue #${NNN}. Read docs/issues/${NNN}/prd.md, user-stories.md, plan.md, acceptance-tests.md (skip any that are missing), the production diff (git diff ${BASE}...HEAD), and tests/acceptance/. Report which deliverables exist, the languages, the change size, and EVERY risk surface the change touches (auth, input/IO, network, concurrency, data/migration, UI/UX, performance-sensitive paths, error handling). Be specific and conservative — only list a surface the change actually touches.`,
-  { phase: 'Scout', schema: SCOUT_SCHEMA }
+  { phase: 'Scout', model: 'sonnet', schema: SCOUT_SCHEMA }
 )
 
 // --- Phase 2: Generate the reviewer panel dynamically ---------------------
@@ -102,7 +104,7 @@ const PANEL_SCHEMA = {
 }
 const panel = await agent(
   `Given this scout report:\n${JSON.stringify(scout)}\n\nDesign the review panel for this change. ALWAYS include these lenses: functional-correctness, clean-code, testability, documentation, a positive advocate (argues the change is sound), and a negative skeptic (hunts for what breaks). The documentation lens is mandatory on EVERY change — its focus must cover: (a) accuracy — README / CHANGELOG / docs/ prose matches what actually changed; (b) consistency — cross-doc coherence (e.g. skills/README.md lists every skill, tests/README.md lists the test files); and (c) follow-through / sync — verify the DEVELOPMENT.md invariants against the diff: when files under a top-level dir (skills/, scripts/, tests/, hooks/, rules/, commands/, templates/, agents/) changed, that dir's README.md is updated in the SAME change, and a feature change carries a CHANGELOG.md entry plus a .claude-plugin/plugin.json version bump. A missing doc update that DEVELOPMENT.md requires is a real finding (severity major). ADD one dedicated lens for EACH risk surface the scout found — e.g. security when auth/input/network is touched, performance/load when perf-sensitive paths are touched, usability when UI/UX is touched. For each lens give: a key, a distinct reviewer persona, the target deliverable, and a sharp focus. Scale the panel to the change; do NOT invent lenses for surfaces that are absent.`,
-  { phase: 'Generate', schema: PANEL_SCHEMA }
+  { phase: 'Generate', model: 'sonnet', schema: PANEL_SCHEMA }
 )
 const lenses = panel.lenses
 log(`Generated ${lenses.length} reviewers: ${lenses.map(l => l.key).join(', ')}`)
@@ -139,7 +141,7 @@ const reviewed = await pipeline(
   (lens) =>
     agent(
       `You are "${lens.persona}". Review ${lens.target} for Issue #${NNN} through the ${lens.key} lens. Focus: ${lens.focus}. Report concrete findings, each with a severity (blocker|major|minor|nit) and a location. If you find nothing, return an empty findings array — do not invent issues.`,
-      { label: `review:${lens.key}`, phase: 'Review', schema: FINDINGS_SCHEMA }
+      { label: `review:${lens.key}`, phase: 'Review', model: 'sonnet', schema: FINDINGS_SCHEMA }
     ),
   (review, lens) =>
     parallel(
@@ -148,7 +150,7 @@ const reviewed = await pipeline(
           ANGLES.map((angle) => () =>
             agent(
               `Adversarially challenge this ${lens.key} finding via the ${angle} angle — try to refute it. Default to real=false if uncertain.\nFinding: ${JSON.stringify(f)}`,
-              { label: `verify:${lens.key}`, phase: 'Verify', schema: VERDICT_SCHEMA }
+              { label: `verify:${lens.key}`, phase: 'Verify', model: 'sonnet', schema: VERDICT_SCHEMA }
             )
           )
         ).then((votes) => {
@@ -189,6 +191,7 @@ const AGG_SCHEMA = {
     },
   },
 }
+// #259: Aggregate inherits the session model — final PASS/FAIL judgment stays on the strongest model
 return await agent(
   `Aggregate these verified findings into one verdict for Issue #${NNN}. Rule: FAIL if any surviving finding is severity "blocker" or "major"; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nAlso emit a machine-readable verdict for autopilot loop control (backward-compatible): set overall_correctness to "correct" when verdict is PASS, else "incorrect"; and normalize EVERY surviving finding into findings[] with priority (0=blocker,1=major,2=minor,3=nit), confidence (0-1), file, line_range, detail, and a REQUIRED evidence_ref (a failing Acceptance Test name / log path, OR a quoted line from the immutable AC/PRD, OR a human-comment URL). If a confirmed finding has no objective backing, set evidence_ref to "unverified" and KEEP it — never drop a confirmed P0/P1, and never report overall_correctness "correct" while one survives (AL-4 is fail-safe, not fail-open).\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
   { phase: 'Aggregate', schema: AGG_SCHEMA }

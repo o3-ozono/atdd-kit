@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-06-11
+
+### Changed
+
+- **フェーズ別モデル割り当て — impl / review subagent の Sonnet 化と escalation path の規定**（#259）。モデルベンチ（2026-06-10〜11、2 Issue × 3 モデル × 10 run = 60 実装 + ジャッジ 76 本: 機能品質同等、コスト比 Sonnet 1.0 : Opus 2.2 : Fable 4.1、設計判断一貫性 Fable 20/20）にもとづき、(1) **review Workflow の Sonnet 恒久化** — `skills/reviewing-deliverables/SKILL.md` の埋め込み Workflow script で Scout / Generate / Review / Verify の `agent()` オプションに `model: 'sonnet'` を指定。Aggregate のみ `model` 無指定でセッションモデルを継承（最終 PASS/FAIL 判定は最強モデルに残す。理由コメント付き）。 (2) **impl phase の推奨モデルガイダンス明文化** — `skills/autopilot/SKILL.md` に Model assignment 節を新設（impl subagent は Sonnet 標準・設計絡み Issue は最初からセッションモデル・escalation トリガー = 収束失敗系 halt（`MAX_ITERATIONS` / `sameness-detector` / `stuck`）による `COMPLETED_WITH_DEBT` → 人間介入後の次サイクルからセッションモデルへ Issue 内一方向昇格。`ac-drift` / `record-error` はアンカー・監査整合性 halt のため対象外）。`skills/running-atdd-cycle/SKILL.md` にも参照注記を追加（通常フローは影響なし）。 (3) **agents/README.md のモデルポリシー更新** — 「Model and effort are intentionally unset」を新ポリシー + escalation path + ベンチ要点に置換（指定は Workflow script の `agent()` オプションのみで `agents/*.md` frontmatter には書かない — #105 の継承設計を維持。effort は引き続き unset）。design phase（`extracting-user-stories` / `writing-plan-and-tests`）とオーケストレータは対象外でセッションモデル維持。BATS pin を `tests/test_reviewing_deliverables_skill.bats`（3 件）/ `tests/test_autopilot_skill.bats`（3 件）/ `tests/test_running_atdd_cycle_skill.bats`（1 件）に追加し、新規 `tests/test_phase_model_assignment.bats`（7 件、`@covers: agents/**`）で README ポリシーと両ファイル間の escalation トリガー定義の同一性を pin。`tests/README.md` を同期。
+
 ## [3.8.1] - 2026-06-11
 
 ### Fixed
