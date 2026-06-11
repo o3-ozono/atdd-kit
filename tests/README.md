@@ -58,7 +58,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) / design-gate rejection plumbing (#261: `rejectionFindings` validation + iteration-1 seed, whole-set rejection discipline) |
+| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) / design-gate rejection plumbing (#261: `rejectionFindings` validation + iteration-1 seed, whole-set rejection discipline) / model assignment (#259: impl subagents Sonnet, one-way escalation, design phase excluded) |
 | test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) |
 | e2e/autopilot.bats | autopilot Skill E2E Test |
 
@@ -174,6 +174,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_pr_screenshot_security.bats | pr-screenshot-table.sh security hardening (Issue #26) |
 | test_conflict_detection.bats | Git conflict detection logic |
 | test_issue_105_frontmatter_session_inheritance.bats | Agent frontmatter model/effort removal guard (Issue #105) |
+| test_phase_model_assignment.bats | Phase model assignment policy in agents/README.md — impl / review = Sonnet, escalation path, bench summary, design phase / orchestrator exclusion (Issue #259) |
 
 > Some files cover more than one area; they are listed under their primary concern. The authoritative list is always `ls tests/*.bats`. Each file declares its scope via a `@covers:` header annotation (see below).
 

@@ -21,6 +21,8 @@ Step 4 of the atdd-kit v1.0 flow. Take an Issue number, read its `docs/issues/<N
 
 No other inputs. No Context Block.
 
+> **Model note (#259):** when this skill runs as an autopilot impl-phase subagent, the recommended model is **Sonnet** by default; design-heavy Issues escalate to the session model (see the Model assignment section in `skills/autopilot/SKILL.md` and `agents/README.md`). The normal flow (main-session execution) is unaffected.
+
 ## Output
 
 | Artifact | Path |

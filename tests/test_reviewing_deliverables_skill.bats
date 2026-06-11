@@ -179,3 +179,28 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   grep -qiE 'never drop a confirmed P0/P1|fail-safe, not fail-open' "$SKILL_FILE"
   ! grep -qE 'Drop any finding that has no evidence_ref' "$SKILL_FILE"
 }
+
+# --- Phase model assignment (#259) ------------------------------------------
+# Scout〜Verify run on Sonnet (bench #259: equal functional quality, ~1/4 cost);
+# Aggregate alone inherits the session model (final PASS/FAIL judgment stays
+# on the strongest model).
+
+@test "model (#259): Scout / Generate / Review / Verify agent() options pin model: 'sonnet' (AT-001)" {
+  grep -qF "{ phase: 'Scout', model: 'sonnet', schema: SCOUT_SCHEMA }" "$SKILL_FILE"
+  grep -qF "{ phase: 'Generate', model: 'sonnet', schema: PANEL_SCHEMA }" "$SKILL_FILE"
+  grep -qF "phase: 'Review', model: 'sonnet', schema: FINDINGS_SCHEMA" "$SKILL_FILE"
+  grep -qF "phase: 'Verify', model: 'sonnet', schema: VERDICT_SCHEMA" "$SKILL_FILE"
+}
+
+@test "model (#259): Aggregate agent() carries NO model — session inheritance with a reason comment (AT-002)" {
+  # the Aggregate options stay exactly { phase: 'Aggregate', schema: AGG_SCHEMA }
+  grep -qF "{ phase: 'Aggregate', schema: AGG_SCHEMA }" "$SKILL_FILE"
+  ! grep -qE "phase: 'Aggregate'[^}]*model" "$SKILL_FILE"
+  grep -qF "#259: Aggregate inherits the session model" "$SKILL_FILE"
+}
+
+@test "model (#259): prose note documents the assignment outside the script (AT-001/AT-002)" {
+  # the Review mechanism section states Scout〜Verify = sonnet, Aggregate = session model
+  grep -qE 'Model assignment' "$SKILL_FILE"
+  grep -qiE 'session model' "$SKILL_FILE"
+}

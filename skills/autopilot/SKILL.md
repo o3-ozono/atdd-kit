@@ -110,18 +110,13 @@ const MAX_ITERATIONS = A.maxIterations || {
 // The step that produces an executable AT suite. For it (and only it) the deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
 const AT_STEP = A.atStep || 'running-atdd-cycle'
 const AT_COMMAND = A.atCommand || "the project's Acceptance Test command (e.g. `bats tests/acceptance/`)"
-// Fail-closed preconditions. impl: the AT step must be looped, or the AT +
-// coverage gates silently vanish (oracle degrades to LLM opinion). design: the
-// AT step must NOT be looped — ATDD runs only after the design-approval gate (AL-1).
+// Fail-closed preconditions. impl: the AT step must be looped, or the AT + coverage gates silently vanish (oracle degrades to LLM opinion). design: the AT step must NOT be looped — ATDD runs only after the design-approval gate (AL-1).
 if (PHASE === 'impl' && !STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
 if (PHASE === 'design' && STEPS.includes(AT_STEP)) throw new Error(`design phase must not loop ${AT_STEP} — ATDD runs only after the design-approval gate`)
 // The issue dir is slug-suffixed (docs/issues/<NNN>-<slug>/); the audit step resolves it by glob at write time — a bare-number dir would break AL-4.
 const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
-// AL-2 anchor, per phase. The pin covers ONLY artifacts a human approved BEFORE
-// this phase — never an artifact this phase's loop may edit (#249: pinning
-// looped user-stories.md guaranteed a false ac-drift halt). design: approved PRD.
-// impl: design-gate-approved prd.md + user-stories.md. The loop-mutable
-// acceptance-tests.md is NOT pinned; the AC→AT coverage gate guards it.
+// AL-2 anchor, per phase. The pin covers ONLY artifacts a human approved BEFORE this phase — never an artifact this phase's loop may edit (#249: pinning looped user-stories.md guaranteed a false ac-drift halt). design: approved PRD.
+// impl: design-gate-approved prd.md + user-stories.md. The loop-mutable acceptance-tests.md is NOT pinned; the AC→AT coverage gate guards it.
 const PIN_NAME = PHASE === 'design' ? 'autopilot-prd.pin' : 'autopilot-design.pin'
 const ANCHOR_CAT = PHASE === 'design' ? 'cat <dir>/prd.md' : 'cat <dir>/prd.md <dir>/user-stories.md'
 
@@ -155,9 +150,7 @@ const priorityOf = (f) => {
   return m ? Number(m[0]) : 0
 }
 
-// Review scope per phase × step (#252): without it the design-phase review
-// flagged missing production code / executable AT as P0 (unconvergeable), and
-// the US-step review drew findings against plan.md it had not yet produced.
+// Review scope per phase × step (#252): without it the design-phase review flagged missing production code / executable AT as P0 (unconvergeable), and the US-step review drew findings against plan.md it had not yet produced.
 const reviewScope = (step) => PHASE === 'impl'
   ? 'Scope: the impl deliverables (production code, executable AT, doc sync).'
   : `Scope (design phase): ${step === 'extracting-user-stories'
@@ -238,6 +231,12 @@ return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
 
 The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
+
+## Model assignment (#259)
+
+- **impl phase subagents (gen / review) default to Sonnet** — bench #259 showed equal functional quality at ~1/4 the cost. **Design-heavy Issues** (architecture judgment / trade-offs) start on the **session model** instead.
+- **Escalation (one-way per Issue):** a Sonnet cycle ending `COMPLETED_WITH_DEBT` via a convergence-failure halt (`MAX_ITERATIONS` / `sameness-detector` / `stuck`) promotes that step's impl / review subagents to the session model from the next convergence cycle (after human intervention); never demote back within the same Issue. `ac-drift` / `record-error` are anchor / audit-integrity halts, not model-quality signals — they do not escalate.
+- **Out of scope:** the design phase (`extracting-user-stories` / `writing-plan-and-tests`) and this orchestrator stay on the session model (bench: design-judgment consistency Fable 20/20). Policy details: `agents/README.md`.
 
 ## Responsibility Boundary
 

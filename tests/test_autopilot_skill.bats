@@ -345,6 +345,39 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qi 'autopilot' skills/defining-requirements/SKILL.md
 }
 
+# --- Model assignment (#259) -------------------------------------------------
+# impl / review subagents default to Sonnet (bench-verified); design phase and
+# the orchestrator stay on the session model; escalation is one-way per Issue.
+
+@test "model (#259): Model assignment section — impl subagents Sonnet by default, design-heavy Issues on the session model (AT-003)" {
+  grep -q '## Model assignment' "$SKILL_FILE"
+  local section
+  section=$(sed -n '/^## Model assignment/,/^## [^M]/p' "$SKILL_FILE")
+  echo "$section" | grep -qi 'sonnet'
+  echo "$section" | grep -qi 'session model'
+  # design-heavy Issues (architecture judgment / trade-offs) start escalated
+  echo "$section" | grep -qiE 'design-heavy|architecture'
+}
+
+@test "model (#259): escalation trigger is the convergence-failure halt set, one-way per Issue (AT-005)" {
+  local section
+  section=$(sed -n '/^## Model assignment/,/^## [^M]/p' "$SKILL_FILE")
+  # the canonical trigger phrase (must stay literally identical to agents/README.md)
+  echo "$section" | grep -qF 'convergence-failure halt (`MAX_ITERATIONS` / `sameness-detector` / `stuck`)'
+  echo "$section" | grep -qF 'COMPLETED_WITH_DEBT'
+  echo "$section" | grep -qiE 'one-way per Issue'
+  # ac-drift / record-error are integrity halts, not model-quality signals
+  echo "$section" | grep -qE 'ac-drift'
+}
+
+@test "model (#259): design phase and the orchestrator are explicitly out of scope (AT-003/CS-3)" {
+  local section
+  section=$(sed -n '/^## Model assignment/,/^## [^M]/p' "$SKILL_FILE")
+  echo "$section" | grep -qE 'extracting-user-stories'
+  echo "$section" | grep -qE 'writing-plan-and-tests'
+  echo "$section" | grep -qiE 'orchestrator'
+}
+
 # --- #261 design-gate rejection plumbing pins -------------------------------
 
 @test "rejection (#261): rejectionFindings args reach iteration 1 via the prevFindings seed (AT-001)" {
