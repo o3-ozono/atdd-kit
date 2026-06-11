@@ -43,7 +43,7 @@ Work proceeds through the 6-step skill chain, each step invoked directly in the 
 
 `defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying`
 
-- **Review step** (`reviewing-deliverables`, Step 5) spawns specialist reviewer subagents (PRD, User Story, Plan, Code, Acceptance Test) serially, then a final aggregator returns a single PASS/FAIL.
+- **Review step** (`reviewing-deliverables`, Step 5) runs a **Workflow**: Scout inspects the deliverables, a reviewer panel is **generated dynamically** from the change, the lenses review **in parallel** (Workflow tool `parallel()` / `pipeline()`), findings are **adversarially verified**, and Aggregate returns a single PASS/FAIL plus per-lens notes.
 - **Deliverables** are committed to the Issue's work branch and presented as the Draft PR diff (the commit moment is the Draft PR moment). Issue / PR comments carry **state-change notifications and approval requests only** — never the deliverable body. Knowledge worth long-term reference is graduated into `docs/` or `DEVELOPMENT.md` by explicit human decision.
 
 ### Draft PR Locking
@@ -94,29 +94,20 @@ stateDiagram-v2
     merged --> [*]
 ```
 
-## Reviewer Aggregation Flow
+## Review Workflow Flow
 
-The review step dispatches five specialist reviewers, then a final reviewer aggregates their verdicts.
+The review step runs a dynamic parallel Workflow: Scout → Generate (dynamic lens panel) → Review (parallel) → Verify (adversarial) → Aggregate (single PASS/FAIL + per-lens notes).
 
 ```mermaid
 flowchart TD
-    Start["reviewing-deliverables (Step 5)"] --> Spawn{"Spawn specialist reviewers"}
-    Spawn --> PRD["prd-reviewer (10)"]
-    Spawn --> US["us-reviewer (7)"]
-    Spawn --> PLAN["plan-reviewer (10)"]
-    Spawn --> CODE["code-reviewer (10)"]
-    Spawn --> AT["at-reviewer (10)"]
-
-    PRD --> Final
-    US --> Final
-    PLAN --> Final
-    CODE --> Final
-    AT --> Final
-
-    Final["final-reviewer: aggregate 47 criteria"]
-    Final --> Decision{"All criteria satisfied?"}
-    Decision -- Yes --> Pass["PASS -> ready-to-go"]
-    Decision -- No --> Fail["FAIL -> needs-plan-revision"]
+    Start["reviewing-deliverables (Step 5)"] --> Scout["Scout (inspect deliverables + risk surfaces)"]
+    Scout --> Generate["Generate (dynamic lens panel)"]
+    Generate --> Review["Review (parallel lenses via parallel() / pipeline())"]
+    Review --> Verify["Verify (adversarial multi-round)"]
+    Verify --> Aggregate["Aggregate (single PASS/FAIL + per-lens notes)"]
+    Aggregate --> Decision{"Verdict?"}
+    Decision -- PASS --> Pass["PASS -> ready-to-go"]
+    Decision -- FAIL --> Fail["FAIL -> needs-plan-revision"]
 ```
 
 ## Configuration Layers

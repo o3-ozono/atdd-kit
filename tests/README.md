@@ -156,7 +156,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_docs_issues_templates.bats | docs/issues/ per-Issue templates (prd.md headings, etc.) |
 | test_template_sync.bats | templates/ and .github/ copy sync verification |
 | test_changelog_format.bats | CHANGELOG.md format compliance |
-| test_docs_restructure.bats | docs/ directory restructure (Issue #64) — Draft-PR-based deliverable rule in workflow-detail.md (#267) |
+| test_docs_restructure.bats | docs/ directory restructure (Issue #64) — Draft-PR-based deliverable rule in workflow-detail.md (#267) — review description aligned to dynamic parallel Workflow panel (#269: AT-001/002/003) |
 | test_doc_agent_teams_sync.bats | Documentation / Agent Teams doc sync (Issue #146) |
 | test_gh_field_audit.bats | docs gh --json usage audit (Issue #85) |
 | test_workflow_config_fields.bats | workflow-config.yml platform-only validation |
@@ -177,6 +177,14 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_phase_model_assignment.bats | Phase model assignment policy in agents/README.md — impl / review = Sonnet, escalation path, bench summary, design phase / orchestrator exclusion (Issue #259) |
 
 > Some files cover more than one area; they are listed under their primary concern. The authoritative list is always `ls tests/*.bats`. Each file declares its scope via a `@covers:` header annotation (see below).
+
+## Acceptance Tests (`tests/acceptance/`)
+
+Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named `AT-<NNN>.bats`. Each encodes the approved AC of `docs/issues/<NNN>-*/acceptance-tests.md` and stays as a regression suite after merge.
+
+| Test File | Target |
+|-----------|--------|
+| AT-269.bats | workflow-detail.md review description aligned to the #234 dynamic parallel Workflow panel — legacy terms absent, current phase terms present, release discipline, doc-side change scope (Issue #269) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 
