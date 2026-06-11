@@ -30,14 +30,14 @@
 
 ## AT-003: autopilot Dialog economy に Gate ①/② の提示チャネル規定が追記されている（US-3）
 
-- [ ] [planned] AT-003: Dialog economy 節に PR 差分ベース提示の規定が存在する
+- [x] [green] AT-003: Dialog economy 節に PR 差分ベース提示の規定が存在する
   - Given: `skills/autopilot/SKILL.md` の `## Dialog economy` 節
   - When: 節内の提示チャネル規定を grep で検査する
   - Then: Gate ①（要件承認）/ Gate ②（設計承認）とも成果物本体を Draft PR 差分として提示する規定が存在する
 
 ## AT-004: ターミナル提示は PR リンク + 判断が必要な点のみ（CS-1）
 
-- [ ] [draft] AT-004: 全文展開禁止の規定が両スキルに存在する
+- [x] [green] AT-004: 全文展開禁止の規定が両スキルに存在する
   - Given: `skills/defining-requirements/SKILL.md` の承認ゲート規定と `skills/autopilot/SKILL.md` の Dialog economy 節
   - When: ターミナル出力に関する規定を grep で検査する
   - Then: いずれにも「ターミナルには PR リンクと判断が必要な点のみを提示し、成果物の全文展開をしない」を意味する規定が存在する
