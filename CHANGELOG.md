@@ -7,11 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.8.2] - 2026-06-11
+## [3.11.1] - 2026-06-11
 
 ### Fixed
 
 - **成果物提示を Draft PR ベースに統一 — workflow-detail.md のレガシー記述矛盾と defining-requirements の承認後書き込み順序を修正**（#267）。(1) `docs/workflow/workflow-detail.md` Execution Mode 節のレガシー行「Deliverables flow through Issue / PR comments … never written to ad-hoc repository paths」を Workflow 表と整合する規定（成果物は作業ブランチへコミットし **Draft PR 差分**として提示、Issue/PR コメントは**状態通知・承認依頼のみ**）に置換。(2) `skills/defining-requirements/SKILL.md` の Flow を「draft 書き込み → commit/push/Draft PR 作成 → 承認ゲート（PR 上）」の順序に変更し、承認ゲートはターミナルに PR リンク + 判断が必要な点のみを提示（全文展開禁止）、修正は再 commit/push で PR 差分を更新。規定はモード非依存（どの呼び出し元から実行されても同一 — 'autopilot' の語は不使用で既存 C1 pin と両立）。(3) `skills/autopilot/SKILL.md` の Dialog economy 節に提示チャネル規定を追記: Gate ①/② とも成果物本体は Draft PR 差分として提示し、承認依頼・状態通知の全チャネル同期（ターミナル + GitHub に同一内容）は維持。`rules/atdd-kit.md` は無変更（CS-3）。回帰 pin として `tests/test_docs_restructure.bats` に 2 件、`tests/test_defining_requirements_skill.bats` に 4 件、`tests/test_autopilot_skill.bats` に 3 件を追加し、`tests/README.md` を同期。
+
+## [3.11.0] - 2026-06-11
+
+### Changed
+
+- **フェーズ別モデル割り当て — impl / review subagent の Sonnet 化と escalation path の規定**（#259）。モデルベンチ（2026-06-10〜11、2 Issue × 3 モデル × 10 run = 60 実装 + ジャッジ 76 本: 機能品質同等、コスト比 Sonnet 1.0 : Opus 2.2 : Fable 4.1、設計判断一貫性 Fable 20/20）にもとづき、(1) **review Workflow の Sonnet 恒久化** — `skills/reviewing-deliverables/SKILL.md` の埋め込み Workflow script で Scout / Generate / Review / Verify の `agent()` オプションに `model: 'sonnet'` を指定。Aggregate のみ `model` 無指定でセッションモデルを継承（最終 PASS/FAIL 判定は最強モデルに残す。理由コメント付き）。 (2) **impl phase の推奨モデルガイダンス明文化** — `skills/autopilot/SKILL.md` に Model assignment 節を新設（impl subagent は Sonnet 標準・設計絡み Issue は最初からセッションモデル・escalation トリガー = 収束失敗系 halt（`MAX_ITERATIONS` / `sameness-detector` / `stuck`）による `COMPLETED_WITH_DEBT` → 人間介入後の次サイクルからセッションモデルへ Issue 内一方向昇格。`ac-drift` / `record-error` はアンカー・監査整合性 halt のため対象外）。`skills/running-atdd-cycle/SKILL.md` にも参照注記を追加（通常フローは影響なし）。 (3) **agents/README.md のモデルポリシー更新** — 「Model and effort are intentionally unset」を新ポリシー + escalation path + ベンチ要点に置換（指定は Workflow script の `agent()` オプションのみで `agents/*.md` frontmatter には書かない — #105 の継承設計を維持。effort は引き続き unset）。design phase（`extracting-user-stories` / `writing-plan-and-tests`）とオーケストレータは対象外でセッションモデル維持。BATS pin を `tests/test_reviewing_deliverables_skill.bats`（3 件）/ `tests/test_autopilot_skill.bats`（3 件）/ `tests/test_running_atdd_cycle_skill.bats`（1 件）に追加し、新規 `tests/test_phase_model_assignment.bats`（7 件、`@covers: agents/**`）で README ポリシーと両ファイル間の escalation トリガー定義の同一性を pin。`tests/README.md` を同期。
+
+## [3.10.0] - 2026-06-11
+
+### Added
+
+- **autopilot 設計ゲート差し戻しコメントを再実行へ運ぶ `rejectionFindings` 配管と全体差し戻し規律を追加**（#261）。従来、design-approval ゲートの差し戻しコメントは「findings として design phase 再実行に投入される」と宣言されていたが、再実行は**新規 Workflow 呼び出し**で `prevFindings` が `null` 初期化されるため、コメントを generate に届ける配管が存在せず握り潰されていた。`skills/autopilot/SKILL.md` の埋め込み Workflow script に (1) **`rejectionFindings` args**: args parse 直後（FREEZE より前）の fail-closed バリデーション — 非配列で throw / 各要素に非空文字列 `evidence_ref` 必須（AL-4）/ `phase !== 'design'` で throw（design ゲート専用配管・不正 args では 1 イテレーションも走らない）、(2) **iteration 1 シード**: `prevFindings` の `null` 固定初期化を `REJECTION_FINDINGS` シードに置換し、既存 `priorityOf` 正規化（priority 無指定 → 0 = blocker、fail-safe）を適用して既存の `JSON.stringify(prevFindings)` 分岐で generate プロンプトに verbatim 到達させる — を追加。あわせて Flow step 3 に差し戻し規律を明文化: **部分承認（「A は ok / B は要修正」等）は承認ではなく成果物セット全体の差し戻し**（impl phase へ進まない）、コメントは**セクション単位**で分割（1 セクションの指摘 = 1 finding）、各 finding の `evidence_ref` = 該当部分の人間コメント verbatim、`args = { issue: NNN, phase: 'design', rejectionFindings: [...] }` で再呼び出し。`tests/test_autopilot_skill.bats` に pin 4 件（AT-001〜AT-005: 配管・バリデーション・priorityOf 正規化・規律文言）を追加。`lib/autopilot_convergence.sh`・`reviewing-deliverables`・Workflow ツール側は無変更。`skills/README.md` / `tests/README.md` を同期。
+
+## [3.9.0] - 2026-06-11
+
+### Added
+
+- **autopilot 監査ログに fail-closed ガード `check_log_integrity` を追加 — ログ削除・巻き戻しで sameness / stuck が無音リセットされる fail-open を解消**（#262）。`check_sameness` / `check_stuck` は `autopilot-log.jsonl` の履歴に依存するため、run 途中のログ削除・truncate でレールが黙って return 0 していた。機構は**イテレーション連続性検証**（design-doc 案 A）: orchestrator（Workflow script）が期待行数を**プロセスメモリ上**で追跡し（freeze 時に `logLines` baseline を取得 → `record_iteration` 成功ごとに `recorded++`）、rails の 5 項目目として `check_log_integrity <jsonl> <expected-lines>` に渡す。真実をディスク外に置くことで「ログを消す操作では期待値を消せない」を構造的に保証。検証は**完全一致**（actual == expected）— 削除・巻き戻しに加え外部追記も両方向 halt（fail-closed, #256 原則）。ログ未存在は expected=0（正当な初回）のみ通過し、再入（design-gate 差し戻し）・phase 跨ぎの既存行は baseline 吸収で誤検出ゼロ。expected が空・非数値・注入文字列なら stderr + status 2（`check_stuck` の window 検証と同等）。halt 理由 `log-integrity` は `ac-drift` 直後・sameness / stuck より先に判定（両者はログ前提のため）。`tests/test_autopilot_convergence.bats` に検出・非検出 8 件、`tests/test_autopilot_skill.bats` に配管 pin 2 件（AT-006/AT-007）を追加し、`tests/README.md` を同期。
 
 ## [3.8.1] - 2026-06-11
 

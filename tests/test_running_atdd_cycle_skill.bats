@@ -111,3 +111,14 @@ SKILL_FILE="skills/running-atdd-cycle/SKILL.md"
 @test "no persona: SKILL.md does not introduce 'As a [persona]' line" {
   ! grep -qE '^As a ' "$SKILL_FILE"
 }
+
+# --- Model assignment note (#259) -------------------------------------------
+
+@test "model (#259): note recommends Sonnet for autopilot impl-phase runs, escalation to session model, refs autopilot SKILL.md (AT-003)" {
+  grep -qiE 'sonnet' "$SKILL_FILE"
+  grep -qiE 'session model' "$SKILL_FILE"
+  grep -qE 'skills/autopilot/SKILL\.md' "$SKILL_FILE"
+  grep -qE 'agents/README\.md' "$SKILL_FILE"
+  # the normal (main-session) flow is unaffected by the note
+  grep -qiE 'normal flow|main-session|unaffected' "$SKILL_FILE"
+}
