@@ -4,9 +4,15 @@
      各エントリには状態マーカー [planned] / [draft] / [green] / [regression] を付与する。
      状態は実装の進行に合わせて更新する。 -->
 
-実装形態: 規定文言の構造検証（BATS pin）。実行可能 AT は既存スイートへの `@test` 追加として
-`tests/test_docs_restructure.bats` / `tests/test_defining_requirements_skill.bats` /
-`tests/test_autopilot_skill.bats` に実装する（Step 4 が `[planned]` → `[draft]` → `[green]` に進める）。
+実装形態は AT ごとに 2 種類ある（Step 4 はこの宣言に従い、形態を取り違えないこと）:
+
+- **AT-001〜AT-004（恒久 pin）**: 規定文言の構造検証（BATS pin）。既存スイートへの `@test` 追加として
+  `tests/test_docs_restructure.bats` / `tests/test_defining_requirements_skill.bats` /
+  `tests/test_autopilot_skill.bats` に実装する（Step 4 が `[planned]` → `[draft]` → `[green]` に進める）。
+- **AT-005 / AT-006（一回性のコマンド検証）**: `@test` 化しない。AT-005 は「`bats tests/` 全スイート実行が green」
+  というメタ確認であり、コマンド実行結果そのものが green 判定になる。AT-006 の `git diff main -- rules/atdd-kit.md`
+  はブランチ相対の検証でマージ後は pin として無意味なため、ブランチ上での一回実行 + 出力 0 行の確認をもって
+  green とする。いずれも実行コマンドと結果（exit code / 出力）を Step 4 のエビデンスとして記録する。
 
 ## AT-001: workflow-detail.md のレガシー記述が Workflow 表と整合する規定に置換されている（US-1）
 
@@ -20,7 +26,7 @@
 - [ ] [planned] AT-002: Flow の順序が承認前書き込み + Draft PR 提示に変更されている
   - Given: `skills/defining-requirements/SKILL.md` の Flow 節
   - When: draft 書き込みステップ / commit・push・Draft PR 作成ステップ / 承認ゲートステップの出現行番号を比較する
-  - Then: 行番号が「draft 書き込み < commit/push/Draft PR 作成 < 承認ゲート」の順であり、承認ゲートが PR 上のレビューを前提とした文言になっている（通常フロー・autopilot 共通の規定として記述されている）
+  - Then: 行番号が「draft 書き込み < commit/push/Draft PR 作成 < 承認ゲート」の順であり、承認ゲートが PR 上のレビューを前提とした文言になっている。規定は**モード非依存**（どの呼び出し元から実行されても同一の順序）として記述され、`skills/defining-requirements/SKILL.md` は 'autopilot' の語を含まない（既存 C1 pin `! grep -qi 'autopilot' skills/defining-requirements/SKILL.md` が無変更のまま green）
 
 ## AT-003: autopilot Dialog economy に Gate ①/② の提示チャネル規定が追記されている（US-3）
 
