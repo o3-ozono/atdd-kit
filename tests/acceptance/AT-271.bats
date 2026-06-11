@@ -271,6 +271,23 @@
   }
 }
 
+# --- AT-006: BATS suite 全体 green（CS-2） ---
+
+@test "AT-006: bats tests/ suite passes without failure" {
+  # Given: 本 Issue の全変更（削除・置換・テスト差し替え・version bump）
+  # When: bats tests/ を実行する
+  # Then: fail 0 件（test_phase_model_assignment / test_docs_restructure / AT-269 含む既存 pin もすべて green）
+  local repo_root
+  repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+
+  run bats "${repo_root}/tests/"
+  [[ "$status" -eq 0 ]] || {
+    echo "FAIL: tests/ suite に失敗があった"
+    echo "$output"
+    return 1
+  }
+}
+
 # --- AT-007: Non-Goals 不可侵（CS-3） ---
 
 @test "AT-007a: skills/reviewing-deliverables/SKILL.md has no diff from main" {

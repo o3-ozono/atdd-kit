@@ -71,6 +71,9 @@
 - [ ] `tests/README.md` を同期する: L53 の test_reviewer_subagents.bats 行を削除し、新規 test_agents_dynamic_panel_align.bats の行を追加し、L176 の test_issue_105 行の説明を更新後の内容に合わせる
 - [ ] verify: `grep -c 'test_reviewer_subagents' tests/README.md` が 0、`grep -c 'test_agents_dynamic_panel_align' tests/README.md` が 1
 
+- [ ] `tests/test_tightening_protection.bats` の AC2a を修正する: `agents/[^R]*.md` glob が固定 reviewer agents 削除後にマッチなしでリテラル文字列展開される bash の挙動（`grep: agents/[^R]*.md: No such file or directory`）により AC2a が FAIL するため、guard を追加して「対象ファイルが存在しない場合は skip」する形に書き換える
+- [ ] verify: `bats tests/test_tightening_protection.bats` が green
+
 - [ ] BATS suite 全体を実行する: `bats tests/ tests/acceptance/`（CS-2）
 - [ ] verify: 全件 green（fail 0）
 
@@ -81,7 +84,7 @@
 - [ ] `CHANGELOG.md` の `## [Unreleased]` 下に新バージョン `## [3.12.0]` を起こし、`### Removed` エントリ（固定 reviewer agents 6 ファイル削除 + agents/README.md 再構成 + レガシー参照置換 + テスト差し替え、refs #271 #234 #269）を追加する
 - [ ] verify: `grep -A3 '\[3.12.0\]' CHANGELOG.md` に `### Removed` が含まれる
 
-- [ ] `.claude-plugin/plugin.json` の version を `3.11.2` → `3.12.0` に bump する（minor — Gate ① 確定）
+- [ ] `.claude-plugin/plugin.json` の version を `3.11.3` → `3.12.0` に bump する（minor — Gate ① 確定）
 - [ ] verify: `grep '"version"' .claude-plugin/plugin.json` が `3.12.0`
 
 ### CS-3: Non-Goals 不可侵の確認

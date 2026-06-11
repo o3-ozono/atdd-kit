@@ -69,7 +69,7 @@
 - [x] [regression] AT-005: CHANGELOG `### Removed` + minor bump
   - Given: `CHANGELOG.md` と `.claude-plugin/plugin.json`
   - When: 新バージョンエントリと version 値を検査する
-  - Then: `## [3.12.0]` に `### Removed` エントリ（refs #271）があり、plugin.json の version が `3.12.0`（3.11.2 から minor bump）である
+  - Then: `## [3.12.0]` に `### Removed` エントリ（refs #271）があり、plugin.json の version が `3.12.0`（3.11.3 から minor bump）である
 
 ## AT-006: BATS suite 全体 green（CS-2）
 
