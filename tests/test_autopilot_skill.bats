@@ -261,8 +261,10 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # impl invocation as design when args arrived stringified — explicit guard only
   grep -qE "A\.phase !== 'design' && A\.phase !== 'impl'" "$SKILL_FILE"
   grep -qE 'refusing to default to design' "$SKILL_FILE"
-  # (b) the silent fallback must be gone
+  # (b) the silent fallback must be gone, and PHASE must be the bare post-guard
+  # assignment — a re-regression like `A.phase ?? 'design'` must not pass (AT-002)
   ! grep -qE "A\.phase === 'impl' \? 'impl' : 'design'" "$SKILL_FILE"
+  grep -qE "const PHASE = A\.phase$" "$SKILL_FILE"
   # (c) Flow steps 2 and 4 both instruct passing args as a JSON object
   [ "$(grep -c '文字列化した JSON を渡さない' "$SKILL_FILE")" -eq 2 ]
 }

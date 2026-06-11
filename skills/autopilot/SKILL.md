@@ -50,7 +50,7 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 ## Flow — two convergence phases around the design-approval gate
 
 1. **Precondition.** The approved PRD exists at `docs/issues/<NNN>-*/prd.md`. Missing or unapproved → stop and route to `defining-requirements`.
-2. **Design phase (autonomous).** Invoke the Workflow script below with `args = { issue: NNN, phase: 'design' }` — pass `args` as a JSON object（文字列化した JSON を渡さない — the script refuses stringified args, #256）. Converges `extracting-user-stories` then `writing-plan-and-tests`, anchored to the pinned PRD. No executable AT suite exists yet, so the AT / coverage gates are off and the oracle is reviewer-only.
+2. **Design phase (autonomous).** Invoke the Workflow script below with `args = { issue: NNN, phase: 'design' }` — pass `args` as a JSON object（文字列化した JSON を渡さない, #256）. Converges `extracting-user-stories` then `writing-plan-and-tests`, anchored to the pinned PRD. No executable AT suite exists yet, so the AT / coverage gates are off and the oracle is reviewer-only.
 3. **Design-approval gate (human).** Present the near-green `user-stories.md` / `plan.md` / `acceptance-tests.md` and ask:
    > `設計成果物（user-stories / plan / acceptance-tests）を承認しますか? 'ok' で ATDD（impl phase）へ進みます。修正点があればコメントしてください。`
    Comments become findings (`evidence_ref` = the human comment) fed verbatim into a re-run of the design phase. Do not proceed without an explicit `ok`.
