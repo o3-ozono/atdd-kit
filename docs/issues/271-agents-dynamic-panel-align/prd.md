@@ -42,4 +42,6 @@
 1. **存廃判断: 削除(案 A・推奨)か、記述整合のみで存置(案 B)か** —
    - **案 A(削除)**: 未使用コードパスの完全除去。誤 spawn の余地と将来の記述ドリフト(本 Issue の再発)を構造的に防ぐ。コスト: 上記 What の全件(テスト差し替え含む)。minor bump。
    - **案 B(存置 + 記述整合)**: 6 ファイルの description と README を「手動 spawn 可能なレガシーロール(現行フローでは未使用)」へ書き換えるだけ。コスト小・patch bump。ただし未使用ファイルの保守義務が残り、#234 Out of Scope の「扱い確定」を再び先送りする。
-2. **削除時の version 区分** — 本 PRD は minor を提案(スキル rename = major 規定は skills/ 対象であり agents/ は対象外と解釈)。major とすべきと判断される場合はご指摘ください。
+   → **Resolved(Gate ① 承認, 2026-06-11)**: 案 A(削除)を採用。
+2. **削除時の version 区分** — 本 PRD は minor を提案(スキル rename = major 規定は skills/ 対象であり agents/ は対象外と解釈)。
+   → **Resolved(Gate ① 承認, 2026-06-11)**: minor 確定。
