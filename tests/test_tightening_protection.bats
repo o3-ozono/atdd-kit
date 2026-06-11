@@ -5,9 +5,17 @@
 # --- AC2a: Agent frontmatter fields preserved ---
 
 @test "AC2a: all agent files retain tools section" {
+  # If no agent definition files exist (only README.md remains after #271), the test trivially passes.
+  local found=0
   for f in agents/[^R]*.md; do
-    grep -q '^tools:' "$f"
+    [[ -f "$f" ]] || continue
+    found=1
+    grep -q '^tools:' "$f" || {
+      echo "FAIL: ${f} is missing tools section"
+      return 1
+    }
   done
+  [[ "$found" -eq 1 ]] || echo "# info: no agent definition files found (only README.md) — skipping tools check"
 }
 
 # --- AC2b: Code block balance (even fence count per file) ---

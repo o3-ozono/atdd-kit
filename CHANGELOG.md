@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-06-12
+
+### Removed
+
+- **固定 reviewer agent 6 ファイル削除と agents/ 配下レガシー記述の #234 整合**（refs #271 #234 #269）。(1) `agents/prd-reviewer.md` / `agents/us-reviewer.md` / `agents/plan-reviewer.md` / `agents/code-reviewer.md` / `agents/at-reviewer.md` / `agents/final-reviewer.md` を `git rm` で削除。(2) `agents/README.md` を再構成: 固定 roster 表・Usage 節（五専門 reviewer / final aggregator）を削除し、(a) ディレクトリの現行役割（将来のカスタム agent 置き場）、(b) #259 モデルポリシー blockquote（文言無変更）、(c) レビューは reviewing-deliverables の動的レンズパネル × 並列 Workflow（#234）が担う旨の 3 点構成に置換。(3) `docs/methodology/definition-of-ready.md`・`docs/guides/getting-started.md`・`DEVELOPMENT.md`・`DEVELOPMENT.ja.md`・`README.md`・`README.ja.md` のレガシー参照（prd-reviewer / specialist reviewer subagents / 47 criteria 等）を動的パネル記述に置換。(4) `tests/test_reviewer_subagents.bats`（#186 固定 6 agent smoke test）を削除し、`tests/test_agents_dynamic_panel_align.bats`（回帰 pin: 6 ファイル不存在・レガシー参照 0 件・動的パネル言及確認）を新規追加。`tests/test_issue_105_frontmatter_session_inheritance.bats` AC1/AC2 を glob ベースに書き換え（削除済みファイル参照を除去）。`tests/README.md` を同期。全 BATS suite green 確認済み。
+
 ## [3.11.4] - 2026-06-12
 
 ### Fixed

@@ -127,7 +127,7 @@ The cycle also collects evidence for each acceptance criterion — confirming al
 
 ### Step 6: reviewing-deliverables — Review
 
-The **reviewing-deliverables** skill reviews the deliverables before merge. It spawns dedicated reviewer subagents (such as `code-reviewer` and `at-reviewer`) to check the implementation and the acceptance tests against the acceptance criteria.
+The **reviewing-deliverables** skill reviews the deliverables before merge. It runs a dynamically generated review panel in parallel — each lens checks the deliverable content (implementation, acceptance tests, etc.) against the acceptance criteria.
 
 ### Step 7: merging-and-deploying — PR and Merge
 

@@ -19,7 +19,7 @@ atdd-kit solves this by enforcing an **Issue-driven, test-first workflow**:
 
 Design principles: zero dependencies, plugin architecture, pure markdown + bash.
 
-**A 6-step flow** carries each Issue from requirements to deploy: define requirements → extract user stories → write the plan + acceptance tests → run the ATDD cycle → review → merge & deploy. Each step is a skill you invoke directly, and the review step spawns specialist reviewer subagents that check every deliverable before merge.
+**A 6-step flow** carries each Issue from requirements to deploy: define requirements → extract user stories → write the plan + acceptance tests → run the ATDD cycle → review → merge & deploy. Each step is a skill you invoke directly, and the review step runs a dynamic lens panel in parallel to check every deliverable before merge.
 
 ### The ATDD Double Loop
 
@@ -86,7 +86,7 @@ flowchart LR
 | 2 | **extracting-user-stories** | Derive user stories from the PRD |
 | 3 | **writing-plan-and-tests** | Create a test-first implementation plan plus the acceptance tests |
 | 4 | **running-atdd-cycle** | Execute the ATDD double loop — outer acceptance tests, inner unit tests |
-| 5 | **reviewing-deliverables** | Serially review every deliverable (PRD/US/Plan/Code/AT) with specialist reviewer subagents and produce a single PASS/FAIL |
+| 5 | **reviewing-deliverables** | Review every deliverable (PRD/US/Plan/Code/AT) with a dynamic lens panel × parallel Workflow (#234) and produce a single PASS/FAIL |
 | 6 | **merging-and-deploying** | Merge → deploy → re-run regression acceptance tests post-deploy |
 
 #### On-demand
@@ -127,18 +127,15 @@ flowchart LR
 
 ## Architecture
 
-### Review Subagents
+### Review Workflow (Dynamic Lens Panel)
 
-The review step (`reviewing-deliverables`, Step 5) spawns six specialist reviewer subagents serially — each receives an isolated context and checks one deliverable against a fixed set of structural criteria. A final aggregator combines their verdicts into a single PASS/FAIL.
+The review step (`reviewing-deliverables`, Step 5) uses a dynamic lens panel × parallel Workflow (#234):
 
-| Agent | Reviews | Criteria |
-|-------|---------|----------|
-| **prd-reviewer** | PRD (`defining-requirements` output) | 10 |
-| **us-reviewer** | User Stories (`extracting-user-stories` output) | 7 |
-| **plan-reviewer** | Implementation Plan | 10 |
-| **code-reviewer** | Production code changes | 10 |
-| **at-reviewer** | Acceptance Tests | 10 |
-| **final-reviewer** | Aggregates the 5 specialist verdicts (47 criteria total) → PASS/FAIL | — |
+1. **Scout** — identify which deliverables are in scope for this Issue
+2. **Generate** — build a dynamic review panel tailored to the deliverable content
+3. **Review** — run lenses in parallel; each lens checks one deliverable against the acceptance criteria
+4. **Verify** — adversarial cross-check of the findings
+5. **Aggregate** — produce a single PASS/FAIL with traceability to each lens result
 
 ### Label Flow
 
