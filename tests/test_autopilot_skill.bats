@@ -255,3 +255,14 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -qE 'Number\.isInteger\(NNN\)' "$SKILL_FILE"
   grep -qE 'refusing to run with an unresolvable issue dir' "$SKILL_FILE"
 }
+
+@test "args (#256): phase guard is fail-closed — no impl→design fallback, JSON-object note on both invokes" {
+  # (a) the old ternary (A.phase === 'impl' ? 'impl' : 'design') silently ran an
+  # impl invocation as design when args arrived stringified — explicit guard only
+  grep -qE "A\.phase !== 'design' && A\.phase !== 'impl'" "$SKILL_FILE"
+  grep -qE 'refusing to default to design' "$SKILL_FILE"
+  # (b) the silent fallback must be gone
+  ! grep -qE "A\.phase === 'impl' \? 'impl' : 'design'" "$SKILL_FILE"
+  # (c) Flow steps 2 and 4 both instruct passing args as a JSON object
+  [ "$(grep -c '文字列化した JSON を渡さない' "$SKILL_FILE")" -eq 2 ]
+}
