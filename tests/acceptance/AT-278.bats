@@ -3,7 +3,7 @@
 # Issue #278: Skill E2E tests specify --model sonnet for claude invocations
 #
 # AT lifecycle: draft -> green -> regression
-# Current state: [draft]
+# Current state: [regression]
 #
 # Machine-verifiable ATs: AT-001 / AT-002 / AT-004 / AT-005 / AT-006 / AT-008
 # AT-003 (regression pin FAIL check) and AT-007 (CHANGELOG + version bump)

@@ -1,7 +1,7 @@
 # Acceptance Tests: Skill E2E テストの claude 起動に --model sonnet を指定 — モデル未指定によるトークン過大消費の解消
 
 <!-- AT lifecycle: planned → draft → green → regression
-     各エントリには状態マーカー [regression] / [draft] / [regression] / [regression] を付与する。
+     各エントリには状態マーカー [planned] / [draft] / [green] / [regression] を付与する。
      状態は実装の進行に合わせて更新する。 -->
 
 ## AT-001: 全 E2E ファイルの claude 起動が明示的にモデルを指定する（US-1）
@@ -64,7 +64,7 @@
 
 | 状態 | 意味 |
 |------|------|
-| [regression] | テスト設計済み・未実装 |
+| [planned] | テスト設計済み・未実装 |
 | [draft] | 実装中・まだ通過していない |
-| [regression] | テスト通過済み |
+| [green] | テスト通過済み |
 | [regression] | リグレッション対象として継続監視中 |
