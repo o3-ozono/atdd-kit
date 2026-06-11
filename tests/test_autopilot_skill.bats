@@ -126,10 +126,12 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 
 # --- Line budget ----------------------------------------------------------
 
-@test "line budget: SKILL.md is at most 240 lines (embedded workflow script)" {
+@test "line budget (#254: Dialog economy section): SKILL.md is at most 260 lines" {
+  # 240 → 260 (#254): the Dialog economy section adds ~10 lines of human-dialog
+  # discipline that must live in the orchestrator (C1: flow skills stay unedited)
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
-  [ "$n" -le 240 ]
+  [ "$n" -le 260 ]
 }
 
 # --- Code-deep oracle (#246 review: rails/oracle must be code, not just prose)
@@ -267,4 +269,52 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -qE "const PHASE = A\.phase$" "$SKILL_FILE"
   # (c) Flow steps 2 and 4 both instruct passing args as a JSON object
   [ "$(grep -c '文字列化した JSON を渡さない' "$SKILL_FILE")" -eq 2 ]
+}
+
+# --- Dialog economy (#254) -------------------------------------------------
+
+@test "dialog economy (#254): asks only human-only decisions (US-1)" {
+  # questions are limited to what a human alone can decide:
+  # trade-offs / 割り切り, scope changes, Outcome pass/fail criteria
+  # ('scope changes', not bare 'scope' — the bare word also matches reviewScope code)
+  grep -qi 'ask ONLY' "$SKILL_FILE"
+  grep -qi 'trade-off' "$SKILL_FILE"
+  grep -qi 'scope changes' "$SKILL_FILE"
+  grep -q 'Outcome pass/fail criteria' "$SKILL_FILE"
+  # derivability must be operationally defined, not left to LLM judgment (P0)
+  grep -qi 'mechanically reconstructable' "$SKILL_FILE"
+}
+
+@test "dialog economy (#254): drafts are batch-presented, approved once per fixed gate (US-2)" {
+  # no section-by-section ok-loops: draft everything derivable, present in bulk,
+  # approve / send back once at each fixed gate (PRD approval / design approval / merge)
+  grep -qi 'batch-present' "$SKILL_FILE"
+  grep -qi 'never ask section-by-section' "$SKILL_FILE"
+}
+
+@test "dialog economy (#254): directive lives in the orchestrator and covers all gate dialogs (US-3/CS-2)" {
+  # the directive is the orchestrator's (C1: flow skills are never edited for autopilot)
+  # and applies to every human-facing dialog, not just Gate ①
+  grep -q '## Dialog economy' "$SKILL_FILE"
+  grep -qi 'all human-facing dialog under autopilot' "$SKILL_FILE"
+  grep -qF 'one question at a time' "$SKILL_FILE"
+  grep -qi 'overrid' "$SKILL_FILE"
+  [ "$(grep -c 'Dialog economy' "$SKILL_FILE")" -ge 3 ]
+}
+
+@test "dialog economy (#254): gates stay exactly three (CS-1)" {
+  # the section removes micro-confirmations only — never a gate (AL-1 invariant)
+  grep -q 'exactly three' "$SKILL_FILE"
+  grep -qi 'never a gate' "$SKILL_FILE"
+  # count-based pin: a 4th numbered gate item would keep the strings above intact,
+  # so count the numbered items inside the Human gates section itself
+  local gates
+  gates=$(sed -n '/^## Human gates/,/^## Dialog economy/p' "$SKILL_FILE" | grep -cE '^[0-9]+\. ')
+  [ "$gates" -eq 3 ]
+}
+
+@test "dialog economy (#254): defining-requirements stays autopilot-free (AT-005/C1)" {
+  # the one-question-at-a-time override is declared ONLY on the orchestrator side;
+  # the flow skill must carry no autopilot carve-out (regression guard for AT-005)
+  ! grep -qi 'autopilot' skills/defining-requirements/SKILL.md
 }
