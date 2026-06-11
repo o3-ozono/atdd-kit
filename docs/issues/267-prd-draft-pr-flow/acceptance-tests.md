@@ -16,7 +16,7 @@
 
 ## AT-001: workflow-detail.md のレガシー記述が Workflow 表と整合する規定に置換されている（US-1）
 
-- [ ] [planned] AT-001: Execution Mode 節からレガシー規定が消え、Draft PR ベースの規定が存在する
+- [x] [green] AT-001: Execution Mode 節からレガシー規定が消え、Draft PR ベースの規定が存在する
   - Given: `docs/workflow/workflow-detail.md` がリポジトリに存在する
   - When: Execution Mode 節の成果物提示規定を grep で検査する
   - Then: 旧文言 `never written to ad-hoc repository paths`（成果物は `gh issue comment` / `gh pr comment` 経由）が存在せず、「成果物はブランチコミット + Draft PR 差分、Issue/PR コメントは状態通知・承認依頼のみ」を意味する新規定が存在する

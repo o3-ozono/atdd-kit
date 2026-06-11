@@ -44,7 +44,7 @@ Work proceeds through the 6-step skill chain, each step invoked directly in the 
 `defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying`
 
 - **Review step** (`reviewing-deliverables`, Step 5) spawns specialist reviewer subagents (PRD, User Story, Plan, Code, Acceptance Test) serially, then a final aggregator returns a single PASS/FAIL.
-- **Deliverables** flow through Issue / PR comments via `gh issue comment` / `gh pr comment` — never written to ad-hoc repository paths. Knowledge worth long-term reference is graduated into `docs/` or `DEVELOPMENT.md` by explicit human decision.
+- **Deliverables** are committed to the Issue's work branch and presented as the Draft PR diff (the commit moment is the Draft PR moment). Issue / PR comments carry **state-change notifications and approval requests only** — never the deliverable body. Knowledge worth long-term reference is graduated into `docs/` or `DEVELOPMENT.md` by explicit human decision.
 
 ### Draft PR Locking
 
