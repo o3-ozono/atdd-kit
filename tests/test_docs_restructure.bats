@@ -169,3 +169,44 @@
   grep -q 'Draft PR diff' docs/workflow/workflow-detail.md
   grep -q 'state-change notifications and approval requests only' docs/workflow/workflow-detail.md
 }
+
+# #269 AT-001/AT-002/AT-003: Align review description with #234 dynamic parallel Workflow panel
+# Given: docs/workflow/workflow-detail.md
+# When: the review step description and mermaid diagram are inspected
+# Then: (a) legacy terms (serially / specialist reviewer subagents / 47 criteria) are absent;
+#       (b) current architecture terms (dynamically / in parallel / Scout--Aggregate) are present
+
+@test "#269 AT-001: legacy 'serially' term is absent from workflow-detail.md" {
+  ! grep -q 'serially' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-001: legacy 'specialist reviewer subagents' is absent from workflow-detail.md" {
+  ! grep -q 'specialist reviewer subagents' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-001: current 'dynamically' term is present in workflow-detail.md" {
+  grep -q 'dynamically' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-001: current 'in parallel' term is present in workflow-detail.md" {
+  grep -q 'in parallel' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-002: legacy fixed-reviewer nodes are absent (prd-reviewer / us-reviewer / plan-reviewer / code-reviewer / at-reviewer / final-reviewer)" {
+  ! grep -qE 'prd-reviewer|us-reviewer|plan-reviewer|code-reviewer|at-reviewer|final-reviewer' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-002: legacy 'aggregate 47 criteria' is absent from workflow-detail.md" {
+  ! grep -qi 'aggregate 47 criteria' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-002: dynamic phase nodes present in mermaid diagram (Scout / Generate / Aggregate)" {
+  grep -q 'Scout' docs/workflow/workflow-detail.md
+  grep -q 'Generate' docs/workflow/workflow-detail.md
+  grep -q 'Aggregate' docs/workflow/workflow-detail.md
+}
+
+@test "#269 AT-003: heading changed from Reviewer Aggregation Flow to Review Workflow Flow" {
+  ! grep -q '## Reviewer Aggregation Flow' docs/workflow/workflow-detail.md
+  grep -q '## Review Workflow Flow' docs/workflow/workflow-detail.md
+}

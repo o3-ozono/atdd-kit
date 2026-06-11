@@ -156,7 +156,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_docs_issues_templates.bats | docs/issues/ per-Issue templates (prd.md headings, etc.) |
 | test_template_sync.bats | templates/ and .github/ copy sync verification |
 | test_changelog_format.bats | CHANGELOG.md format compliance |
-| test_docs_restructure.bats | docs/ directory restructure (Issue #64) — Draft-PR-based deliverable rule in workflow-detail.md (#267) |
+| test_docs_restructure.bats | docs/ directory restructure (Issue #64) — Draft-PR-based deliverable rule in workflow-detail.md (#267) — review description aligned to dynamic parallel Workflow panel (#269: AT-001/002/003) |
 | test_doc_agent_teams_sync.bats | Documentation / Agent Teams doc sync (Issue #146) |
 | test_gh_field_audit.bats | docs gh --json usage audit (Issue #85) |
 | test_workflow_config_fields.bats | workflow-config.yml platform-only validation |

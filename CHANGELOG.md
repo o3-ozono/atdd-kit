@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.2] - 2026-06-11
+
+### Fixed
+
+- **workflow-detail.md のレビュー記述を #234 の動的・並列 Workflow パネルへ整合**（#269）。`docs/workflow/workflow-detail.md` Execution Mode 節の Review step bullet「specialist reviewer subagents … serially spawn → final aggregator」を現行実装（Scout → Generate (dynamic lens panel) → Review (parallel, `parallel()` / `pipeline()`) → Verify (adversarial) → Aggregate (PASS/FAIL + per-lens notes)）の記述に置換。`## Reviewer Aggregation Flow` 節の導入文・mermaid 図（固定 5 reviewer ノード / `final-reviewer: aggregate 47 criteria`）を同フェーズ構成を描く flowchart に差し替え、節見出しを `## Review Workflow Flow` へ変更。回帰 pin として `tests/test_docs_restructure.bats` に 8 件（#269 AT-001〜003 相当）を追加し、`tests/README.md` を同期。変更スコープは `docs/workflow/workflow-detail.md` / `CHANGELOG.md` / `.claude-plugin/plugin.json` / `tests/` / `docs/issues/269-*` に限定（CS-2）。
+
 ## [3.11.1] - 2026-06-11
 
 ### Fixed
