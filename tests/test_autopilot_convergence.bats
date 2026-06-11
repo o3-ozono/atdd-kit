@@ -324,6 +324,96 @@ _assert_valid_jsonl() {
   [ "$status" -ne 0 ]
 }
 
+# --- #272: check_sameness / check_stuck の step スコープ化（AT-001〜AT-004） ---
+# #269 再現: design phase 最終行と impl iteration 1 が同一 fingerprint でも
+# step 引数付き呼び出しでは偽 halt が発生しない。
+
+# 2 step 混在フィクスチャを組み立てるヘルパー:
+# - design phase 最終行（step=writing-plan-and-tests, fingerprint=<empty-findings fp>）
+# - impl iteration 1（step=running-atdd-cycle, 同じ fingerprint）
+_make_cross_step_log() {
+  local jsonl="$1"
+  # 空 findings の実際の fingerprint を生成する（check_sameness のデフォルト挙動と合わせる）
+  local fp
+  fp=$(printf '%s' "[]" | fingerprint)
+  record_iteration "$jsonl" 1 "writing-plan-and-tests" "PASS" "$fp"
+  record_iteration "$jsonl" 2 "running-atdd-cycle"     "FAIL" "$fp"
+}
+
+@test "AT-001 (#272): cross-step same fingerprint does not false-halt check_sameness (step arg)" {
+  # Given: design phase 最終行 + impl iteration 1 が同一 fingerprint の混在ログ
+  _make_cross_step_log "$JSONL"
+  # When: check_sameness <log> running-atdd-cycle（#269 再現ケース）
+  run check_sameness "$JSONL" "running-atdd-cycle"
+  # Then: exit code 0（continue）— 同一 step の行が 1 行しかないため sameness 不成立
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-002 (#272): same-step consecutive same fingerprint still halts (no regression)" {
+  # Given: 同一 step（running-atdd-cycle）の行が連続 2 行、同一 fingerprint
+  local fp
+  fp=$(printf '%s' "[]" | fingerprint)
+  record_iteration "$JSONL" 1 "running-atdd-cycle" "FAIL" "$fp"
+  record_iteration "$JSONL" 2 "running-atdd-cycle" "FAIL" "$fp"
+  # When: check_sameness <log> running-atdd-cycle
+  run check_sameness "$JSONL" "running-atdd-cycle"
+  # Then: exit code 非ゼロ（halt）— 同一 step 内の反復停滞は従来どおり検出
+  [ "$status" -ne 0 ]
+}
+
+@test "AT-003 (#272): omitting step arg preserves legacy whole-log behavior (backward compat)" {
+  # Given: AT-001 と同じクロス step 同一 fingerprint ログ
+  _make_cross_step_log "$JSONL"
+  # When: check_sameness <log>（step 引数なし）
+  run check_sameness "$JSONL"
+  # Then: exit code 非ゼロ（従来どおり末尾 2 行比較で halt）
+  [ "$status" -ne 0 ]
+}
+
+@test "AT-004a (#272): check_stuck excludes cross-step rows from window population" {
+  # Given: 別 step の行を挟み、対象 step（running-atdd-cycle）の fingerprint はすべて異なる
+  local fp1 fp2 fp3 fpD
+  fp1=$(printf '%s' "fail-A" | fingerprint)
+  fp2=$(printf '%s' "fail-B" | fingerprint)
+  fp3=$(printf '%s' "fail-C" | fingerprint)
+  fpD=$(printf '%s' "[]"     | fingerprint)  # design phase 行の fingerprint
+  record_iteration "$JSONL" 1 "running-atdd-cycle"     "FAIL" "$fp1"
+  record_iteration "$JSONL" 2 "writing-plan-and-tests" "PASS" "$fpD"  # 別 step
+  record_iteration "$JSONL" 3 "running-atdd-cycle"     "FAIL" "$fp2"
+  record_iteration "$JSONL" 4 "running-atdd-cycle"     "FAIL" "$fp3"
+  # When: check_stuck <log> 3 running-atdd-cycle
+  run check_stuck "$JSONL" 3 "running-atdd-cycle"
+  # Then: exit code 0（continue）— 対象 step 系列は正当な前進
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-004b (#272): check_stuck detects same-step flatline (A,A,A) with step arg" {
+  # Given: 同一 step の行が window 内で A,A,A
+  local fp
+  fp=$(printf '%s' "fail-X" | fingerprint)
+  record_iteration "$JSONL" 1 "running-atdd-cycle" "FAIL" "$fp"
+  record_iteration "$JSONL" 2 "running-atdd-cycle" "FAIL" "$fp"
+  record_iteration "$JSONL" 3 "running-atdd-cycle" "FAIL" "$fp"
+  # When: check_stuck <log> 3 running-atdd-cycle
+  run check_stuck "$JSONL" 3 "running-atdd-cycle"
+  # Then: exit code 非ゼロ（halt）— AL-5 の無限ループ防止が維持される
+  [ "$status" -ne 0 ]
+}
+
+@test "AT-004c (#272): check_stuck detects same-step oscillation (A,B,A) with step arg" {
+  # Given: 同一 step の行が window 内で A,B,A（fix-one / break-another）
+  local fpA fpB
+  fpA=$(printf '%s' "fail-A" | fingerprint)
+  fpB=$(printf '%s' "fail-B" | fingerprint)
+  record_iteration "$JSONL" 1 "running-atdd-cycle" "FAIL" "$fpA"
+  record_iteration "$JSONL" 2 "running-atdd-cycle" "FAIL" "$fpB"
+  record_iteration "$JSONL" 3 "running-atdd-cycle" "FAIL" "$fpA"
+  # When: check_stuck <log> 3 running-atdd-cycle
+  run check_stuck "$JSONL" 3 "running-atdd-cycle"
+  # Then: exit code 非ゼロ（halt）
+  [ "$status" -ne 0 ]
+}
+
 # --- #252: placeholder fingerprint regression pin ---------------------------
 
 @test "placeholder fingerprint (#252): the literal placeholder hashes to the incident constant and is absent from the skill (AC5)" {

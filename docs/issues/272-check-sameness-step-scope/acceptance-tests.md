@@ -35,10 +35,15 @@
   - When: `check_stuck <log> 3 <対象 step>` を実行する
   - Then: exit code 0（continue）— 別 step 行との重複起因では発火しない
 
-- [x] [regression] AT-004b: 同一 step 内の真の停滞（flatline / oscillation）は halt
-  - Given: 対象 step の行が window 内で A,A,A（flatline）または A,B,A（oscillation）の fingerprint 系列を持つログがある
+- [x] [regression] AT-004b: 同一 step 内の真の停滞（flatline: A,A,A）は halt
+  - Given: 対象 step の行が window 内で A,A,A（flatline）の fingerprint 系列を持つログがある
   - When: `check_stuck <log> 3 <対象 step>` を実行する
   - Then: exit code 非ゼロ（halt）— AL-5 の無限ループ防止の検出力が維持される
+
+- [x] [regression] AT-004c: 同一 step 内の真の停滞（oscillation: A,B,A）は halt
+  - Given: 対象 step の行が window 内で A,B,A（oscillation）の fingerprint 系列を持つログがある
+  - When: `check_stuck <log> 3 <対象 step>` を実行する
+  - Then: exit code 非ゼロ（halt）— fix-one / break-another の振動パターンも無限ループ防止として検出される
 
 ## AT-005: Workflow script の step 引き渡し構造 pin — US-3
 
