@@ -76,7 +76,7 @@ Invoking this skill opts into the **Workflow tool**. For each step S of the curr
 5. **satisfaction oracle** — `AND(atGreen [deterministic], coverageOk, overall_correctness == "correct", confirmed P0/P1 == 0)`. A finding with an absent / non-numeric `priority` is treated as **blocking** (fail-safe), and a confirmed P0/P1 blocks **regardless of `evidence_ref`** — AL-4 is fail-safe, never fail-open.
    - satisfied → advance to the next step.
    - not satisfied → feed the findings **verbatim** back into generate (fix) and re-loop.
-6. **safety rails** (`lib/autopilot_convergence.sh`, AL-5) — record the iteration to the JSONL, then check the rails; a **non-zero `record_iteration`** (corrupt / empty fingerprint) is itself a halt. **Halt + escalate to a human** on any.
+6. **safety rails** (`lib/autopilot_convergence.sh`, AL-5) — record the iteration to the JSONL, then check the rails, including `check_log_integrity` against the orchestrator-tracked expected line count (#262: a deleted / rolled-back audit log silently resets sameness & stuck — fail-closed instead); a **non-zero `record_iteration`** (corrupt / empty fingerprint) is itself a halt. **Halt + escalate to a human** on any.
 
 ```js
 export const meta = {
@@ -85,13 +85,11 @@ export const meta = {
   phases: [{ title: 'Generate' }, { title: 'Review' }, { title: 'AT-gate' }, { title: 'Coverage-gate' }, { title: 'Rails' }],
 }
 
-// Defensive args parse (#252/#256): the harness may deliver args as a JSON
-// string; running with issue=undefined breaks AL-2 anchoring — fail closed.
+// Defensive args parse (#252/#256): the harness may deliver args as a JSON string; running with issue=undefined breaks AL-2 anchoring — fail closed.
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
 const NNN = A.issue
 if (!Number.isInteger(NNN)) throw new Error('args.issue missing or non-integer — refusing to run with an unresolvable issue dir')
-// Two-phase split (#249): 'design' ends at the human design-approval gate; 'impl' runs after it.
-// No default (#256): stringified args left A.phase undefined and silently ran impl as design.
+// Two-phase split (#249): 'design' ends at the human design-approval gate; 'impl' runs after it. No default (#256): stringified args left A.phase undefined and silently ran impl as design.
 if (A.phase !== 'design' && A.phase !== 'impl') throw new Error('args.phase missing or invalid — refusing to default to design')
 const PHASE = A.phase
 // #261: a gate rejection re-runs the phase as a NEW Workflow call where prevFindings
@@ -109,8 +107,7 @@ const STEPS = A.steps || (PHASE === 'design'
 const MAX_ITERATIONS = A.maxIterations || {
   'extracting-user-stories': 4, 'writing-plan-and-tests': 4, 'running-atdd-cycle': 8,
 }
-// The step that produces an executable AT suite. For it (and only it) the
-// deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
+// The step that produces an executable AT suite. For it (and only it) the deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
 const AT_STEP = A.atStep || 'running-atdd-cycle'
 const AT_COMMAND = A.atCommand || "the project's Acceptance Test command (e.g. `bats tests/acceptance/`)"
 // Fail-closed preconditions. impl: the AT step must be looped, or the AT +
@@ -118,8 +115,7 @@ const AT_COMMAND = A.atCommand || "the project's Acceptance Test command (e.g. `
 // AT step must NOT be looped — ATDD runs only after the design-approval gate (AL-1).
 if (PHASE === 'impl' && !STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
 if (PHASE === 'design' && STEPS.includes(AT_STEP)) throw new Error(`design phase must not loop ${AT_STEP} — ATDD runs only after the design-approval gate`)
-// The issue dir is slug-suffixed (docs/issues/<NNN>-<slug>/); the audit step
-// resolves it by glob at write time — a bare-number dir would break AL-4.
+// The issue dir is slug-suffixed (docs/issues/<NNN>-<slug>/); the audit step resolves it by glob at write time — a bare-number dir would break AL-4.
 const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
 // AL-2 anchor, per phase. The pin covers ONLY artifacts a human approved BEFORE
 // this phase — never an artifact this phase's loop may edit (#249: pinning
@@ -129,9 +125,7 @@ const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
 const PIN_NAME = PHASE === 'design' ? 'autopilot-prd.pin' : 'autopilot-design.pin'
 const ANCHOR_CAT = PHASE === 'design' ? 'cat <dir>/prd.md' : 'cat <dir>/prd.md <dir>/user-stories.md'
 
-// Consumer schema. findings items REQUIRE priority + evidence_ref so the oracle
-// can never read an undefined priority as "not blocking" (fail-open). atGreen
-// is NOT taken from the reviewer here — it comes from the deterministic gate.
+// Consumer schema. findings items REQUIRE priority + evidence_ref so the oracle can never read an undefined priority as "not blocking" (fail-open). atGreen is NOT taken from the reviewer here — it comes from the deterministic gate.
 const VERDICT_SCHEMA = {
   type: 'object',
   required: ['verdict', 'overall_correctness'],
@@ -154,8 +148,7 @@ const VERDICT_SCHEMA = {
   },
 }
 
-// Normalize an LLM-supplied priority; an absent / non-numeric value is treated
-// as 0 (blocker) so a malformed finding can never slip through as "not blocking".
+// Normalize an LLM-supplied priority; an absent / non-numeric value is treated as 0 (blocker) so a malformed finding can never slip through as "not blocking".
 const priorityOf = (f) => {
   if (typeof f.priority === 'number') return f.priority
   const m = String(f.priority ?? '').match(/\d+/)
@@ -174,8 +167,12 @@ const reviewScope = (step) => PHASE === 'impl'
 // FREEZE (AL-2) — pin this phase's human-approved anchor ONCE, before any
 // iteration. On re-entry (design-gate rejection) the pin already exists: verify
 // it still matches instead of failing the freeze. Refuse on mismatch / write failure.
-const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and freeze this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh. If "<dir>/${PIN_NAME}" does not exist: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\` (pins once). If it already exists: \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (the anchor must still match the frozen pin). Report pinned = (that command's exit code === 0).`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned'], properties: { pinned: { type: 'boolean' } } } })
+const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and freeze this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh. If "<dir>/${PIN_NAME}" does not exist: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\` (pins once). If it already exists: \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (the anchor must still match the frozen pin). Report pinned = (that command's exit code === 0). Also report logLines = the current non-empty line count of the audit log (${LOG_GLOB}; \`grep -c . <log>\`), or 0 if the file does not exist.`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned', 'logLines'], properties: { pinned: { type: 'boolean' }, logLines: { type: 'integer' } } } })
 if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'anchor-pin-failed' }
+// #262 baseline absorption: lines already in the log (re-entry after a design-gate
+// rejection, or an earlier phase) are the truth. From here the expected line count
+// lives in JS process memory — deleting the log cannot delete the expectation.
+let recorded = frozen.logLines
 
 for (const step of STEPS) {
   const max = MAX_ITERATIONS[step] || 4
@@ -223,12 +220,15 @@ ${JSON.stringify(blocking)}
 END-PAYLOAD
 Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`. Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
     if (rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
+    recorded++ // #262: a successful record_iteration = exactly one more log line, mirrored in memory
     if (converged) { log(`${step}: converged at iteration ${it}`); break }
     // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
     //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
     //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
-    const r = await agent(`Via lib/autopilot_convergence.sh, run all four and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>"; (d) check_stuck "<log>" 3.`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' } } } })
-    const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
+    const r = await agent(`Via lib/autopilot_convergence.sh, run all five and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>"; (d) check_stuck "<log>" 3; (e) check_log_integrity "<log>" ${recorded} (#262: the log must hold EXACTLY the lines the orchestrator recorded — a deleted / rolled-back log silently resets sameness & stuck).`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit', 'logIntegrityExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' }, logIntegrityExit: { type: 'integer' } } } })
+    // log-integrity outranks sameness / stuck: both read history FROM the log,
+    // so their exit codes are meaningless when the log itself is compromised.
+    const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.logIntegrityExit !== 0 ? 'log-integrity' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
     // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
     if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
     prevFindings = verdict.findings?.length ? verdict.findings : null
@@ -237,7 +237,7 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
 
-The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
+The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
 
 ## Responsibility Boundary
 
