@@ -33,4 +33,4 @@ autopilot 運用（#262/#261/#259 で 3 件同時実行中）により Gate ①/
 
 ## Open Questions
 
-- defining-requirements の Flow 順序変更は非 autopilot（通常フロー）にも適用するか、autopilot 時のみのオーバーライドにするか → plan で決定（推奨: 通常フローにも適用 — commit moment = Draft PR moment はモード非依存のため）
+- ~~defining-requirements の Flow 順序変更は非 autopilot（通常フロー）にも適用するか、autopilot 時のみのオーバーライドにするか~~ → **回答（Gate ① 承認時）: 通常フローにも適用する**（commit moment = Draft PR moment はモード非依存）
