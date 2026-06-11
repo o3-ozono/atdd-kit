@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.8.1] - 2026-06-11
+
+### Fixed
+
+- **`.gitignore` に Python バイトコード（`__pycache__/` / `*.pyc`）を追加**（#260）。`hooks/main_branch_guard.py` の実行で自動生成される `hooks/__pycache__/*.pyc` が untracked のまま残り、`git add -A` でコミットに混入するリスクがあった（#254/#256 のモデルベンチマークで 3 回実際に発生し、レビューで major 判定）。Zero Dependencies 原則（"Pure markdown + bash scripts only"）に反するバイナリの履歴汚染を入口で防止する。
+
 ## [3.8.0] - 2026-06-11
 
 ### Added

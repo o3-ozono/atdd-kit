@@ -17,3 +17,5 @@ Thumbs.db
 *.local.*
 *.secret
 *.secrets
+__pycache__/
+*.pyc
