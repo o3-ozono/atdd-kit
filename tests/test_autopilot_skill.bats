@@ -229,7 +229,7 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # #272: payload が oracle 状態込みの新形式であること（blocking を含む）
   grep -qE 'JSON\.stringify\(\{ atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
   # 旧 JSON.stringify(blocking) 単独 payload が残っていないこと
-  ! grep -qE 'BEGIN-PAYLOAD' "$SKILL_FILE" || true  # marker は残る（pass 条件を確認済み）
+  ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
   grep -qi 'quoted heredoc' "$SKILL_FILE"
 }
 

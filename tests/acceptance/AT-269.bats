@@ -144,7 +144,11 @@
 # Given: PR #270 diff including this Issue's changes
 # When:  CHANGELOG.md and .claude-plugin/plugin.json are inspected
 # Then:  CHANGELOG.md has [3.11.2] ### Fixed entry referencing #269;
-#        plugin.json version is 3.11.2
+#        plugin.json stays consistent with the topmost CHANGELOG release
+#
+# #272 hardening: the original literal pin (`version is 3.11.2`) false-failed on
+# the very next version bump — a regression test must hold on any future branch,
+# so the plugin.json assertion is the CHANGELOG-consistency invariant instead.
 
 @test "#269 AT-004: CHANGELOG.md has 3.11.2 entry" {
   grep -q '3\.11\.2' CHANGELOG.md
@@ -154,27 +158,17 @@
   grep -A5 '3\.11\.2' CHANGELOG.md | grep -q '269'
 }
 
-@test "#269 AT-004: plugin.json version is 3.11.2" {
-  grep '"version"' .claude-plugin/plugin.json | grep -q '3\.11\.2'
+@test "#269 AT-004: plugin.json version matches the topmost CHANGELOG release" {
+  top=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | tr -d '#[] ')
+  [ -n "$top" ]
+  grep '"version"' .claude-plugin/plugin.json | grep -qF "\"$top\""
 }
 
 # AT-005: Change scope limited to documentation side (CS-2)
 #
-# Given: Diff between working branch and main
-# When:  Changed file list is inspected (git diff main --name-only)
-# Then:  Changes limited to the allowlist (workflow-detail.md / CHANGELOG.md /
-#        plugin.json / tests/ / docs/issues/269-*); in particular
-#        skills/reviewing-deliverables/SKILL.md and agents/ directory unchanged
-
-@test "#269 AT-005: changes vs main are limited to the documentation-side allowlist" {
-  run bash -c "git diff main --name-only | grep -vE '^(docs/workflow/workflow-detail\.md|CHANGELOG\.md|\.claude-plugin/plugin\.json|tests/|docs/issues/269-)'"
-  [ -z "$output" ]
-}
-
-@test "#269 AT-005: skills/reviewing-deliverables/SKILL.md is not changed vs main" {
-  ! git diff main --name-only | grep -q 'skills/reviewing-deliverables/SKILL\.md'
-}
-
-@test "#269 AT-005: agents/ directory files are not changed vs main" {
-  ! git diff main --name-only | grep -q '^agents/'
-}
+# The original AT-005 asserted `git diff main` scope (allowlist + denylist).
+# That guarantee was one-time by nature — it verified PR #270's scope and was
+# satisfied at merge; on any LATER branch (e.g. #272 touching lib/, #271
+# touching agents/) the same asserts false-fail, blocking unrelated AT gates.
+# Removed as executable regression (#272); the one-time verification remains
+# recorded in docs/issues/269-*/acceptance-tests.md and PR #270.
