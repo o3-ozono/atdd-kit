@@ -51,7 +51,7 @@
 - [ ] [planned] AT-007: テストハーネス変更でも CHANGELOG 更新と patch version bump を伴う
   - Given: 本 Issue の変更を含む Draft PR の diff
   - When: `CHANGELOG.md` と `.claude-plugin/plugin.json` を検査する（`bats tests/test_changelog_format.bats` / `scripts/check-plugin-version.sh`）
-  - Then: CHANGELOG.md に `[3.11.3]` の `### Fixed` エントリ（#278 参照付き）が存在し、plugin.json の `version` が `3.11.3`（3.11.2 からの patch bump）で CHANGELOG 最新エントリと一致する
+  - Then: CHANGELOG.md に `[3.11.4]` の `### Fixed` エントリ（#278 参照付き）が存在し、plugin.json の `version` が `3.11.4`（3.11.3 からの patch bump）で CHANGELOG 最新エントリと一致する
 
 ## AT-008: 変更スコープが Non-Goals を侵食しない
 

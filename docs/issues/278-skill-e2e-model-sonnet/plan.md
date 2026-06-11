@@ -52,10 +52,10 @@
 - [ ] `tests/README.md` の test_skill_test_coverage.bats のテーブル行説明を、モデル指定 pin を含む内容に同期する
 - [ ] verify: `grep -n 'test_skill_test_coverage' tests/README.md` の説明が実ファイルの @test 構成（Unit+E2E 揃い検証 + モデル指定 pin）と一致する
 
-- [ ] `CHANGELOG.md` の `## [Unreleased]` 直下に `## [3.11.3]` の `### Fixed` エントリを追加する（#278: Skill E2E の claude 起動に `--model`（デフォルト sonnet・`SKILL_E2E_MODEL` で上書き）を指定し、モデル未指定によるトークン過大消費を解消）
+- [ ] `CHANGELOG.md` の `## [Unreleased]` 直下に `## [3.11.4]` の `### Fixed` エントリを追加する（#278: Skill E2E の claude 起動に `--model`（デフォルト sonnet・`SKILL_E2E_MODEL` で上書き）を指定し、モデル未指定によるトークン過大消費を解消）
 - [ ] verify: `bats tests/test_changelog_format.bats` が green、エントリに #278 参照が含まれる
 
-- [ ] `.claude-plugin/plugin.json` の version を `3.11.2` → `3.11.3` に bump する（テストハーネスのコスト修正 = patch）
+- [ ] `.claude-plugin/plugin.json` の version を `3.11.3` → `3.11.4` に bump する（テストハーネスのコスト修正 = patch）
 - [ ] verify: `scripts/check-plugin-version.sh` が green、CHANGELOG 最新エントリと version が一致する
 
 - [ ] スコープ最終確認: 変更ファイルが前提のリストに限定されていることを突き合わせる（Non-Goals の `tests/fixtures/headless/` / `scripts/run-skill-e2e.sh` / `docs/guides/headless-skill-testing.md` が無変更）
