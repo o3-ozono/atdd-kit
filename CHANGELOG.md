@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-06-11
+
+### Fixed
+
+- **autopilot 埋め込み Workflow script の `args.phase` フォールバック既定値を廃止 — fail-closed 検証に置換**（#256）。旧実装の `const PHASE = A.phase === 'impl' ? 'impl' : 'design'` は、Workflow `args` が JSON 文字列で届くと（#251 で実際に発生）`A.phase` が undefined になり **impl 実行が無言で design に化ける**危険があった（設計承認ゲートの実質迂回）。`if (A.phase !== 'design' && A.phase !== 'impl') throw new Error('args.phase missing or invalid — refusing to default to design')` に置換し、ガードは FREEZE（`pin_anchor`）・イテレーションループより前の args parse 直後に配置（不正 args では 1 イテレーションも走らない）。あわせて Flow 節の design / impl 両 invoke 指示に「args は JSON オブジェクトとして渡す（文字列化した JSON を渡さない）」注記を追加し、`tests/test_autopilot_skill.bats` に回帰 pin 1 件（ガード存在・旧フォールバック不在・注記 2 箇所を検証）を追加。`lib/autopilot_convergence.sh` と Workflow ツール側は無変更。本エントリは 3.7.2 の #252 エントリで**先行対処**済みの defensive parse / `args.issue` ガードに続く #256 の残差分（phase フォールバック廃止）である。
+
 ## [3.7.2] - 2026-06-10
 
 ### Fixed
