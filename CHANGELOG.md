@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.8.2] - 2026-06-11
+
+### Fixed
+
+- **成果物提示を Draft PR ベースに統一 — workflow-detail.md のレガシー記述矛盾と defining-requirements の承認後書き込み順序を修正**（#267）。(1) `docs/workflow/workflow-detail.md` Execution Mode 節のレガシー行「Deliverables flow through Issue / PR comments … never written to ad-hoc repository paths」を Workflow 表と整合する規定（成果物は作業ブランチへコミットし **Draft PR 差分**として提示、Issue/PR コメントは**状態通知・承認依頼のみ**）に置換。(2) `skills/defining-requirements/SKILL.md` の Flow を「draft 書き込み → commit/push/Draft PR 作成 → 承認ゲート（PR 上）」の順序に変更し、承認ゲートはターミナルに PR リンク + 判断が必要な点のみを提示（全文展開禁止）、修正は再 commit/push で PR 差分を更新。規定はモード非依存（どの呼び出し元から実行されても同一 — 'autopilot' の語は不使用で既存 C1 pin と両立）。(3) `skills/autopilot/SKILL.md` の Dialog economy 節に提示チャネル規定を追記: Gate ①/② とも成果物本体は Draft PR 差分として提示し、承認依頼・状態通知の全チャネル同期（ターミナル + GitHub に同一内容）は維持。`rules/atdd-kit.md` は無変更（CS-3）。回帰 pin として `tests/test_docs_restructure.bats` に 2 件、`tests/test_defining_requirements_skill.bats` に 4 件、`tests/test_autopilot_skill.bats` に 3 件を追加し、`tests/README.md` を同期。
+
 ## [3.8.1] - 2026-06-11
 
 ### Fixed
