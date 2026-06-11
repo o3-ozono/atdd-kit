@@ -4,7 +4,7 @@
      各タスクは単一の操作に限定し、verification で完了条件を即確認できる粒度にする。 -->
 
 対象 Issue: #261 / ブランチ: `fix/261-autopilot-gate-rejection`
-変更対象は `skills/autopilot/SKILL.md` と `tests/test_autopilot_skill.bats` のみ（+ version/CHANGELOG）。`lib/autopilot_convergence.sh`・`reviewing-deliverables`・Workflow ツール（harness）側は変更しない（PRD Non-Goals）。
+変更対象は `skills/autopilot/SKILL.md` と `tests/test_autopilot_skill.bats`、および両ディレクトリの `README.md`（`skills/README.md` / `tests/README.md` — DEVELOPMENT.md「Directory READMEs」規約: これらのディレクトリ配下を変更したら同一 PR で対応 README を更新する）のみ（+ version/CHANGELOG）。`lib/autopilot_convergence.sh`・`reviewing-deliverables`・Workflow ツール（harness）側は変更しない（PRD Non-Goals）。
 
 ## 決定事項（PRD Open Question の解決）
 
@@ -32,6 +32,9 @@
 - [ ] バリデーション・シードの位置を目視確認する: バリデーションは args parse 直後（= FREEZE `freeze:anchor` より前）にあり、不正 args では 1 イテレーションも走らない。シードは step ループ内の iteration 開始前にある
 - [ ] verify: SKILL.md 内で `rejectionFindings` バリデーションの行番号が `freeze:anchor` の行番号より小さい
 
+- [ ] SKILL.md の行数バジェット（#254 pin: 最大 260 行、現在 248 行）を管理する: 上記の追加（3 ガード + 理由コメント + Flow step 3 手順 + gate ② 散文）見込み +10〜16 行はバジェット到達圏のため、編集完了後に `wc -l skills/autopilot/SKILL.md` を確認し、260 行を超える場合はまず新規・既存の散文を圧縮して 260 行以内に収める。圧縮で本質（3 ガード・4 点差し戻し手順・規律文言）を失う場合のみ、#254 の前例（240 → 260）に倣い `tests/test_autopilot_skill.bats` の line budget pin を理由コメント付きで引き上げる（pin 引き上げは最終手段）
+- [ ] verify: `wc -l skills/autopilot/SKILL.md` が line budget pin の上限以下で、`bats tests/test_autopilot_skill.bats -f "line budget"` が pass する
+
 ## Testing
 
 - [ ] `tests/test_autopilot_skill.bats` に `#261 design-gate rejection plumbing pins` セクションを追加し、配管の pin を 1 本目として追加する: (a) args parse 部に `rejectionFindings` バリデーション（配列・evidence_ref 必須・design 限定）が存在する、(b) `prevFindings` 初期化が `REJECTION_FINDINGS` を参照する — を grep で pin する（#252/#256 の pin と同形式）
@@ -43,7 +46,7 @@
 - [ ] BATS スイート全体を実行し、既存 pin（#252 parse / issue ガード、#256 phase ガード、AL-2 pin 系、design-gate rejection 文言）に回帰がないことを確認する
 - [ ] verify: `bats tests/test_autopilot_skill.bats` が全件 pass する
 
-- [ ] 変更ファイルが `skills/autopilot/SKILL.md` / `tests/test_autopilot_skill.bats` / `.claude-plugin/plugin.json` / `CHANGELOG.md` / `docs/issues/261-*` に限定されていることを確認する（Non-Goals: `lib/autopilot_convergence.sh`・reviewing-deliverables・harness 側は不変更）
+- [ ] 変更ファイルが `skills/autopilot/SKILL.md` / `skills/README.md` / `tests/test_autopilot_skill.bats` / `tests/README.md` / `.claude-plugin/plugin.json` / `CHANGELOG.md` / `docs/issues/261-*` に限定されていることを確認する（Non-Goals: `lib/autopilot_convergence.sh`・reviewing-deliverables・harness 側は不変更）
 - [ ] verify: `git diff --name-only main` に上記以外のファイル、特に `lib/autopilot_convergence.sh` と `skills/reviewing-deliverables/` 配下が含まれない
 
 ## Finishing
@@ -53,6 +56,12 @@
 
 - [ ] `CHANGELOG.md` に Added エントリ（design ゲート差し戻しコメントの `rejectionFindings` 配管 + 全体差し戻し・finding 分割規律の明文化、refs #261）を追加する
 - [ ] verify: `grep -n '#261' CHANGELOG.md` がヒットし、Keep a Changelog 形式に沿っている
+
+- [ ] `skills/README.md` の autopilot 行に #261 の差し戻し配管（design ゲート非 'ok' コメント → `rejectionFindings` → design phase 再実行、部分承認は承認ではない）への言及を追記する（DEVELOPMENT.md「Directory READMEs」: `skills/` 配下の変更と同一 PR で README を更新 — #254/#256 と同様）
+- [ ] verify: `grep -n '#261' skills/README.md` が autopilot 行でヒットする
+
+- [ ] `tests/README.md` の `test_autopilot_skill.bats` 行に #261 の pin（design-gate rejection 配管: `rejectionFindings` バリデーション・シード・全体差し戻し規律）への言及を追記する
+- [ ] verify: `grep -n '#261' tests/README.md` が `test_autopilot_skill.bats` 行でヒットする
 
 - [ ] ドキュメント整合性チェック: SKILL.md の Human gates 節・Flow 節・Mechanism 節、および `docs/methodology/autopilot-iron-law.md` の記述が新配管（差し戻しコメント → `rejectionFindings` → iteration 1 generate）と矛盾していないか通読する
 - [ ] verify: 関連ドキュメントが変更内容と整合している（「コメントが findings として再投入される」と約束しながら配管が無い、という乖離記述が残っていない）

@@ -25,7 +25,7 @@
 - [ ] [planned] AT-003: priority 無指定の差し戻し finding は blocker として扱われる
   - Given: `prevFindings` への `REJECTION_FINDINGS` シード処理
   - When: BATS pin が script 本文を検査する
-  - Then: シード時に既存の `priorityOf` 正規化（absent / non-numeric → 0 = blocker）が適用されており、新たな正規化ロジックは導入されていない
+  - Then: `prevFindings` の初期化（シード）行が既存の `priorityOf` を参照している — すなわち既存の正規化（absent / non-numeric priority → 0 = blocker）がシード時に適用される（grep で静的に pin 可能な正の形のアサーション。Plan の初期化行設計 `prevFindings = REJECTION_FINDINGS ? REJECTION_FINDINGS.map((f) => ({ ...f, priority: priorityOf(f) })) : null` と対応）
 
 ## AT-004: 部分承認は承認ではない — 全体差し戻し規律の明文化（US-2）
 
@@ -46,14 +46,14 @@
 - [ ] [planned] AT-006: #261 で追加した pin を含む BATS スイート全体が pass する
   - Given: `tests/test_autopilot_skill.bats` に #261 の pin テストが追加されている
   - When: `bats tests/test_autopilot_skill.bats` を実行する
-  - Then: 追加テストを含む全テストが pass し、既存 pin（#252 parse / issue ガード、#256 phase ガード、AL-2 pin 系、design-gate rejection 文言）に回帰がない
+  - Then: 追加テストを含む全テストが pass し、既存 pin（#252 parse / issue ガード、#256 phase ガード、AL-2 pin 系、design-gate rejection 文言、line budget pin（#254: SKILL.md ≤ 260 行 — 行数超過はこのスイート実行で決定的に検出される））に回帰がない
 
 ## AT-007: スコープの限定（PRD Non-Goals）
 
-- [ ] [planned] AT-007: 変更が SKILL.md の配管・規律明文化 + BATS pin に限定されている
+- [ ] [planned] AT-007: 変更が SKILL.md の配管・規律明文化 + BATS pin + 対応 README 同期に限定されている
   - Given: 本 Issue のブランチ `fix/261-autopilot-gate-rejection` の差分
   - When: `git diff --name-only main` で変更ファイル一覧を取得する
-  - Then: `skills/autopilot/SKILL.md` / `tests/test_autopilot_skill.bats` / `.claude-plugin/plugin.json` / `CHANGELOG.md` / `docs/issues/261-*` 以外の変更がなく、特に `lib/autopilot_convergence.sh`・`skills/reviewing-deliverables/` 配下・Workflow ツール（harness）側の変更を含まない
+  - Then: `skills/autopilot/SKILL.md` / `skills/README.md` / `tests/test_autopilot_skill.bats` / `tests/README.md` / `.claude-plugin/plugin.json` / `CHANGELOG.md` / `docs/issues/261-*` 以外の変更がなく（両 README は DEVELOPMENT.md「Directory READMEs」規約による同一 PR 内の必須同期）、特に `lib/autopilot_convergence.sh`・`skills/reviewing-deliverables/` 配下・Workflow ツール（harness）側の変更を含まない
 
 <!-- 実装開始後は [planned] → [draft] に変更する -->
 <!-- テストが通過したら [draft] → [green] に変更する -->
