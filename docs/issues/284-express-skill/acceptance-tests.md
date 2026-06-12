@@ -73,7 +73,7 @@
 
 ## AT-010: 最小構成とリリース衛生（CS-3 / CS-4）
 
-- [ ] [planned] AT-010: SKILL.md は最小構成で、テスト・README・CHANGELOG・bump が揃っている
+- [x] [regression] AT-010: SKILL.md は最小構成で、テスト・README・CHANGELOG・bump が揃っている
   - Given: 本 Issue の導入 PR の全変更
   - When: 構成とリリース整備を検査する
   - Then: `skills/express/SKILL.md` が 200 行以内で承認ゲートは APPROVAL-GATE の 1 つのみ（多段ゲート・成果物テンプレート・構造化レビューなし）。`tests/test_express_skill.bats` が存在して green、`tests/test_skill_structure.bats` の `ALL_SKILLS` に express が追加済み、`skills/README.md` / `commands/README.md` / `tests/README.md` が更新され、`CHANGELOG.md` に Added エントリ + `plugin.json` が `3.14.0` へ minor bump されている
