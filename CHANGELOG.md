@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.1] - 2026-06-13
+
+### Fixed
+
+- **sameness/stuck rails の比較母集団を同一 step の FAIL 行のみに絞る**（#277）。`_fingerprints` に `grep -F '"verdict":"FAIL"'` フィルタを追加し、`check_sameness` / `check_stuck` の比較母集団から PASS 行を除外する。これにより、空 blocking findings（= 同一 fingerprint）の PASS イテレーションが続いた後に FAIL が来ても偽 stuck/sameness halt が発生しなくなる（stockbot-jp Issue #61 の設計ゲート差し戻し再入シナリオで確認）。step 引数の有無にかかわらず全モードで適用（Gate ① 全モード）。意味論ピン: FAIL→PASS→FAIL の跨 run 同一 fingerprint 再発は引き続き halt — FAIL-only 母集団では PASS が除外されて FAIL 行が隣接するため「同じ失敗の繰り返し」として正当に検出される（AT-006）。`tests/test_autopilot_convergence.bats` に AT-001〜AT-006（計 4 テスト追加・AT-003 更新）、合計 49 件全 green。
 ## [3.14.0] - 2026-06-12
 
 ### Added
