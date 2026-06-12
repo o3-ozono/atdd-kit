@@ -106,6 +106,7 @@
     "${repo_root}/agents/" \
     "${repo_root}/docs/methodology/" \
     "${repo_root}/docs/guides/" \
+    "${repo_root}/docs/workflow/" \
     "${repo_root}/skills/" \
     "${repo_root}/commands/" \
     "${repo_root}/rules/" \
