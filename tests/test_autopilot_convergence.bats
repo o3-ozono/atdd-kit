@@ -492,6 +492,28 @@ _make_cross_step_log() {
   [ "$status" -ne 0 ]
 }
 
+@test "AT-005 (#277): doc-sync — lib comment, SKILL.md, iron-law, skills/README, lib/README all describe FAIL-only semantics" {
+  # Given: FAIL-only フィルタの実装が完了している
+  # When: 5 ドキュメントの FAIL-only 記述を grep で確認する
+  # Then: いずれも「同一 step かつ verdict=FAIL の行のみを比較する」検出意味論が記載されている (#277)
+  local pattern='FAIL.only|FAIL 行のみ|same-step FAIL|#277.*FAIL|FAIL.*#277|FAIL rows only'
+  # lib/autopilot_convergence.sh — _fingerprints / check_sameness / check_stuck コメント
+  run grep -qE "$pattern" "lib/autopilot_convergence.sh"
+  [ "$status" -eq 0 ]
+  # skills/autopilot/SKILL.md — rails 説明
+  run grep -qE "$pattern" "skills/autopilot/SKILL.md"
+  [ "$status" -eq 0 ]
+  # docs/methodology/autopilot-iron-law.md — sameness/stuck 記述
+  run grep -qE "$pattern" "docs/methodology/autopilot-iron-law.md"
+  [ "$status" -eq 0 ]
+  # skills/README.md — autopilot 行
+  run grep -qE "$pattern" "skills/README.md"
+  [ "$status" -eq 0 ]
+  # lib/README.md — autopilot_convergence.sh 行
+  run grep -qE "$pattern" "lib/README.md"
+  [ "$status" -eq 0 ]
+}
+
 @test "AT-006 (#277): cross-run same FAIL fingerprint recurrence halts (FAIL-only adjacency semantics pin)" {
   # 従来 continue → 新規 halt の意図された経路（#277 AT-006）。
   # FAIL-only フィルタにより PASS 行が除外されると、FAIL(A)・PASS・FAIL(A) の並びでは
