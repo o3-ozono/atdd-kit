@@ -8,7 +8,7 @@
 | `tests/test_autopilot_skill.bats` | 新規 7 @test: 境界 canary AT-000 + AT-001〜AT-005（AT-005 = #267/#275 調停句の両節 pin）+ 空配列 `rejectionFindings` の fail-closed 拒否 pin。極性を固定する anchored grep を使う |
 | `tests/e2e/autopilot.bats` | ランタイム挙動検証: 再提示シナリオで LLM がゲートメッセージ本文に diff ハンク提示を回復することを実 `claude -p` で検証 |
 | `docs/issues/275-diff-in-body/` | prd / user-stories / plan / acceptance-tests の 4 点セット |
-| `CHANGELOG.md` + `.claude-plugin/plugin.json` | [3.12.1] エントリ + patch bump（DEVELOPMENT.md §Versioning。main の 3.12.0 取り込み後に採番） |
+| `CHANGELOG.md` + `.claude-plugin/plugin.json` | [3.13.1] エントリ + patch bump（DEVELOPMENT.md §Versioning。main の 3.13.0 取り込み後に採番） |
 | `skills/README.md` / `tests/README.md` | 同一 PR で同期（DEVELOPMENT.md §Directory READMEs） |
 
 ## 設計判断

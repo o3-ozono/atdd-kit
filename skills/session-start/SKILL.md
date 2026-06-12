@@ -99,12 +99,14 @@ platform:
 
 ### E. Plugin Version Check
 - Run `${CLAUDE_PLUGIN_ROOT}/scripts/check-plugin-version.sh "${CLAUDE_PLUGIN_ROOT}" "${HOME}/.claude/plugin-cache"`
-- Parse output:
-  - `FIRST_RUN`: Show current version in report.
+- Parse output (check in this order):
+  - `FIRST_RUN`: 2 lines: `FIRST_RUN`, `<version>`. Show current version in report.
+  - `STALE_SESSION`: 3 lines: `STALE_SESSION`, `<loaded>`, `<cached>`. The current session is running a version older than the marker — another newer session already ran. **Skip E2 Auto-Sync entirely.** Show in report: "⚠ ロード版 v\<loaded\> がマーカー版 v\<cached\> より古い — セッション再起動が必要"
+  - `RESTART_REQUIRED`: 3 lines: `RESTART_REQUIRED`, `<loaded>`, `<installed>`. A newer version is installed locally but not yet active. **Skip E2 Auto-Sync entirely.** Show in report: "⚠ 新版 v\<installed\> がインストール済み — セッション再起動で反映されます"
   - `NO_UPDATE`: No action.
-  - `UPDATED`: 5 lines: `UPDATED`, `<old>`, `<new>`, `VERSIONS: <N>`, `BREAKING: <M>`. Parse counts for report.
+  - `UPDATED`: 5 lines: `UPDATED`, `<old>`, `<new>`, `VERSIONS: <N|UNKNOWN>`, `BREAKING: <M>`. Parse counts for report.
 
-### E2. Auto-Sync on Plugin Update (only if UPDATED)
+### E2. Auto-Sync on Plugin Update (only if UPDATED — STALE_SESSION / RESTART_REQUIRED 時は実行しない)
 
 Read `.claude/config.yml` for `platform`. For each platform:
 
@@ -165,6 +167,8 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 **Agent Teams:** Configured           <-- only if settings.local.json was created or updated in Phase 1-G
 **Updated: v<old> → v<new> (<N> versions, <M> breaking changes). See CHANGELOG.md for details.**  <-- only if UPDATED
 **⚠ BREAKING CHANGE detected**      <-- only if UPDATED and BREAKING > 0
+**⚠ ロード版 v<loaded> がマーカー版 v<cached> より古い — セッション再起動が必要**  <-- only if STALE_SESSION
+**⚠ 新版 v<installed> がインストール済み — セッション再起動で反映されます**        <-- only if RESTART_REQUIRED
 
 ### Plugin Sync  <-- only if UPDATED
 | File | Status |

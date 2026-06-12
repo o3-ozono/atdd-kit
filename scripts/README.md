@@ -6,7 +6,7 @@ Utility scripts used by commands, skills, and CI. All scripts are pure bash (or 
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| [check-plugin-version.sh](check-plugin-version.sh) | Detects plugin version changes for update notifications | Called by `session-start` skill |
+| [check-plugin-version.sh](check-plugin-version.sh) | Detects plugin version changes and session state for update notifications. Outputs one of: FIRST_RUN / NO_UPDATE / UPDATED (5-line format with VERSIONS/BREAKING counts) / RESTART_REQUIRED (installed version newer than loaded — restart needed) / STALE_SESSION (loaded version older than cached marker — stale session detected). All detection is local-file-only with no network access. | Called by `session-start` skill |
 | [measure-footprint.sh](measure-footprint.sh) | Static context/token footprint measurement and regression detection | `measure-footprint.sh measure <name>` / `--check` / `--update` |
 | [start-session.sh](start-session.sh) | Starts Claude Code session | Run manually to start a session |
 | [pr-screenshot-table.sh](pr-screenshot-table.sh) | Adds before/after screenshot comparison tables to PR descriptions | Called during PR creation |

@@ -7,11 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.12.1] - 2026-06-12
+## [3.13.1] - 2026-06-12
 
 ### Fixed
 
 - **autopilot の User gate 提示に Diff-in-body（差分の本文内提示）を必須化**（#275）。設計承認ゲート（Flow step 3）とマージゲート引き継ぎ（step 5）の提示が要約のみで、ユーザーが diff を見るのに毎回追加要求が必要だった（stockbot-jp Issue #61 の運用で発生）。`skills/autopilot/SKILL.md` に追記: (1) **step 3** — ゲートメッセージ本文（セッション内 + GitHub ゲートコメントの両方）への判断材料インライン提示。差し戻し修正後の再提示は finding ごとに整理した diff ブロック + key lines（= AC を直接実装する行・公開インターフェースを変える行・rejection finding に引用された行）、初回提示は各成果物の key decisions（= 覆すと少なくとも 1 つの AC か plan のステップ構成が変わる判断。整形上の選択や Issue 本文から導出可能な事項 (#254) は対象外）を file/line 参照付きで提示。要約のみの提示（ユーザーに diff を追加要求させる形）を禁止。(2) **step 5** — 実装 diff（per-file stat = `git diff --stat` 形式のサマリ + key hunks = step 3 の key lines を含むハンク）の本文内提示を必須化、green ステータス要約のみを禁止。(3) #261 の `rejectionFindings` バリデーションに**空配列 fail-closed ガード**を追加（`[]` は JS で truthy かつ `.some()` が空虚に false のため、全ガードを素通りして finding ゼロの再提示パスへ到達していた — #276 round-4 レビュー検出）。#267 の提示チャネル規定とは補完関係（成果物本体は引き続き Draft PR diff、インラインハンクは判断根拠であって代替チャネルではない）と明文化。レビュー指摘（#276 round-1/round-2 FAIL）を受け: `tests/test_autopilot_skill.bats` に pin 7 件（境界 canary AT-000: sed 範囲の節見出しリネームによる無音 false-pass を防止 / AT-001〜AT-005: 再提示 diff ハンク・再提示判別条件 / 初回 key decisions / ハンドオフ per-file stat / 操作的定義 / #267-#275 調停句の両節 pin。禁止文言は anchored grep で極性固定 / 空配列 `rejectionFindings` の fail-closed 拒否 pin）、`tests/e2e/autopilot.bats` に US-1 ランタイム回復テスト（実 `claude -p` で再提示シナリオの diff-in-body 回復を検証）を追加。Dialog economy 節（#267）にも補完関係（complements — does not override）を明文化し、再提示の機械判別条件（= `rejectionFindings` 付き再呼び出し, #261）を規定。`docs/issues/275-diff-in-body/`（prd / user-stories / plan / acceptance-tests の 4 点セット）を作成し、`skills/README.md` / `tests/README.md` を同期。
+## [3.13.0] - 2026-06-12
+
+### Added
+
+- **`check-plugin-version.sh` に `RESTART_REQUIRED` / `STALE_SESSION` 検知と CHANGELOG 集計ガードを追加**（#280）。(1) `RESTART_REQUIRED`: `~/.claude/plugins/installed_plugins.json` の当該プロジェクトエントリを読み、インストール済みバージョンがロード中バージョンより新しい場合に出力。セッション再起動を促す。マーカー非更新。(2) `STALE_SESSION`: ロード中バージョンがマーカー版より古い（別の新しいセッションがマーカーを先に更新済み）場合に出力。ダウングレード上書き防止のため E2 Auto-Sync をスキップ。マーカー非更新。(3) CHANGELOG 集計ガード: UPDATED 経路でマーカー版のバージョン見出し（`[x.y.z]`）が CHANGELOG に存在しない場合 `VERSIONS: UNKNOWN` を出力（全件誤集計を防止）。(4) 優先順位: STALE_SESSION > RESTART_REQUIRED > UPDATED/NO_UPDATE/FIRST_RUN。(5) `installed_plugins.json` 不在・パース不能・該当エントリなしの場合は従来動作へフォールバック。(6) `skills/session-start/SKILL.md` の Phase 1-E パース表と E2 Auto-Sync 発火条件・Phase 3 レポートテンプレートを更新。BATS テスト 14 件追加（AT-001〜AT-008 系）。
 
 ## [3.12.0] - 2026-06-12
 
