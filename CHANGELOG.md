@@ -7,11 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.11.3] - 2026-06-12
+## [3.12.1] - 2026-06-12
 
 ### Fixed
 
 - **autopilot の User gate 提示に Diff-in-body（差分の本文内提示）を必須化**（#275）。設計承認ゲート（Flow step 3）とマージゲート引き継ぎ（step 5）の提示が要約のみで、ユーザーが diff を見るのに毎回追加要求が必要だった（stockbot-jp Issue #61 の運用で発生）。`skills/autopilot/SKILL.md` に追記: (1) **step 3** — ゲートメッセージ本文（セッション内 + GitHub ゲートコメントの両方）への判断材料インライン提示。差し戻し修正後の再提示は finding ごとに整理した diff ブロック + key lines（= AC を直接実装する行・公開インターフェースを変える行・rejection finding に引用された行）、初回提示は各成果物の key decisions（= 覆すと少なくとも 1 つの AC か plan のステップ構成が変わる判断。整形上の選択や Issue 本文から導出可能な事項 (#254) は対象外）を file/line 参照付きで提示。要約のみの提示（ユーザーに diff を追加要求させる形）を禁止。(2) **step 5** — 実装 diff（per-file stat + key hunks = step 3 の key lines を含むハンク）の本文内提示を必須化、green ステータス要約のみを禁止。#267 の提示チャネル規定とは補完関係（成果物本体は引き続き Draft PR diff、インラインハンクは判断根拠であって代替チャネルではない）と明文化。レビュー指摘（#276 round-1/round-2 FAIL）を受け: `tests/test_autopilot_skill.bats` に pin 5 件（AT-001〜AT-005: 再提示 diff ハンク / 初回 key decisions / ハンドオフ per-file stat / 操作的定義 / #267-#275 調停句の両節 pin。禁止文言は anchored grep で極性固定）、`tests/e2e/autopilot.bats` に US-1 ランタイム回復テスト（実 `claude -p` で再提示シナリオの diff-in-body 回復を検証）を追加。Dialog economy 節（#267）にも補完関係（complements — does not override）を明文化し、再提示の機械判別条件（= `rejectionFindings` 付き再呼び出し, #261）を規定。`docs/issues/275-diff-in-body/`（prd / user-stories / plan / acceptance-tests の 4 点セット）を作成し、`skills/README.md` / `tests/README.md` を同期。
+
+## [3.12.0] - 2026-06-12
+
+### Removed
+
+- **固定 reviewer agent 6 ファイル削除と agents/ 配下レガシー記述の #234 整合**（refs #271 #234 #269）。(1) `agents/prd-reviewer.md` / `agents/us-reviewer.md` / `agents/plan-reviewer.md` / `agents/code-reviewer.md` / `agents/at-reviewer.md` / `agents/final-reviewer.md` を `git rm` で削除。(2) `agents/README.md` を再構成: 固定 roster 表・Usage 節（五専門 reviewer / final aggregator）を削除し、(a) ディレクトリの現行役割（将来のカスタム agent 置き場）、(b) #259 モデルポリシー blockquote（文言無変更）、(c) レビューは reviewing-deliverables の動的レンズパネル × 並列 Workflow（#234）が担う旨の 3 点構成に置換。(3) `docs/methodology/definition-of-ready.md`・`docs/guides/getting-started.md`・`DEVELOPMENT.md`・`DEVELOPMENT.ja.md`・`README.md`・`README.ja.md` のレガシー参照（prd-reviewer / specialist reviewer subagents / 47 criteria 等）を動的パネル記述に置換。(4) `tests/test_reviewer_subagents.bats`（#186 固定 6 agent smoke test）を削除し、`tests/test_agents_dynamic_panel_align.bats`（回帰 pin: 6 ファイル不存在・レガシー参照 0 件・動的パネル言及確認）を新規追加。`tests/test_issue_105_frontmatter_session_inheritance.bats` AC1/AC2 を glob ベースに書き換え（削除済みファイル参照を除去）。`tests/README.md` を同期。全 BATS suite green 確認済み。
+
+## [3.11.4] - 2026-06-12
+
+### Fixed
+
+- **Skill E2E テストの `claude` 起動に `--model`（デフォルト sonnet・`SKILL_E2E_MODEL` で上書き）を指定し、モデル未指定によるトークン過大消費を解消**（#278）。`tests/e2e/*.bats` 全 11 ファイルの `_run_claude` に `E2E_MODEL="${SKILL_E2E_MODEL:-sonnet}"` 変数定義と `--model "${E2E_MODEL}"` フラグを 3 分岐（`timeout` / `gtimeout` / フォールバック）すべてに追加。回帰 pin 2 件（モデル変数 pin + 全分岐 pin）を `tests/test_skill_test_coverage.bats` に追加し、既存 4 件と合わせて 6 件 green。モデルポリシーを `tests/README.md` の Skill E2E Tests 節に追記。変更スコープは `tests/e2e/*.bats` / `tests/test_skill_test_coverage.bats` / `tests/acceptance/AT-278.bats` / `tests/README.md` / `CHANGELOG.md` / `.claude-plugin/plugin.json` / `docs/issues/278-*` に限定（Non-Goals の `_run_claude` 共通ファイル化・`tests/fixtures/headless/` / `scripts/run-skill-e2e.sh` は無変更）。
+
+## [3.11.3] - 2026-06-12
+
+### Fixed
+
+- **`check_sameness` / `check_stuck` の step スコープ化と audit fingerprint への oracle 状態込み拡張 — 偽 sameness halt（#269 再現）の解消**（#272）。(1) `lib/autopilot_convergence.sh` の `_fingerprints` に省略可能な第 2 引数 `step` を追加: 非空のとき `grep -F "\"step\":\"<step>\""` で該当 step の行に絞り込み、クロス step fingerprint の混入を防ぐ。`check_sameness <jsonl> [step]` / `check_stuck <jsonl> <window> [step]` がそれぞれ `_fingerprints` に step を透過。step 省略時は現行挙動（ログ全体を単一系列）を維持（後方互換）。(2) `skills/autopilot/SKILL.md` の rails ステップを `check_sameness "<log>" "${step}"` / `check_stuck "<log>" 3 "${step}"` に更新し、常に現在の step を渡す。(3) audit ステップの fingerprint payload を `${JSON.stringify(blocking)}` 単独から `${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}` に拡張（oracle gate 状態の変化だけで fingerprint が変わり、偽 sameness を防ぐ）。`uncovered` 変数をループスコープに持ち上げて audit から参照可能にした。(4) 回帰 BATS pin を `tests/test_autopilot_convergence.bats`（AT-001〜004c: 6 件）と `tests/test_autopilot_skill.bats`（AT-005〜006: 2 件）に追加し、全 100 件 green を確認。
 
 ## [3.11.2] - 2026-06-11
 

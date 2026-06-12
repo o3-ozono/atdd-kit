@@ -48,9 +48,9 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_writing_design_doc_skill.bats | writing-design-doc skill (on-demand, Step B8 / #195) |
 | test_bug_skill.bats | bug skill (special flow, Step C1 / #196) |
 | test_debugging_skill.bats | debugging skill (special flow, Step C1 / #196) |
-| test_skill_test_coverage.bats | all 10 flow skills have both Unit Test + Skill E2E Test (Step C1 / #196) |
+| test_skill_test_coverage.bats | all 10 flow skills have both Unit Test + Skill E2E Test (Step C1 / #196); and all E2E files specify `--model` + define `E2E_MODEL` (#278) |
 | test_v1_skill_skeletons.bats | v1.0 skill structure across all 6 steps + on-demand skills (skeleton set now empty) |
-| test_reviewer_subagents.bats | 6 specialist reviewer subagent definitions (agents/*.md, Issue #186) |
+| test_agents_dynamic_panel_align.bats | Fixed reviewer agents removal and #234 alignment regression pins (Issue #271) |
 
 ### autopilot — autopilot (#246)
 
@@ -58,8 +58,8 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 
 | Test File | Target |
 |-----------|--------|
-| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) / design-gate rejection plumbing (#261: `rejectionFindings` validation + iteration-1 seed, whole-set rejection discipline) / model assignment (#259: impl subagents Sonnet, one-way escalation, design phase excluded) / presentation channel (#267: Gate ①/② deliverable bodies as the Draft PR diff, terminal = PR link + decision points only, full-channel sync kept) / diff-in-body (#275: re-presentation per-finding diff hunks + key lines, first-presentation key decisions with file/line refs, hand-off per-file stat + key hunks, operational definitions pinned, #267/#275 reconciliation pinned in both sections, ban polarity anchored) |
-| test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) |
+| test_autopilot_skill.bats | autopilot skill (autopilot orchestrator) — oracle / rails / three human gates (requirements, design approval, merge) / iron-law wiring / args contract (#256: fail-closed phase guard, no impl→design fallback) / dialog economy (#254: human-only questions, batch-present) / log-integrity plumbing (#262: logLines baseline + recorded counter + 'log-integrity' halt) / design-gate rejection plumbing (#261: `rejectionFindings` validation + iteration-1 seed, whole-set rejection discipline) / model assignment (#259: impl subagents Sonnet, one-way escalation, design phase excluded) / presentation channel (#267: Gate ①/② deliverable bodies as the Draft PR diff, terminal = PR link + decision points only, full-channel sync kept) / step-scoped sameness+stuck + oracle-state fingerprint (#272: AT-005 rails passes ${step} to check_sameness/check_stuck, AT-006 audit payload = JSON.stringify({ atGreen, coverageOk, uncovered, blocking })) / diff-in-body (#275: re-presentation per-finding diff hunks + key lines, first-presentation key decisions with file/line refs, hand-off per-file stat + key hunks, operational definitions pinned, #267/#275 reconciliation pinned in both sections, ban polarity anchored) |
+| test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) / step-scoped sameness+stuck (#272: AT-001 cross-step false-halt fix, AT-002 same-step halt preserved, AT-003 backward compat, AT-004a/b/c check_stuck step filter — 45 tests total) |
 | e2e/autopilot.bats | autopilot Skill E2E Test（#275: US-1 ゲート再提示の diff-in-body 回復を含む） |
 
 ### Skill Structure & Quality
@@ -173,7 +173,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_public_repo_prep.bats | Public repository preparation checks (Issue #16) |
 | test_pr_screenshot_security.bats | pr-screenshot-table.sh security hardening (Issue #26) |
 | test_conflict_detection.bats | Git conflict detection logic |
-| test_issue_105_frontmatter_session_inheritance.bats | Agent frontmatter model/effort removal guard (Issue #105) |
+| test_issue_105_frontmatter_session_inheritance.bats | Agent frontmatter model/effort removal guard (Issue #105); updated by #271 to use glob-based detection instead of fixed 6-file list |
 | test_phase_model_assignment.bats | Phase model assignment policy in agents/README.md — impl / review = Sonnet, escalation path, bench summary, design phase / orchestrator exclusion (Issue #259) |
 
 > Some files cover more than one area; they are listed under their primary concern. The authoritative list is always `ls tests/*.bats`. Each file declares its scope via a `@covers:` header annotation (see below).
@@ -213,6 +213,8 @@ scripts/run-skill-e2e.sh --all --dry-run          # 対象解決のみ（実行�
 ```
 
 ログは `tests/e2e/.logs/<run-id>.log` に出力される。詳細は [docs/testing-skills.md](../docs/testing-skills.md) を参照。
+
+**実行モデル:** Skill E2E Test は `claude` 起動時にデフォルトで **sonnet** を使用する（#259 ベンチマーク準拠のコスト最適化）。別モデルで実行したい場合は `SKILL_E2E_MODEL` 環境変数で上書きできる（例: `SKILL_E2E_MODEL=claude-opus-4-5 scripts/run-skill-e2e.sh --all`）。
 
 ## Conventions
 

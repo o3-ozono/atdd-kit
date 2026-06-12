@@ -29,7 +29,7 @@ For AC-to-test-layer mapping rules, see [test-mapping.md](./test-mapping.md). te
 
 | # | Criterion | How to Verify |
 |---|-----------|---------------|
-| D8 | **PR review approved** — at least one specialist reviewer PASS (from reviewing-deliverables, Step 5) or human approval | GitHub PR review status |
+| D8 | **PR review approved** — reviewing-deliverables (Step 5) の動的レビューパネルが PASS を出力、または人間レビュアーの承認 | GitHub PR review status |
 | D9 | **No open review comments** — all threads resolved | GitHub PR threads |
 | D10 | **Issue linked in PR body** — `Closes #NNN` in PR description | PR body check |
 

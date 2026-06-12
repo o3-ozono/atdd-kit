@@ -9,8 +9,8 @@
 # Functions:
 #   fingerprint                              stdin -> normalized sha256 of a failure signature
 #   record_iteration <jsonl> <it> <step> <verdict> <fp>   append one JSONL audit line (AL-4)
-#   check_sameness <jsonl>                   non-zero if the last 2 iterations share a fingerprint
-#   check_stuck <jsonl> <window>             non-zero if the last <window> iterations show no progress
+#   check_sameness <jsonl> [step]            non-zero if the last 2 iterations share a fingerprint (step-scoped when step given)
+#   check_stuck <jsonl> <window> [step]      non-zero if the last <window> iterations show no progress (step-scoped when step given)
 #   check_max_iterations <current> <max>     non-zero if current >= max
 #   pin_anchor <pinfile>                     pin the approved-AC fingerprint once at loop start (AL-2)
 #   check_pin <pinfile> <current-fp>         non-zero if the AC anchor drifted from the pin (AL-2)
@@ -84,17 +84,38 @@ record_iteration() {
 }
 
 # Echo the fingerprint column from the JSONL log, in order, one per line.
+# Optional second argument `step`: when non-empty, restrict to rows whose
+# "step" field matches that value exactly (fixed-string match on the escaped
+# JSON representation). This prevents cross-step fingerprint leakage that
+# causes false sameness halts (#272, #269 incident).
+# Step is already _json_escape'd by record_iteration, so a fixed-string match
+# on the literal value is correct for all well-formed step names.
 _fingerprints() {
-  local jsonl="$1"
+  local jsonl="$1" step="${2:-}"
   [ -f "$jsonl" ] || return 0
-  grep -o '"fingerprint":"[^"]*"' "$jsonl" | sed 's/"fingerprint":"//; s/"$//'
+  if [ -n "$step" ]; then
+    # 対象 step の行のみに絞り込んでから fingerprint 列を抽出する。
+    # _json_escape の出力と同じエスケープ表現（バックスラッシュ・ダブルクォートのみ）で
+    # 固定文字列マッチさせる（grep -F）。
+    local escaped_step
+    escaped_step=$(_json_escape "$step")
+    grep -F "\"step\":\"${escaped_step}\"" "$jsonl" \
+      | grep -o '"fingerprint":"[^"]*"' \
+      | sed 's/"fingerprint":"//; s/"$//'
+  else
+    grep -o '"fingerprint":"[^"]*"' "$jsonl" | sed 's/"fingerprint":"//; s/"$//'
+  fi
 }
 
 # sameness-detector: halt (non-zero) when the last two iterations carry the
 # same fingerprint — the loop is repeating the identical failure.
+# Optional second argument `step`: when non-empty, only the rows for that step
+# are compared, preventing cross-phase fingerprint coincidence from halting the
+# loop (#272 / #269 incident). Omitting step preserves the legacy whole-log
+# behavior (backward-compatible).
 check_sameness() {
-  local jsonl="$1" fps n last prev
-  fps=$(_fingerprints "$jsonl")
+  local jsonl="$1" step="${2:-}" fps n last prev
+  fps=$(_fingerprints "$jsonl" "$step")
   [ -z "$fps" ] && return 0
   n=$(printf '%s\n' "$fps" | grep -c .)
   [ "$n" -lt 2 ] && return 0
@@ -110,8 +131,11 @@ check_sameness() {
 # both a flatline (A,A,A) AND an oscillation (A,B,A,B — fix-one / break-another),
 # which the previous "collapse to a single distinct" rule missed and which
 # check_sameness (last-two only) also misses.
+# Optional third argument `step`: when non-empty, only the rows for that step
+# are included in the window population (#272 / #269 incident fix). Omitting
+# step preserves the legacy whole-log behavior (backward-compatible).
 check_stuck() {
-  local jsonl="$1" window="${2:-3}" fps n tail_fps count distinct
+  local jsonl="$1" window="${2:-3}" step="${3:-}" fps n tail_fps count distinct
   # A non-numeric window would make the integer test / tail error out yet still
   # return 0 (fail-OPEN, silently disabling the rail). Validate → halt instead.
   case "$window" in
@@ -120,7 +144,7 @@ check_stuck() {
       return 2
       ;;
   esac
-  fps=$(_fingerprints "$jsonl")
+  fps=$(_fingerprints "$jsonl" "$step")
   [ -z "$fps" ] && return 0
   n=$(printf '%s\n' "$fps" | grep -c .)
   [ "$n" -lt "$window" ] && return 0

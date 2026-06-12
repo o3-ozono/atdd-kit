@@ -195,9 +195,11 @@ for (const step of STEPS) {
     }
     // 4. AC→AT coverage gate (AL-2) — separate context from the AT author.
     let coverageOk = !atRequired
+    let uncovered = []  // #272: ループスコープで宣言 — audit payload から参照可能にする
     if (atRequired) {
       const cov = await agent(`In a context SEPARATE from the AT author, verify the executable Acceptance Tests for Issue #${NNN} encode EVERY approved AC in the immutable design anchor (docs/issues/${NNN}-*/acceptance-tests.md + the design-gate-approved AC). List uncovered AC; each is a P0.`, { label: `coverage:${step}`, phase: 'Coverage-gate', schema: { type: 'object', required: ['allCovered', 'uncovered'], properties: { allCovered: { type: 'boolean' }, uncovered: { type: 'array', items: { type: 'string' } } } } })
-      coverageOk = cov.allCovered === true && (cov.uncovered || []).length === 0
+      uncovered = cov.uncovered || []
+      coverageOk = cov.allCovered === true && uncovered.length === 0
     }
     const blocking = (verdict.findings || []).filter((f) => priorityOf(f) <= 1)
     // 5. satisfaction oracle — AL-3 deterministic AT AND AL-2 coverage AND
@@ -207,11 +209,11 @@ for (const step of STEPS) {
     //    before deciding, so the JSONL is the complete external source of truth.
     //    record_iteration's full signature is <jsonl> <iteration> <step> <verdict> <fp>;
     //    a non-zero return (corrupt / empty fingerprint) is itself a halt.
-    //    #252: the payload is embedded verbatim (JSON.stringify) — a literal
-    //    placeholder would otherwise get hashed as-is (the 2aed7ea6… incident).
+    //    #252: payload is embedded verbatim (JSON.stringify, never a placeholder). #272: oracle
+    //    state included — gate change alone (atGreen/coverageOk/uncovered) yields a distinct fp.
     const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. The blocking-findings payload to fingerprint is the exact text between the two marker lines below (hash the payload only, never the markers):
 BEGIN-PAYLOAD
-${JSON.stringify(blocking)}
+${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}
 END-PAYLOAD
 Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`. Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
     if (rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
@@ -220,7 +222,7 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
     // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
     //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
     //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
-    const r = await agent(`Via lib/autopilot_convergence.sh, run all five and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>"; (d) check_stuck "<log>" 3; (e) check_log_integrity "<log>" ${recorded} (#262: the log must hold EXACTLY the lines the orchestrator recorded — a deleted / rolled-back log silently resets sameness & stuck).`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit', 'logIntegrityExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' }, logIntegrityExit: { type: 'integer' } } } })
+    const r = await agent(`Via lib/autopilot_convergence.sh, run all five and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>" "${step}" (#272: step スコープ化で偽 halt を防ぐ); (d) check_stuck "<log>" 3 "${step}" (#272: 同上); (e) check_log_integrity "<log>" ${recorded} (#262: the log must hold EXACTLY the lines the orchestrator recorded — a deleted / rolled-back log silently resets sameness & stuck).`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit', 'logIntegrityExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' }, logIntegrityExit: { type: 'integer' } } } })
     // log-integrity outranks sameness / stuck: both read history FROM the log,
     // so their exit codes are meaningless when the log itself is compromised.
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.logIntegrityExit !== 0 ? 'log-integrity' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'

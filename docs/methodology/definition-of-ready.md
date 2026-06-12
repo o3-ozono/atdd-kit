@@ -27,7 +27,7 @@ For AC quality standards (MUST criteria including independent verifiability and 
 The defining-requirements skill (Step 1) drives the DoR check. When all criteria are met:
 
 1. defining-requirements produces `docs/issues/<NNN>/prd.md` with the AC set
-2. The prd-reviewer (spawned by reviewing-deliverables, Step 5) checks R1–R5
+2. The `reviewing-deliverables` skill (Step 5) runs the relevant review lenses (documentation / functional-correctness) of its dynamic panel, which checks R1–R5
 3. On PASS: `ready-to-go` label applied → writing-plan-and-tests (Step 3) can start
 
 If any criterion fails, the Issue stays in `in-progress` with `blocked-ac` if AC-related, or returns to defining-requirements.
