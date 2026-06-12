@@ -126,12 +126,14 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 
 # --- Line budget ----------------------------------------------------------
 
-@test "line budget (#254: Dialog economy section): SKILL.md is at most 260 lines" {
+@test "line budget (#254: Dialog economy section): SKILL.md is at most 280 lines" {
   # 240 → 260 (#254): the Dialog economy section adds ~10 lines of human-dialog
   # discipline that must live in the orchestrator (C1: flow skills stay unedited)
+  # 260 → 280 (#275): #272 step-scoped rails + #275 diff-in-body left the file
+  # at 260/260 with zero headroom; raised per the #276 review headroom finding
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
-  [ "$n" -le 260 ]
+  [ "$n" -le 280 ]
 }
 
 # --- Code-deep oracle (#246 review: rails/oracle must be code, not just prose)
@@ -371,6 +373,84 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   local section
   section=$(sed -n '/^## Dialog economy/,/^## Output/p' "$SKILL_FILE")
   echo "$section" | grep -qi 'full-channel sync'
+}
+
+# --- Diff-in-body (#275) ------------------------------------------------------
+# The gate message itself carries the decision evidence inline at the
+# design-approval gate (Flow step 3) and the merge hand-off (step 5).
+
+@test "diff-in-body (#275): AT-000 sed boundaries for the section extractions exist" {
+  # if a boundary heading is renamed, the sed ranges below silently expand to
+  # EOF and AT-001..AT-005 would pass for the wrong reason — fail loudly here.
+  # note: these are prefix matches (same regexes as the sed ranges), so an
+  # INSERTED heading sharing an END prefix (e.g. '## Mechanism Details' inside
+  # the Flow section) truncates the range without failing AT-000 — the
+  # downstream AT-001..AT-004 greps then fail noisily, so no silent false-pass
+  grep -q '^## Flow' "$SKILL_FILE"
+  grep -q '^## Mechanism' "$SKILL_FILE"
+  grep -q '^## Dialog economy' "$SKILL_FILE"
+  grep -q '^## Output' "$SKILL_FILE"
+}
+
+@test "diff-in-body (#275): AT-001 re-presentation shows per-finding diff hunks with key lines, in both channels" {
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -q 'Diff-in-body (mandatory, #275)'
+  echo "$flow" | grep -qi 'diff blocks organized per finding'
+  # AC-1's third element pinned independently: the key lines must be called out
+  echo "$flow" | grep -qi 'with the key lines called out'
+  echo "$flow" | grep -qi 'BOTH the in-session message and the GitHub gate comment'
+  # the machine-checkable discriminator between the two presentation forms
+  echo "$flow" | grep -qi 're-invoked with `rejectionFindings`'
+  echo "$flow" | grep -qi 'anything else is a first presentation'
+}
+
+@test "diff-in-body (#275): AT-002 first presentation shows key decisions with file/line references; summary-only gates are banned" {
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'key decisions with file/line references'
+  # anchored: the ban's polarity is pinned, not just the phrase's existence
+  echo "$flow" | grep -qi 'Never present a summary-only gate'
+}
+
+@test "diff-in-body (#275): AT-003 merge hand-off includes the implementation diff inline (per-file stat + key hunks)" {
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  # 'includes' pins the inclusion as required, not optional
+  echo "$flow" | grep -qi 'the hand-off message includes the implementation diff inline'
+  echo "$flow" | grep -qi 'per-file stat'
+  echo "$flow" | grep -qi 'not just a green-status summary'
+}
+
+@test "diff-in-body (#275): AT-004 key lines / key decision carry operational definitions" {
+  # without these definitions a formally-compliant but content-free gate
+  # message satisfies the rule (review finding on #276)
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'key lines.* = lines that directly implement an AC'
+  echo "$flow" | grep -qi 'key decision.* = a choice that, if reversed'
+}
+
+@test "rejection (#261/#275): empty rejectionFindings array is refused fail-closed" {
+  # [] is truthy in JS and .some() is vacuously false — without this guard an
+  # empty array slips every check and reaches generate as a zero-finding
+  # re-presentation (#276 round-4 review, error-handling lens)
+  grep -q 'rejectionFindings.length === 0' "$SKILL_FILE"
+  grep -qi 'must not be empty' "$SKILL_FILE"
+  # containment invariant: the guard must sit INSIDE the undefined-check block,
+  # right after Array.isArray — moved outside it, undefined.length is a TypeError
+  grep -A 2 'if (A.rejectionFindings !== undefined)' "$SKILL_FILE" | grep -q 'length === 0'
+}
+
+@test "diff-in-body (#275): AT-005 #267/#275 reconciliation is pinned in BOTH sections" {
+  # dropping either clause silently re-opens the #267-vs-#275 conflict: a model
+  # reading #267 as dominant would suppress the mandatory inline hunks
+  local flow dialog
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'not a replacement channel'
+  dialog=$(sed -n '/^## Dialog economy/,/^## Output/p' "$SKILL_FILE")
+  echo "$dialog" | grep -qi 'complements — does not override'
+  echo "$dialog" | grep -qi 'decision evidence'
 }
 
 # --- Model assignment (#259) -------------------------------------------------

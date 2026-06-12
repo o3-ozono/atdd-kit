@@ -102,6 +102,22 @@ ${SKILL_CONTENT}
   echo "$out" | grep -qiE "immutable|anchor|approved AC|override|AL-2|iron law"
 }
 
+@test "US-1 (#275): I want gate re-presentations to carry the diff inline, so that I can judge without asking for it" {
+  prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
+You are at the design-approval gate, re-presenting the deliverables after fixing rejection findings. What must the gate message body itself contain, and in which channels? Respond in English.
+
+--- SKILL.md START ---
+${SKILL_CONTENT}
+--- SKILL.md END ---"
+  out=$(_run_claude "$prompt")
+  [ -n "$out" ]
+  echo "$out" | grep -qiE "diff (hunk|block)|inline"
+  echo "$out" | grep -qiE "per[- ]finding|each finding|key line"
+  # BOTH channels must be recovered, not either one
+  echo "$out" | grep -qiE "in-session|terminal|session message"
+  echo "$out" | grep -qiE "GitHub|gate comment"
+}
+
 @test "C1: I want the flow skills left unchanged, so that autopilot only changes their role in this mode" {
   prompt="The following is the atdd-kit autopilot (autopilot) skill definition. \
 Does this skill permanently rewrite the existing flow skills, or do they keep their normal behavior outside autopilot? Respond in English.
