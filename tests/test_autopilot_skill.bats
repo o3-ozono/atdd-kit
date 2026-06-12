@@ -427,6 +427,14 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   echo "$flow" | grep -qi 'key decision.* = a choice that, if reversed'
 }
 
+@test "rejection (#261/#275): empty rejectionFindings array is refused fail-closed" {
+  # [] is truthy in JS and .some() is vacuously false — without this guard an
+  # empty array slips every check and reaches generate as a zero-finding
+  # re-presentation (#276 round-4 review, error-handling lens)
+  grep -q 'rejectionFindings.length === 0' "$SKILL_FILE"
+  grep -qi 'must not be empty' "$SKILL_FILE"
+}
+
 @test "diff-in-body (#275): AT-005 #267/#275 reconciliation is pinned in BOTH sections" {
   # dropping either clause silently re-opens the #267-vs-#275 conflict: a model
   # reading #267 as dominant would suppress the mandatory inline hunks
