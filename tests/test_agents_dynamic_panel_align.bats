@@ -22,6 +22,7 @@
     agents/ \
     docs/methodology/ \
     docs/guides/ \
+    docs/workflow/ \
     skills/ \
     commands/ \
     rules/ \
