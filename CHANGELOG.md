@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-06-12
+
+### Added
+
+- **`check-plugin-version.sh` に `RESTART_REQUIRED` / `STALE_SESSION` 検知と CHANGELOG 集計ガードを追加**（#280）。(1) `RESTART_REQUIRED`: `~/.claude/plugins/installed_plugins.json` の当該プロジェクトエントリを読み、インストール済みバージョンがロード中バージョンより新しい場合に出力。セッション再起動を促す。マーカー非更新。(2) `STALE_SESSION`: ロード中バージョンがマーカー版より古い（別の新しいセッションがマーカーを先に更新済み）場合に出力。ダウングレード上書き防止のため E2 Auto-Sync をスキップ。マーカー非更新。(3) CHANGELOG 集計ガード: UPDATED 経路でマーカー版のバージョン見出し（`[x.y.z]`）が CHANGELOG に存在しない場合 `VERSIONS: UNKNOWN` を出力（全件誤集計を防止）。(4) 優先順位: STALE_SESSION > RESTART_REQUIRED > UPDATED/NO_UPDATE/FIRST_RUN。(5) `installed_plugins.json` 不在・パース不能・該当エントリなしの場合は従来動作へフォールバック。(6) `skills/session-start/SKILL.md` の Phase 1-E パース表と E2 Auto-Sync 発火条件・Phase 3 レポートテンプレートを更新。BATS テスト 14 件追加（AT-001〜AT-008 系）。
+
 ## [3.12.0] - 2026-06-12
 
 ### Removed

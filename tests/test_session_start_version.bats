@@ -44,3 +44,24 @@
   run grep -c 'CHANGELOG diff here' skills/session-start/SKILL.md
   [[ "$output" == "0" ]]
 }
+
+# AT-003 / AT-005: RESTART_REQUIRED and STALE_SESSION wiring in SKILL.md
+@test "AT-005: SKILL.md Phase 1-E parses RESTART_REQUIRED token" {
+  grep -q 'RESTART_REQUIRED' skills/session-start/SKILL.md
+}
+
+@test "AT-005: SKILL.md Phase 3 report template shows restart message for RESTART_REQUIRED" {
+  grep -q 'セッション再起動で反映されます\|restart.*RESTART_REQUIRED\|RESTART_REQUIRED.*restart' skills/session-start/SKILL.md
+}
+
+@test "AT-003: SKILL.md Phase 1-E parses STALE_SESSION token" {
+  grep -q 'STALE_SESSION' skills/session-start/SKILL.md
+}
+
+@test "AT-003: SKILL.md Phase 3 report template shows restart message for STALE_SESSION" {
+  grep -q 'セッション再起動が必要\|restart.*STALE_SESSION\|STALE_SESSION.*restart' skills/session-start/SKILL.md
+}
+
+@test "AT-003: SKILL.md E2 Auto-Sync is excluded for STALE_SESSION and RESTART_REQUIRED" {
+  grep -q 'STALE_SESSION.*実行しない\|RESTART_REQUIRED.*実行しない\|STALE_SESSION / RESTART_REQUIRED' skills/session-start/SKILL.md
+}
