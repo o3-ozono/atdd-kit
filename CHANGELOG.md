@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-06-12
+
+### Added
+
+- **`express` skill の再導入 — 機能破壊リスクのないドキュメント級タスクの省略経路**（#284）。v1.0 の capability-name skill 体系に合わせ `skills/express/SKILL.md` と `/atdd-kit:express <issue>` コマンド（`commands/express.md`）を新設。Issue → 実装 → CI → merge の最短経路を提供し、PRD / US / plan / AT / 構造化レビューをスキップ。発動は明示コマンドのみ（keyword auto-trigger 禁止）。Step 1: Issue 番号必須・not found / closed / in-progress 付き Issue は STOP。Step 2: OK/NG 適用基準（OK: docs/README 追記・typo・コメント・gitignore・version bump のみ等 / NG: 新機能・振る舞い変更・依存追加・CI/hooks 変更・セキュリティ影響等）を SKILL.md に内蔵し、判断に迷う場合は `defining-requirements` へフォールバック。`<APPROVAL-GATE>` でユーザーの明示的承認 + 該当 OK 基準の提示を必須化（AC1/AC2）。Step 3: `express/<N>-<slug>` ブランチ作成・実装中に diff が適用基準を超えたらスコープ逸脱として即中断し `defining-requirements` へ誘導（AC9）。atdd-kit 自身が対象の場合 version bump + CHANGELOG 更新を同一 PR で義務化（AC7）。Step 4: `express-mode` ラベル + PR body の `## Express Mode` セクション（適用基準の理由を記録）。ラベル欠落時は `setup-github` を案内（AC5/AC6）。Step 5: `<HARD-GATE>` で CI green まで merge 不可、自動 merge なし（AC4）。skill-gate の Pre-check: Issue Work Routing に express 分岐を追加し正規ルートとして認識（AC8）。`commands/setup-github.md` に `express-mode` ラベル作成行を追加。`tests/test_express_skill.bats` 25 件 + `tests/acceptance/AT-284.bats` 35 件を新設、`tests/test_skill_structure.bats` の `ALL_SKILLS` に `express` を追加し全 BATS suite green 確認。
+
 ## [3.13.1] - 2026-06-12
 
 ### Fixed
