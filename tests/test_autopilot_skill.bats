@@ -386,12 +386,15 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   local flow
   flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
   echo "$flow" | grep -qi 'key decisions with file/line references'
-  echo "$flow" | grep -qi 'summary-only gate'
+  # anchored: the ban's polarity is pinned, not just the phrase's existence
+  echo "$flow" | grep -qi 'Never present a summary-only gate'
 }
 
 @test "diff-in-body (#275): AT-003 merge hand-off includes the implementation diff inline (per-file stat + key hunks)" {
   local flow
   flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  # 'includes' pins the inclusion as required, not optional
+  echo "$flow" | grep -qi 'the hand-off message includes the implementation diff inline'
   echo "$flow" | grep -qi 'per-file stat'
   echo "$flow" | grep -qi 'not just a green-status summary'
 }
@@ -403,6 +406,17 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
   echo "$flow" | grep -qi 'key lines.* = lines that directly implement an AC'
   echo "$flow" | grep -qi 'key decision.* = a choice that, if reversed'
+}
+
+@test "diff-in-body (#275): AT-005 #267/#275 reconciliation is pinned in BOTH sections" {
+  # dropping either clause silently re-opens the #267-vs-#275 conflict: a model
+  # reading #267 as dominant would suppress the mandatory inline hunks
+  local flow dialog
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'not a replacement channel'
+  dialog=$(sed -n '/^## Dialog economy/,/^## Output/p' "$SKILL_FILE")
+  echo "$dialog" | grep -qi 'complements — does not override'
+  echo "$dialog" | grep -qi 'decision evidence'
 }
 
 # --- Model assignment (#259) -------------------------------------------------
