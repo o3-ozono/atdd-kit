@@ -84,7 +84,7 @@ bug (auto) → defining-requirements → extracting-user-stories → writing-pla
 
 ### エージェント
 
-reviewer のロール定義は `agents/` に配置され、`reviewing-deliverables` スキル（Step 5）が spawn する。各エージェントは YAML フロントマター（`name`、`description`、`tools`、`skills`）とシステムプロンプト本文を持つ。詳細は `agents/README.md` を参照。
+`agents/` は将来のカスタム agent 置き場（現在 agent 定義ファイルなし）。レビューは `reviewing-deliverables` スキル（Step 5）の動的レンズパネル × 並列 Workflow（#234）が担い、固定 agent ファイルは使用しない。impl / review サブエージェントのモデルポリシーは `agents/README.md` を参照。
 
 ### スキル description フィールドのルール
 
@@ -137,7 +137,7 @@ atdd-kit/
 │   ├── ui-test-debugging/    # iOS アドオンスキル
 │   ├── writing-design-doc/
 │   └── writing-plan-and-tests/
-├── agents/           # reviewer ロール定義（prd/us/plan/code/at/final-reviewer。reviewing-deliverables が spawn）
+├── agents/           # カスタム agent 定義（現在 README のみ。レビューは動的パネルが担う — #234）
 ├── addons/           # プラットフォーム固有アドオンパッケージ（ios/, web/）
 │   └── ios/          # iOS アドオン（addon.yml, scripts/, ci/, tests/）
 ├── commands/         # ユーザー明示呼び出しコマンド（/atdd-kit:*）

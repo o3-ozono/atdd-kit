@@ -84,7 +84,7 @@ Platform-specific features live in `addons/<platform>/`. Each addon has an `addo
 
 ### Agents
 
-Reviewer role definitions live in `agents/`, spawned by the `reviewing-deliverables` skill (Step 5). Each agent has YAML frontmatter (`name`, `description`, `tools`, `skills`) and a system prompt body. See `agents/README.md`.
+`agents/` is the future custom agent placement area (currently no agent definition files exist). Review is handled by the `reviewing-deliverables` skill (Step 5) through a dynamic lens panel × parallel Workflow (#234) — not by fixed agent files. Model policy for impl / review subagents is documented in `agents/README.md`.
 
 ### Skill Description Field Rules
 
@@ -137,7 +137,7 @@ atdd-kit/
 │   ├── ui-test-debugging/    # iOS addon skill
 │   ├── writing-design-doc/
 │   └── writing-plan-and-tests/
-├── agents/           # Reviewer role definitions (prd/us/plan/code/at/final-reviewer) spawned by reviewing-deliverables
+├── agents/           # Custom agent definitions (currently README only; review uses dynamic panels — #234)
 ├── addons/           # Platform-specific addon packages (ios/, web/)
 │   └── ios/          # iOS addon (addon.yml, scripts/, ci/, tests/)
 ├── commands/         # User-invoked slash commands (/atdd-kit:*)

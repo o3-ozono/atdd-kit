@@ -50,7 +50,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_debugging_skill.bats | debugging skill (special flow, Step C1 / #196) |
 | test_skill_test_coverage.bats | all 10 flow skills have both Unit Test + Skill E2E Test (Step C1 / #196); and all E2E files specify `--model` + define `E2E_MODEL` (#278) |
 | test_v1_skill_skeletons.bats | v1.0 skill structure across all 6 steps + on-demand skills (skeleton set now empty) |
-| test_reviewer_subagents.bats | 6 specialist reviewer subagent definitions (agents/*.md, Issue #186) |
+| test_agents_dynamic_panel_align.bats | Fixed reviewer agents removal and #234 alignment regression pins (Issue #271) |
 
 ### autopilot — autopilot (#246)
 
@@ -173,7 +173,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_public_repo_prep.bats | Public repository preparation checks (Issue #16) |
 | test_pr_screenshot_security.bats | pr-screenshot-table.sh security hardening (Issue #26) |
 | test_conflict_detection.bats | Git conflict detection logic |
-| test_issue_105_frontmatter_session_inheritance.bats | Agent frontmatter model/effort removal guard (Issue #105) |
+| test_issue_105_frontmatter_session_inheritance.bats | Agent frontmatter model/effort removal guard (Issue #105); updated by #271 to use glob-based detection instead of fixed 6-file list |
 | test_phase_model_assignment.bats | Phase model assignment policy in agents/README.md — impl / review = Sonnet, escalation path, bench summary, design phase / orchestrator exclusion (Issue #259) |
 
 > Some files cover more than one area; they are listed under their primary concern. The authoritative list is always `ls tests/*.bats`. Each file declares its scope via a `@covers:` header annotation (see below).
