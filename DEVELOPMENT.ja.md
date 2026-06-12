@@ -56,6 +56,10 @@ atdd-kit は**外部依存ゼロ**を設計方針としている。npm パッケ
 
 > 予算は v1.0 移行（#179）中に 6-step Workflow テーブル収容のため 40 行から 60 行に引き上げた。レガシーヒントを刈り取りながら、再度 40 行を目標に圧縮すること。
 
+### SKILL.md 行バジェットの引き上げ
+
+SKILL.md の行バジェット pin（`tests/test_<skill>_skill.bats`）の引き上げは **1 ファイルにつき累計 2 回まで**。3 回目が必要になった時点で引き上げず、SKILL.md を loader stub + `docs/methodology/` 配下の詳細 doc に分割すること（#283）。
+
 ### ディレクトリ README
 
 各トップレベルディレクトリ（`skills/`、`commands/`、`hooks/`、`rules/`、`scripts/`、`templates/`、`tests/`）には `README.md` がある。これらのディレクトリでファイルを追加・削除・変更した場合、**同じ PR 内で対応する README.md も更新すること**。

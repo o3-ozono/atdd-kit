@@ -56,6 +56,10 @@ atdd-kit has **zero external dependencies** by design. No npm packages, no exter
 
 > The budget was raised from 40 to 60 lines during the v1.0 migration (#179) to accommodate the 6-step Workflow table. Re-tighten toward 40 lines as legacy hints are pruned.
 
+### SKILL.md Line-Budget Raises
+
+Raising a SKILL.md line-budget pin (in `tests/test_<skill>_skill.bats`) is allowed at most **twice cumulatively per file**. When a third raise becomes necessary, do not raise again — split the SKILL.md into a loader stub plus a detailed doc under `docs/methodology/` (#283).
+
 ### Directory READMEs
 
 Each top-level directory (`skills/`, `commands/`, `hooks/`, `rules/`, `scripts/`, `templates/`, `tests/`) has a `README.md`. When adding, removing, or modifying files in these directories, **update the corresponding README.md** in the same PR.

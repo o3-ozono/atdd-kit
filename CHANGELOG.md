@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.2] - 2026-06-13
+
+### Changed
+
+- **「人間ゲート」/「human gate」表記を「User gate」へ統一（現役ドキュメントのみ）**（#281）。対象: `skills/autopilot/SKILL.md`（description / AL-1 要約 / `## User gates` 見出し / Flow step 3 の `(User gate)` 注記 / User merge gate ほか）、`skills/README.md`、`docs/methodology/autopilot-iron-law.md`（AL-1 見出し・AL-6・役割シフト節）、`README.md` / `README.ja.md`、`tests/README.md`。`tests/test_autopilot_skill.bats` の pin を更新: `grep 'user gate'` + 旧表記（`human gate|人間ゲート`）の不存在アサーションを追加し、`## Human gates` 見出し依存の sed 範囲を `## User gates` に追随。行為者としての「human」単独表記（the human / human-facing / human comment / human-approved 等）は対象外として保持。CHANGELOG 過去エントリと `docs/issues/` アーカイブは履歴として無変更。BATS 62 件 green。
+- **SKILL.md 行バジェット引き上げの分割介入閾値を DEVELOPMENT.md に規定**（#283）。`DEVELOPMENT.md` / `DEVELOPMENT.ja.md` に「SKILL.md Line-Budget Raises」節を追加: 行バジェット pin の引き上げは 1 ファイルにつき累計 2 回まで、3 回目が必要になった時点で loader stub + `docs/methodology/` 詳細 doc への分割を必須とする。`rules/atdd-kit.md` の 60 行分割方針との非対称（#276 round-4 レビュー指摘）を解消。
+
 ## [3.14.1] - 2026-06-13
 
 ### Fixed
