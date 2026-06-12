@@ -379,12 +379,26 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 # The gate message itself carries the decision evidence inline at the
 # design-approval gate (Flow step 3) and the merge hand-off (step 5).
 
+@test "diff-in-body (#275): AT-000 sed boundaries for the section extractions exist" {
+  # if a boundary heading is renamed, the sed ranges below silently expand to
+  # EOF and AT-001..AT-005 would pass for the wrong reason — fail loudly here
+  grep -q '^## Flow' "$SKILL_FILE"
+  grep -q '^## Mechanism' "$SKILL_FILE"
+  grep -q '^## Dialog economy' "$SKILL_FILE"
+  grep -q '^## Output' "$SKILL_FILE"
+}
+
 @test "diff-in-body (#275): AT-001 re-presentation shows per-finding diff hunks with key lines, in both channels" {
   local flow
   flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
   echo "$flow" | grep -q 'Diff-in-body (mandatory, #275)'
   echo "$flow" | grep -qi 'diff blocks organized per finding'
+  # AC-1's third element pinned independently: the key lines must be called out
+  echo "$flow" | grep -qi 'with the key lines called out'
   echo "$flow" | grep -qi 'BOTH the in-session message and the GitHub gate comment'
+  # the machine-checkable discriminator between the two presentation forms
+  echo "$flow" | grep -qi 're-invoked with `rejectionFindings`'
+  echo "$flow" | grep -qi 'anything else is a first presentation'
 }
 
 @test "diff-in-body (#275): AT-002 first presentation shows key decisions with file/line references; summary-only gates are banned" {

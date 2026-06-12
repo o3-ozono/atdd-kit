@@ -113,7 +113,9 @@ ${SKILL_CONTENT}
   [ -n "$out" ]
   echo "$out" | grep -qiE "diff (hunk|block)|inline"
   echo "$out" | grep -qiE "per[- ]finding|each finding|key line"
-  echo "$out" | grep -qiE "in-session|terminal|GitHub|gate comment"
+  # BOTH channels must be recovered, not either one
+  echo "$out" | grep -qiE "in-session|terminal|session message"
+  echo "$out" | grep -qiE "GitHub|gate comment"
 }
 
 @test "C1: I want the flow skills left unchanged, so that autopilot only changes their role in this mode" {

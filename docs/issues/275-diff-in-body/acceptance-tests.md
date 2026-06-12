@@ -1,6 +1,6 @@
 # Acceptance Tests — #275 Diff-in-body
 
-実体は `tests/test_autopilot_skill.bats` の `--- Diff-in-body (#275) ---` 節（pin 4 件）。対象は `skills/autopilot/SKILL.md` の `## Flow` 節。
+実体は `tests/test_autopilot_skill.bats` の `--- Diff-in-body (#275) ---` 節（境界 canary AT-000 + pin 5 件）。対象は `skills/autopilot/SKILL.md` の `## Flow` 節（AT-001〜AT-004）と `## Dialog economy` 節（AT-005）。
 
 | AT | 対応 AC | 検証内容 | BATS test |
 |----|---------|----------|-----------|
@@ -13,4 +13,4 @@
 
 静的 pin（文言の存在と極性）と E2E（LLM の挙動回復）の二層で検証する。実セッションでのゲート提示そのものはテスト境界外（乖離は skill-fix で還流）。
 
-実行: `bats tests/test_autopilot_skill.bats`（58 件 green）+ `bats tests/e2e/autopilot.bats`
+実行: `bats tests/test_autopilot_skill.bats` + `bats tests/e2e/autopilot.bats`
