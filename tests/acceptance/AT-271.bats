@@ -101,12 +101,14 @@
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
+  # スコープは docs/ 全域（歴史的記録の docs/issues/ のみ除外）— 承認 AC のとおり。
+  # パターンは固定 reviewer ファイル名に加え、ファイル名を含まないレガシー表現
+  # （'specialist reviewer' / '47 criteria'）も検知する（DoD D8 の再混入防止）。
   local hits
-  hits=$(grep -rE 'prd-reviewer|us-reviewer|plan-reviewer|code-reviewer|at-reviewer|final-reviewer' \
+  hits=$(grep -rE 'prd-reviewer|us-reviewer|plan-reviewer|code-reviewer|at-reviewer|final-reviewer|specialist reviewer|47 criteria' \
+    --exclude-dir=issues \
     "${repo_root}/agents/" \
-    "${repo_root}/docs/methodology/" \
-    "${repo_root}/docs/guides/" \
-    "${repo_root}/docs/workflow/" \
+    "${repo_root}/docs/" \
     "${repo_root}/skills/" \
     "${repo_root}/commands/" \
     "${repo_root}/rules/" \
@@ -161,6 +163,16 @@
     echo "FAIL: README.ja.md にレガシー参照が残っている"
     return 1
   fi
+
+  # 肯定条件: 置換後の各文書が動的パネル（dynamic / 動的）へ言及している
+  local doc
+  for doc in README.md README.ja.md DEVELOPMENT.md DEVELOPMENT.ja.md \
+      docs/methodology/definition-of-ready.md docs/guides/getting-started.md; do
+    grep -qiE 'dynamic|動的' "${repo_root}/${doc}" || {
+      echo "FAIL: ${doc} に動的パネル（dynamic/動的）への言及がない"
+      return 1
+    }
+  done
 }
 
 # --- AT-004a: テスト差し替え — 旧構造テストが削除されている（US-4） ---
@@ -216,6 +228,12 @@
     return 1
   fi
 
+  # README.md pin（AC3 × 2 件）が維持されていること — 削除されると無言で通過するため明示 pin
+  grep -q 'AC3' "$t" || {
+    echo "FAIL: test_issue_105 から AC3（agents/README.md pin）テストが消えている"
+    return 1
+  }
+
   run bats "$t"
   [[ "$status" -eq 0 ]] || {
     echo "FAIL: test_issue_105_frontmatter_session_inheritance.bats が green でない"
@@ -241,6 +259,12 @@
 
   grep -q 'test_agents_dynamic_panel_align' "$readme" || {
     echo "FAIL: tests/README.md に test_agents_dynamic_panel_align の行がない"
+    return 1
+  }
+
+  # test_issue_105 行の説明が更新後の内容（glob ベース検出への変更）を反映している
+  grep -q 'glob-based detection' "$readme" || {
+    echo "FAIL: tests/README.md の test_issue_105 行が glob ベース検出への更新を反映していない"
     return 1
   }
 }
@@ -300,34 +324,28 @@
 }
 
 # --- AT-007: Non-Goals 不可侵（CS-3） ---
+#
+# CS-3 の 5 条項のうち、ブランチ非依存の不変条件のみを実行可能 pin とする。
+# `git diff main` ベースの条項（CHANGELOG 新エントリのみ / docs/issues/ の限定 /
+# reviewing-deliverables 無変更）は #269→#272 で確立した教訓のとおり恒久回帰に
+# できない（マージ後の任意のブランチで false-fail する一回性検証）ため、
+# acceptance-tests.md に手続き検証として記録し、merge gate の証跡で確認する。
+# #259 blockquote の内容保全は tests/test_phase_model_assignment.bats（7 pin）と
+# AT-002b が文言レベルで恒久 pin 済み。
 
-@test "AT-007a: skills/reviewing-deliverables/SKILL.md has no diff from main" {
-  # Given: git diff main の変更ファイル一覧
-  # When: reviewing-deliverables/SKILL.md を検査する
-  # Then: 差分がない
+@test "AT-007: skills keep their agents/README.md policy references (durable CS-3 invariant)" {
+  # Given: skills/autopilot/SKILL.md と skills/running-atdd-cycle/SKILL.md
+  # When: agents/README.md への参照を grep する
+  # Then: #259 ポリシーの置き場所への参照が両ファイルに維持されている
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  local diff_count
-  diff_count=$(git -C "$repo_root" diff main -- skills/reviewing-deliverables/SKILL.md | wc -l | tr -d ' ')
-  [[ "$diff_count" -eq 0 ]] || {
-    echo "FAIL: skills/reviewing-deliverables/SKILL.md に差分がある（${diff_count} 行）"
+  grep -q 'agents/README.md' "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: skills/autopilot/SKILL.md から agents/README.md 参照が消えている"
     return 1
   }
-}
-
-@test "AT-007b: agents/README.md model policy blockquote is unchanged from main" {
-  # Given: git diff main -- agents/README.md
-  # When: blockquote 行の差分を検査する
-  # Then: blockquote ブロック（> で始まる行）に削除・追加がない
-  local repo_root
-  repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-
-  local blockquote_diff
-  blockquote_diff=$(git -C "$repo_root" diff main -- agents/README.md | grep -E '^[+-]>' | grep -v '^---\|^+++' || true)
-  [[ -z "$blockquote_diff" ]] || {
-    echo "FAIL: agents/README.md の blockquote（#259 ポリシー）に差分がある:"
-    echo "$blockquote_diff"
+  grep -q 'agents/README.md' "${repo_root}/skills/running-atdd-cycle/SKILL.md" || {
+    echo "FAIL: skills/running-atdd-cycle/SKILL.md から agents/README.md 参照が消えている"
     return 1
   }
 }

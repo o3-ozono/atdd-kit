@@ -9,6 +9,7 @@
 - 実装が正。`skills/reviewing-deliverables/SKILL.md` は変更しない（CS-3）。
 - `agents/README.md` の **#259 モデルポリシー blockquote は一字も変更しない**。`tests/test_phase_model_assignment.bats` と `tests/test_issue_105_frontmatter_session_inheritance.bats` AC3 が文言を pin しており、`skills/autopilot/SKILL.md:240` / `skills/running-atdd-cycle/SKILL.md:24` から参照されている。
 - レガシー参照の残存箇所（事前 grep 棚卸し済み）: `agents/*.md` 6 ファイル + `agents/README.md`、`README.md`（L22 / L89 / L130-141「Review Subagents」節）、`README.ja.md`（L24 / L91 / L132-143）、`DEVELOPMENT.md`（L87 Agents 節 / L140 tree 注記）、`DEVELOPMENT.ja.md`（同 L87 / L140）、`docs/methodology/definition-of-ready.md`（L30）、`docs/guides/getting-started.md`（L130）、`tests/test_reviewer_subagents.bats`、`tests/test_issue_105_frontmatter_session_inheritance.bats`（AC1/AC2 が削除対象 6 ファイルを loop）、`tests/README.md`（L53）。`CHANGELOG.md` / `docs/issues/` は歴史的記録として不変。
+- 棚卸し追補（impl phase で発見・トレーサビリティ記録）: `docs/methodology/definition-of-done.md`（D8「specialist reviewer PASS」→ 動的パネル表現へ改訂、commit 10af6ad）、`skills/README.md`（L59「Retained specialist reviewer agents … kept for reuse」→ 削除済み実態に整合、coverage gate 解消時）。いずれもファイル名を含まない『specialist reviewer』表現のため当初 grep パターンの死角だった — AT-003a / pin(b) のパターン拡張（`specialist reviewer|47 criteria`）と docs/ 全域スコープ化で再混入を恒久検知する。
 - 設計ドキュメントは作らない: 存廃トレードオフは Gate ① で確定済みで PRD Open Questions に記録されているため。
 
 ## Implementation

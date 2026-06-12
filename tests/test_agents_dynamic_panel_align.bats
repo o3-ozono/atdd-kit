@@ -17,12 +17,13 @@
 # --- pin (b): 対象範囲でレガシー参照 0 件 ---
 
 @test "pin(b): no legacy reviewer references in agents/ docs/ skills/ commands/ rules/ README.md README.ja.md DEVELOPMENT.md DEVELOPMENT.ja.md" {
+  # docs/ は issues/（歴史的記録）を除く全域。パターンはファイル名を含まない
+  # レガシー表現（'specialist reviewer' / '47 criteria'）も検知する（#271 coverage gate）。
   local hits
-  hits=$(grep -rE 'prd-reviewer|us-reviewer|plan-reviewer|code-reviewer|at-reviewer|final-reviewer' \
+  hits=$(grep -rE 'prd-reviewer|us-reviewer|plan-reviewer|code-reviewer|at-reviewer|final-reviewer|specialist reviewer|47 criteria' \
+    --exclude-dir=issues \
     agents/ \
-    docs/methodology/ \
-    docs/guides/ \
-    docs/workflow/ \
+    docs/ \
     skills/ \
     commands/ \
     rules/ \

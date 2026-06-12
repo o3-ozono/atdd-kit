@@ -56,5 +56,5 @@ Resume mid-flow by invoking the skill for the next incomplete step. `skill-gate`
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) — Skills vs Commands, skill description field rules
 - Each skill's `SKILL.md` — Full trigger conditions and instructions
-- [agents/](../agents/) — Retained specialist reviewer agents (PRD, User Story, Plan, Code, Acceptance Test, Final). As of #234, `reviewing-deliverables` generates its reviewer panel dynamically via the Workflow tool rather than spawning this fixed roster; these definitions are kept for reuse.
+- [agents/](../agents/) — Custom agent definitions placeholder (currently README only). Since #234, `reviewing-deliverables` generates its reviewer panel dynamically via the Workflow tool; the former fixed reviewer roster was removed in #271. The directory README also hosts the #259 model-assignment policy.
 - [addons/](../addons/) — Platform-specific addon packages

@@ -1,2 +1,8 @@
 {"iteration":1,"step":"extracting-user-stories","verdict":"PASS","fingerprint":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
 {"iteration":1,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+{"iteration":1,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"3e069d23d109da154f8e9315cd72bc488c62b9ffbc479b661fa419d24c973482"}
+{"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"f918c2b1eb3f71fbab3975937c3e55f539134955d20f27af5440da7207c57172"}
+{"iteration":3,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"3966f1f8d2de312de4218a403ce16ffbc913d4fc3dc653df8aed08f33e8b5cc5"}
+{"iteration":4,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"3dfdc96fb97b97530f58d26163fbeb2b75cb806e67d72121e72fbddae105254a"}
+{"iteration":5,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"d9e1d1c293ca4938f8b426530c0c6a28953a9ab86511e23d287aa48305d22234"}
+{"iteration":6,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"9b8a94329564ddeb5f4d7aa347d9f6f38ac818831191426dd9948b3159acffe7"}
