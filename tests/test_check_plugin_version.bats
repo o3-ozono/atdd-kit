@@ -397,3 +397,22 @@ CL
   # STALE_SESSION must NOT appear (current 3.12.0 is NOT < cached 3.11.1)
   [[ "${lines[0]}" != "STALE_SESSION" ]]
 }
+
+# AT-009: network-independent, local-only
+# Static inspection: verify no external network calls (curl/wget/http/nc etc.) exist in the script.
+# This guard detects future regressions if the script is modified.
+@test "AT-009: check-plugin-version.sh has no external network calls (curl/wget/http/nc)" {
+  # Check the entire script including comments and string literals
+  # grep exits 1 when no lines match → test PASS
+  run grep -nE '\b(curl|wget|nc |netcat|https?://|fetch |requests\.|urllib)' \
+    scripts/check-plugin-version.sh
+  [[ "$status" -eq 1 ]]
+}
+
+@test "AT-009: check-plugin-version.sh references only local files across all decision paths" {
+  # Disallowed pattern: network-related tools must not appear in the script
+  local script="scripts/check-plugin-version.sh"
+  run grep -cE '\b(curl|wget|fetch|ssh|scp|rsync|nc |netcat|nslookup|dig|ping)\b' "$script"
+  # grep -c outputs "0" when no lines match
+  [[ "$output" == "0" ]]
+}

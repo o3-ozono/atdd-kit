@@ -95,7 +95,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_session_start_auto_sync.bats | session-start addon-based file sync |
 | test_session_start_recent_activity.bats | session-start Recent Activity (24h) reporting |
 | test_session_start_task_recommendation.bats | session-start task recommendation (in-progress Issue handling) |
-| test_session_start_version.bats | session-start version check |
+| test_session_start_version.bats | session-start version check — SKILL.md Phase 1-E parses RESTART_REQUIRED + restart message in Phase 3 report (AT-005: 2 cases) + SKILL.md Phase 1-E parses STALE_SESSION + restart message + E2 Auto-Sync skip wiring (AT-003: 3 cases) (#280) |
 | test_conflict_detection.bats | session-start git conflict detection |
 
 ### Spec / US / AC Mechanism
@@ -146,7 +146,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_impact_map.bats | scripts/impact_map.sh impact scope detection (Issue #135) |
 | test_run_skill_e2e_impact.bats | scripts/run-skill-e2e.sh path-based impact mapping (Issue #222) |
 | test_skill_gate_collision.bats | scripts/check-issue-collision.sh + skill-gate parallel collision detection (Step C2 / #197) |
-| test_check_plugin_version.bats | scripts/check-plugin-version.sh |
+| test_check_plugin_version.bats | scripts/check-plugin-version.sh — legacy tokens (FIRST_RUN/NO_UPDATE/UPDATED/VERSIONS/BREAKING) + STALE_SESSION (AT-002: loaded < cached, marker unchanged) + RESTART_REQUIRED (AT-001: installed > loaded, marker unchanged) + simultaneous-condition priority STALE wins (AT-007) + fallback when installed_plugins.json absent/unparseable/no-matching-entry (AT-006: 5 cases) + CHANGELOG guard VERSIONS:UNKNOWN when cached heading absent (AT-004: 2 cases) + post-restart recovery to UPDATED/NO_UPDATE (AT-008: 2 cases) + network-independence static inspection (AT-009: 2 cases) (#280) |
 
 ### Templates, Docs & Config
 
