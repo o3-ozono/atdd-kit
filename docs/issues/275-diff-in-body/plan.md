@@ -5,7 +5,7 @@
 | ファイル | 変更 |
 |---------|------|
 | `skills/autopilot/SKILL.md` | Flow step 3 に Diff-in-body (mandatory) + key lines / key decision の操作的定義、step 5 にハンドオフ diff 必須化を追記。Dialog economy（#267, L47）に補完関係を明文化。行バジェットは #272 取り込みで 260/260 となったため 280 へ引き上げ（#254 の 240→260 と同じ前例） |
-| `tests/test_autopilot_skill.bats` | Diff-in-body pin（境界 canary AT-000 + AT-001〜AT-005。AT-005 = #267/#275 調停句の両節 pin）を追加。極性を固定する anchored grep を使う |
+| `tests/test_autopilot_skill.bats` | 新規 7 @test: 境界 canary AT-000 + AT-001〜AT-005（AT-005 = #267/#275 調停句の両節 pin）+ 空配列 `rejectionFindings` の fail-closed 拒否 pin。極性を固定する anchored grep を使う |
 | `tests/e2e/autopilot.bats` | ランタイム挙動検証: 再提示シナリオで LLM がゲートメッセージ本文に diff ハンク提示を回復することを実 `claude -p` で検証 |
 | `docs/issues/275-diff-in-body/` | prd / user-stories / plan / acceptance-tests の 4 点セット |
 | `CHANGELOG.md` + `.claude-plugin/plugin.json` | [3.12.1] エントリ + patch bump（DEVELOPMENT.md §Versioning。main の 3.12.0 取り込み後に採番） |

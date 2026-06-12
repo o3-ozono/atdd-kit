@@ -381,7 +381,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 
 @test "diff-in-body (#275): AT-000 sed boundaries for the section extractions exist" {
   # if a boundary heading is renamed, the sed ranges below silently expand to
-  # EOF and AT-001..AT-005 would pass for the wrong reason — fail loudly here
+  # EOF and AT-001..AT-005 would pass for the wrong reason — fail loudly here.
+  # note: these are prefix matches (same regexes as the sed ranges), so an
+  # INSERTED heading sharing an END prefix (e.g. '## Mechanism Details' inside
+  # the Flow section) truncates the range without failing AT-000 — the
+  # downstream AT-001..AT-004 greps then fail noisily, so no silent false-pass
   grep -q '^## Flow' "$SKILL_FILE"
   grep -q '^## Mechanism' "$SKILL_FILE"
   grep -q '^## Dialog economy' "$SKILL_FILE"
@@ -433,6 +437,9 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # re-presentation (#276 round-4 review, error-handling lens)
   grep -q 'rejectionFindings.length === 0' "$SKILL_FILE"
   grep -qi 'must not be empty' "$SKILL_FILE"
+  # containment invariant: the guard must sit INSIDE the undefined-check block,
+  # right after Array.isArray — moved outside it, undefined.length is a TypeError
+  grep -A 2 'if (A.rejectionFindings !== undefined)' "$SKILL_FILE" | grep -q 'length === 0'
 }
 
 @test "diff-in-body (#275): AT-005 #267/#275 reconciliation is pinned in BOTH sections" {
