@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.3] - 2026-06-12
+
+### Fixed
+
+- **autopilot の User gate 提示に Diff-in-body（差分の本文内提示）を必須化**（#275）。設計承認ゲート（Flow step 3）とマージゲート引き継ぎ（step 5）の提示が要約のみで、ユーザーが diff を見るのに毎回追加要求が必要だった（stockbot-jp Issue #61 の運用で発生）。`skills/autopilot/SKILL.md` に追記: (1) **step 3** — ゲートメッセージ本文（セッション内 + GitHub ゲートコメントの両方）への判断材料インライン提示。差し戻し修正後の再提示は finding ごとに整理した diff ブロック + key lines（= AC を直接実装する行・公開インターフェースを変える行・rejection finding に引用された行）、初回提示は各成果物の key decisions（= 覆すと少なくとも 1 つの AC か plan のステップ構成が変わる判断。整形上の選択や Issue 本文から導出可能な事項 (#254) は対象外）を file/line 参照付きで提示。要約のみの提示（ユーザーに diff を追加要求させる形）を禁止。(2) **step 5** — 実装 diff（per-file stat + key hunks = step 3 の key lines を含むハンク）の本文内提示を必須化、green ステータス要約のみを禁止。#267 の提示チャネル規定とは補完関係（成果物本体は引き続き Draft PR diff、インラインハンクは判断根拠であって代替チャネルではない）と明文化。レビュー指摘（#276 FAIL: BATS pin 不在で要件削除が検出不能・用語未定義）を受け、`tests/test_autopilot_skill.bats` に pin 4 件（AT-001〜AT-004: 再提示 diff ハンク / 初回 key decisions / ハンドオフ per-file stat / 操作的定義の存在）を追加し、`docs/issues/275-diff-in-body/`（prd / acceptance-tests）と `tests/README.md` を同期。
+
 ## [3.11.2] - 2026-06-11
 
 ### Fixed

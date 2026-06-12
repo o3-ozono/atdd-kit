@@ -370,6 +370,41 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   echo "$section" | grep -qi 'full-channel sync'
 }
 
+# --- Diff-in-body (#275) ------------------------------------------------------
+# The gate message itself carries the decision evidence inline at the
+# design-approval gate (Flow step 3) and the merge hand-off (step 5).
+
+@test "diff-in-body (#275): AT-001 re-presentation shows per-finding diff hunks with key lines, in both channels" {
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -q 'Diff-in-body (mandatory, #275)'
+  echo "$flow" | grep -qi 'diff blocks organized per finding'
+  echo "$flow" | grep -qi 'BOTH the in-session message and the GitHub gate comment'
+}
+
+@test "diff-in-body (#275): AT-002 first presentation shows key decisions with file/line references; summary-only gates are banned" {
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'key decisions with file/line references'
+  echo "$flow" | grep -qi 'summary-only gate'
+}
+
+@test "diff-in-body (#275): AT-003 merge hand-off includes the implementation diff inline (per-file stat + key hunks)" {
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'per-file stat'
+  echo "$flow" | grep -qi 'not just a green-status summary'
+}
+
+@test "diff-in-body (#275): AT-004 key lines / key decision carry operational definitions" {
+  # without these definitions a formally-compliant but content-free gate
+  # message satisfies the rule (review finding on #276)
+  local flow
+  flow=$(sed -n '/^## Flow/,/^## Mechanism/p' "$SKILL_FILE")
+  echo "$flow" | grep -qi 'key lines.* = lines that directly implement an AC'
+  echo "$flow" | grep -qi 'key decision.* = a choice that, if reversed'
+}
+
 # --- Model assignment (#259) -------------------------------------------------
 # impl / review subagents default to Sonnet (bench-verified); design phase and
 # the orchestrator stay on the session model; escalation is one-way per Issue.
