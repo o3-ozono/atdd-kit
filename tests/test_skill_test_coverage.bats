@@ -75,3 +75,40 @@ _e2e_file() {
     [ -f "skills/${skill}/SKILL.md" ]
   done
 }
+
+# --- #278 regression pins: E2E model specification ---
+
+@test "coverage: every E2E test file defines E2E_MODEL=\"\${SKILL_E2E_MODEL:-sonnet}\" (#278)" {
+  # glob ベースで tests/e2e/*.bats 全ファイルを対象とし、新規ファイルも自動的に検査範囲に入る
+  local missing=()
+  for f in tests/e2e/*.bats; do
+    if ! grep -q 'E2E_MODEL="${SKILL_E2E_MODEL:-sonnet}"' "$f"; then
+      missing+=("$f")
+    fi
+  done
+  if [ "${#missing[@]}" -gt 0 ]; then
+    printf 'Missing E2E_MODEL definition:\n'
+    printf '  %s\n' "${missing[@]}"
+    return 1
+  fi
+}
+
+@test "coverage: every E2E test file passes --model to all claude -p invocations (#278)" {
+  # 各ファイルの claude 起動行数と --model 指定数が一致すること（= 全分岐でモデル指定漏れなし）
+  local failed=()
+  for f in tests/e2e/*.bats; do
+    local launch_count model_count
+    launch_count=$(grep -c 'CLAUDE_BIN.*-p' "$f" 2>/dev/null; true)
+    model_count=$(grep -c 'model.*E2E_MODEL' "$f" 2>/dev/null; true)
+    launch_count=$(echo "$launch_count" | tail -1 | tr -d ' ')
+    model_count=$(echo "$model_count" | tail -1 | tr -d ' ')
+    if [ "$launch_count" -ne "$model_count" ] || [ "$launch_count" -eq 0 ]; then
+      failed+=("$f (launch: ${launch_count}, --model: ${model_count})")
+    fi
+  done
+  if [ "${#failed[@]}" -gt 0 ]; then
+    printf 'E2E files with missing --model in some branches:\n'
+    printf '  %s\n' "${failed[@]}"
+    return 1
+  fi
+}

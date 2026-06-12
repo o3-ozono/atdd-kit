@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.4] - 2026-06-12
+
+### Fixed
+
+- **Skill E2E テストの `claude` 起動に `--model`（デフォルト sonnet・`SKILL_E2E_MODEL` で上書き）を指定し、モデル未指定によるトークン過大消費を解消**（#278）。`tests/e2e/*.bats` 全 11 ファイルの `_run_claude` に `E2E_MODEL="${SKILL_E2E_MODEL:-sonnet}"` 変数定義と `--model "${E2E_MODEL}"` フラグを 3 分岐（`timeout` / `gtimeout` / フォールバック）すべてに追加。回帰 pin 2 件（モデル変数 pin + 全分岐 pin）を `tests/test_skill_test_coverage.bats` に追加し、既存 4 件と合わせて 6 件 green。モデルポリシーを `tests/README.md` の Skill E2E Tests 節に追記。変更スコープは `tests/e2e/*.bats` / `tests/test_skill_test_coverage.bats` / `tests/acceptance/AT-278.bats` / `tests/README.md` / `CHANGELOG.md` / `.claude-plugin/plugin.json` / `docs/issues/278-*` に限定（Non-Goals の `_run_claude` 共通ファイル化・`tests/fixtures/headless/` / `scripts/run-skill-e2e.sh` は無変更）。
+
 ## [3.11.3] - 2026-06-12
 
 ### Fixed

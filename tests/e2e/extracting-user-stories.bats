@@ -14,6 +14,7 @@
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 SKILL_FILE="${REPO_ROOT}/skills/extracting-user-stories/SKILL.md"
 TIMEOUT_SECS="${SKILL_E2E_TIMEOUT_SECS:-120}"
+E2E_MODEL="${SKILL_E2E_MODEL:-sonnet}"
 
 setup() {
   if [ ! -f "$SKILL_FILE" ]; then
@@ -30,16 +31,19 @@ _run_claude() {
   local prompt="$1"
   if command -v timeout >/dev/null 2>&1; then
     timeout "$TIMEOUT_SECS" "$CLAUDE_BIN" -p "$prompt" \
+      --model "${E2E_MODEL}" \
       --max-turns 1 \
       --permission-mode bypassPermissions \
       2>/dev/null
   elif command -v gtimeout >/dev/null 2>&1; then
     gtimeout "$TIMEOUT_SECS" "$CLAUDE_BIN" -p "$prompt" \
+      --model "${E2E_MODEL}" \
       --max-turns 1 \
       --permission-mode bypassPermissions \
       2>/dev/null
   else
     "$CLAUDE_BIN" -p "$prompt" \
+      --model "${E2E_MODEL}" \
       --max-turns 1 \
       --permission-mode bypassPermissions \
       2>/dev/null
