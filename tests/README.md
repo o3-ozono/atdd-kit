@@ -48,6 +48,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_writing_design_doc_skill.bats | writing-design-doc skill (on-demand, Step B8 / #195) |
 | test_bug_skill.bats | bug skill (special flow, Step C1 / #196) |
 | test_debugging_skill.bats | debugging skill (special flow, Step C1 / #196) |
+| test_express_skill.bats | express skill (documentation-grade fast path, Issue #284) |
 | test_skill_test_coverage.bats | all 10 flow skills have both Unit Test + Skill E2E Test (Step C1 / #196); and all E2E files specify `--model` + define `E2E_MODEL` (#278) |
 | test_v1_skill_skeletons.bats | v1.0 skill structure across all 6 steps + on-demand skills (skeleton set now empty) |
 | test_agents_dynamic_panel_align.bats | Fixed reviewer agents removal and #234 alignment regression pins (Issue #271) |

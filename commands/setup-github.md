@@ -46,6 +46,7 @@ gh label create "type:research" --color "D4C5F9" --force
 gh label create "refactoring" --color "BFDADC" --force
 gh label create "implementing" --color "0E8A16" --force
 gh label create "blocked-ac" --color "B60205" --description "AC quality gate failed under skill-fix" --force
+gh label create "express-mode" --color "FEF2C0" --description "PR created via /atdd-kit:express fast path" --force
 ```
 
 ### Step 4: Summary
@@ -54,5 +55,5 @@ gh label create "blocked-ac" --color "B60205" --description "AC quality gate fai
 GitHub setup complete:
 - Issue templates: [count] files
 - PR template: created
-- Labels: 14 created
+- Labels: 15 created
 ```

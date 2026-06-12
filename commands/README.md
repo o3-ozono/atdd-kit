@@ -8,6 +8,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 
 | Command | Purpose | Invocation |
 |---------|---------|------------|
+| [express](express.md) | Documentation-grade Issue fast path — skips PRD/US/plan/AT/review; requires explicit approval and CI gate | `/atdd-kit:express <issue>` |
 | [maintenance](maintenance.md) | On-demand rule and documentation health check; creates/updates maintenance Issue | `/atdd-kit:maintenance` |
 | [skill-fix](skill-fix.md) | Manually trigger the atdd-kit skill-defect report flow | `/atdd-kit:skill-fix` |
 | [setup-github](setup-github.md) | Set up GitHub issue/PR templates and labels | `/atdd-kit:setup-github` |

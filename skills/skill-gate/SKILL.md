@@ -13,13 +13,14 @@ Enforce governance rules before any action, including clarifying questions.
 
 ## Pre-check: Issue Work Routing
 
-1. **Match:** Message contains Issue reference (`#N` or `Issue N`) **AND** a work-start verb ("go ahead", "implement", "fix", "resume", "handle", "do it", "get started", "work on", "start", "continue").
-2. **Matched:** Enter the v1.0 6-step flow at Step 1. Guide to `defining-requirements`:
+1. **Express fast path (check first):** If the message is an explicit `/atdd-kit:express <N>` invocation, this is a recognized legitimate route — do NOT redirect to `defining-requirements`. Let the express skill handle it. Parallel Collision Detection still applies (see below).
+2. **Match:** Message contains Issue reference (`#N` or `Issue N`) **AND** a work-start verb ("go ahead", "implement", "fix", "resume", "handle", "do it", "get started", "work on", "start", "continue").
+3. **Matched:** Enter the v1.0 6-step flow at Step 1. Guide to `defining-requirements`:
    ```
    Use `/atdd-kit:defining-requirements <number>` to start the v1.0 flow for this Issue.
    ```
    The flow then chains Step 1 → 6 (defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying). Resume mid-flow by invoking the skill for the next incomplete step.
-3. **Not matched** (e.g., "What is Issue #16 about?"): Proceed to Governance Rules.
+4. **Not matched** (e.g., "What is Issue #16 about?"): Proceed to Governance Rules.
 
 ## Pre-check: Parallel Collision Detection
 
