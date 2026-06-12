@@ -17,6 +17,7 @@
 完了時に達成されている状態:
 
 - `/atdd-kit:express <issue>` コマンドで、Issue → 実装 → CI → merge の最短経路が実行できる。
+- **express 実行時の人間の接点は「発動承認」と「merge」の 2 点のみ。** 中間成果物（`docs/issues/<NNN>/` ディレクトリ、PRD / US / plan / AT、レビューレポート）は一切作らない。通常フローとの差は「省略の量」ではなく「経路そのものの短さ」で体感できる。
 - Issue #284 の AC1〜AC9 がすべて満たされている:
   - AC1: 発動はユーザの明示的承認が必須（implicit fallback 禁止）
   - AC2: 適用基準（OK 例 / NG 例 / 迷ったらフルフロー）が文書化されている
@@ -33,14 +34,25 @@
 
 ## What
 
-- `skills/express/SKILL.md` の新設（v1.0 capability-name 体系に整合）
+**設計原則（最優先）: express の価値はスピードと簡略性。** SKILL.md は最小構成とし、フルフロー級の儀式（多段ゲート・成果物テンプレート・構造化レビュー・セクション単位の確認）を express 内に持ち込まない。ステップとして存在してよいのは AC が明示的に要求するガードレールだけ。
+
+**express のランタイムフロー（これが全工程）:**
+
+1. 発動 — `/atdd-kit:express <issue>`（Issue 必須 = AC3、ユーザの明示的承認 = AC1）
+2. 適用基準チェック（AC2）— NG・判定に迷う場合は即フルフローへ
+3. branch 作成 → 実装 → commit
+4. PR 作成 — `express-mode` ラベル + 理由 1 セクション（AC5/AC6）
+5. CI green（AC4）→ 人間が merge
+
+**作るもの:**
+
+- `skills/express/SKILL.md` の新設（v1.0 capability-name 体系、最小構成）
 - `/atdd-kit:express <issue>` コマンドの追加
-- 適用基準の文書化（AC2）— OK 例: docs/README 追記・typo・コメント・gitignore・バージョン bump のみ等 / NG 例: 新機能・振る舞い変更・依存追加・CI/hooks 変更・セキュリティ影響あり等 / 判定に迷う場合はフルフローへフォールバック
-- 発動ゲート: ユーザの明示的承認必須（AC1）、対象 Issue 必須（AC3）
-- ガバナンス維持: CI ゲート（AC4）、`express-mode` ラベル + PR body 固定セクション（AC5）、選択理由の記録（AC6）、version bump + CHANGELOG（AC7）
+- 適用基準の文書化（AC2）— OK 例: docs/README 追記・typo・コメント・gitignore・バージョン bump のみ等 / NG 例: 新機能・振る舞い変更・依存追加・CI/hooks 変更・セキュリティ影響あり等
 - skill-gate 統合: express 経路を正規ルートとして認識させる（AC8）
 - スコープ逸脱フォールバック: 実装中に diff が適用基準を超えたら express を中断しフルフローへ切り替えて報告（AC9）
-- 付帯整備: BATS テスト（`tests/test_express_skill.bats`）、`skills/README.md` / `commands/README.md` 更新、CHANGELOG エントリ + minor version bump（新 skill 追加 = minor、DEVELOPMENT.md 準拠）
+- 対象リポジトリが atdd-kit 自身の場合の AC7 遵守（version bump + CHANGELOG は省略不可）
+- 付帯整備（atdd-kit 開発ルール上の必須分のみ）: BATS テスト（`tests/test_express_skill.bats`）、`skills/README.md` / `commands/README.md` 更新、CHANGELOG + minor bump
 
 ## Non-Goals
 
@@ -49,6 +61,7 @@
 - **フルフロー skill 群（6-step）の変更はしない** — express は追加の省略経路であり、既存の defining-requirements 〜 merging-and-deploying を書き換えない。
 - **コード変更への適用拡大はしない** — 適用基準の NG 例（新機能・振る舞い変更・依存追加・CI/hooks 変更等）は明示的にスコープ外。迷ったらフルフロー。
 - **keyword 検出による implicit 自動発動はしない** — AC1 により Claude の独断開始は禁止。
+- **express 内に新たな多段承認・中間成果物を持ち込まない** — 省略経路に儀式を足したら存在意義が消える。人間の接点は発動承認と merge の 2 点に固定。
 
 ## Open Questions
 
