@@ -9,8 +9,8 @@
 # Functions:
 #   fingerprint                              stdin -> normalized sha256 of a failure signature
 #   record_iteration <jsonl> <it> <step> <verdict> <fp>   append one JSONL audit line (AL-4)
-#   check_sameness <jsonl> [step]            non-zero if the last 2 iterations share a fingerprint (step-scoped when step given)
-#   check_stuck <jsonl> <window> [step]      non-zero if the last <window> iterations show no progress (step-scoped when step given)
+#   check_sameness <jsonl> [step]            non-zero if the last 2 FAIL iterations share a fingerprint (step-scoped when step given; FAIL rows only — #277)
+#   check_stuck <jsonl> <window> [step]      non-zero if the last <window> FAIL iterations show no progress (step-scoped when step given; FAIL rows only — #277)
 #   check_max_iterations <current> <max>     non-zero if current >= max
 #   pin_anchor <pinfile>                     pin the approved-AC fingerprint once at loop start (AL-2)
 #   check_pin <pinfile> <current-fp>         non-zero if the AC anchor drifted from the pin (AL-2)
@@ -90,29 +90,42 @@ record_iteration() {
 # causes false sameness halts (#272, #269 incident).
 # Step is already _json_escape'd by record_iteration, so a fixed-string match
 # on the literal value is correct for all well-formed step names.
+#
+# FAIL-only filter (#277): 比較母集団は同一 step かつ verdict=FAIL の行のみ。
+# PASS 行は「失敗の繰り返し」の証拠にならないため除外する。空 blocking findings の
+# イテレーションはすべて同一 fingerprint になるため、PASS 行を含めると設計ゲート
+# 差し戻し再入などのシナリオで check_sameness / check_stuck が偽停止する（#277）。
+# この FAIL-only フィルタは step 引数の有無にかかわらず全モードで適用する（Gate ①）。
 _fingerprints() {
   local jsonl="$1" step="${2:-}"
   [ -f "$jsonl" ] || return 0
   if [ -n "$step" ]; then
-    # 対象 step の行のみに絞り込んでから fingerprint 列を抽出する。
+    # 対象 step かつ verdict=FAIL の行のみに絞り込んでから fingerprint 列を抽出する。
     # _json_escape の出力と同じエスケープ表現（バックスラッシュ・ダブルクォートのみ）で
     # 固定文字列マッチさせる（grep -F）。
     local escaped_step
     escaped_step=$(_json_escape "$step")
     grep -F "\"step\":\"${escaped_step}\"" "$jsonl" \
+      | grep -F '"verdict":"FAIL"' \
       | grep -o '"fingerprint":"[^"]*"' \
       | sed 's/"fingerprint":"//; s/"$//'
   else
-    grep -o '"fingerprint":"[^"]*"' "$jsonl" | sed 's/"fingerprint":"//; s/"$//'
+    # レガシー全ログモード: step フィルタなし。FAIL 行のみ（#277 Gate ① 全モード適用）。
+    grep -F '"verdict":"FAIL"' "$jsonl" \
+      | grep -o '"fingerprint":"[^"]*"' \
+      | sed 's/"fingerprint":"//; s/"$//'
   fi
 }
 
 # sameness-detector: halt (non-zero) when the last two iterations carry the
 # same fingerprint — the loop is repeating the identical failure.
+# 比較母集団は FAIL 行のみ。PASS 行は失敗反復の証拠にならないため除外する (#277)。
+# PASS を挟んだ同一 fingerprint の FAIL 再発（FAIL→PASS→FAIL）は「同じ失敗の繰り返し」
+# として halt する — これは意図された挙動（#277 AT-006 意味論 pin）。
 # Optional second argument `step`: when non-empty, only the rows for that step
 # are compared, preventing cross-phase fingerprint coincidence from halting the
 # loop (#272 / #269 incident). Omitting step preserves the legacy whole-log
-# behavior (backward-compatible).
+# behavior (backward-compatible); FAIL-only applies to both modes (#277 Gate ①).
 check_sameness() {
   local jsonl="$1" step="${2:-}" fps n last prev
   fps=$(_fingerprints "$jsonl" "$step")
@@ -131,9 +144,11 @@ check_sameness() {
 # both a flatline (A,A,A) AND an oscillation (A,B,A,B — fix-one / break-another),
 # which the previous "collapse to a single distinct" rule missed and which
 # check_sameness (last-two only) also misses.
+# window 母集団は同一 step の FAIL 行のみ。PASS 行は進捗の証拠にならないため除外する (#277)。
 # Optional third argument `step`: when non-empty, only the rows for that step
 # are included in the window population (#272 / #269 incident fix). Omitting
-# step preserves the legacy whole-log behavior (backward-compatible).
+# step preserves the legacy whole-log behavior (backward-compatible);
+# FAIL-only applies to both modes (#277 Gate ①).
 check_stuck() {
   local jsonl="$1" window="${2:-3}" step="${3:-}" fps n tail_fps count distinct
   # A non-numeric window would make the integer test / tail error out yet still
