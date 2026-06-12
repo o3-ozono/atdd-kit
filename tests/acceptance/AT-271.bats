@@ -273,16 +273,26 @@
 
 # --- AT-006: BATS suite 全体 green（CS-2） ---
 
-@test "AT-006: bats tests/ suite passes without failure" {
+@test "AT-006: bats tests/ and tests/acceptance/ suite passes without failure" {
   # Given: 本 Issue の全変更（削除・置換・テスト差し替え・version bump）
-  # When: bats tests/ を実行する
+  # When: bats tests/ および tests/acceptance/（AT-271.bats 自身を除く）を実行する
   # Then: fail 0 件（test_phase_model_assignment / test_docs_restructure / AT-269 含む既存 pin もすべて green）
+  #
+  # NOTE: tests/acceptance/AT-271.bats（本ファイル）を再帰実行すると無限ループになるため除外する。
+  #       tests/acceptance/ の他の AT ファイル（AT-269.bats 等）は明示的に追加する。
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  run bats "${repo_root}/tests/"
+  # tests/acceptance/ 内の AT ファイルを収集（本ファイル自身を除く）
+  local acceptance_files=()
+  while IFS= read -r -d '' f; do
+    [[ "$f" == "$BATS_TEST_FILENAME" ]] && continue
+    acceptance_files+=("$f")
+  done < <(find "${repo_root}/tests/acceptance" -name "*.bats" -print0 2>/dev/null)
+
+  run bats "${repo_root}/tests/" "${acceptance_files[@]}"
   [[ "$status" -eq 0 ]] || {
-    echo "FAIL: tests/ suite に失敗があった"
+    echo "FAIL: tests/ または tests/acceptance/ suite に失敗があった"
     echo "$output"
     return 1
   }

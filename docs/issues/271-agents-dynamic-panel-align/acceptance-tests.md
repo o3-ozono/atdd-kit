@@ -75,7 +75,7 @@
 
 - [x] [regression] AT-006: suite 全体が green で出荷される
   - Given: 本 Issue の全変更（削除・置換・テスト差し替え・version bump）
-  - When: `bats tests/ tests/acceptance/` を実行する
+  - When: `bats tests/` および `tests/acceptance/` 配下の AT ファイル（AT-271.bats 自身を除く）を実行する
   - Then: fail 0 件（`test_phase_model_assignment.bats` / `test_docs_restructure.bats` / `AT-269.bats` を含む既存 pin もすべて green）
 
 ## AT-007: Non-Goals 不可侵（CS-3）
