@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.3] - 2026-06-13
+
+### Fixed
+
+- **autopilot rails subagent が実ログでなく合成フィクスチャに対して check_stuck を実行し偽 halt を報告する問題を修正**（#287）。`skills/autopilot/SKILL.md` の rails ステップ（`label: rails:step`）プロンプトは `"<dir>"` / `"<log>"` プレースホルダのみで指示しており、freeze / audit ステップにある「Resolve the issue directory matching `docs/issues/${NNN}-*`」実パス解決指示を欠いていた。そのため rails subagent（Sonnet）がプレースホルダを実パスに解決せず、`/tmp` に合成フィクスチャ（架空の FAIL 行）を自作して `check_stuck` を実行し、その exit 1 を `stuckExit` として誤報告 → 偽 `COMPLETED_WITH_DEBT (stuck)` halt を起こしていた（#277 impl phase 実走で発生）。修正: rails プロンプト冒頭に freeze / audit と同形の実ディレクトリ・実ログ解決指示を追加し、合成フィクスチャ・サンプル FAIL 行・`/tmp` コピーの作成を明示的に禁止（「invented data に対する check は偽 halt を返す」根拠を明記）。`tests/test_autopilot_skill.bats` に AT-007（#287）を追加し rails プロンプトの実パス解決指示＋フィクスチャ禁止文言を構造 pin、計 63 件 green。
+
 ## [3.14.2] - 2026-06-13
 
 ### Changed
