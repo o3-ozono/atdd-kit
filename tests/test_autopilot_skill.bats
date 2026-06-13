@@ -5,7 +5,7 @@
 # LLM behavior is covered by tests/e2e/autopilot.bats.
 #
 # Scope (#246, gates re-placed in #249): autopilot is the autopilot MODE — a thin
-# orchestrator that runs the EXISTING flow skills, narrows the human gates to three
+# orchestrator that runs the EXISTING flow skills, narrows the User gates to three
 # (requirements approval at the start, design approval before ATDD, merge at the
 # end), and loops generate→review→fix until a satisfaction oracle (AND of green AT,
 # reviewer verdict, zero P0/P1) holds, with safety rails.
@@ -36,8 +36,10 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -q 'reviewing-deliverables' "$SKILL_FILE"
 }
 
-@test "orchestration: human gates fixed to three points — requirements, design approval, merge (F1/AL-1, #249)" {
-  grep -qiE 'human gate|人間ゲート' "$SKILL_FILE"
+@test "orchestration: User gates fixed to three points — requirements, design approval, merge (F1/AL-1, #249)" {
+  grep -qiE 'user gate' "$SKILL_FILE"
+  # the gate naming is unified to "User gate" (#281) — the old naming must be gone
+  ! grep -qiE 'human gate|人間ゲート' "$SKILL_FILE"
   grep -qiE 'requirements approval|defining-requirements' "$SKILL_FILE"
   grep -qiE 'design approval|design-approval' "$SKILL_FILE"
   grep -qiE 'merge' "$SKILL_FILE"
@@ -338,9 +340,9 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -q 'exactly three' "$SKILL_FILE"
   grep -qi 'never a gate' "$SKILL_FILE"
   # count-based pin: a 4th numbered gate item would keep the strings above intact,
-  # so count the numbered items inside the Human gates section itself
+  # so count the numbered items inside the User gates section itself
   local gates
-  gates=$(sed -n '/^## Human gates/,/^## Dialog economy/p' "$SKILL_FILE" | grep -cE '^[0-9]+\. ')
+  gates=$(sed -n '/^## User gates/,/^## Dialog economy/p' "$SKILL_FILE" | grep -cE '^[0-9]+\. ')
   [ "$gates" -eq 3 ]
 }
 
@@ -351,7 +353,7 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 }
 
 # --- Presentation channel (#267) ---------------------------------------------
-# Deliverable bodies travel as the Draft PR diff at both human gates; the
+# Deliverable bodies travel as the Draft PR diff at both User gates; the
 # terminal / comments carry the PR link + decision points only.
 
 @test "presentation channel (#267): AT-003 both gates present deliverable bodies as the Draft PR diff" {

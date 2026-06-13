@@ -1,21 +1,21 @@
 ---
 name: autopilot
-description: "Use when you want to run an Issue in autopilot — autonomously converging its deliverables to near-green, with human gates at requirements approval (start), design approval (before ATDD), and merge (end)."
+description: "Use when you want to run an Issue in autopilot — autonomously converging its deliverables to near-green, with User gates at requirements approval (start), design approval (before ATDD), and merge (end)."
 ---
 
 # Autopilot
 
 The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle`, with `reviewing-deliverables` as the in-loop reviewer — and narrows human involvement to **three gates**: **requirements approval** at the start, **design approval** before any implementation, and **merge** at the end. Between gates, everything is looped `generate → review → fix` until a satisfaction oracle holds.
 
-The flow skills are **not permanently changed**; their role (specifically, where the human gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`.
+The flow skills are **not permanently changed**; their role (specifically, where the User gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`.
 
-**Scope ends at a near-green Issue handed to the human merge gate.** Merging is never automated.
+**Scope ends at a near-green Issue handed to the User merge gate.** Merging is never automated.
 
 ## autopilot Iron Law (overrides the standard Iron Law in this mode)
 
 While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridden by the **autopilot Iron Law** (`docs/methodology/autopilot-iron-law.md`, AL-1…AL-6):
 
-- **AL-1** human gates = requirements approval + design approval + merge, fixed.
+- **AL-1** User gates = requirements approval + design approval + merge, fixed.
 - **AL-2** iterations anchor to the immutable artifacts a human approved **before the current phase**, **enforced** by a sha256 pin per phase (design: prd.md → `autopilot-prd.pin`; impl: prd.md + user-stories.md → `autopilot-design.pin`, taken at the design-approval gate) re-checked every iteration (drift → halt); impl precondition: AC→AT coverage gate green.
 - **AL-3** "done" = the satisfaction-oracle AND gate; deterministic gates decide AT/lint/test.
 - **AL-4** every finding needs an `evidence_ref`; an unbacked PASS auto-demotes; verdicts persist to JSONL.
@@ -29,9 +29,9 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 
 ## Input
 
-- Issue number, with a **human-approved PRD** already produced via `defining-requirements` (壁打ち) — the first human gate. If the PRD is not approved, stop and route to that gate. autopilot never invents or approves its own requirements.
+- Issue number, with a **human-approved PRD** already produced via `defining-requirements` (壁打ち) — the first User gate. If the PRD is not approved, stop and route to that gate. autopilot never invents or approves its own requirements.
 
-## Human gates (exactly three — AL-1)
+## User gates (exactly three — AL-1)
 
 1. **Start — requirements approval.** `defining-requirements` engages the human in 壁打ち (run it per Dialog economy below), the human approves the PRD, and it is frozen as the design phase's immutable anchor.
 2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human** (one batch presentation — Dialog economy below). Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment), carried into the design-phase re-invocation as `rejectionFindings` args (#261, Flow step 3); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
@@ -60,7 +60,7 @@ This governs all human-facing dialog under autopilot: the Gate ① requirements 
 
 1. **Precondition.** The approved PRD exists at `docs/issues/<NNN>-*/prd.md`. Missing or unapproved → stop and route to `defining-requirements`.
 2. **Design phase (autonomous).** Invoke the Workflow script below with `args = { issue: NNN, phase: 'design' }` — pass `args` as a JSON object（文字列化した JSON を渡さない, #256）. Converges `extracting-user-stories` then `writing-plan-and-tests`, anchored to the pinned PRD. No executable AT suite exists yet, so the AT / coverage gates are off and the oracle is reviewer-only.
-3. **Design-approval gate (human).** Present the near-green `user-stories.md` / `plan.md` / `acceptance-tests.md` and ask:
+3. **Design-approval gate (User gate).** Present the near-green `user-stories.md` / `plan.md` / `acceptance-tests.md` and ask:
    > `設計成果物（user-stories / plan / acceptance-tests）を承認しますか? 'ok' で ATDD（impl phase）へ進みます。修正点があればコメントしてください。`
    **Diff-in-body (mandatory, #275).** The gate message itself must carry the evidence, inline in BOTH the in-session message and the GitHub gate comment — complementing #267: deliverable bodies still travel as the Draft PR diff; the inline hunks are the decision evidence, not a replacement channel. On every re-presentation after fixes (re-presentation = the gate of a run re-invoked with `rejectionFindings`, #261; anything else is a first presentation), show the actual diff hunks of what changed (```diff blocks organized per finding, with the key lines called out — *key lines* = lines that directly implement an AC, change a public interface, or are quoted in a rejection finding). On first presentation, show each artifact's key decisions with file/line references — *key decision* = a choice that, if reversed, changes at least one AC or the plan's step structure; formatting choices and facts derivable from the Issue body (#254) do not qualify. Never present a summary-only gate that makes the user ask for the diff.
    Do not proceed without an explicit `ok`. Any non-`ok` response — including partial approval like「A は ok / B は要修正」— rejects the **whole deliverable set**（部分承認は承認ではない）; never enter the impl phase on it (#261). On rejection: split the comment セクション単位 into findings（1 セクションの指摘 = 1 finding — never collapse multiple points into one）, each with `priority`（0 = blocker unless the human states a severity）and `evidence_ref` = that section's human comment verbatim, then re-invoke the Workflow with `args = { issue: NNN, phase: 'design', rejectionFindings: [...] }` (a JSON object, #256) so they reach iteration 1's generate verbatim.
@@ -250,13 +250,13 @@ The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck`
 | Looping the flow skills to the satisfaction oracle | **autopilot** (this skill) |
 | Each artifact's generation | the flow skills (unchanged) |
 | The review verdict | reviewing-deliverables (single-pass primitive) |
-| Requirements approval / design approval / merge (the three human gates) | the human |
+| Requirements approval / design approval / merge (the three User gates) | the human |
 | Parallel-session conflict, `in-progress` label | skill-gate |
 
-This skill **does not** permanently change the flow skills, **does not** approve its own requirements or design, and **does not** merge — merging is the human gate (AL-1).
+This skill **does not** permanently change the flow skills, **does not** approve its own requirements or design, and **does not** merge — merging is the User gate (AL-1).
 
 ## Integration
 
-- **Upstream:** `defining-requirements` (the approved PRD — the first human gate)
+- **Upstream:** `defining-requirements` (the approved PRD — the first User gate)
 - **Mid-flow:** the design-approval gate (the human approves the converged design deliverables before ATDD)
-- **Downstream:** `merging-and-deploying` (the human merge gate, on a near-green Issue)
+- **Downstream:** `merging-and-deploying` (the User merge gate, on a near-green Issue)

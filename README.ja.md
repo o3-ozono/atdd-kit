@@ -97,7 +97,7 @@ flowchart LR
 |--------|------|
 | **writing-design-doc** | 設計探索 — トレードオフと代替案、判断を文書化する必要があるとき |
 | **launching-preview** | プレビューをビルド・起動して手動確認 |
-| **autopilot** | autopilot — flow skill をループして Issue の成果物を near-green まで自律収束。人間ゲートは要求承認（最初）・設計承認（ATDD 前）・merge（最後）の3点 |
+| **autopilot** | autopilot — flow skill をループして Issue の成果物を near-green まで自律収束。User gate は要求承認（最初）・設計承認（ATDD 前）・merge（最後）の3点 |
 
 #### 自動トリガー
 
