@@ -494,9 +494,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # a gate rejection re-runs the phase as a NEW Workflow call where prevFindings
   # starts null — without this plumbing the human comments are silently dropped
   grep -qE 'const REJECTION_FINDINGS' "$SKILL_FILE"
-  # the null-fixed init is replaced by the seed; the existing JSON.stringify
-  # branch then embeds the human comments verbatim into iteration 1's generate
-  grep -qE 'prevFindings = REJECTION_FINDINGS' "$SKILL_FILE"
+  # the null-fixed init is replaced by the unified seed (#288: SEED_FINDINGS =
+  # design rejectionFindings | impl implSeedFindings); the JSON.stringify branch
+  # then embeds the comments verbatim into iteration 1's generate
+  grep -qE 'prevFindings = SEED_FINDINGS' "$SKILL_FILE"
+  grep -qE "const SEED_FINDINGS = PHASE === 'design' \? REJECTION_FINDINGS : IMPL_SEED_FINDINGS" "$SKILL_FILE"
   ! grep -qE 'let prevFindings = null$' "$SKILL_FILE"
 }
 
@@ -516,7 +518,7 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 
 @test "rejection (#261): seeded findings get priorityOf normalization — absent priority = blocker (AT-003)" {
   # fail-safe: a human comment without an explicit severity is priority 0
-  grep -qE 'prevFindings = REJECTION_FINDINGS \? REJECTION_FINDINGS\.map\(\(f\) => \(\{ \.\.\.f, priority: priorityOf\(f\) \}\)\) : null' "$SKILL_FILE"
+  grep -qE 'prevFindings = SEED_FINDINGS \? SEED_FINDINGS\.map\(\(f\) => \(\{ \.\.\.f, priority: priorityOf\(f\) \}\)\) : null' "$SKILL_FILE"
 }
 
 @test "rejection (#261): partial approval is rejection of the whole set, split per section (AT-004/AT-005)" {
@@ -575,4 +577,57 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # 合成フィクスチャ・/tmp コピーの明示的禁止（#287）
   echo "$rails" | grep -qF 'NEVER fabricate synthetic fixtures'
   echo "$rails" | grep -qF '/tmp copies'
+}
+
+# --- #288: impl phase 再入の findings 配管 / audit trail 保護 ----------------
+
+@test "AT-001 (#288): implSeedFindings validation is fail-closed, impl-only, before the freeze" {
+  # Given: SKILL.md の args 解析（implSeedFindings ガード）
+  # When: 構造 pin（grep）を実行する
+  # Then: rejectionFindings と同型の fail-closed 検証（非配列・空・evidence_ref 欠落を拒否）かつ
+  #       impl 限定（design では拒否）、すべて freeze:anchor より前に実行される
+  grep -qE 'Array\.isArray\(A\.implSeedFindings\)' "$SKILL_FILE"
+  grep -qE 'A\.implSeedFindings\.length === 0' "$SKILL_FILE"
+  grep -qE 'every implSeedFindings item needs a non-empty evidence_ref' "$SKILL_FILE"
+  # impl-phase-only — design は gate-rejection 用の rejectionFindings を使う
+  grep -qE "PHASE !== 'impl'" "$SKILL_FILE"
+  # ガードは freeze:anchor より前（不正 args で iteration を開始しない）
+  local vline fline
+  vline=$(grep -n 'Array\.isArray(A\.implSeedFindings)' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  fline=$(grep -n 'freeze:anchor' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$vline" ] && [ -n "$fline" ] && [ "$vline" -lt "$fline" ]
+}
+
+@test "AT-002 (#288): impl re-entry seeds iteration 1 via the unified SEED_FINDINGS" {
+  # Given: SKILL.md の seed 配管
+  # When: 構造 pin（grep）を実行する
+  # Then: SEED_FINDINGS が phase で design rejectionFindings / impl implSeedFindings を選び、
+  #       prevFindings の seed として priorityOf 正規化込みで使われる
+  grep -qE 'const IMPL_SEED_FINDINGS = A\.implSeedFindings \|\| null' "$SKILL_FILE"
+  grep -qE "const SEED_FINDINGS = PHASE === 'design' \? REJECTION_FINDINGS : IMPL_SEED_FINDINGS" "$SKILL_FILE"
+  grep -qE 'prevFindings = SEED_FINDINGS \? SEED_FINDINGS\.map' "$SKILL_FILE"
+}
+
+@test "AT-003 (#288): audit agent commits ONLY the log after a successful record_iteration" {
+  # Given: SKILL.md の audit ステップ（label: audit:step）プロンプト
+  # When: audit 呼び出し行を抽出して構造 pin する
+  # Then: record_iteration 成功後にログファイルのみを即コミットし、後続 gen の
+  #       working-tree 巻き戻しから audit trail を保護する（#288 欠陥1a）
+  # （audit プロンプトは複数行テンプレート — commit 指示は Steps 行に載るためファイル全体を grep）
+  grep -qF 'if record_iteration succeeded, IMMEDIATELY commit ONLY the audit log' "$SKILL_FILE"
+  grep -qF 'git add "<resolved-log-path>" && git commit' "$SKILL_FILE"
+}
+
+@test "AT-004 (#288): gen prompt forbids touching the orchestrator-owned audit log / pins" {
+  # Given: SKILL.md の GEN_GUARD と gen 呼び出し
+  # When: 構造 pin（grep）を実行する
+  # Then: audit log / pin は orchestrator 所有で、追記・削除・コミット・巻き戻しを双方向に禁止し、
+  #       その guard が両 gen 分岐プロンプトに挿入されている（#288 欠陥1a/1b）
+  grep -qF 'const GEN_GUARD =' "$SKILL_FILE"
+  grep -qF 'orchestrator-owned: never read, append to, edit, delete, commit, or roll back them' "$SKILL_FILE"
+  grep -qF 'git restore / checkout -- / stash uncommitted work you did not create' "$SKILL_FILE"
+  # 両分岐（prevFindings あり / なし）に GEN_GUARD が挿入されている
+  local n
+  n=$(grep -c "approved anchor\.\${GEN_GUARD}" "$SKILL_FILE")
+  [ "$n" -eq 2 ]
 }

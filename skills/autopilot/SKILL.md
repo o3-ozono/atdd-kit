@@ -104,6 +104,20 @@ if (A.rejectionFindings !== undefined) {
   if (PHASE !== 'design') throw new Error('rejectionFindings is design-gate plumbing — refusing it outside the design phase')
 }
 const REJECTION_FINDINGS = A.rejectionFindings || null
+// #288: impl-phase re-entry after a halt starts a NEW Workflow call (prevFindings=null), so the
+// unresolved halt findings (review / coverage) never reach iteration 1's gen — the impl analogue
+// of #261's rejectionFindings. Same fail-closed validation, impl-phase-only.
+if (A.implSeedFindings !== undefined) {
+  if (!Array.isArray(A.implSeedFindings)) throw new Error('args.implSeedFindings must be an array')
+  if (A.implSeedFindings.length === 0) throw new Error('args.implSeedFindings must not be empty — [] is truthy and .some() is vacuously false, so it would slip every guard and reach generate as a zero-finding re-presentation')
+  if (A.implSeedFindings.some((f) => typeof f?.evidence_ref !== 'string' || f.evidence_ref === '')) throw new Error('every implSeedFindings item needs a non-empty evidence_ref (AL-4)')
+  if (PHASE !== 'impl') throw new Error('implSeedFindings is impl-phase re-entry plumbing — refusing it outside the impl phase')
+}
+const IMPL_SEED_FINDINGS = A.implSeedFindings || null
+// Exactly one seed is non-null (the guards make them phase-exclusive); both feed iteration 1 via prevFindings.
+const SEED_FINDINGS = PHASE === 'design' ? REJECTION_FINDINGS : IMPL_SEED_FINDINGS
+// #288: the audit log + pins are orchestrator-owned; the gen agent must never touch them in either direction (discarding uncommitted rows OR appending fake PASS rows both broke the log-integrity rail).
+const GEN_GUARD = ' The audit log (autopilot-log.jsonl) and the *.pin anchors are orchestrator-owned: never read, append to, edit, delete, commit, or roll back them — and never git restore / checkout -- / stash uncommitted work you did not create.'
 const STEPS = A.steps || (PHASE === 'design'
   ? ['extracting-user-stories', 'writing-plan-and-tests']
   : ['running-atdd-cycle'])
@@ -176,15 +190,16 @@ for (const step of STEPS) {
   let it = 0
   // #252: carry the previous verdict's findings into the next generate call —
   // a fresh-context gen agent cannot "fix them verbatim" without their text.
-  // #261: gate-rejection findings seed iteration 1; absent priority → 0 = blocker (fail-safe).
-  let prevFindings = REJECTION_FINDINGS ? REJECTION_FINDINGS.map((f) => ({ ...f, priority: priorityOf(f) })) : null
+  // #261/#288: the phase seed (design rejectionFindings / impl re-entry implSeedFindings) seeds
+  // iteration 1; absent priority → 0 = blocker (fail-safe).
+  let prevFindings = SEED_FINDINGS ? SEED_FINDINGS.map((f) => ({ ...f, priority: priorityOf(f) })) : null
   for (;;) {
     it++
     // 1. generate / fix — run the EXISTING flow skill (not rewritten). From
     //    iteration 2 the prior findings are embedded verbatim (JSON).
     await agent(prevFindings
-      ? `Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor. Fix these previous review findings verbatim:\n${JSON.stringify(prevFindings)}`
-      : `Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor. If a prior review left findings, fix them verbatim.`, { label: `gen:${step}`, phase: 'Generate' })
+      ? `Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor.${GEN_GUARD} Fix these previous review findings verbatim:\n${JSON.stringify(prevFindings)}`
+      : `Run the ${step} flow skill for Issue #${NNN}, anchored to this phase's immutable approved anchor.${GEN_GUARD} If a prior review left findings, fix them verbatim.`, { label: `gen:${step}`, phase: 'Generate' })
     // 2. review — single-pass primitive, structured verdict, phase×step scope
     const verdict = await agent(`Run reviewing-deliverables for Issue #${NNN} (phase: ${PHASE}, step: ${step}). ${reviewScope(step)} Return its structured verdict (overall_correctness + findings[], each with priority and evidence_ref).`, { label: `review:${step}`, phase: 'Review', schema: VERDICT_SCHEMA })
     // 3. DETERMINISTIC AT gate (AL-3) — atGreen is the test command's EXIT CODE,
@@ -216,7 +231,7 @@ for (const step of STEPS) {
 BEGIN-PAYLOAD
 ${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}
 END-PAYLOAD
-Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`. Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
+Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`; (4) #288: if record_iteration succeeded, IMMEDIATELY commit ONLY the audit log so a later working-tree rollback by the next gen agent cannot delete this row — \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): audit ${step} iteration ${it} (#${NNN})"\` (stage the log file alone, nothing else). Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
     if (rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
     recorded++ // #262: a successful record_iteration = exactly one more log line, mirrored in memory
     if (converged) { log(`${step}: converged at iteration ${it}`); break }
@@ -235,7 +250,7 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
 
-The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green.
+The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green. On impl-phase re-entry after such a halt, carry the unresolved findings (the halt `verdict.findings` plus any coverage-gate uncovered AC, each with a non-empty `evidence_ref`) into the new Workflow call as `args.implSeedFindings` (#288) — the impl analogue of design's `rejectionFindings`; without it iteration 1 restarts blind (`prevFindings = null`) and review / coverage re-derive the same rejection.
 
 ## Model assignment (#259)
 

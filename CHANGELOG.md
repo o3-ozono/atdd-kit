@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.4] - 2026-06-14
+
+### Fixed
+
+- **autopilot impl phase の halt 後再入で findings 配管がなく、gen agent の作業ツリー巻き戻しが未コミット audit log を破壊する問題を修正**（#288）。`skills/autopilot/SKILL.md` の Workflow スクリプトに 3 つの修正を反映（#277 / 別 Issue #24 の 2 セッションで独立再現）:
+  - **欠陥2（findings 運搬欠如）**: impl phase の halt は新しい Workflow 呼び出しで再入し `prevFindings = null` で始まるため、halt 時点の未解決 findings（review / coverage gate の uncovered AC）が iteration 1 の gen に届かず同じ否決を繰り返していた。design phase の `rejectionFindings`（#261）に対応する **`args.implSeedFindings`** を新設（同型の fail-closed 検証: 非空配列・各要素に非空 `evidence_ref`・**impl phase 限定**で design では拒否）。`SEED_FINDINGS = PHASE === 'design' ? REJECTION_FINDINGS : IMPL_SEED_FINDINGS` で両 phase の seed を統一し、`prevFindings` の seed として priorityOf 正規化込みで iteration 1 の gen に verbatim 埋め込み。canonical なエスカレーション記述に impl 再入時の運搬手順も追記。
+  - **欠陥1a（audit 行の破壊）**: gen agent（running-atdd-cycle）の作業ツリー巻き戻し（git restore / checkout）が未コミットの audit 行を削除し、log-integrity rail が偽発火していた。audit agent のプロンプトに **record_iteration 成功後にログファイルのみを即コミット**するステップ (4) を追加し、後続 gen の巻き戻しから audit trail を保護。
+  - **欠陥1b（偽行追記の変種）**: gen/fix subagent が `record_iteration` を経由せず audit log へ偽 PASS 行を直接追記する変種（#24 で再現）も塞ぐため、gen プロンプトに `GEN_GUARD`（audit log / pin は orchestrator 所有・読み書き・追記・削除・コミット・git restore/checkout/stash を双方向に禁止）を両分岐へ挿入。
+  - `tests/test_autopilot_skill.bats` に AT-001〜AT-004（#288）を追加、#261 の AT-001/AT-003 を `SEED_FINDINGS` 統一に追随更新。autopilot BATS 63 → 67 件 green、全スイート 1220 件 green。
+
 ## [3.14.3] - 2026-06-13
 
 ### Fixed
