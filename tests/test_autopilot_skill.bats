@@ -561,3 +561,18 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   pline=$(grep -nF 'JSON.stringify({ atGreen' "$SKILL_FILE" | head -1 | cut -d: -f1)
   [ -n "$uline" ] && [ -n "$pline" ] && [ "$uline" -lt "$pline" ]
 }
+
+@test "AT-007 (#287): rails prompt resolves real paths and bans synthetic fixtures" {
+  # Given: SKILL.md の rails ステップ（label: rails:step）のプロンプト文字列
+  # When: rails 呼び出し行を抽出して構造 pin する
+  # Then: freeze/audit と同じ実ディレクトリ解決指示を持ち、合成フィクスチャ・/tmp コピーを
+  #       明示的に禁止している（プレースホルダのまま subagent に渡されて偽 halt を出さない）
+  local rails
+  rails=$(grep -F "run all five and report each one's integer exit code" "$SKILL_FILE")
+  [ -n "$rails" ]
+  # 実 issue ディレクトリ・実ログの解決指示（freeze/audit と同形）が rails プロンプトにある
+  echo "$rails" | grep -qF 'Resolve the issue directory matching docs/issues/${NNN}-*'
+  # 合成フィクスチャ・/tmp コピーの明示的禁止（#287）
+  echo "$rails" | grep -qF 'NEVER fabricate synthetic fixtures'
+  echo "$rails" | grep -qF '/tmp copies'
+}
