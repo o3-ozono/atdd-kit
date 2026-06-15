@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-06-15
+
+### Added
+
+- **autopilot 収束レールに監査ログ corruption guard を追加（#248, AL-4 完全性 / #246 2nd review 繰り越し）**。`lib/autopilot_convergence.sh` の `_fingerprints` は FAIL 行から fingerprint を `grep -o` 抽出する際、部分書込・外部破損で fingerprint が欠落/不正な行を**黙って drop** しており、`check_sameness` / `check_stuck` の比較母集団からデータ点が消えて fail-OPEN（偽 continue＝記憶喪失）になり得た。修正: 候補 FAIL 行数と well-formed fingerprint 数（非空・`record_iteration` と同じ charset `[A-Za-z0-9._:-]` 制限）が一致しなければ corruption とみなし非ゼロ（3）を返す。`check_sameness` / `check_stuck` はその exit code を伝播し、ログ破損時は黙って continue せず halt（escalation）する。PASS 行は FAIL-only 母集団（#277）の対象外なので破損 PASS 行で偽 halt しない。`tests/test_autopilot_convergence.bats` に #248 corruption テスト 6 件を追加（truncated/missing fingerprint で halt・step スコープ検出・PASS 行と正常ログの陰性）、計 56 件 green。
+
+  繰り越し 3 項目のうち本リリースで対応したのは項目1（corruption guard）のみ。**項目2（step 跨ぎログ分離/順序付け）は #272（rails の step スコープ化）/ #277（FAIL-only 母集団）/ #262（line-count log-integrity）で実質解消済みのためクローズ。項目3（halt 理由・findings の JSONL 記録 + timestamp）は #262 の log-integrity counter / #288 の即コミットフローとの整合に設計判断が必要なため別 Issue へ繰り越し（現実リスクは低く return 値で機能している）。**
+
 ## [3.14.5] - 2026-06-15
 
 ### Fixed
