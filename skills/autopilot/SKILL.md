@@ -178,6 +178,7 @@ const reviewScope = (step) => PHASE === 'impl'
 // iteration. On re-entry (design-gate rejection) the pin already exists: verify
 // it still matches instead of failing the freeze. Refuse on mismatch / write failure.
 const frozen = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and freeze this phase's immutable human-approved anchor (AL-2) via lib/autopilot_convergence.sh. If "<dir>/${PIN_NAME}" does not exist: \`${ANCHOR_CAT} | pin_anchor "<dir>/${PIN_NAME}"\` (pins once). If it already exists: \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (the anchor must still match the frozen pin). Report pinned = (that command's exit code === 0). Also report logLines = the current non-empty line count of the audit log (${LOG_GLOB}; \`grep -c . <log>\`), or 0 if the file does not exist.`, { label: 'freeze:anchor', phase: 'Generate', schema: { type: 'object', required: ['pinned', 'logLines'], properties: { pinned: { type: 'boolean' }, logLines: { type: 'integer' } } } })
+if (frozen == null) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'freeze-error' }
 if (frozen.pinned !== true) return { status: 'COMPLETED_WITH_DEBT', step: 'freeze', reason: 'anchor-pin-failed' }
 // #262 baseline absorption: lines already in the log (re-entry after a design-gate
 // rejection, or an earlier phase) are the truth. From here the expected line count
@@ -207,20 +208,20 @@ for (const step of STEPS) {
     let atGreen = !atRequired
     if (atRequired) {
       const at = await agent(`Run the executable Acceptance Test suite for Issue #${NNN} (${AT_COMMAND}). Actually execute it; report ONLY the command's integer exit code and green = (exit code === 0). Do NOT judge whether tests "would" pass.`, { label: `at-gate:${step}`, phase: 'AT-gate', schema: { type: 'object', required: ['exitCode', 'green'], properties: { exitCode: { type: 'integer' }, green: { type: 'boolean' }, log: { type: 'string' } } } })
-      atGreen = at.exitCode === 0 && at.green === true
+      atGreen = at != null && at.exitCode === 0 && at.green === true
     }
     // 4. AC→AT coverage gate (AL-2) — separate context from the AT author.
     let coverageOk = !atRequired
     let uncovered = []  // #272: ループスコープで宣言 — audit payload から参照可能にする
     if (atRequired) {
       const cov = await agent(`In a context SEPARATE from the AT author, verify the executable Acceptance Tests for Issue #${NNN} encode EVERY approved AC in the immutable design anchor (docs/issues/${NNN}-*/acceptance-tests.md + the design-gate-approved AC). List uncovered AC; each is a P0.`, { label: `coverage:${step}`, phase: 'Coverage-gate', schema: { type: 'object', required: ['allCovered', 'uncovered'], properties: { allCovered: { type: 'boolean' }, uncovered: { type: 'array', items: { type: 'string' } } } } })
-      uncovered = cov.uncovered || []
-      coverageOk = cov.allCovered === true && uncovered.length === 0
+      uncovered = cov?.uncovered || []
+      coverageOk = cov != null && cov.allCovered === true && uncovered.length === 0
     }
-    const blocking = (verdict.findings || []).filter((f) => priorityOf(f) <= 1)
+    const blocking = (verdict != null ? verdict.findings || [] : []).filter((f) => priorityOf(f) <= 1)
     // 5. satisfaction oracle — AL-3 deterministic AT AND AL-2 coverage AND
-    //    reviewer correctness AND zero confirmed P0/P1 (fail-safe, not fail-open).
-    const converged = atGreen && coverageOk && verdict.overall_correctness === 'correct' && blocking.length === 0
+    //    reviewer correctness AND zero confirmed P0/P1 (fail-safe, never fail-open: null = not converged).
+    const converged = atGreen && coverageOk && verdict != null && verdict.overall_correctness === 'correct' && blocking.length === 0
     // 6. AUDIT FIRST (AL-4) — record EVERY iteration (incl. the converged one)
     //    before deciding, so the JSONL is the complete external source of truth.
     //    record_iteration's full signature is <jsonl> <iteration> <step> <verdict> <fp>;
@@ -232,19 +233,20 @@ BEGIN-PAYLOAD
 ${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}
 END-PAYLOAD
 Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`; (4) #288: if record_iteration succeeded, IMMEDIATELY commit ONLY the audit log so a later working-tree rollback by the next gen agent cannot delete this row — \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): audit ${step} iteration ${it} (#${NNN})"\` (stage the log file alone, nothing else). Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } } })
-    if (rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
+    if (rec == null || rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
     recorded++ // #262: a successful record_iteration = exactly one more log line, mirrored in memory
     if (converged) { log(`${step}: converged at iteration ${it}`); break }
     // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
     //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
     //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
     const r = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and its real audit log (${LOG_GLOB}); run every check against those ACTUAL resolved paths (substitute them for "<dir>" / "<log>" below). #287: NEVER fabricate synthetic fixtures, sample FAIL rows, or /tmp copies of the log / anchor — a check run against invented data reports a false halt; operate only on the real audit log and the pinned anchor. Via lib/autopilot_convergence.sh, run all five and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>" "${step}" (#272: step スコープ化で偽 halt を防ぐ; #277: FAIL 行のみ比較 — PASS 行は比較母集団から除外される); (d) check_stuck "<log>" 3 "${step}" (#272: 同上; #277: FAIL 行のみ比較); (e) check_log_integrity "<log>" ${recorded} (#262: the log must hold EXACTLY the lines the orchestrator recorded — a deleted / rolled-back log silently resets sameness & stuck).`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit', 'logIntegrityExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' }, logIntegrityExit: { type: 'integer' } } } })
+    if (r == null) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'rails-error', verdict }
     // log-integrity outranks sameness / stuck: both read history FROM the log,
     // so their exit codes are meaningless when the log itself is compromised.
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.logIntegrityExit !== 0 ? 'log-integrity' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
     // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
     if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
-    prevFindings = verdict.findings?.length ? verdict.findings : null
+    prevFindings = verdict?.findings?.length ? verdict.findings : null
   }
 }
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }

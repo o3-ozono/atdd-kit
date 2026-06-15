@@ -1,0 +1,5 @@
+{"iteration":1,"step":"extracting-user-stories","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
+{"iteration":1,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"2fa288678476261b891f654112ccd880ee2b3ca2dd143011d4f508dd45b762d8"}
+{"iteration":2,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
+{"iteration":1,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"2736f73c592baca875293077c690ea66d2d6aa760041f87c0a54f4c574d123b4"}
+{"iteration":2,"step":"running-atdd-cycle","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
