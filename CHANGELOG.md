@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.15.1] - 2026-06-15
+
+### Fixed
+
+- **autopilot Workflow の `agent()` 戻り値 null フェイルセーフ化（#292）**。`at-gate` / `coverage` / `review` / `freeze` / `audit` / `rails` の各ゲートで `agent()` が null を返した場合にクラッシュ（TypeError）または fail-open（null を収束/PASS と誤判定）していた欠陥を修正。すべての null 経路を fail-closed に倒す: loop-continuation gates（at-gate / coverage / review）は null=未通過でループ継続、terminal gates（freeze / audit / rails）は null=COMPLETED_WITH_DEBT でフェイルクローズ。`never fail-open` 不変条件を satisfaction oracle コメントに明記。SKILL.md +2 行（279 行 / 上限 280 行）。BATS 構造アサーション AT-001…AT-007（#292）を追加し全 74 件 green。
+
 ## [3.15.0] - 2026-06-15
 
 ### Added

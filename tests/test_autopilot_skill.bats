@@ -254,7 +254,8 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # later iterations embed the findings JSON — never a body-less "fix them verbatim"
   grep -qE 'await agent\(prevFindings' "$SKILL_FILE"
   grep -qE 'JSON\.stringify\(prevFindings\)' "$SKILL_FILE"
-  grep -qE 'prevFindings = verdict\.findings' "$SKILL_FILE"
+  # #292: optional chain added (verdict?.findings?.length) to prevent TypeError when verdict=null
+  grep -qE 'prevFindings = verdict\??\.findings' "$SKILL_FILE"
 }
 
 @test "args (#252, refs #256): defensive parse + fail-closed integer guard are pinned" {
@@ -630,4 +631,84 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   local n
   n=$(grep -c "approved anchor\.\${GEN_GUARD}" "$SKILL_FILE")
   [ "$n" -eq 2 ]
+}
+
+# --- #292: agent() null フェイルセーフ ----------------------------------------
+# 検証方式: SKILL.md の Workflow スクリプトに grep で構造アサーションをかける。
+# 各 AT は AC で定めた null ガード文字列・reason・不変条件コメントを pin する。
+
+@test "AT-001 (#292): at-gate atGreen calculation includes null guard (FS-1)" {
+  # Given: SKILL.md no deterministic AT gate (label: at-gate:step) no atGreen sanshutu
+  # When: grep structure pin wo jikko suru
+  # Then: null guard tsuki keishiki wo fukumi, null guard nashi no sosaen ga tandokugyou to shite nokotte inai
+  grep -qF 'atGreen = at != null && at.exitCode === 0 && at.green === true' "$SKILL_FILE"
+  # null guard nashi no sosaen ga tankan de nokotte inai koto
+  ! grep -qE '^\s*atGreen = at\.exitCode === 0 && at\.green === true' "$SKILL_FILE"
+}
+
+@test "AT-002 (#292): coverage cov null falls to uncovered=[] / coverageOk=false (FS-2)" {
+  # Given: SKILL.md no AC-AT coverage gate (label: coverage:step) no sanshutu
+  # When: grep structure pin wo jikko suru
+  # Then: optional chain de uncovered wo anzen shutoku shi, cov != null check de coverageOk wo sanshutu suru
+  grep -qF 'uncovered = cov?.uncovered || []' "$SKILL_FILE"
+  grep -qF 'coverageOk = cov != null && cov.allCovered === true && uncovered.length === 0' "$SKILL_FILE"
+  # null guard nashi no sosaen ga tankoku de nokotte inai koto
+  ! grep -qE '^\s*coverageOk = cov\.allCovered === true' "$SKILL_FILE"
+}
+
+@test "AT-003 (#292): verdict null does not reach converged=true and does not crash prevFindings (fail-safe form, FS-3)" {
+  # Given: SKILL.md no review kekka (verdict) wo sanshoo suru oracle sanshutu
+  # When: grep structure pin wo jikko suru
+  # Then: overall_correctness hikaku ga null guard tsuki keishiki ni natte ori, null verdict ga PASS ni taorenai
+  grep -qE 'verdict != null && verdict\.overall_correctness === .correct.|verdict\?\.overall_correctness === .correct.' "$SKILL_FILE"
+  # converged sanshutsu gyou ni null guard nashi no tandoku verdict.overall_correctness sosaen ga nokotte inai koto
+  # (old form: converged = ... && verdict.overall_correctness === 'correct' without preceding verdict != null)
+  ! grep -qE "converged = [^;]*[^&!] verdict\.overall_correctness === 'correct'" "$SKILL_FILE"
+  # prevFindings dainyuu de null verdict ga crash shinai koto (AC3/FS-3: verdict?.findings?.length — optional chain hitsuyou)
+  # verdict.findings?.length (optional chain nashi) no mama dewa verdict=null de TypeError crash suru
+  grep -qF 'verdict?.findings?.length' "$SKILL_FILE"
+}
+
+@test "AT-004 (#292): freeze frozen null guard precedes anchor-pin-failed path (FS-4)" {
+  # Given: SKILL.md no FREEZE step (label: freeze:anchor) no modorichigai guard
+  # When: grep structure pin wo jikko suru
+  # Then: frozen == null guard to reason: 'freeze-error' ga sonzai shi, frozen.logLines sanshoo yori mae ni aru
+  grep -qF "frozen == null" "$SKILL_FILE"
+  grep -qF "reason: 'freeze-error'" "$SKILL_FILE"
+  # frozen == null guard ga frozen.pinned guard yori mae (gyoubangou hikaku)
+  local null_line pin_line log_line
+  null_line=$(grep -n 'frozen == null' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  pin_line=$(grep -n 'frozen\.pinned !== true' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  log_line=$(grep -n 'frozen\.logLines' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$null_line" ] && [ -n "$pin_line" ] && [ -n "$log_line" ]
+  [ "$null_line" -lt "$pin_line" ]
+  [ "$null_line" -lt "$log_line" ]
+}
+
+@test "AT-005 (#292): audit rec null merges into existing recordOk path (FS-5)" {
+  # Given: SKILL.md no AUDIT step (label: audit:step) no henkyaku guard
+  # When: grep structure pin wo jikko suru
+  # Then: null merge keishiki no guard ga sonzai shi, reason: 'record-error' ga iji sareru
+  grep -qF 'rec == null || rec.recordOk !== true' "$SKILL_FILE"
+  grep -qF "reason: 'record-error'" "$SKILL_FILE"
+}
+
+@test "AT-006 (#292): rails r null guard precedes r.acDriftExit reference (FS-6)" {
+  # Given: SKILL.md no safety rails step (label: rails:step) no halt sanshutu
+  # When: grep structure pin wo jikko suru
+  # Then: r == null guard to reason: 'rails-error' ga sonzai shi, r.acDriftExit sanshoo yori mae ni aru
+  grep -qF "r == null" "$SKILL_FILE"
+  grep -qF "reason: 'rails-error'" "$SKILL_FILE"
+  local null_line drift_line
+  null_line=$(grep -n 'r == null' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  drift_line=$(grep -n 'r\.acDriftExit' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$null_line" ] && [ -n "$drift_line" ]
+  [ "$null_line" -lt "$drift_line" ]
+}
+
+@test "AT-007 (#292): fail-open prohibition comment exists in SKILL.md (CS-1)" {
+  # Given: SKILL.md no null failsafe houshin comment
+  # When: grep structure pin wo jikko suru
+  # Then: never fail-open matawa dougi no hyougen wo fukumu comment ga sonzai suru
+  grep -qiE 'never fail-open|fail-open.*forbidden' "$SKILL_FILE"
 }
