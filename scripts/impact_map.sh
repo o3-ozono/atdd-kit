@@ -186,27 +186,13 @@ scan_covers() {
     local matched=0
     while IFS= read -r cov_line; do
       [[ "$cov_line" =~ ^#[[:space:]]*@covers:[[:space:]]*(.+)$ ]] || continue
-      local raw="${BASH_REMATCH[1]}"
-      # Support comma-separated and space-separated multi-target @covers values.
-      # Split on commas first, then iterate each token (trimming whitespace).
-      local IFS_save="$IFS"
-      IFS=','
-      local tokens
-      read -ra tokens <<< "$raw"
-      IFS="$IFS_save"
-      local tok
-      for tok in "${tokens[@]}"; do
-        # trim leading/trailing whitespace from token
-        tok="${tok#"${tok%%[! ]*}"}"
-        tok="${tok%"${tok##*[! ]}"}"
-        # bash fnmatch: exact path, prefix glob, or simple glob
-        # shellcheck disable=SC2254
-        if [[ "$changed_file" == $tok ]]; then
-          matched=1
-          break
-        fi
-      done
-      [[ $matched -eq 1 ]] && break
+      local glob="${BASH_REMATCH[1]}"
+      # bash fnmatch: exact path, prefix glob, or simple glob
+      # shellcheck disable=SC2254
+      if [[ "$changed_file" == $glob ]]; then
+        matched=1
+        break
+      fi
     done <<< "$header"
     if [[ $matched -eq 1 ]]; then
       printf '%s\n' "$bats_file"
