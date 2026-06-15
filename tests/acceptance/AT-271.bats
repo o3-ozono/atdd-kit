@@ -3,6 +3,9 @@
 # AT-271: Fixed reviewer agents removal and #234 alignment
 # Issue #271
 
+# CHANGELOG 解析ヘルパー（changelog_latest_release 関数）を共有ヘルパーからロードする
+load "$(dirname "$BATS_TEST_FILENAME")/helpers/changelog"
+
 # --- AT-001: 固定 reviewer agent 6 ファイルの削除（US-1） ---
 
 @test "AT-001: six fixed reviewer agent files do not exist" {
@@ -292,7 +295,7 @@
   # 整合事実: plugin.json version が CHANGELOG 最新リリース見出しと一致する
   # 最新リリース見出し = ## [Unreleased] を除いた先頭の ## [X.Y.Z]
   local latest_release
-  latest_release=$(grep -m1 '^## \[[0-9]' "${repo_root}/CHANGELOG.md" | grep -o '\[[0-9][^]]*\]' | tr -d '[]')
+  latest_release=$(changelog_latest_release "${repo_root}/CHANGELOG.md")
   local version
   version=$(grep '"version"' "${repo_root}/.claude-plugin/plugin.json" | grep -o '"[0-9][^"]*"' | tr -d '"')
   [[ "$version" == "$latest_release" ]] || {

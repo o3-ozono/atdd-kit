@@ -4,6 +4,9 @@
 # AT-001 to AT-010: structural assertions (BATS Unit Test style)
 # Corresponds to docs/issues/284-express-skill/acceptance-tests.md
 
+# CHANGELOG 解析ヘルパー（changelog_latest_release 関数）を共有ヘルパーからロードする
+load "$(dirname "$BATS_TEST_FILENAME")/helpers/changelog"
+
 SKILL_FILE="skills/express/SKILL.md"
 COMMAND_FILE="commands/express.md"
 SETUP_GITHUB_FILE="commands/setup-github.md"
@@ -193,7 +196,7 @@ SKILL_GATE_FILE="skills/skill-gate/SKILL.md"
   # (b) 整合事実: plugin.json version が CHANGELOG 最新リリース見出しと一致する
   # 最新リリース見出し = ## [Unreleased] を除いた先頭の ## [X.Y.Z]
   local latest_release
-  latest_release=$(grep -m1 '^## \[[0-9]' CHANGELOG.md | grep -o '\[[0-9][^]]*\]' | tr -d '[]')
+  latest_release=$(changelog_latest_release CHANGELOG.md)
   local plugin_version
   plugin_version=$(grep '"version"' ".claude-plugin/plugin.json" | grep -o '"[0-9][^"]*"' | tr -d '"')
   [[ "$plugin_version" == "$latest_release" ]] || {
