@@ -189,6 +189,30 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-271.bats | Fixed reviewer agents removal and #234 alignment regression pins — six fixed-reviewer agent files absent, agents/README.md dynamic panel wiring present (Issue #271) |
 | AT-278.bats | Skill E2E tests specify --model sonnet for claude invocations — all E2E files pass --model flag, no unspecified invocations (Issue #278) |
 | AT-284.bats | express skill re-introduction — documentation-grade fast path, SKILL.md/commands/express.md structure, skill-gate guard, CI gate (Issue #284) |
+| AT-289.bats | AT-version-pin regression — CHANGELOG history-fact + latest-release-heading consistency assertions replace exact-version pins in AT-271/AT-284; helpers/changelog.bash shared helper; future-proof against version bumps (Issue #289) |
+
+### Acceptance Test Helpers (`tests/acceptance/helpers/`)
+
+共有ヘルパー関数ライブラリ。AT ファイルから `load` ディレクティブで読み込んで使用する。BATS の `load` は拡張子 `.bash` を自動補完する。
+
+| ファイル | 提供関数 | 用途 |
+|--------|---------|------|
+| `changelog.bash` | `changelog_latest_release <path>` | `CHANGELOG.md` の `## [Unreleased]` を除いた先頭の `## [X.Y.Z]` からバージョン文字列を抽出する。バージョン完全一致ピンを避け、「CHANGELOG 最新リリース見出しとの整合」アサーションで AT を将来耐性化するために使用する（Issue #289）。 |
+
+**使い方:**
+
+```bash
+# AT ファイルの setup() または @test 内で
+load "$(dirname "$BATS_TEST_FILENAME")/helpers/changelog"
+
+@test "plugin.json version matches CHANGELOG latest release" {
+  local expected
+  expected="$(changelog_latest_release "$ROOT/CHANGELOG.md")"
+  local actual
+  actual="$(jq -r .version "$ROOT/plugin.json")"
+  [[ "$actual" == "$expected" ]]
+}
+```
 
 ## iOS Addon Tests (addons/ios/tests/)
 
