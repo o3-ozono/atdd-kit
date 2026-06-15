@@ -183,8 +183,23 @@ SKILL_GATE_FILE="skills/skill-gate/SKILL.md"
   grep -qiE 'express' CHANGELOG.md
 }
 
-@test "AT-010: plugin.json version is 3.14.0" {
-  grep -q '"version": "3.14.0"' ".claude-plugin/plugin.json"
+@test "AT-010: plugin.json version matches CHANGELOG latest release & 3.14.0 history exists" {
+  # (a) 履歴事実: #284 が 3.14.0 へ bump したことが CHANGELOG に永続する
+  grep -q '^## \[3\.14\.0\]' CHANGELOG.md || {
+    echo "FAIL: CHANGELOG.md に ## [3.14.0] 見出しがない（#284 の履歴事実）"
+    return 1
+  }
+
+  # (b) 整合事実: plugin.json version が CHANGELOG 最新リリース見出しと一致する
+  # 最新リリース見出し = ## [Unreleased] を除いた先頭の ## [X.Y.Z]
+  local latest_release
+  latest_release=$(grep -m1 '^## \[[0-9]' CHANGELOG.md | grep -o '\[[0-9][^]]*\]' | tr -d '[]')
+  local plugin_version
+  plugin_version=$(grep '"version"' ".claude-plugin/plugin.json" | grep -o '"[0-9][^"]*"' | tr -d '"')
+  [[ "$plugin_version" == "$latest_release" ]] || {
+    echo "FAIL: plugin.json の version が ${plugin_version}、CHANGELOG 最新リリース見出しは ${latest_release}"
+    return 1
+  }
 }
 
 @test "AT-010: test_skill_structure.bats ALL_SKILLS includes express" {

@@ -271,27 +271,32 @@
 
 # --- AT-005: リリース規律（CS-1） ---
 
-@test "AT-005: CHANGELOG has [3.12.0] with Removed section and plugin.json version is 3.12.0" {
+@test "AT-005: CHANGELOG has [3.12.0] with Removed section and plugin.json version matches CHANGELOG latest release" {
   # Given: CHANGELOG.md と .claude-plugin/plugin.json
   # When: 新バージョンエントリと version 値を検査する
-  # Then: [3.12.0] に ### Removed エントリがあり、plugin.json の version が 3.12.0
+  # Then: [3.12.0] に ### Removed エントリがあり（履歴事実）、plugin.json の version が CHANGELOG 最新リリース見出しと一致する
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  grep -q '\[3.12.0\]' "${repo_root}/CHANGELOG.md" || {
+  # 履歴事実: #271 が [3.12.0] リリース＋ Removed セクションを導入したことは append-only で永続する
+  grep -q '\[3\.12\.0\]' "${repo_root}/CHANGELOG.md" || {
     echo "FAIL: CHANGELOG.md に [3.12.0] がない"
     return 1
   }
 
-  grep -A5 '\[3.12.0\]' "${repo_root}/CHANGELOG.md" | grep -q '### Removed' || {
+  grep -A5 '\[3\.12\.0\]' "${repo_root}/CHANGELOG.md" | grep -q '### Removed' || {
     echo "FAIL: [3.12.0] セクションに ### Removed がない"
     return 1
   }
 
+  # 整合事実: plugin.json version が CHANGELOG 最新リリース見出しと一致する
+  # 最新リリース見出し = ## [Unreleased] を除いた先頭の ## [X.Y.Z]
+  local latest_release
+  latest_release=$(grep -m1 '^## \[[0-9]' "${repo_root}/CHANGELOG.md" | grep -o '\[[0-9][^]]*\]' | tr -d '[]')
   local version
-  version=$(grep '"version"' "${repo_root}/.claude-plugin/plugin.json" | grep -o '"[0-9.]*"' | tr -d '"')
-  [[ "$version" == "3.12.0" ]] || {
-    echo "FAIL: plugin.json の version が ${version} （期待: 3.12.0）"
+  version=$(grep '"version"' "${repo_root}/.claude-plugin/plugin.json" | grep -o '"[0-9][^"]*"' | tr -d '"')
+  [[ "$version" == "$latest_release" ]] || {
+    echo "FAIL: plugin.json の version が ${version}、CHANGELOG 最新リリース見出しは ${latest_release}"
     return 1
   }
 }
