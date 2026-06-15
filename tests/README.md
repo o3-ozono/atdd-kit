@@ -189,7 +189,6 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-271.bats | Fixed reviewer agents removal and #234 alignment regression pins — six fixed-reviewer agent files absent, agents/README.md dynamic panel wiring present (Issue #271) |
 | AT-278.bats | Skill E2E tests specify --model sonnet for claude invocations — all E2E files pass --model flag, no unspecified invocations (Issue #278) |
 | AT-284.bats | express skill re-introduction — documentation-grade fast path, SKILL.md/commands/express.md structure, skill-gate guard, CI gate (Issue #284) |
-| AT-289.bats | AT-version-pin regression — CHANGELOG history-fact + latest-release-heading consistency assertions replace exact-version pins in AT-271/AT-284; helpers/changelog.bash shared helper; future-proof against version bumps (Issue #289) |
 
 ### Acceptance Test Helpers (`tests/acceptance/helpers/`)
 

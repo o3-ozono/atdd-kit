@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.3] - 2026-06-15
+
 ### Fixed
 
-- **恒久実行される acceptance AT のバージョン完全一致ピンを将来耐性のある検証へ置換**（#289）。`tests/acceptance/AT-284.bats` AT-010 の `grep -q '"version": "3.14.0"'` 完全一致を「(a) CHANGELOG に `## [3.14.0]` 見出し存在（履歴事実）＋ (b) plugin.json version が CHANGELOG 最新リリース見出しと一致（整合事実）」の 2 アサーションへ置換。`tests/acceptance/AT-271.bats` AT-005 の `[[ "$version" == "3.12.0" ]]` 完全一致ブロックを最新リリース見出し整合へ置換（`[3.12.0]` 見出し存在・`### Removed` 存在の履歴事実は維持）。テスト名から完全一致バージョン値の含意を除去。再発防止ガイダンスを `skills/writing-plan-and-tests/SKILL.md` と `skills/running-atdd-cycle/SKILL.md` に追記。acceptance suite 89 件 fail 0 件。
+- **恒久実行される acceptance AT のバージョン完全一致ピンを将来耐性のある検証へ置換**（#289）。`tests/acceptance/AT-284.bats` AT-010 の `grep -q '"version": "3.14.0"'` 完全一致を「(a) CHANGELOG に `## [3.14.0]` 見出し存在（履歴事実）＋ (b) plugin.json version が CHANGELOG 最新リリース見出しと一致（整合事実）」の 2 アサーションへ置換。`tests/acceptance/AT-271.bats` AT-005 の `[[ "$version" == "3.12.0" ]]` 完全一致ブロックを最新リリース見出し整合へ置換（`[3.12.0]` 見出し存在・`### Removed` 存在の履歴事実は維持）。テスト名から完全一致バージョン値の含意を除去。再発防止ガイダンスを `skills/writing-plan-and-tests/SKILL.md` と `skills/running-atdd-cycle/SKILL.md` に追記。`tests/README.md` の AT-289.bats 行を削除（AT は AT-271/AT-284 の修正として実装済み）。acceptance suite 89 件 fail 0 件。
 - **AT-284 / AT-271 で重複していた `latest_release` 抽出ロジックを共有ヘルパーへ集約**（#289 レビュー指摘対応）。`tests/acceptance/helpers/changelog.bash` に `changelog_latest_release <changelog_path>` 関数を定義し、両 AT ファイルからインライン `grep -m1 '^## \[[0-9]' | grep -o ... | tr -d '[]'` を除去して関数呼び出しへ置換。AT ファイルが 3 件以上に増えた場合も同ロジックの散在が生じない構造にした。
 
 ## [3.14.2] - 2026-06-13
