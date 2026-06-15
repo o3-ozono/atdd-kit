@@ -183,8 +183,13 @@ SKILL_GATE_FILE="skills/skill-gate/SKILL.md"
   grep -qiE 'express' CHANGELOG.md
 }
 
-@test "AT-010: plugin.json version is 3.14.0" {
-  grep -q '"version": "3.14.0"' ".claude-plugin/plugin.json"
+@test "AT-010: plugin.json version matches the topmost CHANGELOG release" {
+  # #289 hardening: 旧 literal pin（`version is 3.14.0`）は次の version bump で false-fail し、
+  #   post-merge regression を恒久 red にしていた。時点依存の version 文字列を完全一致でピンせず、
+  #   CHANGELOG 最新リリース見出しとの一致（将来の bump で壊れない不変条件）で書く。
+  top=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | tr -d '#[] ')
+  [ -n "$top" ]
+  grep '"version"' .claude-plugin/plugin.json | grep -qF "\"$top\""
 }
 
 @test "AT-010: test_skill_structure.bats ALL_SKILLS includes express" {

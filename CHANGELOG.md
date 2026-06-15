@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.5] - 2026-06-15
+
+### Fixed
+
+- **`tests/acceptance` のバージョン文字列完全一致ピンが version bump のたびに post-merge regression を恒久 red にする問題を修正**（#289）。`tests/acceptance/AT-271.bats` AT-005（`version is 3.12.0` を完全一致でピン、v3.13.0 以降ずっと red）と `tests/acceptance/AT-284.bats` AT-010（`version is 3.14.0`、v3.14.1 bump で破損）が、時点依存の plugin バージョンを literal にピンしていた。`[regression]` AT は将来の任意ブランチでも成立すべきなので、両テストを `tests/acceptance/AT-269.bats` AT-004（#272 hardening で確立済み）と同じ不変条件 — **plugin.json version が CHANGELOG 最新リリース見出し（`grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' | head -1`）と一致する** — へ書き換え。#271 の永続記録（CHANGELOG `[3.12.0]` ### Removed の存在）は履歴検証として保持。再発防止として `skills/writing-plan-and-tests/SKILL.md` の `[regression]` lifecycle 定義に「regression AT は時点依存値（現行 version / 日付 / 行数）を完全一致でピンせず不変条件で書く」ガイダンスを明文化。これで AT-271 AT-006（全 suite 再帰実行）への連鎖失敗も解消。`bats tests/acceptance/` 全 green。
+
 ## [3.14.4] - 2026-06-14
 
 ### Fixed
