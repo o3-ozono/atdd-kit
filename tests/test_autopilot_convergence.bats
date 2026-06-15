@@ -186,6 +186,62 @@ _assert_valid_jsonl() {
   [ "$status" -ne 0 ]
 }
 
+# --- #248: audit-log corruption guard (AL-4 completeness) -----------------
+# _fingerprints must never SILENTLY drop a FAIL row whose fingerprint was
+# partial-written / externally corrupted: dropping it erases a stuck/sameness
+# data point (fail-OPEN). The guard demands FAIL-row-count == fingerprint-count
+# and returns non-zero so the rails escalate (halt) instead of going dark.
+
+@test "#248 corruption: a FAIL row with a truncated fingerprint halts check_sameness (not dark)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "samefp"
+  # simulate a partial write: a FAIL row whose fingerprint field has no value
+  printf '%s\n' '{"iteration":2,"step":"US","verdict":"FAIL","fingerprint":"' >> "$JSONL"
+  run check_sameness "$JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#248 corruption: a FAIL row missing the fingerprint key halts check_stuck (not dark)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "a"
+  record_iteration "$JSONL" 2 "US" "FAIL" "b"
+  printf '%s\n' '{"iteration":3,"step":"US","verdict":"FAIL"}' >> "$JSONL"
+  run check_stuck "$JSONL" 3
+  [ "$status" -ne 0 ]
+}
+
+@test "#248 corruption: _fingerprints returns non-zero when a FAIL row yields no fingerprint" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "okfp"
+  printf '%s\n' '{"iteration":2,"step":"US","verdict":"FAIL","fingerprint":""}' >> "$JSONL"
+  run _fingerprints "$JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#248 corruption: detected within a step-scoped population" {
+  record_iteration "$JSONL" 1 "running-atdd-cycle" "FAIL" "okfp"
+  printf '%s\n' '{"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":""}' >> "$JSONL"
+  run check_sameness "$JSONL" "running-atdd-cycle"
+  [ "$status" -ne 0 ]
+}
+
+@test "#248 corruption: a malformed PASS row does NOT trigger the guard (PASS excluded, #277)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "a"
+  record_iteration "$JSONL" 2 "US" "FAIL" "a"
+  # a corrupt PASS row is outside the FAIL-only population — must not false-halt
+  printf '%s\n' '{"iteration":3,"step":"US","verdict":"PASS","fingerprint":"' >> "$JSONL"
+  run check_sameness "$JSONL"
+  # sameness still fires on the two identical FAIL "a" rows; corruption NOT raised
+  [ "$status" -eq 1 ]
+}
+
+@test "#248 corruption: a clean log is unaffected (no false corruption halt)" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "a"
+  record_iteration "$JSONL" 2 "US" "FAIL" "b"
+  run check_stuck "$JSONL" 3
+  [ "$status" -eq 0 ]   # 2 rows < window 3 → continue
+  run _fingerprints "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(printf 'a\nb')" ]
+}
+
 # --- round-2 hardening (#246 second review) -------------------------------
 
 @test "record_iteration: a C0 control char (form-feed) in step is collapsed, log stays valid JSON" {

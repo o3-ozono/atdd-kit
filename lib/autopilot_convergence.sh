@@ -96,25 +96,39 @@ record_iteration() {
 # イテレーションはすべて同一 fingerprint になるため、PASS 行を含めると設計ゲート
 # 差し戻し再入などのシナリオで check_sameness / check_stuck が偽停止する（#277）。
 # この FAIL-only フィルタは step 引数の有無にかかわらず全モードで適用する（Gate ①）。
+#
+# Corruption guard (#248, AL-4 completeness): every candidate FAIL row MUST yield
+# exactly one well-formed fingerprint (non-empty, restricted to record_iteration's
+# charset [A-Za-z0-9._:-]). The old `grep -o` SILENTLY DROPPED a row whose
+# fingerprint was partial-written / externally corrupted, erasing a data point
+# from the stuck/sameness population — a fail-OPEN memory loss. Now the candidate
+# rows are counted first; if line-count != well-formed-fingerprint-count the log
+# is corrupt and the function returns non-zero (3) so the rails escalate (halt)
+# instead of going dark. check_sameness / check_stuck propagate that code.
 _fingerprints() {
-  local jsonl="$1" step="${2:-}"
+  local jsonl="$1" step="${2:-}" lines nlines fps nfps
   [ -f "$jsonl" ] || return 0
+  # Collect the candidate population: verdict=FAIL rows (#277), optionally scoped
+  # to a single step (#272). step is _json_escape'd by record_iteration, so a
+  # fixed-string match (grep -F) on the escaped literal is correct.
   if [ -n "$step" ]; then
-    # 対象 step かつ verdict=FAIL の行のみに絞り込んでから fingerprint 列を抽出する。
-    # _json_escape の出力と同じエスケープ表現（バックスラッシュ・ダブルクォートのみ）で
-    # 固定文字列マッチさせる（grep -F）。
     local escaped_step
     escaped_step=$(_json_escape "$step")
-    grep -F "\"step\":\"${escaped_step}\"" "$jsonl" \
-      | grep -F '"verdict":"FAIL"' \
-      | grep -o '"fingerprint":"[^"]*"' \
-      | sed 's/"fingerprint":"//; s/"$//'
+    lines=$(grep -F "\"step\":\"${escaped_step}\"" "$jsonl" | grep -F '"verdict":"FAIL"')
   else
-    # レガシー全ログモード: step フィルタなし。FAIL 行のみ（#277 Gate ① 全モード適用）。
-    grep -F '"verdict":"FAIL"' "$jsonl" \
-      | grep -o '"fingerprint":"[^"]*"' \
-      | sed 's/"fingerprint":"//; s/"$//'
+    lines=$(grep -F '"verdict":"FAIL"' "$jsonl")
   fi
+  [ -z "$lines" ] && return 0
+  nlines=$(printf '%s\n' "$lines" | grep -c .)
+  # A non-empty, charset-restricted fingerprint value only — an empty
+  # ("fingerprint":"") or out-of-charset value is corruption, not a data point.
+  fps=$(printf '%s\n' "$lines" | grep -o '"fingerprint":"[A-Za-z0-9._:-][A-Za-z0-9._:-]*"' | sed 's/"fingerprint":"//; s/"$//')
+  nfps=$(printf '%s\n' "$fps" | grep -c .)
+  if [ "$nlines" -ne "$nfps" ]; then
+    echo "autopilot_convergence: audit log corruption — $nlines FAIL row(s) but $nfps well-formed fingerprint(s): '$jsonl'" >&2
+    return 3
+  fi
+  printf '%s\n' "$fps"
 }
 
 # sameness-detector: halt (non-zero) when the last two iterations carry the
@@ -127,8 +141,10 @@ _fingerprints() {
 # loop (#272 / #269 incident). Omitting step preserves the legacy whole-log
 # behavior (backward-compatible); FAIL-only applies to both modes (#277 Gate ①).
 check_sameness() {
-  local jsonl="$1" step="${2:-}" fps n last prev
-  fps=$(_fingerprints "$jsonl" "$step")
+  local jsonl="$1" step="${2:-}" fps n last prev rc
+  fps=$(_fingerprints "$jsonl" "$step"); rc=$?
+  # #248: a corrupt log (non-zero from _fingerprints) is a halt, not a continue.
+  [ "$rc" -ne 0 ] && return "$rc"
   [ -z "$fps" ] && return 0
   n=$(printf '%s\n' "$fps" | grep -c .)
   [ "$n" -lt 2 ] && return 0
@@ -150,7 +166,7 @@ check_sameness() {
 # step preserves the legacy whole-log behavior (backward-compatible);
 # FAIL-only applies to both modes (#277 Gate ①).
 check_stuck() {
-  local jsonl="$1" window="${2:-3}" step="${3:-}" fps n tail_fps count distinct
+  local jsonl="$1" window="${2:-3}" step="${3:-}" fps n tail_fps count distinct rc
   # A non-numeric window would make the integer test / tail error out yet still
   # return 0 (fail-OPEN, silently disabling the rail). Validate → halt instead.
   case "$window" in
@@ -159,7 +175,9 @@ check_stuck() {
       return 2
       ;;
   esac
-  fps=$(_fingerprints "$jsonl" "$step")
+  fps=$(_fingerprints "$jsonl" "$step"); rc=$?
+  # #248: a corrupt log (non-zero from _fingerprints) is a halt, not a continue.
+  [ "$rc" -ne 0 ] && return "$rc"
   [ -z "$fps" ] && return 0
   n=$(printf '%s\n' "$fps" | grep -c .)
   [ "$n" -lt "$window" ] && return 0
