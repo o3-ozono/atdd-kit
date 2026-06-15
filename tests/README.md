@@ -186,6 +186,10 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | Test File | Target |
 |-----------|--------|
 | AT-269.bats | workflow-detail.md review description aligned to the #234 dynamic parallel Workflow panel — legacy terms absent, current phase terms present, release discipline, doc-side change scope (Issue #269) |
+| AT-271.bats | Fixed reviewer agents removal and #234 alignment regression pins — 6 fixed reviewer agent files deleted, dynamic-panel alignment invariants (Issue #271) |
+| AT-278.bats | Skill E2E Tests specify `--model` flag and define `E2E_MODEL` in all 10 flow skill E2E files (Issue #278) |
+| AT-284.bats | express skill re-introduction — APPROVAL-GATE, scope-overflow guard, OK/NG criteria, explicit trigger, CI gate wiring (Issue #284) |
+| AT-302.bats | autopilot / express route determination step — session-start Recommended Tasks 推奨経路 column, Step 3 hybrid routing definition, express/autopilot signal alignment, ambiguous fallback to autopilot, advisory-only invariant (Issue #302) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

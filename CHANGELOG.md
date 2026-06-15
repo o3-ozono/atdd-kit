@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.16.0] - 2026-06-16
+
+### Added
+
+- **session-start に autopilot / express 経路推奨ステップを追加（#302）**。`session-start` の `### Recommended Tasks` 出力テンプレートに「推奨経路」列を追加し、`### Task Recommendation Rules` に **Step 3: Route recommendation** を追記。判定主体はハイブリッド（labels・キーワードの決定的ガードレール＋ Issue title/body への LLM 判断の併用）。express 適格信号（docs/README/typo/gitignore/version-bump のみ・挙動変更なし）と autopilot 信号（コード変更・新機能・CI/hooks・依存・セキュリティ）を定義。曖昧時は安全側 autopilot へフォールバック。推奨のみ・auto-route しない不変条件を明記。`tests/acceptance/AT-302.bats` に AC1–AC7 の構造アサーション 14 件を追加し全件 green。
+
 ## [3.15.1] - 2026-06-15
 
 ### Fixed
