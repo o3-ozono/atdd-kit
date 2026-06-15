@@ -186,6 +186,9 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | Test File | Target |
 |-----------|--------|
 | AT-269.bats | workflow-detail.md review description aligned to the #234 dynamic parallel Workflow panel — legacy terms absent, current phase terms present, release discipline, doc-side change scope (Issue #269) |
+| AT-271.bats | Fixed reviewer agents removal and #234 alignment regression pins — six fixed-reviewer agent files absent, agents/README.md dynamic panel wiring present (Issue #271) |
+| AT-278.bats | Skill E2E tests specify --model sonnet for claude invocations — all E2E files pass --model flag, no unspecified invocations (Issue #278) |
+| AT-284.bats | express skill re-introduction — documentation-grade fast path, SKILL.md/commands/express.md structure, skill-gate guard, CI gate (Issue #284) |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

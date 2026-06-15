@@ -1,7 +1,7 @@
 # Acceptance Tests: 恒久実行される acceptance AT のバージョン完全一致ピンを将来耐性のある検証へ置換する
 
 <!-- AT lifecycle: planned → draft → green → regression
-     各エントリには状態マーカー [planned] / [draft] / [regression] / [regression] を付与する。
+     各エントリには状態マーカー [planned] / [draft] / [green] / [regression] を付与する。
      状態は実装の進行に合わせて更新する。 -->
 
 ## AT-289-1: AT-284 AT-010 のバージョン検証が将来耐性化されている（US-1）
@@ -40,8 +40,8 @@
   - Then: いずれも fail 0 件で green。version bump によって対象 AT が red 化しない（regression 信号が bump に対して安定）
 
 <!-- 実装開始後は [planned] → [draft] に変更する -->
-<!-- テストが通過したら [draft] → [regression] に変更する -->
-<!-- リグレッション対象になったら [regression] → [regression] に変更する -->
+<!-- テストが通過したら [draft] → [green] に変更する -->
+<!-- リグレッション対象になったら [green] → [regression] に変更する -->
 
 ## ライフサイクル例
 
@@ -49,5 +49,5 @@
 |------|------|
 | [planned] | テスト設計済み・未実装 |
 | [draft] | 実装中・まだ通過していない |
-| [regression] | テスト通過済み |
+| [green] | テスト通過済み |
 | [regression] | リグレッション対象として継続監視中 |
