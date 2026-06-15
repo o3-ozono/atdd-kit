@@ -271,10 +271,14 @@
 
 # --- AT-005: リリース規律（CS-1） ---
 
-@test "AT-005: CHANGELOG has [3.12.0] with Removed section and plugin.json version is 3.12.0" {
+@test "AT-005: CHANGELOG records [3.12.0] ### Removed and plugin.json matches the topmost CHANGELOG release" {
   # Given: CHANGELOG.md と .claude-plugin/plugin.json
-  # When: 新バージョンエントリと version 値を検査する
-  # Then: [3.12.0] に ### Removed エントリがあり、plugin.json の version が 3.12.0
+  # When: #271 のリリース履歴（恒久）と、現行 version が CHANGELOG 最新リリース見出しと一致するか検査する
+  # Then: [3.12.0] に ### Removed があり（#271 の永続記録）、plugin.json version が CHANGELOG 最新リリースと一致する
+  #
+  # #289 hardening: 旧 literal pin（`version is 3.12.0`）は次の version bump で false-fail し、
+  #   post-merge regression を恒久 red にしていた。regression は将来の任意ブランチでも成立すべきなので、
+  #   時点依存の version 文字列を完全一致でピンせず、CHANGELOG 最新見出しとの一致（不変条件）で書く。
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
@@ -288,10 +292,15 @@
     return 1
   }
 
-  local version
+  local version top
   version=$(grep '"version"' "${repo_root}/.claude-plugin/plugin.json" | grep -o '"[0-9.]*"' | tr -d '"')
-  [[ "$version" == "3.12.0" ]] || {
-    echo "FAIL: plugin.json の version が ${version} （期待: 3.12.0）"
+  top=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "${repo_root}/CHANGELOG.md" | head -1 | tr -d '#[] ')
+  [[ -n "$top" ]] || {
+    echo "FAIL: CHANGELOG.md に [X.Y.Z] 形式のリリース見出しがない"
+    return 1
+  }
+  [[ "$version" == "$top" ]] || {
+    echo "FAIL: plugin.json version (${version}) が CHANGELOG 最新リリース見出し (${top}) と一致しない"
     return 1
   }
 }
