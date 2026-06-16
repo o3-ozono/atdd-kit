@@ -111,3 +111,39 @@ SKILL_EXPRESS="skills/express/SKILL.md"
 @test "#302-AC5: express SKILL.md still has OK/NG criteria" {
   grep -qiE '\*\*OK|OK.*applies|\*\*NG|NG.*does not apply|OK 基準|NG 基準' "$SKILL_EXPRESS"
 }
+
+# --- #316: Draft PR layer-1 pins ---
+
+@test "#316-AC1: SKILL.md limits CONFLICTING rebase to ready (non-Draft) @me PRs" {
+  # The rebase recommendation must mention ready/non-Draft and @me conditions
+  local step2
+  step2=$(sed -n '/Step 2/,/Step 3/p' "$SKILL_EN")
+  echo "$step2" | grep -qiE 'ready.*non.draft|non.draft.*ready'
+  echo "$step2" | grep -q '@me'
+}
+
+@test "#316-AC2: SKILL.md states Draft PRs must not have write-back proposed" {
+  local step2
+  step2=$(sed -n '/Step 2/,/Step 3/p' "$SKILL_EN")
+  echo "$step2" | grep -qiE 'draft.*not|not.*draft|draft.*never'
+  echo "$step2" | grep -qiE 'git checkout|git rebase|git push'
+}
+
+@test "#316-AC3: SKILL.md shows Draft PR as read-only in Previous Work example" {
+  grep -qiE 'read-only|read only' "$SKILL_EN"
+}
+
+@test "#316-AC4: SKILL.md includes read-only working-on-branch marker text" {
+  grep -q '別セッション作業中' "$SKILL_EN"
+}
+
+@test "#316-regression: existing #187 in-progress exclusion pin is intact" {
+  local section
+  section=$(sed -n '/Task Recommendation Rules/,/^## /p' "$SKILL_EN")
+  echo "$section" | grep -q 'in-progress'
+  echo "$section" | grep -qi 'exclu'
+}
+
+@test "#316-regression: existing #302 4-column Recommended Tasks header is intact" {
+  grep -qE '\|\s*Priority\s*\|\s*Issue\s*\|\s*Reason\s*\|\s*推奨経路\s*\|' "$SKILL_EN"
+}

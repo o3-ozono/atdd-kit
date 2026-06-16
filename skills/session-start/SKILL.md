@@ -180,7 +180,8 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 **Branch:** `<branch>` (<clean / uncommitted changes>)
 
 ### Previous Work  <-- only if ongoing work exists
-- PR #XX: <title> -- <CI status> / <review status> / ⚠ CONFLICTING  <-- if mergeable == CONFLICTING
+- PR #XX: <title> -- <CI status> / <review status> / ⚠ CONFLICTING  <-- if ready (non-Draft) @me PR and mergeable == CONFLICTING
+- 🔒 別セッション作業中: PR #YY: <title>  <-- if open Draft PR; read-only display only
 
 ### Recent Activity (24h)  <-- only if recent activity exists
 | Type | # | Title | When |
@@ -209,7 +210,7 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 2. Issues with open PRs (Phase 1-B) → add to EXCLUDE_SET
 
 **Step 2: Filter and rank**
-1. **Highest priority:** PRs with `mergeable == CONFLICTING` — recommend rebase:
+1. **Highest priority:** ready (non-Draft) `@me` PRs with `mergeable == CONFLICTING` — recommend rebase:
    ```bash
    git fetch origin main
    git checkout <branch>
@@ -217,6 +218,7 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
    # After resolving conflicts
    git push --force-with-lease
    ```
+   Draft PRs are never included here — display them as `🔒 別セッション作業中` (read-only) in Previous Work only. Do not propose `git checkout`, `git rebase`, or `git push --force-with-lease` for Draft PR branches.
 2. Remove EXCLUDE_SET from open Issues
 3. Rank remaining: bugs > features > refactoring > research
 

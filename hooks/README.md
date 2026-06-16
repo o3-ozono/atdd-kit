@@ -16,6 +16,7 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 | [hooks.json](hooks.json) | — | Hook definitions — maps events to shell commands |
 | [session-start](session-start) | SessionStart | Checks if `.claude/config.yml` (or legacy `workflow-config.yml`) exists; guides first-time setup |
 | [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit of project-repo files whose worktree is on `main`/`master` |
+| [branch-lease-guard.sh](branch-lease-guard.sh) | PreToolUse (Bash) | Blocks write-back operations (git push / gh pr edit / merge / ready) on branches with open Draft PRs held by another session |
 | [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal (timeout=10s: balances normalization benefit vs hook overhead; large outputs complete in <1s on typical hardware) |
 
 ### main-branch-guard.sh + main_branch_guard.py
@@ -51,6 +52,43 @@ In the atdd-kit repository, on a feature branch, edit `hooks/hooks.json` and rem
 **Option 3: Override via Claude Code settings (project-level)**
 
 In your project's `.claude/settings.json`, add a hook that returns `{}` for the same matcher before the plugin hook runs.
+
+### branch-lease-guard.sh
+
+Prevents write-back operations (git push, gh pr edit/merge/ready) on branches that have an open Draft PR held by another active session (#316):
+
+1. Intercepts Bash tool calls via PreToolUse hook
+2. Identifies write-back operations: `git push` (all forms including `--force*`), `gh pr edit`, `gh pr merge`, `gh pr ready`. Non-write-back ops (checkout, switch, local rebase, etc.) pass through immediately.
+3. Resolves the target branch from the command: explicit argument in `git push`, or PR branch via `gh pr view`, falling back to `git branch --show-current`.
+4. `main`/`master` always passes through.
+5. Checks the shared **lease store** (`BRANCH_LEASE_DIR`, default `/tmp/claude-branch-leases/`) for another session's fresh lease on the target branch.
+6. If another session holds a fresh lease **and** `gh pr list` confirms an open Draft PR on that branch → `permissionDecision: "deny"` JSON + exit 0 (hard block).
+7. If no blocking condition: allows, and acquires a lease for the current session (`session_id` from hook input).
+
+**Lease store:** One JSON file per branch (URL-encoded filename): `{session_id, timestamp}`. Shared across sessions on the same machine via filesystem.
+
+**TTL:** `BRANCH_LEASE_TTL_LOCAL` (default 7200s / 2h) for local; `BRANCH_LEASE_TTL_CI` (default 2400s / 40min, when `GITHUB_ACTIONS` is set). Stale leases are deleted at access time (orphan cleanup — no daemon needed).
+
+**Override escape hatch:** `ATDD_BRANCH_LEASE_FORCE=1` unconditionally allows — use to break out of a stuck lease situation.
+
+**Fail-safe:** Any unexpected condition (jq/git unavailable, malformed stdin, gh failure) returns `{}` + exit 0 (allow). The hook never blocks due to unexpected failures.
+
+#### Emergency Recovery (if the hook misbehaves)
+
+**Option 1: Remove the stale lease manually**
+```bash
+ls /tmp/claude-branch-leases/          # or your BRANCH_LEASE_DIR
+rm /tmp/claude-branch-leases/<branch>.json
+```
+
+**Option 2: Override for the current command**
+```bash
+ATDD_BRANCH_LEASE_FORCE=1 git push origin <branch>
+```
+
+**Option 3: Remove the hook entry from hooks.json (feature branch)**
+
+In the atdd-kit repository, on a feature branch, edit `hooks/hooks.json` and remove the Bash PreToolUse entry for `branch-lease-guard.sh` temporarily.
 
 ## References
 
