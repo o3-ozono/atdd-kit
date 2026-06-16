@@ -29,17 +29,17 @@
 
 ## AT-318-C: merge coordinator（サブ c）
 
-- [ ] [planned] AT-318-C1: rebase 後フル再ゲートを通して merge する（F5）
+- [x] [green] AT-318-C1: rebase 後フル再ゲートを通して merge する（F5） — `tests/acceptance/AT-318-C.bats` / unit `tests/test_merge_coordinator.bats`。順序 rebase→regate→merge→regression をモックで pin
   - Given: `merge-ready` な単体 green の PR、main は他 PR で前進済み
   - When: coordinator が drain する
   - Then: 最新 main へ rebase → フル再ゲート（AT＋verdict）→ merge → post-merge regression が順に通る
 
-- [ ] [planned] AT-318-C2: 失敗は自動差し戻し、閾値 N で human エスカレーション（F6・F7）
+- [x] [green] AT-318-C2: 失敗は自動差し戻し、閾値 N で human エスカレーション（F6・F7） — `tests/acceptance/AT-318-C.bats` / unit `tests/test_merge_coordinator.bats`
   - Given: rebase 衝突 or 再ゲート fail を起こす PR
   - When: coordinator が drain する
   - Then: 新 autopilot イテレーションへ自動差し戻し。N 回失敗で初めて human にフラグ（Issue コメント）が立つ
 
-- [ ] [planned] AT-318-C3: 並列生成 PR を統合しても main が壊れない（C1・broken-together 防止・regression 候補）
+- [ ] [planned] AT-318-C3: 並列生成 PR を統合しても main が壊れない（C1・broken-together 防止・regression 候補） — 構造的担保（再ゲートが必ず merge 前に走る順序）は AT-318-C1 で green。実 git の複数 PR 統合 E2E は epic 統合（AT-318-E1）で検証
   - Given: 単体 green な merge-ready PR が2本（互いに干渉し得る変更）
   - When: coordinator が逐次 drain する
   - Then: 各 PR が rebase＋再ゲートを経て統合され、merge 後の main で regression が green（不変条件: 単体 green の同時統合で main は壊れない）
