@@ -17,12 +17,12 @@
 
 ## AT-318-D: lease 拡張（サブ d）
 
-- [ ] [planned] AT-318-D1: issue-lease が同一 issue の二重 claim を防ぐ（C2）
+- [x] [green] AT-318-D1: issue-lease が同一 issue の二重 claim を防ぐ（C2） — `tests/acceptance/AT-318-D.bats` / unit `tests/test_lease_store.bats`
   - Given: issue #X を claim 済みのセッション A
   - When: セッション B が同じ #X を claim しようとする
   - Then: B はブロックされる（lease 保有者 A が表示）。A の lease は TTL stale で期限切れ可能
 
-- [ ] [planned] AT-318-D2: merge-lease 容量1が同時 merge を直列化（C2）
+- [x] [green] AT-318-D2: merge-lease 容量1が同時 merge を直列化（C2） — `tests/acceptance/AT-318-D.bats` / unit `tests/test_lease_store.bats`
   - Given: `merge-ready` PR を merge しようとする2つの主体
   - When: 同時に merge-lease を取得しようとする
   - Then: 容量1で後発は待機/ブロック。override（FORCE 相当）で意図的上書きは可能

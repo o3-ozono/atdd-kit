@@ -1,6 +1,6 @@
 # Plan: full-autopilot — キュー方式で複数 issue を並列・無人で merge まで回す
 
-> **本 Issue は epic**。実装は4つのサブ Issue に分割し、各サブ Issue が自身の `prd → user-stories → plan → ATDD` サイクルを持つ。本 plan は epic レベルの**分解・依存・ロールアウト順・統合戦略・横断的関心事**を定義する。2-5 分粒度の詳細タスクは各サブ Issue の plan で詰める。
+> **本 Issue は #318 一本で一括実装する**（サブ Issue 分割なし・単一 Draft PR #319）。下記の (a)〜(d) は**実装順序の単位**であり、別 Issue ではない。依存 DAG に従って同一ブランチ上で順に green 化する。
 
 ## Epic 分解と依存 DAG
 
@@ -60,8 +60,8 @@
 
 - [ ] epic 統合 E2E：キュー2 issue・K=2 で `dispatch → 並列 hand-off worker → 各 merge-ready → coordinator 逐次 merge → 次の取得` まで無人で1周
 - [ ] verify: 2 issue が main に直列 merge され、post-merge regression green、人間関与は壁打ち（キュー投入）のみ（AT-318-E1）
-- [ ] 各サブ Issue は自身の ATDD サイクルで Unit + E2E を持つ（#316 の skill テスト規律踏襲）
-- [ ] verify: `reviewing-deliverables`（Step 5 / R1-R6）が各サブ Issue で PASS
+- [ ] 各実装単位 (a)〜(d) が Unit（bats フック / skill）+ 必要箇所 E2E を持つ（#316 の skill テスト規律踏襲）
+- [ ] verify: `reviewing-deliverables`（Step 5 / R1-R6）が #318 全体で PASS
 
 ## Finishing
 - [ ] CHANGELOG.md 更新（Keep a Changelog、feature PR ごと）
