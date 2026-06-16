@@ -759,3 +759,51 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
 @test "#305 AT-001 finding #3: autopilot Gate ① delegates to defining-requirements; no separate requirements gate" {
   grep -qiE 'Gate ①.*(defining-requirements|delegat|委譲)|delegat.*defining-requirements' "$SKILL_FILE"
 }
+
+# --- #311: impl phase MODEL constant + agent model assignment ----------------
+# impl phase subagents (gen/review/at-gate/coverage/audit/rails) receive
+# model: MODEL so the harness dispatches them to Sonnet; design phase and the
+# freeze:anchor orchestrator glue inherit the session model (MODEL = undefined).
+
+@test "#311 AT-001: MODEL constant is defined as impl→sonnet after const PHASE" {
+  # AT-001: impl phase に限定して Sonnet を選ぶ MODEL 定数が Workflow スクリプトに存在する
+  local phase_line model_line
+  phase_line=$(grep -nF "const PHASE = A.phase" "$SKILL_FILE" | head -1 | cut -d: -f1)
+  model_line=$(grep -nF "const MODEL = PHASE === 'impl' ? 'sonnet' : undefined" "$SKILL_FILE" | head -1 | cut -d: -f1)
+  # exactly 1 occurrence
+  [ "$(grep -cF "const MODEL = PHASE === 'impl' ? 'sonnet' : undefined" "$SKILL_FILE")" -eq 1 ]
+  # MODEL line is directly after PHASE line (adjacent, higher line number)
+  [ -n "$phase_line" ]
+  [ -n "$model_line" ]
+  [ "$model_line" -eq $(( phase_line + 1 )) ]
+}
+
+@test "#311 AT-002: all 6 impl agent labels carry model: MODEL; total count is exactly 6" {
+  # AT-002: gen / review / at-gate / coverage / audit / rails のすべてに model: MODEL が付与されている
+  local count
+  count=$(grep -cF 'model: MODEL' "$SKILL_FILE")
+  [ "$count" -eq 6 ]
+  # each label's line must contain model: MODEL
+  grep -qF 'model: MODEL' <(grep 'label: `gen:' "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`review:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`at-gate:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`coverage:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`audit:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`rails:" "$SKILL_FILE")
+}
+
+@test "#311 AT-003: freeze:anchor line does NOT carry model:" {
+  # AT-003: freeze:anchor (orchestrator glue) は model 不付与 — セッションモデルを継承する
+  local freeze_line
+  freeze_line=$(grep "label: 'freeze:anchor'" "$SKILL_FILE")
+  [ -n "$freeze_line" ]
+  # must not contain 'model:' in any form
+  ! echo "$freeze_line" | grep -qF 'model:'
+}
+
+@test "#311 AT-004: SKILL.md line count is still ≤ 280 after MODEL constant addition" {
+  # AT-004: +1 行 (const MODEL) の純増で 280 ピン以内を維持
+  local n
+  n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
+  [ "$n" -le 280 ]
+}
