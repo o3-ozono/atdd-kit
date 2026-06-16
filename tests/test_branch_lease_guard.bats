@@ -65,14 +65,17 @@ write_lease_file() {
   local session_id="$2"
   local ts="${3:-$(now_ts)}"
   local encoded
-  encoded=$(printf '%s' "$branch" | sed 's|/|%2F|g')
+  # encode_branch 関数（hooks/branch-lease-guard.sh L54）と同じエンコードを維持する:
+  #   / → %2F, スペース → %20, # → %23, . → %2E, ~ → %7E
+  encoded=$(printf '%s' "$branch" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
   printf '{"session_id":"%s","timestamp":%s}\n' "$session_id" "$ts" > "$LEASE_DIR/${encoded}.json"
 }
 
 read_lease_file() {
   local branch="$1"
   local encoded
-  encoded=$(printf '%s' "$branch" | sed 's|/|%2F|g')
+  # encode_branch 関数（hooks/branch-lease-guard.sh L54）と同じエンコードを維持する
+  encoded=$(printf '%s' "$branch" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
   cat "$LEASE_DIR/${encoded}.json" 2>/dev/null || true
 }
 
@@ -213,7 +216,8 @@ read_lease_file() {
   BRANCH="feat/shared-branch"
   write_lease_file "$BRANCH" "session-A"
   # session-B reads the file directly (simulates cross-session access)
-  encoded=$(printf '%s' "$BRANCH" | sed 's|/|%2F|g')
+  # encode_branch 関数（hooks/branch-lease-guard.sh L54）と同じ 5 文字セットでエンコード
+  encoded=$(printf '%s' "$BRANCH" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
   lease=$(cat "$LEASE_DIR/${encoded}.json" 2>/dev/null)
   echo "$lease" | grep -q "session-A"
 }
@@ -223,7 +227,8 @@ read_lease_file() {
   BRANCH="feat/alt-dir-test"
   json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-X"}' "$BRANCH")
   env BRANCH_LEASE_DIR="$ALT_DIR" PATH="$FAKE_BIN:$PATH" bash "$GUARD_PATH" <<< "$json" >/dev/null
-  encoded=$(printf '%s' "$BRANCH" | sed 's|/|%2F|g')
+  # encode_branch 関数（hooks/branch-lease-guard.sh L54）と同じ 5 文字セットでエンコード
+  encoded=$(printf '%s' "$BRANCH" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
   [ -f "$ALT_DIR/${encoded}.json" ]
   rm -rf "$ALT_DIR"
 }
@@ -330,7 +335,63 @@ read_lease_file() {
   write_lease_file "$BRANCH" "session-A"
   json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push --force origin %s"},"session_id":"session-B"}' "$BRANCH")
   result=$(run_guard "$json" "DRAFT_BRANCH_MOCK=$BRANCH")
-  # With a draft on BRANCH, should be denied (we set DRAFT_BRANCH_MOCK so gh mock returns 1)
-  # If mock matches, deny; if not, allow — just must be valid JSON
+  # DRAFT_BRANCH_MOCK を BRANCH に合わせているため、モック gh は Draft PR ありを返す。
+  # 別セッション (session-A) が fresh リースを保有しているため deny が返ることを assert する（AT-003 の force-push カバレッジ）。
+  echo "$result" | jq . >/dev/null
+  echo "$result" | grep -q '"deny"'
+}
+
+# ── Finding 1: ドットを含むブランチ名のエンコード整合 ─────────────────────────
+# encode_branch（hook L54）は '.' を %2E にエンコードする。
+# write_lease_file / read_lease_file ヘルパーも同じエンコードを使わないと
+# ドット入りブランチ（例: fix/1.0-compat）でリース参照が食い違う。
+# このテストが回帰として encode 整合を固定する。（#316 review finding priority-3）
+
+@test "encode consistency: dot-branch fix/1.0-compat lease is found after guard writes it" {
+  DOT_BRANCH="fix/1.0-compat"
+  # ガードが push で lease を書いたと仮定（guard が encode_branch で書く）
+  json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-A"}' "$DOT_BRANCH")
+  run_guard "$json" "DRAFT_BRANCH_MOCK=none-matches" >/dev/null
+
+  # write_lease_file ヘルパー（テスト内）が同じエンコードで書いた場合と
+  # guard が書いたファイルが同一パスを指す必要がある。
+  # read_lease_file で読み出せれば整合している。
+  lease=$(read_lease_file "$DOT_BRANCH")
+  echo "$lease" | grep -q "session-A"
+}
+
+@test "encode consistency: dot-branch write_lease_file can seed a block for guard" {
+  # write_lease_file ヘルパーで session-A がシードしたリースを
+  # guard が read してブロックすることを確認する（エンコード一致が前提）。
+  DOT_BRANCH="fix/1.0-compat"
+  write_lease_file "$DOT_BRANCH" "session-A"
+  json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-B"}' "$DOT_BRANCH")
+  # DRAFT_BRANCH_MOCK を DOT_BRANCH に合わせてモック gh が Draft PR ありを返すようにする
+  result=$(run_guard "$json" "DRAFT_BRANCH_MOCK=$DOT_BRANCH")
+  # guard がリースを正しく読めていれば deny（エンコードずれがあれば {} が返る）
+  echo "$result" | grep -q '"deny"'
+}
+
+# ── Finding 3: gh pr edit のブランチ解決正確性 ────────────────────────────────
+# test 28 は有効 JSON を返すだけの弱いアサーションだった。
+# gh pr view をモック化してブランチ解決経路を実際に検証する。（#316 review finding priority-2）
+
+@test "gh pr edit: --head flag resolves branch correctly and blocks on draft" {
+  # --head フラグが付いている場合は正確にそのブランチを対象にする。
+  TARGET="feat/head-flag-test"
+  write_lease_file "$TARGET" "session-A"
+  # モック gh が TARGET を Draft として返すよう DRAFT_BRANCH_MOCK に指定
+  json=$(printf '{"tool_name":"Bash","tool_input":{"command":"gh pr edit 42 --head %s --title foo"},"session_id":"session-B"}' "$TARGET")
+  result=$(run_guard "$json" "DRAFT_BRANCH_MOCK=$TARGET")
+  # --head フラグがあるのでブランチ解決は正確。別セッションリース + Draft PR → deny
+  echo "$result" | grep -q '"deny"'
+}
+
+@test "gh pr edit: without --head flag falls back gracefully and returns valid JSON" {
+  # --head フラグ無し・PR番号指定の場合、gh pr view でブランチ解決を試みるが
+  # モック gh は pr view に対応していないため git branch --show-current にフォールバック。
+  # 重要な不変条件: フォールバックが起きてもクラッシュせず valid JSON を返す（fail-safe）。
+  json=$(printf '{"tool_name":"Bash","tool_input":{"command":"gh pr edit 42 --title foo"},"session_id":"session-B"}')
+  result=$(run_guard "$json")
   echo "$result" | jq . >/dev/null
 }

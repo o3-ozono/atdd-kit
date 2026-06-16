@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **branch-lease guard フック新設（#316）**。`hooks/branch-lease-guard.sh` を新規作成し、`git push` / `gh pr edit` / `gh pr merge` / `gh pr ready` などの write-back 操作を PreToolUse 層で hard block する。対象ブランチに open Draft PR があり、かつ別セッションが共有 lease store（`/tmp/claude-branch-leases/`、`BRANCH_LEASE_DIR` env で override 可）に fresh リースを保有している場合のみ `permissionDecision: "deny"` を返す。main/master / 非 write-back 操作 / 想定外条件はすべて fail-safe allow。TTL は `BRANCH_LEASE_TTL_LOCAL`（default 7200s）/ `BRANCH_LEASE_TTL_CI`（default 2400s）で制御し、アクセス時 orphan 掃除で stale リースを自動削除。`ATDD_BRANCH_LEASE_FORCE=1` で緊急上書き可能。`hooks/hooks.json` の PreToolUse Bash matcher に登録。`tests/test_branch_lease_guard.bats`（31 件）と `tests/e2e/branch-lease-guard.bats`（7 件）で挙動を pin。`hooks/README.md`・`tests/README.md` も同一 PR 内で更新。
+- **branch-lease guard フック新設（#316）**。`hooks/branch-lease-guard.sh` を新規作成し、`git push` / `gh pr edit` / `gh pr merge` / `gh pr ready` などの write-back 操作を PreToolUse 層で hard block する。対象ブランチに open Draft PR があり、かつ別セッションが共有 lease store（`/tmp/claude-branch-leases/`、`BRANCH_LEASE_DIR` env で override 可）に fresh リースを保有している場合のみ `permissionDecision: "deny"` を返す。main/master / 非 write-back 操作 / 想定外条件はすべて fail-safe allow。TTL は `BRANCH_LEASE_TTL_LOCAL`（default 7200s）/ `BRANCH_LEASE_TTL_CI`（default 2400s）で制御し、アクセス時 orphan 掃除で stale リースを自動削除。`ATDD_BRANCH_LEASE_FORCE=1` で緊急上書き可能。`hooks/hooks.json` の PreToolUse Bash matcher に登録。`tests/test_branch_lease_guard.bats`（35 件）と `tests/e2e/branch-lease-guard.bats`（9 件）で挙動を pin。`hooks/README.md`・`tests/README.md` も同一 PR 内で更新。
 
 ### Changed
 

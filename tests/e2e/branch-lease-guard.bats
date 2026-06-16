@@ -71,7 +71,11 @@ write_lease() {
   local session_id="$2"
   local ts="${3:-$(now_ts)}"
   local encoded
-  encoded=$(printf '%s' "$branch" | sed 's|/|%2F|g')
+  # encode_branch（hooks/branch-lease-guard.sh L54）と同じエンコードセットを維持する:
+  #   / → %2F, スペース → %20, # → %23, . → %2E, ~ → %7E
+  # Finding 1 (#316 review): E2E ヘルパーが '/' のみエンコードしていた場合、
+  # ドット入りブランチ（例: fix/1.0-compat）でリース参照がずれてテストが偽パスする。
+  encoded=$(printf '%s' "$branch" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
   printf '{"session_id":"%s","timestamp":%s}\n' "$session_id" "$ts" > "$LEASE_DIR/${encoded}.json"
 }
 
@@ -107,7 +111,8 @@ run_guard_e2e() {
   json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-new-e2e"}' "$BRANCH")
   result=$(run_guard_e2e "$json")
   [ "$result" = "{}" ]
-  encoded=$(printf '%s' "$BRANCH" | sed 's|/|%2F|g')
+  # encode_branch 関数（hooks/branch-lease-guard.sh L54）と同じ 5 文字セットでエンコード
+  encoded=$(printf '%s' "$BRANCH" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
   [ -f "$LEASE_DIR/${encoded}.json" ]
 }
 
@@ -144,4 +149,32 @@ run_guard_e2e() {
   json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-mine-e2e"}' "$DRAFT_BRANCH")
   result=$(run_guard_e2e "$json" "ATDD_BRANCH_LEASE_FORCE=1")
   [ "$result" = "{}" ]
+}
+
+# ── E2E-007: ドット入りブランチ名のエンコード整合（Finding 1 regression） ────────
+# hooks/branch-lease-guard.sh encode_branch() は '.' を %2E にエンコードする。
+# E2E write_lease() ヘルパーが '/' のみエンコードする場合、ドット入りブランチ（例:
+# fix/1.0-compat）で guard が書いたリースファイルと write_lease() が書くファイルの
+# パスがずれ、ブロックアサーションが偽パス（リース不一致で allow が返る）する。
+# このテストは E2E レベルでエンコード整合を回帰固定する。
+
+@test "E2E-007: dot-branch write_lease seeds a block that the guard enforces" {
+  DOT_BRANCH="fix/1.0-compat"
+  write_lease "$DOT_BRANCH" "session-other-e2e" "$(now_ts)"
+  json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-mine-e2e"}' "$DOT_BRANCH")
+  # MOCK_DRAFT_BRANCH を DOT_BRANCH に合わせてモック gh が Draft PR ありを返すようにする
+  result=$(run_guard_e2e "$json" "MOCK_DRAFT_BRANCH=$DOT_BRANCH")
+  # エンコードが一致していれば guard はリースを検出して deny を返す
+  echo "$result" | grep -q '"deny"'
+}
+
+@test "E2E-007: dot-branch lease written by guard is readable from write_lease path" {
+  DOT_BRANCH="fix/1.0-compat"
+  # ガードが push で lease を書く（guard の encode_branch パスで書き込む）
+  json=$(printf '{"tool_name":"Bash","tool_input":{"command":"git push origin %s"},"session_id":"session-writer-e2e"}' "$DOT_BRANCH")
+  run_guard_e2e "$json" "MOCK_DRAFT_BRANCH=none" >/dev/null
+  # write_lease ヘルパーのエンコードパスで読み出せることを確認する
+  encoded=$(printf '%s' "$DOT_BRANCH" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g')
+  [ -f "$LEASE_DIR/${encoded}.json" ]
+  grep -q "session-writer-e2e" "$LEASE_DIR/${encoded}.json"
 }

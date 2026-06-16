@@ -48,8 +48,10 @@ emit_deny() {
 }
 
 # Encode a branch name to a safe filename (replace / and other unsafe chars).
+# git branch naming forbids most special chars in practice; we encode the
+# residual ones defensively so the lease filename is always filesystem-safe.
 encode_branch() {
-  printf '%s' "$1" | sed 's|/|%2F|g; s| |%20|g'
+  printf '%s' "$1" | sed 's|/|%2F|g; s| |%20|g; s|#|%23|g; s|\.|%2E|g; s|~|%7E|g'
 }
 
 # Return effective TTL based on CI detection.
@@ -65,6 +67,15 @@ effective_ttl() {
 #
 # Targeted operations only — git push, gh pr edit/merge/ready.
 # Non-targeted: git checkout, git switch, git rebase (without push), local ops.
+#
+# Known limitation (Finding 2 / #316): compound shell commands whose first verb
+# is not 'git push' or 'gh pr …' bypass detection.  For example:
+#   git fetch origin && git push origin feat/X
+#   git rebase origin/main && git push --force-with-lease
+# In practice Claude Code issues each Bash tool call as a standalone command,
+# and the session-start SKILL.md Step 2 rebase recipe lists individual commands,
+# so real-world impact is low.  Fixing this would require a shell parser or
+# splitting on '&&'/';' — out of scope for this hook's fail-safe mandate.
 
 is_write_back() {
   local cmd="$1"
@@ -130,9 +141,11 @@ resolve_branch_from_cmd() {
 
   # --- gh pr edit / merge / ready ---------------------------------------------
   if printf '%s' "$cmd" | grep -qE '^gh[[:space:]]+pr[[:space:]]+(edit|merge|ready)'; then
-    # Try --head <branch> flag
+    # Try --head <branch> flag.
+    # Use awk instead of `sed -n 's/.*--head\+.../p'` because BSD sed (macOS)
+    # does not support \+ (GNU extension) — awk is POSIX and portable.
     local head_val
-    head_val=$(printf '%s' "$cmd" | sed -n 's/.*--head[[:space:]]\+\([^[:space:]]*\).*/\1/p')
+    head_val=$(printf '%s' "$cmd" | awk '{for(i=1;i<=NF;i++) if($i=="--head" && i<NF) print $(i+1)}')
     if [ -n "$head_val" ]; then
       printf '%s' "$head_val"
       return 0
