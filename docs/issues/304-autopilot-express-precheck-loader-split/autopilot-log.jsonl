@@ -2,3 +2,4 @@
 {"iteration":1,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"dc09303bba22b9c139c1824a40ab68c1198262c3f2a905b4f41979427296423e"}
 {"iteration":2,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
 {"iteration":1,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"73cb7d07807e1b4f0d07dc03b63db3c510194591c9abcf996624de9a39400e72"}
+{"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"9f3533c99c005f6951c295c2ed76d700bc9ce354bf95a70deae58513f7be0858"}
