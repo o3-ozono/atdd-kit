@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.18.0] - 2026-06-16
+
+### Changed
+
+- **VERDICT_SCHEMA.overall_correctness を enum 制約化（#296）**。`skills/autopilot/SKILL.md` の `VERDICT_SCHEMA` 内 `overall_correctness` を `{ type: 'string' }` から `{ type: 'string', enum: ['correct', 'incorrect'] }` に変更。構造化出力ツール段での prose 混入を防ぎ、satisfaction oracle の厳密一致（`=== 'correct'`）と乖離した値が返って収束できない偽 stuck halt を構造的に排除する（既存の判定ロジックは無改修で整合）。
+- **running-atdd-cycle に時点依存ピン禁止ガイダンスを追加（#300-1）**。`skills/running-atdd-cycle/SKILL.md` の C2 バレット末尾に `[regression]` AT は version 等の時点依存値を完全一致でピンせず不変条件で assert する旨のガイダンスを追記（`writing-plan-and-tests/SKILL.md` の既存記述 #289 と整合）。
+- **AT-302 AC6 の git-diff 依存チェックを不変条件チェックへ置換**。点時間依存の `git diff --name-only` による "autopilot SKILL.md 変更禁止" チェックを、autopilot SKILL.md が存在し VERDICT_SCHEMA を持つという構造的不変条件チェックへ置換（#289 パターン遵守）。
+
+### Added
+
+- **changelog_latest_release ヘルパーを集約（#300-2）**。`tests/acceptance/helpers/changelog.bash` に `changelog_latest_release <changelog_path>` 関数を新設。`## [Unreleased]` をスキップして先頭の `## [X.Y.Z]` から `X.Y.Z` を出力する。`AT-271.bats`（AT-005）と `AT-284.bats`（AT-010）のインライン抽出重複をヘルパー呼び出しへ置換し、同ロジックの散在を解消。
+
 ## [3.17.0] - 2026-06-16
 
 ### Changed

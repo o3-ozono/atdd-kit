@@ -187,7 +187,11 @@ SKILL_GATE_FILE="skills/skill-gate/SKILL.md"
   # #289 hardening: 旧 literal pin（`version is 3.14.0`）は次の version bump で false-fail し、
   #   post-merge regression を恒久 red にしていた。時点依存の version 文字列を完全一致でピンせず、
   #   CHANGELOG 最新リリース見出しとの一致（将来の bump で壊れない不変条件）で書く。
-  top=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | tr -d '#[] ')
+  local repo_root
+  repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+  # shellcheck disable=SC1090
+  source "${repo_root}/tests/acceptance/helpers/changelog.bash"
+  top=$(changelog_latest_release CHANGELOG.md)
   [ -n "$top" ]
   grep '"version"' .claude-plugin/plugin.json | grep -qF "\"$top\""
 }

@@ -292,9 +292,12 @@
     return 1
   }
 
+  # shellcheck disable=SC1090
+  source "${repo_root}/tests/acceptance/helpers/changelog.bash"
+
   local version top
   version=$(grep '"version"' "${repo_root}/.claude-plugin/plugin.json" | grep -o '"[0-9.]*"' | tr -d '"')
-  top=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "${repo_root}/CHANGELOG.md" | head -1 | tr -d '#[] ')
+  top=$(changelog_latest_release "${repo_root}/CHANGELOG.md")
   [[ -n "$top" ]] || {
     echo "FAIL: CHANGELOG.md に [X.Y.Z] 形式のリリース見出しがない"
     return 1

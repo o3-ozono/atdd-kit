@@ -104,17 +104,18 @@ CHANGELOG="CHANGELOG.md"
 # AT-006: AC6 -- Skills Changes Require Test Evidence + autopilot SKILL.md unchanged
 # ---------------------------------------------------------------------------
 
-@test "AT-006 AC6: skills/autopilot/SKILL.md is not modified in this branch" {
-  # CI-safe: リモートブランチが未フェッチの場合も merge-base で安全に比較する
-  local base changed
-  base=$(git merge-base HEAD origin/main 2>/dev/null \
-      || git merge-base HEAD main 2>/dev/null \
-      || git rev-parse HEAD~1 2>/dev/null)
-  changed=$(git diff --name-only "$base" HEAD 2>/dev/null)
-  if echo "$changed" | grep -q 'skills/autopilot/SKILL.md'; then
-    echo "FAIL: skills/autopilot/SKILL.md has been modified (descope violation)"
+@test "AT-006 AC6: skills/autopilot/SKILL.md exists and has VERDICT_SCHEMA" {
+  # #302 の descope 遵守チェック（git diff ベース）は点時間依存であり regression に不適切。
+  # #296 で autopilot SKILL.md 自体の修正（enum 制約化）が承認されたため、不変条件チェックへ置換する。
+  # 不変条件: autopilot SKILL.md が存在し VERDICT_SCHEMA という構造を持つ
+  [[ -f "skills/autopilot/SKILL.md" ]] || {
+    echo "FAIL: skills/autopilot/SKILL.md が存在しない"
     return 1
-  fi
+  }
+  grep -q "VERDICT_SCHEMA" "skills/autopilot/SKILL.md" || {
+    echo "FAIL: skills/autopilot/SKILL.md に VERDICT_SCHEMA が存在しない"
+    return 1
+  }
 }
 
 # ---------------------------------------------------------------------------
