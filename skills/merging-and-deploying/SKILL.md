@@ -12,7 +12,11 @@ Step 6 of the atdd-kit v1.0 flow — the flow terminus. Take an Issue whose deli
 ## Trigger
 
 - **Explicit:** `/atdd-kit:merging-and-deploying <issue-number>`
-- **Keyword-detected (confirm before invoking):** When user messages mention merge / deploy / ship intent (e.g. "マージ", "deploy", "リリース"), ask `Run merging-and-deploying skill on <issue>? Y/n` before starting. Auto-invocation without confirmation is forbidden by the v1.0 Step B progression rule (#179).
+- **Keyword-detected (confirm before invoking):** When user messages mention merge / deploy / ship intent (e.g. "マージ", "deploy", "リリース"), confirm before starting via **AskUserQuestion** (header `Merge?`; first option `(Recommended) マージ` for one-tap go, then `保留（レビュー継続）`; `multiSelect: false`):
+  ```
+  Recommended: マージ — reply 'ok' to accept, or 保留 to hold for more review
+  ```
+  This **replaces** the previous `Y/n` text confirm — it changes only how the existing confirm is offered, not the Flow (precondition check → squash-merge is unchanged); **no new in-skill gate is added**. The `Other` option is harness-auto — never list it manually; an `Other` free-text comment flows into the existing natural-language route unchanged. On non-selection-UI channels (headless / cron), the `Recommended: ... — reply 'ok'` line is the fallback. Auto-invocation without confirmation is forbidden by the v1.0 Step B progression rule (#179).
 
 ## Input
 

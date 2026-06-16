@@ -73,3 +73,25 @@ SKILL_FILE="skills/defining-requirements/SKILL.md"
 @test "#267: revisions re-commit and push so the Draft PR diff stays current" {
   grep -qi 'Draft PR diff stays current' "$SKILL_FILE"
 }
+
+# --- #305: User gate selection-UI presentation (one-tap approval) ----------
+
+@test "#305 AT-001: approval gate uses AskUserQuestion with Recommended approval first" {
+  grep -q 'AskUserQuestion' "$SKILL_FILE"
+  grep -qiE '\(Recommended\).*承認.*ok' "$SKILL_FILE"
+}
+
+@test "#305 AT-002: approval gate offers Problem / Outcome / scope send-back options" {
+  grep -qiE 'Problem' "$SKILL_FILE"
+  grep -qiE 'Outcome' "$SKILL_FILE"
+  grep -qiE 'スコープ' "$SKILL_FILE"
+}
+
+@test "#305 AT-003: Other option is harness-auto, not manually listed" {
+  grep -qiE 'Other.*(harness-auto|手動列挙しない|never list it manually)' "$SKILL_FILE"
+}
+
+@test "#305 AT-005: 'recommended.*ok' fallback line present for non-selection-UI channels" {
+  grep -qiE "recommended.*ok" "$SKILL_FILE"
+  grep -qiE 'fallback' "$SKILL_FILE"
+}

@@ -7,7 +7,7 @@
 
 ## AT-001: ワンタップ承認（Story 1）
 
-- [ ] [planned] AT-001: すべての User gate で第一選択肢として承認がワンタップ提示される
+- [ ] [regression] AT-001: すべての User gate で第一選択肢として承認がワンタップ提示される
   - Given: Issue がいずれかの User gate（要件承認 / 設計承認 / マージ）に到達している
   - When: 各ゲートが提示される（`defining-requirements` 要件承認 / `autopilot` 設計承認 / `merging-and-deploying` マージ）
   - Then: 各ゲートが AskUserQuestion 形式で提示され、第一選択肢が `(Recommended)` 付きの承認（要件承認・設計承認は「承認 (ok)」、マージは「マージ」）であり、ユーザーは手入力なしにそれを選んで承認できる
@@ -15,35 +15,35 @@
 
 ## AT-002: 文脈に応じた差し戻し選択肢（Story 2）
 
-- [ ] [planned] AT-002: 各ゲートが文脈別の差し戻し選択肢を併せて提示する
+- [ ] [regression] AT-002: 各ゲートが文脈別の差し戻し選択肢を併せて提示する
   - Given: User gate が AskUserQuestion 形式で提示されている
   - When: 提示された選択肢を確認する
   - Then: 要件承認ゲートは「Problem を修正」「Outcome を修正」「スコープを変更」、設計承認ゲートは「User Stories を修正」「Plan を修正」「Acceptance Tests を修正」、マージゲートは「保留（レビュー継続）」を、承認選択肢に続けて提示する（各ゲート合計 2-4 選択肢、skill-authoring-guide (b) 準拠）
 
 ## AT-003: 自由記述の常設（Story 3）
 
-- [ ] [planned] AT-003: どのゲートでも「Other（自由記述）」が常に選択できる
+- [ ] [regression] AT-003: どのゲートでも「Other（自由記述）」が常に選択できる
   - Given: User gate が AskUserQuestion 形式で提示されている
   - When: 選択肢に収まらないフィードバックを返したい
   - Then: harness が自動付与する「Other」を選んで自由記述でき（SKILL.md は Other を手動列挙しない）、その自由記述は現行の自然言語フィードバック経路にそのまま流れる
 
 ## AT-004: 承認/差し戻しロジックへの忠実なマッピング（Story 4）
 
-- [ ] [planned] AT-004: 選択結果が現行の承認/差し戻し意味論にそのままマッピングされる
+- [ ] [regression] AT-004: 選択結果が現行の承認/差し戻し意味論にそのままマッピングされる
   - Given: 設計承認ゲートが選択肢提示で表示されている
   - When: ユーザーが承認以外（差し戻し選択肢、または部分承認に相当する複数指摘）を返す
   - Then: 現行どおり成果物セット全体が差し戻され、指摘はセクション単位で 1 セクション = 1 finding 化される（部分承認は承認ではない）。提示方法を選択肢化しても承認/差し戻しの意味論は変わらず、その旨が設計承認ゲート記述に明記されている
 
 ## AT-005: 非対応チャネルへのフォールバック（Story 5）
 
-- [ ] [planned] AT-005: selection UI 非対応チャネルでは従来の `ok` テキスト入力にフォールバックする
+- [ ] [regression] AT-005: selection UI 非対応チャネルでは従来の `ok` テキスト入力にフォールバックする
   - Given: ヘッドレス / cron など selection UI が使えないチャネルで User gate に到達する
   - When: ゲートが提示される
   - Then: 各ゲート記述に `Recommended: ... — reply 'ok'` 行（`recommended.*ok` にマッチ）とフォールバック文言が存在し、ユーザーは従来どおり `ok` テキスト入力で承認できる
 
 ## AT-006: ゲート数の不変性（AL-1）（Story 6）
 
-- [ ] [planned] AT-006: 選択肢提示化によって User gate の数・構造が変わらない
+- [ ] [regression] AT-006: 選択肢提示化によって User gate の数・構造が変わらない
   - Given: 変更後のスキル群（autopilot / 各フロースキル）
   - When: User gate の総数と構造を確認する
   - Then: User gate は要件承認・設計承認・マージの 3 つのまま増減せず（AL-1 不変）、変わったのは提示方法のみである

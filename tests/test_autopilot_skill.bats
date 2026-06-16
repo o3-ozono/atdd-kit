@@ -712,3 +712,50 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   # Then: never fail-open matawa dougi no hyougen wo fukumu comment ga sonzai suru
   grep -qiE 'never fail-open|fail-open.*forbidden' "$SKILL_FILE"
 }
+
+# --- #305: design-approval gate selection-UI presentation (one-tap approval) ---
+# The detailed gate contract is split into docs/methodology/autopilot-design-gate.md
+# (loader-stub split, finding #1) so SKILL.md stays within its ≤280 line budget.
+
+DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
+
+@test "#305 finding #1: design-gate detail doc exists and is referenced from SKILL.md" {
+  [ -f "$DESIGN_GATE_DOC" ]
+  grep -qF 'docs/methodology/autopilot-design-gate.md' "$SKILL_FILE"
+}
+
+@test "#305 finding #1: SKILL.md stays within its line budget after the split (no 3rd raise)" {
+  local lines
+  lines=$(grep -c '' "$SKILL_FILE")
+  [ "$lines" -le 280 ]
+}
+
+@test "#305 AT-001: design-approval gate uses AskUserQuestion with Recommended approval first" {
+  grep -q 'AskUserQuestion' "$DESIGN_GATE_DOC"
+  grep -qiE '\(Recommended\).*承認.*ok' "$DESIGN_GATE_DOC"
+}
+
+@test "#305 AT-002: design-approval gate offers US / Plan / Acceptance Tests send-backs" {
+  grep -qiE 'User Stories を修正' "$DESIGN_GATE_DOC"
+  grep -qiE 'Plan を修正' "$DESIGN_GATE_DOC"
+  grep -qiE 'Acceptance Tests を修正' "$DESIGN_GATE_DOC"
+}
+
+@test "#305 AT-003: Other option is harness-auto on the design gate, not manually listed" {
+  grep -qiE 'Other.*(harness-auto|手動列挙しない|never list it manually)' "$DESIGN_GATE_DOC"
+}
+
+@test "#305 AT-004: approval/rejection semantics are unchanged (whole-set reject, section findings, partial != approval)" {
+  grep -qiE 'whole.*deliverable set|whole.*reject' "$DESIGN_GATE_DOC"
+  grep -qiE 'セクション単位|1 セクション.*finding' "$DESIGN_GATE_DOC"
+  grep -qiE '部分承認は承認ではない' "$DESIGN_GATE_DOC"
+}
+
+@test "#305 AT-005: design gate has 'recommended.*ok' fallback line for non-selection-UI channels" {
+  grep -qiE "recommended.*ok" "$DESIGN_GATE_DOC"
+  grep -qiE 'fallback' "$DESIGN_GATE_DOC"
+}
+
+@test "#305 AT-001 finding #3: autopilot Gate ① delegates to defining-requirements; no separate requirements gate" {
+  grep -qiE 'Gate ①.*(defining-requirements|delegat|委譲)|delegat.*defining-requirements' "$SKILL_FILE"
+}

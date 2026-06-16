@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.17.0] - 2026-06-16
+
+### Changed
+
+- **3 つの User gate を選択肢提示（ワンタップ承認）化（#305）**。要件承認（`defining-requirements` Step 10）・設計承認（`autopilot` Flow step 3）・マージ（`merging-and-deploying` Trigger confirm）の各ゲートを **AskUserQuestion 形式**に書き換え、第一選択肢を `(Recommended)` 付きのワンタップ承認（要件・設計は `承認 (ok)`、マージは `マージ`）にした。文脈別の差し戻し選択肢（要件: Problem / Outcome / スコープ、設計: User Stories / Plan / Acceptance Tests、マージ: 保留）を併せて提示。`Other`（自由記述）は harness 自動付与で手動列挙せず、非対応チャネルでは `Recommended: ... — reply 'ok'` 行による従来の `ok` テキスト入力にフォールバック。**提示方法のみの変更で、承認/差し戻しの意味論（非 `ok` = 全体差し戻し＋セクション単位 finding 化、部分承認は承認ではない）と User gate 数 3（AL-1）は不変**。マージゲートは既存の `Y/n` confirm の**置換**であり新規 in-skill Flow ゲートを追加しない。autopilot SKILL.md のライン・バジェット枯渇（279/280、第 3 の昇格は禁止）に対応するため、設計承認ゲートの詳細を `docs/methodology/autopilot-design-gate.md`（新規）へ loader-stub 分割（DEVELOPMENT.md §SKILL.md Line-Budget Raises / #283）。`docs/guides/skill-authoring-guide.md` (f) に autopilot 設計ゲート・merging マージゲートの decision point を追記。`tests/acceptance/AT-305.bats`（AC1–AC6 の構造アサーション 14 件）を追加し、各スキル bats（defining-requirements / autopilot / merging-and-deploying）にもゲート別アサーションを追加、全 green。
+
 ## [3.16.0] - 2026-06-16
 
 ### Added

@@ -40,9 +40,12 @@ No Issue comment, no `skill-status` fenced block. The PRD draft is committed and
 7. **Section 6 — Open Questions** (one question): "List unresolved decisions, or state 'none remain'."
 8. **Write draft.** `cp templates/docs/issues/prd.md docs/issues/<NNN>/prd.md`, then fill in each section in place.
 9. **Commit / push / Draft PR.** Commit the draft to the Issue's work branch (Conventional Commits), push, and if no Draft PR exists open one with `gh pr create --draft`.
-10. **Approval gate (on the PR).** In the terminal present only the PR link + the points needing a human decision — never the full PRD body — then ask:
+10. **Approval gate (on the PR).** In the terminal present only the PR link + the points needing a human decision — never the full PRD body — then ask via **AskUserQuestion** (header `Approve PRD?`; first option `(Recommended) 承認 (ok)` for one-tap approval, then the context-specific section send-backs `Problem を修正` / `Outcome を修正` / `スコープを変更`; `multiSelect: false`):
     > `Approve PRD? Reply 'ok' to approve, or name a section to revise.`
-    Revisions loop back to that section; commit and push each revision so the Draft PR diff stays current. Do not proceed without explicit `ok`.
+    ```
+    Recommended: 承認 (ok) — reply 'ok' to accept, or name a section to revise
+    ```
+    The `Other` option is harness-auto — never list it manually; an `Other` free-text comment flows into the existing natural-language revision route unchanged. On non-selection-UI channels (headless / cron), the `Recommended: ... — reply 'ok'` line is the fallback: approve with the legacy `ok` text input. Revisions loop back to that section; commit and push each revision so the Draft PR diff stays current. Do not proceed without explicit `ok`.
 
 Each section step is one question at a time. Do not bundle multiple sections into a single prompt.
 
