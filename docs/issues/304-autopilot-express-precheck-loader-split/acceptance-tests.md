@@ -45,7 +45,7 @@
 - [x] [regression] AT-301: express 適格 Issue で続行確認を一度だけ提示する
   - Given: 直接 `/atdd-kit:autopilot <issue>` 起動・対象 Issue が route-eligibility.md 基準で express 適格（doc-grade）
   - When: autopilot がプリチェックを評価する
-  - Then: 「express の方が低コスト。autopilot で続行しますか？」を一度だけ提示し、明示続行が無ければ進めない
+  - Then: 「この Issue は express の方が低コストです。autopilot で続行しますか？（ok で続行）」を一度だけ提示し、明示続行が無ければ進めない
 
 - [x] [regression] AT-302: express 非適格 Issue では無言で従来どおり続行する
   - Given: 対象 Issue が express 適格信号を満たさない

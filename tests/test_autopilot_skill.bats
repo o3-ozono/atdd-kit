@@ -835,8 +835,12 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   section=$(sed -n '/Express precheck/,/^## /p' "$SKILL_FILE")
   # advisory is presented once only
   echo "$section" | grep -qi 'once'
-  # explicit ok required before proceeding
-  echo "$section" | grep -qiE 'explicit.*ok|ok.*explicit'
+  # explicit ok required before proceeding — pin the specific gating phrase:
+  # "Without an explicit `ok`, do not proceed" (or equivalent).
+  # Two-part check prevents silent false-pass on future rewrites:
+  # (a) the word "explicit" must appear near "ok" as a named token
+  # (b) a negative gate ("without"/"unless"/"not proceed" or similar) is present
+  echo "$section" | grep -qiE 'without.*explicit.*ok|explicit.*\`ok\`|explicit ok.*do not proceed'
 }
 
 @test "#304 AT-401: auto-route is explicitly forbidden in the precheck section" {

@@ -24,8 +24,8 @@
 
 ### FS-2: autopilot SKILL.md のローダ分割
 
-- [ ] 移設先 doc（`docs/methodology/autopilot-overview.md` 新規、または既存 `autopilot-iron-law.md` への追記）を用意し、SKILL.md から移設する grep 非依存の説明的散文（Iron Law の背景説明・運用ノート）を移す。BATS が grep する文字列は移設しない。**Dialog economy セクション（`## Dialog economy` 〜 `## Output` の範囲）は移設禁止**: `tests/test_autopilot_skill.bats` L308-394 がヘッダ・`Dialog economy` 出現回数・US-1/US-2/US-3 の diff-in-body 文字列を grep/sed pin しているため、design-doc.md「本体据え置きリスト」のとおり本体に据え置く
-- [ ] verify: 移設先 doc が存在し、移設した散文が読める。移設対象に BATS pin 文字列（design-doc.md「pin 据え置きリスト」記載）が含まれていない
+- [ ] 移設先 doc（`docs/methodology/autopilot-overview.md` 新規、または既存 `autopilot-iron-law.md` への追記）を用意し、SKILL.md から移設する grep 非依存の説明的散文（Iron Law の背景説明・運用ノート）を移す。design-doc.md「doc へ移設リスト」に明記された **Responsibility Boundary テーブル（ロール所有者表と説明段落）** も移設対象に含まれる（BATS pin 非依存の散文であることを事前確認）。BATS が grep する文字列は移設しない。**Dialog economy セクション（`## Dialog economy` 〜 `## Output` の範囲）は移設禁止**: `tests/test_autopilot_skill.bats` L308-394 がヘッダ・`Dialog economy` 出現回数・US-1/US-2/US-3 の diff-in-body 文字列を grep/sed pin しているため、design-doc.md「本体据え置きリスト」のとおり本体に据え置く
+- [ ] verify: 移設先 doc が存在し、移設した散文が読める。移設対象に BATS pin 文字列（design-doc.md「pin 据え置きリスト」記載）が含まれていない。Responsibility Boundary テーブルも移設先 doc に含まれる
 
 - [ ] `skills/autopilot/SKILL.md` から移設済み散文を削除し、`docs/methodology/` への docs ポインタ（要点 + 参照リンク）へ置き換える。canonical Workflow script・args ガード・freeze/audit 配管・User gates 番号リスト・Dialog economy の pin 対象行は本体に据え置く
 - [ ] verify: `wc -l skills/autopilot/SKILL.md` が **280 以下**（理想は headroom を確保し 280 未満）
