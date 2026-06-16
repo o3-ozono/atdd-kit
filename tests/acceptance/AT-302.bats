@@ -1,12 +1,18 @@
 #!/usr/bin/env bats
-# @covers: skills/session-start/SKILL.md, skills/express/SKILL.md
+# @covers: skills/session-start/SKILL.md, skills/express/SKILL.md, docs/methodology/route-eligibility.md
 # Acceptance Tests for Issue #302: autopilot/express route determination step
 # Corresponds to docs/issues/302-route-autopilot-express/acceptance-tests.md
+#
+# #304 FS-1: 経路判定信号の本文は docs/methodology/route-eligibility.md へ移設され、
+#   session-start Step 3 はその参照に置換された。信号 content を assert する pin は
+#   削除・緩和せず grep ターゲットを route-eligibility.md へ振り替える（CS-2 参照先更新）。
+#   session-start 本体に残る構造（Step 3 見出し・両経路への言及・推奨経路列）は不変のまま session-start を見る。
 
 # lifecycle: [regression]
 
 SKILL_SESSION="skills/session-start/SKILL.md"
 SKILL_EXPRESS="skills/express/SKILL.md"
+ROUTE_DOC="docs/methodology/route-eligibility.md"
 PLUGIN_JSON=".claude-plugin/plugin.json"
 CHANGELOG="CHANGELOG.md"
 
@@ -43,45 +49,40 @@ CHANGELOG="CHANGELOG.md"
   echo "$section" | grep -q 'express'
 }
 
-@test "AT-002 AC2: Step 3 defines express-eligible signals (docs/README/typo/gitignore/version-bump)" {
-  local section
-  section=$(sed -n '/Step 3/,/Step 4\|^###\|^##[^#]/p' "$SKILL_SESSION")
-  echo "$section" | grep -qiE 'docs|README|typo|gitignore|version.bump|version bump'
+@test "AT-002 AC2: route-eligibility defines express-eligible signals (docs/README/typo/gitignore/version-bump)" {
+  # #304 FS-1: 信号 content は route-eligibility.md へ移設（CS-2 参照先更新）
+  grep -qiE 'docs|README|typo|gitignore|version.bump|version bump' "$ROUTE_DOC"
 }
 
-@test "AT-002 AC2: Step 3 defines autopilot signals (new feature/behavior change/CI/dependency/security)" {
-  local section
-  section=$(sed -n '/Step 3/,/Step 4\|^###\|^##[^#]/p' "$SKILL_SESSION")
-  echo "$section" | grep -qiE 'new feature|behavior|CI|hooks|depend|security|新機能|挙動変更|依存|セキュリティ'
+@test "AT-002 AC2: route-eligibility defines autopilot signals (new feature/behavior change/CI/dependency/security)" {
+  # #304 FS-1: 信号 content は route-eligibility.md へ移設（CS-2 参照先更新）
+  grep -qiE 'new feature|behavior|CI|hooks|depend|security|新機能|挙動変更|依存|セキュリティ' "$ROUTE_DOC"
 }
 
-@test "AT-002 AC2: Step 3 specifies hybrid determination with labels, keywords, and LLM" {
-  local section
-  section=$(sed -n '/Step 3/,/Step 4\|^###\|^##[^#]/p' "$SKILL_SESSION")
-  echo "$section" | grep -qi 'label'
-  echo "$section" | grep -qiE 'keyword|キーワード'
-  echo "$section" | grep -qi 'LLM'
+@test "AT-002 AC2: route-eligibility specifies hybrid determination with labels, keywords, and LLM" {
+  # #304 FS-1: 信号 content は route-eligibility.md へ移設（CS-2 参照先更新）
+  grep -qi 'label' "$ROUTE_DOC"
+  grep -qiE 'keyword|キーワード' "$ROUTE_DOC"
+  grep -qi 'LLM' "$ROUTE_DOC"
 }
 
 # ---------------------------------------------------------------------------
 # AT-003: AC3 -- Ambiguous cases fall back to autopilot
 # ---------------------------------------------------------------------------
 
-@test "AT-003 AC3: Step 3 documents fallback to autopilot when ambiguous" {
-  local section
-  section=$(sed -n '/Step 3/,/Step 4\|^###\|^##[^#]/p' "$SKILL_SESSION")
-  echo "$section" | grep -qiE 'doubt|ambiguous|unclear|曖昧|不明'
-  echo "$section" | grep -q 'autopilot'
+@test "AT-003 AC3: route-eligibility documents fallback to autopilot when ambiguous" {
+  # #304 FS-1: 信号 content は route-eligibility.md へ移設（CS-2 参照先更新）
+  grep -qiE 'doubt|ambiguous|unclear|曖昧|不明' "$ROUTE_DOC"
+  grep -q 'autopilot' "$ROUTE_DOC"
 }
 
 # ---------------------------------------------------------------------------
 # AT-004: AC4 -- Recommendation only, no auto-routing
 # ---------------------------------------------------------------------------
 
-@test "AT-004 AC4: Step 3 states recommendation is advisory only, no auto-routing" {
-  local section
-  section=$(sed -n '/Step 3/,/Step 4\|^###\|^##[^#]/p' "$SKILL_SESSION")
-  echo "$section" | grep -qiE 'recommend.*only|only.*recommend|推奨.*のみ|のみ.*推奨|auto.route.*not|not.*auto.route|自動.*しない|しない.*自動'
+@test "AT-004 AC4: route-eligibility states recommendation is advisory only, no auto-routing" {
+  # #304 FS-1: 不変条件 content は route-eligibility.md へ移設（CS-2 参照先更新）
+  grep -qiE 'recommend.*only|only.*recommend|推奨.*のみ|のみ.*推奨|auto.route.*not|not.*auto.route|自動.*しない|しない.*自動|never.*auto|auto.*never' "$ROUTE_DOC"
 }
 
 # ---------------------------------------------------------------------------

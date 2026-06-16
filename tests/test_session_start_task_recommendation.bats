@@ -75,7 +75,8 @@ ROUTE_ELIGIBILITY="docs/methodology/route-eligibility.md"
 
 @test "#302-AC2: Step 3 has autopilot signals" {
   # 信号文字列は route-eligibility.md が単一ソース（#304 FS-1）
-  grep -qiE 'CI|hooks|depend|security|新機能|挙動変更|依存|セキュリティ' "$ROUTE_ELIGIBILITY"
+  # 英語シグナル（new feature / behavior change）と日本語シグナルの両方を含む完全セットを確認する（#304 finding #2）
+  grep -qiE 'new feature|behavior|CI|hooks|depend|security|新機能|挙動変更|依存|セキュリティ' "$ROUTE_ELIGIBILITY"
 }
 
 @test "#302-AC2: Step 3 specifies hybrid determination (label + keyword + LLM)" {
