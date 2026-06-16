@@ -119,6 +119,22 @@ Auto-detection proceeds without AskUserQuestion. Title input uses free text.
 | P-1 | Outer Loop test layer selection | E2E or Integration? |
 | P-2 | Handling Large Plans: split decision | Split or continue as-is? |
 
+### autopilot — key decision points
+
+| # | Section | Decision |
+|---|---------|---------|
+| AP-1 | Design-approval User gate (Flow step 3) | Approve design (ok) or revise US / Plan / Acceptance Tests? |
+
+Detail: `docs/methodology/autopilot-design-gate.md`. The requirements-approval gate (Gate ①) delegates to `defining-requirements` (DR-3) — autopilot adds no requirements question of its own.
+
+### merging-and-deploying — key decision points
+
+| # | Section | Decision |
+|---|---------|---------|
+| M-1 | Merge confirm (Trigger) | Merge (recommended) or 保留 (hold for review)? |
+
+Note: M-1 replaces the prior `Y/n` text confirm — presentation only, no new in-skill Flow gate.
+
 ### bug — key decision points
 
 | # | Section | Decision |

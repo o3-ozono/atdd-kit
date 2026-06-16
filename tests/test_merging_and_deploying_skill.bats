@@ -78,3 +78,32 @@ SKILL_FILE="skills/merging-and-deploying/SKILL.md"
 @test "no persona: SKILL.md does not introduce 'As a [persona]' line" {
   ! grep -qE '^As a ' "$SKILL_FILE"
 }
+
+# --- #305: merge gate selection-UI presentation (one-tap merge) ------------
+
+@test "#305 AT-001: merge confirm uses AskUserQuestion with Recommended merge first" {
+  grep -q 'AskUserQuestion' "$SKILL_FILE"
+  grep -qiE '\(Recommended\).*マージ' "$SKILL_FILE"
+}
+
+@test "#305 AT-002: merge confirm offers hold send-back option" {
+  grep -qiE '保留' "$SKILL_FILE"
+}
+
+@test "#305 AT-003: Other option is harness-auto, not manually listed" {
+  grep -qiE 'Other.*(harness-auto|手動列挙しない|never list it manually)' "$SKILL_FILE"
+}
+
+@test "#305 AT-005: 'recommended.*ok' fallback line present" {
+  grep -qiE "recommended.*ok" "$SKILL_FILE"
+  grep -qiE 'fallback' "$SKILL_FILE"
+}
+
+@test "#305 AT-006: merge gate is a replacement of the Y/n confirm, not a new Flow gate" {
+  # presentation-only: replaces the prior Y/n confirm, no new in-skill gate
+  grep -qiE 'replaces.*Y/n|no new in-skill gate' "$SKILL_FILE"
+  # Flow still has exactly 5 numbered steps (precondition/merge/deploy/regression/report)
+  local steps
+  steps=$(sed -n '/^## Flow/,/^## Responsibility Boundary/p' "$SKILL_FILE" | grep -cE '^[0-9]+\. ')
+  [ "$steps" -eq 5 ]
+}
