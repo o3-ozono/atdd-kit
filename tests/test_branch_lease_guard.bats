@@ -49,7 +49,10 @@ teardown() {
 run_guard() {
   local json="$1"
   local extra_env="${2:-}"
-  local env_vars="BRANCH_LEASE_DIR=$LEASE_DIR DRAFT_BRANCH_MOCK=$DRAFT_BRANCH PATH=$FAKE_BIN:$PATH"
+  # GITHUB_ACTIONS= で空にし、CI(GNU/GitHub) でも effective_ttl が LOCAL 経路を取るよう固定する。
+  # これによりテストは BRANCH_LEASE_TTL_LOCAL のみで TTL を決定論的に制御できる（CI で TTL_CI=2400 が
+  # 効いて stale テストが偽 fail するのを防ぐ。CI 検出自体を明示する test は無い）。
+  local env_vars="BRANCH_LEASE_DIR=$LEASE_DIR DRAFT_BRANCH_MOCK=$DRAFT_BRANCH GITHUB_ACTIONS= PATH=$FAKE_BIN:$PATH"
   if [ -n "$extra_env" ]; then
     env_vars="$env_vars $extra_env"
   fi

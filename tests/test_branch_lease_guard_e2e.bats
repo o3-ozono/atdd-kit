@@ -84,7 +84,8 @@ write_lease() {
 run_guard_e2e() {
   local json="$1"
   local extra="${2:-}"
-  local base_env="BRANCH_LEASE_DIR=$LEASE_DIR MOCK_DRAFT_BRANCH=$DRAFT_BRANCH PATH=$FAKE_BIN:$PATH"
+  # GITHUB_ACTIONS= で空にし、CI でも effective_ttl が LOCAL 経路を取るよう固定（unit 側と同じ理由）。
+  local base_env="BRANCH_LEASE_DIR=$LEASE_DIR MOCK_DRAFT_BRANCH=$DRAFT_BRANCH GITHUB_ACTIONS= PATH=$FAKE_BIN:$PATH"
   eval "env $base_env $extra bash '$GUARD_PATH'" <<< "$json"
 }
 
