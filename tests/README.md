@@ -198,6 +198,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-278.bats | Skill E2E Tests specify `--model` flag and define `E2E_MODEL` in all 10 flow skill E2E files (Issue #278) |
 | AT-284.bats | express skill re-introduction — APPROVAL-GATE, scope-overflow guard, OK/NG criteria, explicit trigger, CI gate wiring (Issue #284) |
 | AT-296.bats | VERDICT_SCHEMA enum 制約化・running-atdd-cycle 時点依存ピン禁止ガイダンス・changelog ヘルパー集約 (Issue #296 / #300) |
+| AT-297.bats | autopilot impl phase 並行セッション未追跡ファイル混入防止 — GEN_GUARD foreign ファイル不可触ガード・COMPLETED_WITH_DEBT エスカレーション・reviewScope impl P0 検出・oracle 非退行・行数バジェット (Issue #297) |
 | AT-302.bats | autopilot / express route determination step — session-start Recommended Tasks 推奨経路 column, Step 3 hybrid routing definition, express/autopilot signal alignment, ambiguous fallback to autopilot, advisory-only invariant (Issue #302) |
 
 ## iOS Addon Tests (addons/ios/tests/)

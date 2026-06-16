@@ -37,7 +37,7 @@
 - [ ] verify: `bats tests/acceptance/AT-297.bats` が全ケース green。各ケースが acceptance-tests.md の AC と 1:1 対応（AC→AT トレーサビリティ）
 - [ ] 既存 autopilot skill テストの非退行確認: `bats tests/test_autopilot_skill.bats` を変更前後で実行する
 - [ ] verify: GEN_GUARD / COMPLETED_WITH_DEBT / reviewScope / line budget の各アサーションが before/after とも green（CS-1）
-- [ ] 収束レール非退行確認: `bats tests/acceptance/test_autopilot_convergence.bats`
+- [ ] 収束レール非退行確認: `bats tests/test_autopilot_convergence.bats`
 - [ ] verify: AL-1〜AL-6 / #288 ガードのアサーションが green（CS-1）
 
 ## Finishing

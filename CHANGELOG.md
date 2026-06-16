@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.19.0] - 2026-06-16
+
+### Changed
+
+- **autopilot GEN_GUARD に foreign 未追跡ファイル不可触ガードと COMPLETED_WITH_DEBT エスカレーション指示を追記（#297）**。`skills/autopilot/SKILL.md` の `GEN_GUARD` 定数（L120、既存の audit log / pin 保護文）に、impl 生成エージェントが当該 Issue スコープ外の未追跡・未コミットファイルを変更・コミット・exclude 等で回避しないよう指示し、foreign 由来のゲート失敗は `COMPLETED_WITH_DEBT` として人間にエスカレーションする旨を既存行内に追記。行数は 279→279（変化なし）で budget <= 280 を維持。
+- **autopilot reviewScope の impl scope 文にスコープ外パス P0 検出指示を追記（#297）**。`reviewScope(step)` の `PHASE === 'impl'` 分岐文字列に、`git diff main...HEAD` に現れる当該 Issue スコープ外パス（`pyproject.toml` / CI 設定 / 他 Issue ソース等）へのコミット済み変更を P0 finding として検出する旨を既存行内に追記。satisfaction oracle の `blocking.length === 0` 判定が混入スコープ外コミットで green 誤認するのを構造的に防止する。
+
 ## [3.18.0] - 2026-06-16
 
 ### Changed

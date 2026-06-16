@@ -1,7 +1,7 @@
 # Acceptance Tests: autopilot impl phase が並行セッションの未追跡ファイル混入で偽 MAX_ITERATIONS / スコープ汚染を起こす問題の解消
 
 <!-- AT lifecycle: planned → draft → green → regression
-     各エントリには状態マーカー [planned] / [draft] / [green] / [regression] を付与する。
+     各エントリには状態マーカー [planned] / [regression] / [green] / [regression] を付与する。
      状態は実装の進行に合わせて更新する。 -->
 
 実装先（ターゲット）: `tests/acceptance/AT-297.bats`（新規・AT-296.bats 形式に倣う・grep ベース不変条件）。
@@ -11,7 +11,7 @@
 
 ## AT-297-1: foreign 未追跡ファイル不可触ガードが GEN_GUARD に明記される（US-1）
 
-- [ ] [planned] AT-001: GEN_GUARD に foreign 未追跡/未コミットファイル不可触ガード文が存在する
+- [x] [regression] AT-001: GEN_GUARD に foreign 未追跡/未コミットファイル不可触ガード文が存在する
   - Given: 本 Issue の変更を適用した作業ツリー
   - When: `skills/autopilot/SKILL.md` の `GEN_GUARD` 定数定義を検査する
   - Then: GEN_GUARD 文字列に「自分が作成していない／当該 Issue スコープ外の未追跡・未コミットファイルを変更・コミット・ゲート回避設定（exclude 等）の対象にしない」旨が grep ヒットする
@@ -19,7 +19,7 @@
 
 ## AT-297-2: foreign 由来ゲート失敗のエスカレーション指示が GEN_GUARD に明記される（US-2）
 
-- [ ] [planned] AT-002: GEN_GUARD に foreign 由来ゲート失敗時の COMPLETED_WITH_DEBT エスカレーション指示が存在する
+- [x] [regression] AT-002: GEN_GUARD に foreign 由来ゲート失敗時の COMPLETED_WITH_DEBT エスカレーション指示が存在する
   - Given: 本 Issue の変更を適用した作業ツリー
   - When: `skills/autopilot/SKILL.md` の `GEN_GUARD` 定数定義を検査する
   - Then: GEN_GUARD 文字列に「foreign ファイル由来でゲートが失敗する場合は修正を試みず COMPLETED_WITH_DEBT として人間にエスカレーションする」旨が grep ヒットする
@@ -27,7 +27,7 @@
 
 ## AT-297-3: 混入検知が impl review scope に組み込まれ P0 finding 化される（US-3）
 
-- [ ] [planned] AT-003: reviewScope の impl 分岐にスコープ外パス変更の P0 finding 検出指示が存在する
+- [x] [regression] AT-003: reviewScope の impl 分岐にスコープ外パス変更の P0 finding 検出指示が存在する
   - Given: 本 Issue の変更を適用した作業ツリー
   - When: `skills/autopilot/SKILL.md` の `reviewScope(step)` の `PHASE === 'impl'` 分岐文字列を検査する
   - Then: impl scope 文に「当該 Issue スコープ外パスへの変更（特に `pyproject.toml` / CI 設定 / 他 Issue のソース）を検出したら P0 finding として返す」旨が grep ヒットする
@@ -35,7 +35,7 @@
 
 ## AT-297-4: oracle が混入 finding を green 誤認しない（US-3／非退行不変条件）
 
-- [ ] [planned] AT-004: satisfaction oracle の P0/P1 ブロッキング判定式が無改変で維持される
+- [x] [regression] AT-004: satisfaction oracle の P0/P1 ブロッキング判定式が無改変で維持される
   - Given: 本 Issue の変更を適用した作業ツリー
   - When: `skills/autopilot/SKILL.md` の satisfaction oracle 収束判定式を検査する
   - Then: `overall_correctness === 'correct'` かつ `blocking.length === 0`（priority <= 1 を blocking とする）の判定式が存在し、混入 P0 finding が green 判定を阻止する経路が維持されている
@@ -43,7 +43,7 @@
 
 ## AT-297-5: SKILL.md 行数バジェットが維持される（US-4／CS-1 不変条件）
 
-- [ ] [planned] AT-005: 追記後も SKILL.md が line budget pin（<= 280 行）を満たす
+- [x] [regression] AT-005: 追記後も SKILL.md が line budget pin（<= 280 行）を満たす
   - Given: 本 Issue の guard/critic 追記を適用した作業ツリー
   - When: `wc -l skills/autopilot/SKILL.md` を実行する
   - Then: 行数が 280 以下（既存 line budget pin と整合・3 回目の raise を発生させない）
@@ -51,7 +51,7 @@
 
 ## AT-297-6: 既存 autopilot skill テスト群が非退行で green（CS-1）
 
-- [ ] [planned] AT-006: GEN_GUARD / COMPLETED_WITH_DEBT / reviewScope の既存アサーションが維持される
+- [x] [regression] AT-006: GEN_GUARD / COMPLETED_WITH_DEBT / reviewScope の既存アサーションが維持される
   - Given: 本 Issue の変更を適用した作業ツリー
   - When: `tests/test_autopilot_skill.bats` の関連アサーション対象（GEN_GUARD 連結・COMPLETED_WITH_DEBT・reviewScope phase×step）を検査する
   - Then: 既存アサーションが指す構造（GEN_GUARD が両 gen 指示に連結・impl/design scope 分岐・COMPLETED_WITH_DEBT エスカレーション）が SKILL.md に存在し続ける
@@ -59,7 +59,7 @@
 
 ## AT-297-7: バージョン bump ＋ CHANGELOG がリリース規約に従う（AC-COM）
 
-- [ ] [planned] AT-007: plugin.json version が CHANGELOG 最新リリース見出しと一致する
+- [x] [regression] AT-007: plugin.json version が CHANGELOG 最新リリース見出しと一致する
   - Given: 本 Issue の変更を適用した作業ツリー
   - When: `.claude-plugin/plugin.json` の version と `changelog_latest_release CHANGELOG.md` を突き合わせる
   - Then: version が SemVer で minor bump され、CHANGELOG 最新リリース見出しと完全一致する（特定 version 値はピンしない不変条件）
@@ -70,6 +70,6 @@
 | 状態 | 意味 |
 |------|------|
 | [planned] | テスト設計済み・未実装 |
-| [draft] | 実装中・まだ通過していない |
+| [regression] | 実装中・まだ通過していない |
 | [green] | テスト通過済み |
 | [regression] | リグレッション対象として継続監視中 |

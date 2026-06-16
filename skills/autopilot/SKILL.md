@@ -117,7 +117,7 @@ const IMPL_SEED_FINDINGS = A.implSeedFindings || null
 // Exactly one seed is non-null (the guards make them phase-exclusive); both feed iteration 1 via prevFindings.
 const SEED_FINDINGS = PHASE === 'design' ? REJECTION_FINDINGS : IMPL_SEED_FINDINGS
 // #288: the audit log + pins are orchestrator-owned; the gen agent must never touch them in either direction (discarding uncommitted rows OR appending fake PASS rows both broke the log-integrity rail).
-const GEN_GUARD = ' The audit log (autopilot-log.jsonl) and the *.pin anchors are orchestrator-owned: never read, append to, edit, delete, commit, or roll back them — and never git restore / checkout -- / stash uncommitted work you did not create.'
+const GEN_GUARD = ' The audit log (autopilot-log.jsonl) and the *.pin anchors are orchestrator-owned: never read, append to, edit, delete, commit, or roll back them — and never git restore / checkout -- / stash uncommitted work you did not create. Do not change, commit, or add exclude/skip config for foreign files (files outside this Issue\'s scope that you did not create); if a gate fails due to such foreign files, do not fix them — escalate as COMPLETED_WITH_DEBT to a human.'
 const STEPS = A.steps || (PHASE === 'design'
   ? ['extracting-user-stories', 'writing-plan-and-tests']
   : ['running-atdd-cycle'])
@@ -169,7 +169,7 @@ const priorityOf = (f) => {
 
 // Review scope per phase × step (#252): without it the design-phase review flagged missing production code / executable AT as P0 (unconvergeable), and the US-step review drew findings against plan.md it had not yet produced.
 const reviewScope = (step) => PHASE === 'impl'
-  ? 'Scope: the impl deliverables (production code, executable AT, doc sync).'
+  ? 'Scope: the impl deliverables (production code, executable AT, doc sync). Also flag as a P0 finding any committed change (git diff main...HEAD) to an out-of-scope path outside this Issue (e.g. pyproject.toml, CI config, other Issue sources).'
   : `Scope (design phase): ${step === 'extracting-user-stories'
     ? 'judge ONLY prd.md vs user-stories.md consistency; do NOT return findings on plan.md / acceptance-tests.md (later steps own them).'
     : 'judge the planning set (user-stories.md / plan.md / acceptance-tests.md).'} Production code and an executable AT suite do NOT exist yet BY DESIGN — their absence is NOT a finding.`
