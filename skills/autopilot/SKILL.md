@@ -261,18 +261,6 @@ The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck`
 - **Escalation (one-way per Issue):** a Sonnet cycle ending `COMPLETED_WITH_DEBT` via a convergence-failure halt (`MAX_ITERATIONS` / `sameness-detector` / `stuck`) promotes that step's impl / review subagents to the session model from the next convergence cycle (after human intervention); never demote back within the same Issue. `ac-drift` / `record-error` are anchor / audit-integrity halts, not model-quality signals — they do not escalate.
 - **Out of scope:** the design phase (`extracting-user-stories` / `writing-plan-and-tests`) and this orchestrator stay on the session model (bench: design-judgment consistency Fable 20/20). Policy details: `agents/README.md`.
 
-## Responsibility Boundary
-
-| Concern | Owner |
-|---------|-------|
-| Looping the flow skills to the satisfaction oracle | **autopilot** (this skill) |
-| Each artifact's generation | the flow skills (unchanged) |
-| The review verdict | reviewing-deliverables (single-pass primitive) |
-| Requirements approval / design approval / merge (the three User gates) | the human |
-| Parallel-session conflict, `in-progress` label | skill-gate |
-
-This skill **does not** permanently change the flow skills, **does not** approve its own requirements or design, and **does not** merge — merging is the User gate (AL-1).
-
 ## Integration
 
 - **Upstream:** `defining-requirements` (the approved PRD — the first User gate)

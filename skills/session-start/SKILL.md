@@ -224,10 +224,4 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 
 各 Issue に `autopilot` または `express` の推奨経路を付与し、Recommended Tasks 表の「推奨経路」列に記入する。
 
-判定基準（express 適格信号 / autopilot 信号 / 曖昧時フォールバック / 不変条件）は `docs/methodology/route-eligibility.md` に集約されている。要点:
-
-- **判定主体: ハイブリッド** — label / keyword（キーワード）/ LLM 判断を組み合わせる
-- **express 適格信号**: docs/README/typo/gitignore/version bump 等、機能ロジック非接触の変更のみ
-- **autopilot 信号**: CI/hooks/depend/security/新機能/挙動変更 等、または `type:development` ラベル
-- **曖昧時フォールバック**: when in doubt (ambiguous / 曖昧) → `autopilot`（フルフロー）
-- **不変条件**: 推奨のみ（recommendation only）; auto-route しない; ユーザーが最終選択
+判定基準（express 適格信号 / autopilot 信号 / 曖昧時フォールバック / 不変条件）は `docs/methodology/route-eligibility.md` に集約されている。
