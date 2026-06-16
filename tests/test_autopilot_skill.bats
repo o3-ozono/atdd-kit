@@ -778,11 +778,11 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   [ "$model_line" -eq $(( phase_line + 1 )) ]
 }
 
-@test "#311 AT-002: all 6 impl agent labels carry model: MODEL; total count is exactly 6" {
-  # AT-002: gen / review / at-gate / coverage / audit / rails のすべてに model: MODEL が付与されている
+@test "#311 AT-002: all 7 impl agent labels carry model: MODEL; total count is exactly 7" {
+  # AT-002: gen / review / at-gate / coverage / audit / rails / audit-halt (#299) のすべてに model: MODEL が付与されている
   local count
   count=$(grep -cF 'model: MODEL' "$SKILL_FILE")
-  [ "$count" -eq 6 ]
+  [ "$count" -eq 7 ]
   # each label's line must contain model: MODEL
   grep -qF 'model: MODEL' <(grep 'label: `gen:' "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`review:" "$SKILL_FILE")
@@ -790,6 +790,7 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   grep -qF 'model: MODEL' <(grep "label: \`coverage:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`audit:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`rails:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`audit-halt:" "$SKILL_FILE")
 }
 
 @test "#311 AT-003: freeze:anchor line does NOT carry model:" {
@@ -870,4 +871,61 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   grep -qiE 'doubt|ambiguous|曖昧' "$ROUTE_ELIGIBILITY_DOC"
   # 4. recommendation only / no auto-routing
   grep -qiE '推奨のみ|recommendation only|auto.route' "$ROUTE_ELIGIBILITY_DOC"
+}
+
+# --- #299: 終端 HALT レコード配線の構造 pin -------------------------------------
+# AT-299-5b: 収束失敗系 halt のみに record_halt が配線されていること
+# AT-299-6: 終端レコード追記が「ログ単独 stage + commit」として配線されること
+# AT-299-7: return 値（COMPLETED_WITH_DEBT）と終端レコードが両立すること
+# AT-299-8: HALT 行追記後に recorded++ も check_log_integrity も無いこと
+
+@test "AT-299-5b (#299): record_halt is wired only to convergence-failure halt path" {
+  # record_halt must appear in the convergence-failure if(halt !== 'none') block
+  grep -qF 'record_halt "<resolved-log-path>"' "$SKILL_FILE"
+  # record-error / rails-error / freeze-error / anchor-pin-failed return paths must NOT have record_halt
+  # (those are non-convergence-failure returns that skip the HALT record)
+  # Approach: check that record_halt does NOT appear on the same line as those reasons
+  ! grep -E "reason: 'record-error'" "$SKILL_FILE" | grep -q 'record_halt'
+  ! grep -E "reason: 'rails-error'" "$SKILL_FILE" | grep -q 'record_halt'
+  ! grep -E "reason: 'freeze-error'" "$SKILL_FILE" | grep -q 'record_halt'
+  ! grep -E "reason: 'anchor-pin-failed'" "$SKILL_FILE" | grep -q 'record_halt'
+}
+
+@test "AT-299-6 (#299): halt record agent commits ONLY the log (log-only stage + commit)" {
+  # the audit-halt agent must instruct log-only commit (same pattern as #288 audit commits)
+  grep -qF 'audit-halt:' "$SKILL_FILE"
+  grep -qE 'git add.*resolved-log-path.*&&.*git commit.*halt record' "$SKILL_FILE"
+}
+
+@test "AT-299-7 (#299): return COMPLETED_WITH_DEBT is still present after halt record insertion" {
+  # the HALT record is additional — the return value must not be removed
+  grep -qF "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }" "$SKILL_FILE"
+  # the return must appear AFTER the record_halt call (within the if-halt block)
+  local halt_line ret_line
+  halt_line=$(grep -n 'record_halt "<resolved-log-path>"' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  ret_line=$(grep -n "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt" "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$halt_line" ] && [ -n "$ret_line" ]
+  [ "$halt_line" -lt "$ret_line" ]
+}
+
+@test "AT-299-8 (#299): HALT append is after rails checks, recorded not incremented, no integrity re-run" {
+  # recorded++ must appear only once (the existing post-audit-success increment)
+  # HALT append must NOT add another recorded++
+  local count
+  count=$(grep -c 'recorded++' "$SKILL_FILE")
+  [ "$count" -eq 1 ]
+  # the convergence-failure halt block must come AFTER the rails check in line order
+  local rails_line halt_block_line
+  rails_line=$(grep -n "label: \`rails:" "$SKILL_FILE" | head -1 | cut -d: -f1)
+  halt_block_line=$(grep -n 'record_halt "<resolved-log-path>"' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$rails_line" ] && [ -n "$halt_block_line" ]
+  [ "$rails_line" -lt "$halt_block_line" ]
+  # also confirm the invariant comment is present (#299 OQ3 resolution)
+  grep -qiE 'recorded.*NOT.*increment|NOT.*increment.*recorded' "$SKILL_FILE"
+}
+
+@test "AT-299-8b (#299): line budget still ≤ 280 after record_halt wiring" {
+  local n
+  n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
+  [ "$n" -le 280 ]
 }

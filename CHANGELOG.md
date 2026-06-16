@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.23.0] - 2026-06-17
+
+### Added
+
+- **autopilot halt 終端レコードの JSONL 監査ログ追記（#299）**。`lib/autopilot_convergence.sh` に `record_halt <jsonl> <step> <reason> <findings_digest>` 関数を追加し、収束失敗系 halt（`MAX_ITERATIONS` / `sameness-detector` / `stuck` / `ac-drift` / `log-integrity`）のみ終端 HALT レコードを JSONL に 1 行 append する。`reason` を enum に限定（範囲外は非ゼロ return）、`findings_digest` は整形済み JSON 配列値として verbatim 埋め込み（ネストした JSON 配列 — エスケープ済み文字列スカラではない）。`record_iteration` に `timestamp`（ISO 8601 UTC）フィールドを追加。`skills/autopilot/SKILL.md` の収束失敗系 halt 経路に `audit-halt:${step}` agent 呼び出しを挿入（`record_halt` + ログ単独 stage/commit、`recorded` 非インクリメント・`check_log_integrity` 再走なしの不変条件コメント付き）。`tests/test_autopilot_convergence.bats` に 14 件の新規 AT（record_halt 正常系・異常系・timestamp 付与・決定論不変）、`tests/test_autopilot_skill.bats` に 5 件の構造 pin（AT-299-5b/6/7/8/8b）、`tests/acceptance/AT-299.bats` に 9 件の Acceptance Tests を追加。全 70+97+165 テスト green。
+
 ## [3.22.0] - 2026-06-16
 
 ### Added

@@ -245,15 +245,21 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
     // log-integrity outranks sameness / stuck: both read history FROM the log,
     // so their exit codes are meaningless when the log itself is compromised.
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.logIntegrityExit !== 0 ? 'log-integrity' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
-    // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
-    if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
+    // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5). #299: convergence-failure
+    // halts append a terminating HALT record AFTER all rails checks and BEFORE return.
+    // `recorded` is NOT incremented for the HALT line; check_log_integrity is NOT re-run after the append.
+    if (halt !== 'none') {
+      const haltFindings = [...(verdict?.findings || []).filter((f) => priorityOf(f) <= 1), ...uncovered.map((ac) => ({ priority: 0, evidence_ref: ac }))].map((f) => ({ priority: f.priority, evidence_ref: f.evidence_ref }))
+      await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and its audit log (${LOG_GLOB}). Via lib/autopilot_convergence.sh, append one terminating HALT record: \`record_halt "<resolved-log-path>" ${step} ${halt} '${JSON.stringify(haltFindings)}'\`. Then commit ONLY the log: \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): halt record ${step} ${halt} (#${NNN})"\`. Report haltRecorded = (record_halt exit code === 0).${GEN_GUARD}`, { label: `audit-halt:${step}`, phase: 'Rails', schema: { type: 'object', required: ['haltRecorded'], properties: { haltRecorded: { type: 'boolean' } } }, model: MODEL })
+      return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
+    }
     prevFindings = verdict?.findings?.length ? verdict.findings : null
   }
 }
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
 
-The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green. On impl-phase re-entry after such a halt, carry the unresolved findings (the halt `verdict.findings` plus any coverage-gate uncovered AC, each with a non-empty `evidence_ref`) into the new Workflow call as `args.implSeedFindings` (#288) — the impl analogue of design's `rejectionFindings`; without it iteration 1 restarts blind (`prevFindings = null`) and review / coverage re-derive the same rejection.
+The rails (`fingerprint` / `record_iteration` / `record_halt` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green. On impl-phase re-entry after such a halt, carry the unresolved findings (the halt `verdict.findings` plus any coverage-gate uncovered AC, each with a non-empty `evidence_ref`) into the new Workflow call as `args.implSeedFindings` (#288) — the impl analogue of design's `rejectionFindings`; without it iteration 1 restarts blind (`prevFindings = null`) and review / coverage re-derive the same rejection.
 
 ## Model assignment (#259)
 
