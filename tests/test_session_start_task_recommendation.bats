@@ -3,6 +3,7 @@
 # Issue #187: fix: session-start の推奨タスクが in-progress Issue を除外しない
 
 SKILL_EN="skills/session-start/SKILL.md"
+ROUTE_ELIGIBILITY="docs/methodology/route-eligibility.md"
 
 # --- AC1: in-progress Issue の除外 ---
 
@@ -68,35 +69,30 @@ SKILL_EN="skills/session-start/SKILL.md"
 }
 
 @test "#302-AC2: Step 3 has express-eligible signals" {
-  local section
-  section=$(sed -n '/Step 3/,/^## \|^###/p' "$SKILL_EN")
-  echo "$section" | grep -qiE 'docs|README|typo|gitignore|version.bump'
+  # 信号文字列は route-eligibility.md が単一ソース（#304 FS-1）
+  grep -qiE 'docs|README|typo|gitignore|version.bump' "$ROUTE_ELIGIBILITY"
 }
 
 @test "#302-AC2: Step 3 has autopilot signals" {
-  local section
-  section=$(sed -n '/Step 3/,/^## \|^###/p' "$SKILL_EN")
-  echo "$section" | grep -qiE 'CI|hooks|depend|security|new feature|behavior|新機能|挙動変更|依存|セキュリティ'
+  # 信号文字列は route-eligibility.md が単一ソース（#304 FS-1）
+  grep -qiE 'CI|hooks|depend|security|新機能|挙動変更|依存|セキュリティ' "$ROUTE_ELIGIBILITY"
 }
 
 @test "#302-AC2: Step 3 specifies hybrid determination (label + keyword + LLM)" {
-  local section
-  section=$(sed -n '/Step 3/,/^## \|^###/p' "$SKILL_EN")
-  echo "$section" | grep -qi 'label'
-  echo "$section" | grep -qiE 'keyword|キーワード'
-  echo "$section" | grep -qi 'LLM'
+  # ハイブリッド判定の 3 要素は route-eligibility.md に集約（#304 FS-1）
+  grep -qi 'label' "$ROUTE_ELIGIBILITY"
+  grep -qiE 'keyword|キーワード' "$ROUTE_ELIGIBILITY"
+  grep -qi 'LLM' "$ROUTE_ELIGIBILITY"
 }
 
 @test "#302-AC3: Step 3 documents fallback to autopilot when ambiguous" {
-  local section
-  section=$(sed -n '/Step 3/,/^## \|^###/p' "$SKILL_EN")
-  echo "$section" | grep -qiE 'doubt|ambiguous|unclear|曖昧|不明'
+  # 曖昧時フォールバックは route-eligibility.md が単一ソース（#304 FS-1）
+  grep -qiE 'doubt|ambiguous|unclear|曖昧|不明' "$ROUTE_ELIGIBILITY"
 }
 
 @test "#302-AC4: Step 3 states recommendation only -- no auto-routing" {
-  local section
-  section=$(sed -n '/Step 3/,/^## \|^###/p' "$SKILL_EN")
-  echo "$section" | grep -qiE '推奨のみ|recommendation only|auto.route.*not|not.*auto.route|自動.*しない|しない.*自動'
+  # 推奨のみ不変条件は route-eligibility.md が単一ソース（#304 FS-1）
+  grep -qiE '推奨のみ|recommendation only|auto.route.*not|not.*auto.route|自動.*しない|しない.*自動' "$ROUTE_ELIGIBILITY"
 }
 
 # --- #302-AC5: express の既存トリガ温存（リグレッション） ---
