@@ -5,3 +5,4 @@
 {"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"9f3533c99c005f6951c295c2ed76d700bc9ce354bf95a70deae58513f7be0858"}
 {"iteration":3,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"ca32a1bf45cdd4c027c325a1ac7ebb0ade549458445d3da926eda818571d78ca"}
 {"iteration":4,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"e00f9f9b807eccd2552d4e1dba96140b05fdf72d1d7ac1f5a9c0ac3052fb6ede"}
+{"iteration":5,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"5c0e2fc2d19e87a5ca2791ec7d7b9e841628100dee3c4c812936d0c5eaa4d345"}
