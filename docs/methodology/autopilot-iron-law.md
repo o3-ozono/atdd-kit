@@ -21,6 +21,8 @@ So some standard Iron Laws cannot hold verbatim inside autopilot. Rather than tr
 ### AL-1 — Three User gates, fixed
 The only User approval gates are **discover (requirements approval)**, **design approval** (the converged design deliverables — user-stories / plan / acceptance-tests — reviewed and approved before any implementation), and **merge**. At these three points the standard Iron Law is fully in force. autopilot must not silently remove, automate, or route around any gate; ATDD never starts before the design-approval gate (#249: this is the user-expected flow — 壁打ち → design review → approval → ATDD).
 
+**通常 autopilot（非 full-autopilot）では本 AL-1 は不変** — 三つの人間ゲートは常に発火する。`full-autopilot`（#318）の **hand-off モードでのみ** ①は queue 投入時の事前承認に、②は reviewer-oracle に、③は merge coordinator に委譲される（末尾の §AL-1 under full-autopilot を参照）。hand-off フラグの無い起動には一切影響しない。
+
 ### AL-2 — Immutable per-phase anchor (replaces standard #2)
 An iteration may write a deliverable without a fresh human approval **iff** it is traceable to the **immutable** artifacts a human approved **before the current phase**: the design phase anchors to the discover-approved PRD, and the impl phase anchors to the design-gate-approved set (prd.md + user-stories.md). A pin never covers an artifact the same phase's loop may edit (#249: pinning user-stories.md while looping `extracting-user-stories` guaranteed a false `ac-drift` halt); acceptance-tests.md is not pinned because `running-atdd-cycle` advances its lifecycle markers — its content is guarded by the **AC→AT coverage gate** instead, run in a context separate from the AT author, confirming the Acceptance Tests encode every approved AC (any uncovered AC is a P0 finding). Each anchor is frozen *after* it is approved; autopilot may never edit it. The freeze is **enforced**, not merely declared: a sha256 of the anchor is pinned at phase start (`pin_anchor` → `autopilot-prd.pin` / `autopilot-design.pin`) and re-checked every iteration (`check_pin`); any drift halts the loop (`ac-drift`), so autopilot cannot weaken the anchor it grades itself against.
 
@@ -43,3 +45,15 @@ autopilot does not fork or rewrite the flow skills. Each flow skill (`defining-r
 ## Why these overrides are legitimate (not rationalization)
 
 The standard Iron Law exists to keep a human in control of *what gets built* and *whether it is correct*. autopilot keeps both: **what** is anchored to the human-approved immutable requirements and design (AL-1, AL-2), and **whether it is correct** is gated by an objective AND oracle plus auditable evidence (AL-3, AL-4), with a guaranteed human-escalation exit (AL-5). The overrides relax *how often a human signs off mid-loop*, not *whether a human owns the boundaries*. This is the same boundary the strongest field players keep (Anthropic: *"Claude does not approve or block PRs"*; OpenAI: *"a support tool, not a replacement"*) — see `docs/issues/246-autopilot-revival/research.md`.
+
+## AL-1 under full-autopilot (hand-off mode)
+
+`full-autopilot`（#318）は autopilot を **headless worker として多重起動する上位オーケストレータ**であり、autopilot 自身を書き換えない（疎結合）。worker を `--hand-off` 付きで起動したときのみ、AL-1 の三ゲートは次のように **担い手が移る**（人間がゲートの境界を所有し続ける点は不変）:
+
+| ゲート | 通常 autopilot | full-autopilot hand-off |
+|--------|----------------|--------------------------|
+| ① 要件承認 | 起動時に人間が壁打ち承認 | **queue 投入時に事前承認済み**（`ready-to-go` の前提）。人間が queue をキュレーションすることで①を所有 |
+| ② 設計承認 | 人間がサインオフ | **reviewer-oracle に委譲**（設計ループ generate→review→fix と near-green 収束は維持。AL-3 の AND オラクル＋AL-4 の evidence で担保）。人間は Draft PR の設計成果物を見て差し戻す **override 権を保持** |
+| ③ merge | 人間が merge | **merge coordinator に委譲**（容量1直列・rebase 後フル再ゲート。autopilot は元々 merge しない） |
+
+**正当性**: hand-off は「人間が境界を所有するか」を緩めない。①は queue キュレーション、②は AL-3/AL-4 の客観オラクル＋人間 override、③は coordinator の再ゲート＋AL-5 のエスカレーション（N 回失敗で human フラグ）で担保される。緩めるのは「人間がループ途中で何回サインオフするか」だけで、これは通常 autopilot が②を人間に残すのに対し full-autopilot がそれを reviewer-oracle に委ねる差にすぎない。**この上書きは hand-off フラグが立っている起動に厳密に閉じ、通常 autopilot の AL-1 を変更しない。**

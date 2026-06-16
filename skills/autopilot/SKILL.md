@@ -37,6 +37,10 @@ Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligi
 2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human** (one batch presentation — Dialog economy below). Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment), carried into the design-phase re-invocation as `rejectionFindings` args (#261, Flow step 3); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
 3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges.
 
+## Hand-off mode — `--hand-off` (full-autopilot only, #318)
+
+`full-autopilot` が autopilot を多重起動するとき **だけ** 渡すフラグ。autopilot 本体の収束・レビュー・near-green スコープは不変（疎結合 / C3）。三ゲートの担い手のみ移る: ①要件=queue の `ready-to-go` で事前承認済み / ②設計=人間サインオフを待たず **reviewer-oracle（AL-3 AND オラクル＋AL-4 evidence）で自動承認**（人間は Draft PR で override 可）/ ③merge=autopilot は従来どおり merge せず `merge-ready` で手放し coordinator が引き取る。**フラグ無し起動は AL-1 のまま**（厳密3ゲート）。詳細は `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
+
 ## Dialog economy — all human-facing dialog under autopilot (#254)
 
 This governs all human-facing dialog under autopilot: the Gate ① requirements 壁打ち, the design-gate presentation, and everything between gates.

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **full-autopilot — キュー方式で複数 issue を並列・無人で merge まで回す（#318）**。`ready-to-go`（PRD 承認済み）の Issue をキューに積めば、実装〜レビュー〜merge を無人・並列で消化する上位オーケストレータ。人間の関与は冒頭の要件壁打ちのみ。`skills/full-autopilot/SKILL.md` を新規作成し、3 つのライブラリを束ねる:
+  - `lib/lease-store.sh` — 汎用 lease（issue-lease / merge-lease）。#316 branch-lease の store 形式（JSON + TTL orphan 掃除）を踏襲し pool 名前空間で分離。容量1/キー。`tests/test_lease_store.bats`（LS-1..7）/ `tests/acceptance/AT-318-D.bats`。
+  - `lib/merge-coordinator.sh` — `merge-ready` を容量1（merge-lease）で直列 drain。`rebase→フル再ゲート→merge→regression` の順序保証（broken-together 防止）と、失敗の自動差し戻し→閾値 N で human エスカレーション。外部ステップは env 注入で差し替え可能。`tests/test_merge_coordinator.bats`（MC-1..5）/ `tests/acceptance/AT-318-C.bats`。
+  - `lib/full-autopilot-dispatch.sh` — K スロット下で issue-lease を取りつつ起動対象を選ぶ select ロジック（並列排他・数珠つなぎの心臓部）。`tests/test_full_autopilot_dispatch.bats`（FAD-1..4）。
+- 並列 worker は **独立 headless プロセス**（`claude -p "/atdd-kit:autopilot <issue> --hand-off"` を `run_in_background`）として起動。各 worker が top-level プロセスのため内部 Workflow が入れ子制約に当たらないこと・ログ3層（stdout json / `--session-id` 確定の transcript / 入れ子 Workflow の `subagents/workflows/wf_*/`）を回収できることを実証済み。
+
+### Changed
+
+- **autopilot に hand-off モード（`--hand-off`）を追加（#318・full-autopilot 限定）**。`skills/autopilot/SKILL.md` に hand-off 節を追加し、`docs/methodology/autopilot-iron-law.md` に §AL-1 under full-autopilot を新設。hand-off 時のみ AL-1 三ゲートの担い手が移る（①=queue 事前承認 / ②=reviewer-oracle で自動承認 / ③=merge coordinator）。**通常 autopilot（フラグ無し）の厳密3ゲートは不変** — invariant を `tests/acceptance/AT-318-A.bats`（A2）で pin。`tests/test_skill_structure.bats` の `ALL_SKILLS` に full-autopilot を登録。
+
 ## [3.22.0] - 2026-06-16
 
 ### Added

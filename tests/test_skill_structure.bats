@@ -2,7 +2,7 @@
 # @covers: skills/**
 # Skill lists for structure validation
 setup() {
-  ALL_SKILLS=(bug autopilot debugging defining-requirements express extracting-user-stories launching-preview merging-and-deploying reviewing-deliverables running-atdd-cycle session-start sim-pool skill-fix skill-gate ui-test-debugging writing-design-doc writing-plan-and-tests)
+  ALL_SKILLS=(bug autopilot debugging defining-requirements express extracting-user-stories full-autopilot launching-preview merging-and-deploying reviewing-deliverables running-atdd-cycle session-start sim-pool skill-fix skill-gate ui-test-debugging writing-design-doc writing-plan-and-tests)
 }
 
 # --- AC1: All skills have SKILL.md ---
