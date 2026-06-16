@@ -110,9 +110,9 @@ repo_root() {
 
 # ── AT-005 FS-5/Layer 2: lease auto-acquired on push ─────────────────────────
 
-@test "AT-005 FS-5: branch-lease-guard.sh implements lease acquisition (write_lease_file)" {
+@test "AT-005 FS-5: branch-lease-guard.sh implements lease acquisition (write_lease)" {
   # Given: hooks/branch-lease-guard.sh の lease 取得実装
-  # When: write_lease_file 関数と LEASE_DIR への書き込みを検査する
+  # When: write_lease 関数と LEASE_DIR への書き込みを検査する
   # Then: リース取得が実装されている
   local root
   root="$(repo_root)"
@@ -120,8 +120,8 @@ repo_root() {
 
   [[ -f "$hook" ]] || { echo "FAIL: hooks/branch-lease-guard.sh does not exist"; return 1; }
 
-  grep -qE 'write_lease_file|LEASE_DIR' "$hook" || {
-    echo "FAIL: branch-lease-guard.sh has no lease acquisition (write_lease_file/LEASE_DIR)"
+  grep -qE 'write_lease\b|LEASE_DIR' "$hook" || {
+    echo "FAIL: branch-lease-guard.sh has no lease acquisition (write_lease/LEASE_DIR)"
     return 1
   }
 }

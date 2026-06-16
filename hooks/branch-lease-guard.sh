@@ -218,6 +218,9 @@ write_lease() {
   fi
 }
 
+# delete_lease() は現在呼び出されていない（dead code）。
+# design-doc 決定 3: PR merge/close 時のリース即時無効化は TTL に委ねるため呼び出し箇所が存在しない。
+# 将来の拡張（PR close イベントからのリース即時削除）用に関数定義を保持する。
 delete_lease() {
   local branch="$1"
   local lf
