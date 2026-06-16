@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.22.0] - 2026-06-16
+
+### Added
+
+- **branch-lease guard フック新設（#316）**。`hooks/branch-lease-guard.sh` を新規作成し、`git push` / `gh pr edit` / `gh pr merge` / `gh pr ready` などの write-back 操作を PreToolUse 層で hard block する。対象ブランチに open Draft PR があり、かつ別セッションが共有 lease store（`/tmp/claude-branch-leases/`、`BRANCH_LEASE_DIR` env で override 可）に fresh リースを保有している場合のみ `permissionDecision: "deny"` を返す。main/master / 非 write-back 操作 / 想定外条件はすべて fail-safe allow。TTL は `BRANCH_LEASE_TTL_LOCAL`（default 7200s）/ `BRANCH_LEASE_TTL_CI`（default 2400s）で制御し、アクセス時 orphan 掃除で stale リースを自動削除。`ATDD_BRANCH_LEASE_FORCE=1` で緊急上書き可能。`hooks/hooks.json` の PreToolUse Bash matcher に登録。`tests/test_branch_lease_guard.bats`（35 件）と `tests/e2e/branch-lease-guard.bats`（9 件）で挙動を pin。`hooks/README.md`・`tests/README.md` も同一 PR 内で更新。
+
+### Changed
+
+- **session-start の CONFLICTING rebase 推奨を ready（非 Draft）＋ @me に限定（#316 Layer 1）**。`skills/session-start/SKILL.md` Step 2 の「Highest priority: CONFLICTING → rebase」推奨を ready（非 Draft）かつ `@me` の PR にのみ適用するよう条件を明記。Draft PR は `🔒 別セッション作業中` の read-only 表示として Previous Work にのみ掲載し、actionable task・rebase / checkout / push 提案対象外である旨を明記。`tests/test_session_start_task_recommendation.bats` に #316 pin 6 件追加（全 23 件 green）。
+
 ## [3.21.0] - 2026-06-16
 
 ### Added

@@ -80,8 +80,14 @@ _e2e_file() {
 
 @test "coverage: every E2E test file defines E2E_MODEL=\"\${SKILL_E2E_MODEL:-sonnet}\" (#278)" {
   # glob ベースで tests/e2e/*.bats 全ファイルを対象とし、新規ファイルも自動的に検査範囲に入る
+  # 例外: claude -p を起動しないフック/スクリプト E2E（tests/e2e/hooks/ 下など）は対象外。
+  # claude 起動行（CLAUDE_BIN.*-p）が 0 件のファイルはスキルテストではないためスキップ。
   local missing=()
   for f in tests/e2e/*.bats; do
+    local launch_count
+    launch_count=$(grep -c 'CLAUDE_BIN.*-p' "$f" 2>/dev/null; true)
+    launch_count=$(echo "$launch_count" | tail -1 | tr -d ' ')
+    [ "${launch_count:-0}" -eq 0 ] && continue  # hook/script E2E — skip
     if ! grep -q 'E2E_MODEL="${SKILL_E2E_MODEL:-sonnet}"' "$f"; then
       missing+=("$f")
     fi
@@ -95,6 +101,7 @@ _e2e_file() {
 
 @test "coverage: every E2E test file passes --model to all claude -p invocations (#278)" {
   # 各ファイルの claude 起動行数と --model 指定数が一致すること（= 全分岐でモデル指定漏れなし）
+  # 例外: claude -p を起動しないフック/スクリプト E2E はスキップ（hook E2E には claude 呼び出しなし）。
   local failed=()
   for f in tests/e2e/*.bats; do
     local launch_count model_count
@@ -102,7 +109,8 @@ _e2e_file() {
     model_count=$(grep -c 'model.*E2E_MODEL' "$f" 2>/dev/null; true)
     launch_count=$(echo "$launch_count" | tail -1 | tr -d ' ')
     model_count=$(echo "$model_count" | tail -1 | tr -d ' ')
-    if [ "$launch_count" -ne "$model_count" ] || [ "$launch_count" -eq 0 ]; then
+    [ "${launch_count:-0}" -eq 0 ] && continue  # hook/script E2E — skip
+    if [ "$launch_count" -ne "$model_count" ]; then
       failed+=("$f (launch: ${launch_count}, --model: ${model_count})")
     fi
   done
