@@ -3,3 +3,4 @@
 {"iteration":1,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"e44faad22ec6cb41d0ef6a58191a870f2d81d58b775c4a30dcfdf90c66566f06"}
 {"iteration":2,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
 {"iteration":1,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"e4d057025988b11baae49f5627d7a15fe58f7b92092356ba6e2c64513e72148c"}
+{"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"7e195a0c59226cae6cb9c33c2e89a483535791960d3380329064f930c12da92a"}
