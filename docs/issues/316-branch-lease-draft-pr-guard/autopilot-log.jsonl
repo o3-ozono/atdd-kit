@@ -7,3 +7,4 @@
 {"iteration":3,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"1bf980ce2aaff57bb223a8e44252925db8d39a9195292a47a2cf82314e0a999e"}
 {"iteration":4,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"255912b7de620d1402f76a0ab8d419c1de597748d0444cd02cd458ed3c69a8ec"}
 {"iteration":5,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"4f4742426630c257367cb6e1f49d53c9406da32f5cf7fe3264759c6e93b62a8c"}
+{"iteration":6,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"7e195a0c59226cae6cb9c33c2e89a483535791960d3380329064f930c12da92a"}
