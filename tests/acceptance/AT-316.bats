@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# @covers: hooks/branch-lease-guard.sh hooks/hooks.json skills/session-start/SKILL.md tests/test_branch_lease_guard.bats tests/e2e/branch-lease-guard.bats
+# @covers: hooks/branch-lease-guard.sh hooks/hooks.json skills/session-start/SKILL.md tests/test_branch_lease_guard.bats tests/test_branch_lease_guard_e2e.bats
 # AT-316: session-start Draft PR 二層ブロック（branch-lease guard + 推奨の非 Draft 限定）
 # Issue #316
 #
@@ -166,11 +166,13 @@ repo_root() {
     return 1
   }
 
-  # 5 文字セット: %2F(/) %2E(.) %20(space) %23(#) %7E(~)
-  grep -q '%2F' "$hook" && grep -q '%2E' "$hook" || {
-    echo "FAIL: encode_branch does not implement full 5-char set (%2F, %2E, %20, %23, %7E)"
-    return 1
-  }
+  # 5 文字セット: %2F(/) %2E(.) %20(space) %23(#) %7E(~) — 全 5 文字を assert（#316 P3: 回帰漏れ防止）
+  for code in '%2F' '%2E' '%20' '%23' '%7E'; do
+    grep -q "$code" "$hook" || {
+      echo "FAIL: encode_branch does not implement full 5-char set — missing $code (expected %2F %2E %20 %23 %7E)"
+      return 1
+    }
+  done
 }
 
 # ── AT-008 CS-2: stale lease is cleaned up by TTL ────────────────────────────
@@ -205,8 +207,9 @@ repo_root() {
     return 1
   }
 
-  [[ -f "${root}/tests/e2e/branch-lease-guard.bats" ]] || {
-    echo "FAIL: tests/e2e/branch-lease-guard.bats does not exist"
+  # hook 統合 E2E は claude を呼ばないため tests/ 直下（tests/e2e/ は claude-invoking flow-skill E2E 専用・#278）
+  [[ -f "${root}/tests/test_branch_lease_guard_e2e.bats" ]] || {
+    echo "FAIL: tests/test_branch_lease_guard_e2e.bats does not exist"
     return 1
   }
 

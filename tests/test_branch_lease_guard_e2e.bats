@@ -1,17 +1,19 @@
 #!/usr/bin/env bats
 # @covers: hooks/branch-lease-guard.sh hooks/hooks.json
-# E2E_MODEL=claude-sonnet-4-5
 # =============================================================================
 # branch-lease-guard E2E tests — Issue #316
 #
 # End-to-end pin using real lease store + real git branch + mock gh.
 # Verifies: another-session Draft branch push is blocked; own-session push passes.
+# NOTE: This is a hook/guard integration E2E (no `claude -p`), so it lives under
+# tests/ alongside test_main_branch_guard.bats — NOT tests/e2e/ which is reserved
+# for claude-invoking flow-skill E2E (#278 enforces --model there).
 # =============================================================================
 
 GUARD="hooks/branch-lease-guard.sh"
 
 setup() {
-  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"  # tests/ → repo root（#316: tests/e2e/ から tests/ へ移設したため ../.. → ..）
   GUARD_PATH="$ROOT/$GUARD"
 
   # Isolated workspace
