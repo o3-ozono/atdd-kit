@@ -1,0 +1,11 @@
+{"iteration":1,"step":"extracting-user-stories","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
+{"iteration":1,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"dc09303bba22b9c139c1824a40ab68c1198262c3f2a905b4f41979427296423e"}
+{"iteration":2,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"a8b58a4eee984ce01ab083d07e56ff9e7dda50f76cc05082e2f68f5b8055d854"}
+{"iteration":1,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"73cb7d07807e1b4f0d07dc03b63db3c510194591c9abcf996624de9a39400e72"}
+{"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"9f3533c99c005f6951c295c2ed76d700bc9ce354bf95a70deae58513f7be0858"}
+{"iteration":3,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"ca32a1bf45cdd4c027c325a1ac7ebb0ade549458445d3da926eda818571d78ca"}
+{"iteration":4,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"e00f9f9b807eccd2552d4e1dba96140b05fdf72d1d7ac1f5a9c0ac3052fb6ede"}
+{"iteration":5,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"5c0e2fc2d19e87a5ca2791ec7d7b9e841628100dee3c4c812936d0c5eaa4d345"}
+{"iteration":6,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"111261bb6185235face04fc639cb82ba4f799262c705ec7163e690d2a96e8f21"}
+{"iteration":7,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"8df35b6293a223b66caa370f991052300e96057efcf206ddfa93962e84074055"}
+{"iteration":8,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"311f8ac771255bc413708cacf885de5f9ad255bade581d27d4aaf579731a8d69"}

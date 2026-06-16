@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.21.0] - 2026-06-16
+
+### Added
+
+- **autopilot express 適格プリチェック（pre-flight advisory）＋ route-eligibility.md 抽出（#304）**。`skills/autopilot/SKILL.md` に "Express precheck" セクション（Gate ① 手前の pre-flight advisory）を追加。express 適格 Issue（`docs/methodology/route-eligibility.md` 基準）に対して「express の方が低コストです。autopilot で続行しますか？」を一度だけ提示し、明示 `ok` なしでは進めない。非適格時は無言で続行。auto-route は一切行わず、User gates は 3 件のまま（AL-1 不変）。`docs/methodology/route-eligibility.md` を新規作成し、express 適格信号 / autopilot 信号 / 曖昧時フォールバック / 推奨のみ不変条件を集約。`skills/session-start/SKILL.md` Step 3 を `route-eligibility.md` への参照ポインタに置き換え（二重管理解消）。`tests/test_autopilot_skill.bats` に AT-301〜AT-403 (#304) を追加して全 92 tests green（既存 86 + 新規 6）。SKILL.md 行数は 280→268 行に削減（headroom 12 確保、第 3 回引き上げなし）。ロール分掌（Responsibility Boundary）は `docs/methodology/autopilot-overview.md` 新規作成で保全（FS-2 移設）。
+
 ## [3.20.0] - 2026-06-16
 
 ### Changed
