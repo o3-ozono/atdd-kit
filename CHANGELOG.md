@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.20.0] - 2026-06-16
+
+### Changed
+
+- **autopilot impl phase の 6 つの agent() 呼び出しに `model: MODEL` を付与（#311）**。`skills/autopilot/SKILL.md` の Workflow スクリプトに `const MODEL = PHASE === 'impl' ? 'sonnet' : undefined` 定数を `const PHASE` 直後に追加し、impl ループ内の `gen:${step}` / `review:${step}` / `at-gate:${step}` / `coverage:${step}` / `audit:${step}` / `rails:${step}` の各 `agent()` opts に `model: MODEL` をインライン付与。design phase / `freeze:anchor` オーケストレーターはセッションモデルを継承（`MODEL = undefined`）。行数は 279→280 で budget ≤ 280 を維持。`tests/test_autopilot_skill.bats` に AT-001～AT-004 (#311) を追加して全 86 tests green。
+
 ## [3.19.0] - 2026-06-16
 
 ### Changed
