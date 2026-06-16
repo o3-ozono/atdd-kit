@@ -224,22 +224,10 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 
 各 Issue に `autopilot` または `express` の推奨経路を付与し、Recommended Tasks 表の「推奨経路」列に記入する。
 
-**判定主体: ハイブリッド**
-決定的ガードレール（labels・キーワード）と Issue title/body への LLM 判断を組み合わせて判定する。
+判定基準（express 適格信号 / autopilot 信号 / 曖昧時フォールバック / 不変条件）は `docs/methodology/route-eligibility.md` に集約されている。要点:
 
-**express 適格信号**（以下のいずれかに該当し、かつ挙動変更なし）:
-- docs/README/typo/コメント編集のみ
-- `.gitignore` 追記のみ
-- version bump のみ（CHANGELOG エントリを含む）
-- その他、機能ロジックに触れない純粋なドキュメント変更
-
-**autopilot 信号**（以下のいずれかに該当する場合は autopilot）:
-- コード変更・挙動変更・新機能追加
-- CI/hooks/スクリプトの変更
-- 依存パッケージの追加・更新
-- セキュリティ関連の変更
-- `type:development` ラベルが付いている Issue
-
-**曖昧時フォールバック**: 判定が express/autopilot のどちらとも確定できない場合（when in doubt）は、安全側 `autopilot`（フルフロー）に倒す。express 適格信号を満たすと「明確に」言えない限り autopilot を推奨する。
-
-**不変条件**: この判定は**推奨のみ**であり、auto-route（自動実行）はしない。ユーザーが最終的に経路を選択する。推奨に反する経路を選択することは常に許可される。
+- **判定主体: ハイブリッド** — label / keyword（キーワード）/ LLM 判断を組み合わせる
+- **express 適格信号**: docs/README/typo/gitignore/version bump 等、機能ロジック非接触の変更のみ
+- **autopilot 信号**: CI/hooks/depend/security/新機能/挙動変更 等、または `type:development` ラベル
+- **曖昧時フォールバック**: when in doubt (ambiguous / 曖昧) → `autopilot`（フルフロー）
+- **不変条件**: 推奨のみ（recommendation only）; auto-route しない; ユーザーが最終選択

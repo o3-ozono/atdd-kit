@@ -807,3 +807,63 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
   [ "$n" -le 280 ]
 }
+
+# --- #304: express precheck (pre-flight advisory) ----------------------------
+# AT-301…AT-403: express precheck structural pins.
+# The precheck is a pre-flight advisory before Gate ①; it is NOT a User gate.
+# route-eligibility.md is the single source for express-eligible signals.
+
+ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
+
+@test "#304 AT-301: SKILL.md has an express precheck section before User gates" {
+  # precheck heading must exist and precede User gates heading
+  grep -q 'Express precheck' "$SKILL_FILE"
+  local precheck_line user_gates_line
+  precheck_line=$(grep -n 'Express precheck' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  user_gates_line=$(grep -n '## User gates' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$precheck_line" ] && [ -n "$user_gates_line" ]
+  [ "$precheck_line" -lt "$user_gates_line" ]
+}
+
+@test "#304 AT-302: express precheck references route-eligibility.md as the signal source" {
+  grep -qF 'docs/methodology/route-eligibility.md' "$SKILL_FILE"
+  [ -f "$ROUTE_ELIGIBILITY_DOC" ]
+}
+
+@test "#304 AT-303: express precheck presents the advisory once and requires explicit ok" {
+  local section
+  section=$(sed -n '/Express precheck/,/^## /p' "$SKILL_FILE")
+  # advisory is presented once only
+  echo "$section" | grep -qi 'once'
+  # explicit ok required before proceeding
+  echo "$section" | grep -qiE 'explicit.*ok|ok.*explicit'
+}
+
+@test "#304 AT-401: auto-route is explicitly forbidden in the precheck section" {
+  local section
+  section=$(sed -n '/Express precheck/,/^## /p' "$SKILL_FILE")
+  echo "$section" | grep -qiE 'auto.route.*never|never.*auto.route|自動.*しない|しない.*自動'
+}
+
+@test "#304 AT-402: precheck is a pre-flight advisory, not a gate (gate count stays at three)" {
+  local section
+  section=$(sed -n '/Express precheck/,/^## /p' "$SKILL_FILE")
+  # must explicitly state this does NOT add a gate
+  echo "$section" | grep -qiE 'does not count toward|not.*gate|advisory.*not.*gate'
+  # User gates count pin (three) must be unchanged — count numbered items in User gates section
+  local gates
+  gates=$(sed -n '/^## User gates/,/^## Dialog economy/p' "$SKILL_FILE" | grep -cE '^[0-9]+\. ')
+  [ "$gates" -eq 3 ]
+}
+
+@test "#304 AT-403: route-eligibility.md contains all four required elements" {
+  [ -f "$ROUTE_ELIGIBILITY_DOC" ]
+  # 1. express-eligible signals
+  grep -qiE 'express.eligible|express eligible' "$ROUTE_ELIGIBILITY_DOC"
+  # 2. autopilot signals
+  grep -qi 'autopilot' "$ROUTE_ELIGIBILITY_DOC"
+  # 3. ambiguous fallback
+  grep -qiE 'doubt|ambiguous|曖昧' "$ROUTE_ELIGIBILITY_DOC"
+  # 4. recommendation only / no auto-routing
+  grep -qiE '推奨のみ|recommendation only|auto.route' "$ROUTE_ELIGIBILITY_DOC"
+}

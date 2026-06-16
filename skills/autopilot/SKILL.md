@@ -13,14 +13,7 @@ The flow skills are **not permanently changed**; their role (specifically, where
 
 ## autopilot Iron Law (overrides the standard Iron Law in this mode)
 
-While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridden by the **autopilot Iron Law** (`docs/methodology/autopilot-iron-law.md`, AL-1…AL-6):
-
-- **AL-1** User gates = requirements approval + design approval + merge, fixed.
-- **AL-2** iterations anchor to the immutable artifacts a human approved **before the current phase**, **enforced** by a sha256 pin per phase (design: prd.md → `autopilot-prd.pin`; impl: prd.md + user-stories.md → `autopilot-design.pin`, taken at the design-approval gate) re-checked every iteration (drift → halt); impl precondition: AC→AT coverage gate green.
-- **AL-3** "done" = the satisfaction-oracle AND gate; deterministic gates decide AT/lint/test.
-- **AL-4** every finding needs an `evidence_ref`; an unbacked PASS auto-demotes; verdicts persist to JSONL.
-- **AL-5** the loop fails safe via the rails below.
-- **AL-6** one convergence cycle may produce a whole phase's deliverable set.
+While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridden by the **autopilot Iron Law** (`docs/methodology/autopilot-iron-law.md`, AL-1…AL-6). Full law text in that doc; key pointers: AL-1 fixes the three User gates; AL-2 enforces immutable per-phase anchors; AL-3/AL-4 gate "done" on deterministic evidence; AL-5/AL-6 govern fail-safe rails and convergence scope.
 
 ## Trigger
 
@@ -30,6 +23,13 @@ While autopilot runs, the standard Iron Laws (`rules/atdd-kit.md`) are overridde
 ## Input
 
 - Issue number, with a **human-approved PRD** already produced via `defining-requirements` (壁打ち) — the first User gate. If the PRD is not approved, stop and route to that gate. autopilot never invents or approves its own requirements.
+
+## Express precheck — pre-flight advisory (before Gate ①)
+
+Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligible signals before Gate ①. **Auto-route is never performed** — do not switch to `express` automatically; the User gates stay at three (exactly three — AL-1 invariant).
+
+- **Express-eligible** (doc-grade, no behavior change): present **once** — "この Issue は express の方が低コストです。autopilot で続行しますか？（ok で続行）" — and wait. Without an explicit `ok`, do not proceed. This advisory does not count toward the three User gates (AL-1).
+- **Not express-eligible**: no message, proceed silently.
 
 ## User gates (exactly three — AL-1)
 
