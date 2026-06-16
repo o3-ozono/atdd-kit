@@ -143,7 +143,7 @@ const VERDICT_SCHEMA = {
   required: ['verdict', 'overall_correctness'],
   properties: {
     verdict: { type: 'string' },               // PASS | FAIL
-    overall_correctness: { type: 'string' },    // correct | incorrect
+    overall_correctness: { type: 'string', enum: ['correct', 'incorrect'] },    // correct | incorrect
     findings: {
       type: 'array',
       items: {
