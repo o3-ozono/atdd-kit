@@ -9,28 +9,28 @@
 
 ## AT-001: MODEL 定数の Sonnet デフォルト定義（AC1 / US2）
 
-- [ ] [planned] AT-001: impl phase に限定して Sonnet を選ぶ MODEL 定数が Workflow スクリプトに存在する
+- [x] [green] AT-001: impl phase に限定して Sonnet を選ぶ MODEL 定数が Workflow スクリプトに存在する
   - Given: `skills/autopilot/SKILL.md` の Workflow スクリプト本文
   - When: `const MODEL = PHASE === 'impl' ? 'sonnet' : undefined` を固定文字列で検索する
   - Then: 該当行がちょうど 1 件存在し、`const PHASE = A.phase` の直後（より大きい行番号で隣接）に位置する
 
 ## AT-002: 6 つの impl agent への model: MODEL 付与（AC2 / US1）
 
-- [ ] [planned] AT-002: impl phase ループ内の 6 つの agent() 呼び出しすべてに `model: MODEL` が付与されている
+- [x] [green] AT-002: impl phase ループ内の 6 つの agent() 呼び出しすべてに `model: MODEL` が付与されている
   - Given: SKILL.md の impl agent ラベル `gen:` / `review:` / `at-gate:` / `coverage:` / `audit:` / `rails:`
   - When: 各ラベル（`` label: `gen: `` 等）を含む行に `model: MODEL` が含まれるか検査し、`model: MODEL` の総出現回数を数える
   - Then: 6 つのラベル行すべてに `model: MODEL` が含まれ、SKILL.md 全体での `model: MODEL` 出現回数がちょうど 6 である
 
 ## AT-003: freeze:anchor は model 不付与（AC3 / US2）
 
-- [ ] [planned] AT-003: design phase / orchestrator glue の `freeze:anchor` には `model` が付与されていない
+- [x] [green] AT-003: design phase / orchestrator glue の `freeze:anchor` には `model` が付与されていない
   - Given: SKILL.md の `freeze:anchor` ラベルを持つ agent() 呼び出し（両 phase で走る glue）
   - When: `freeze:anchor` を含む行に `model:` が含まれるか検査する
   - Then: その行に `model:` が含まれず、design phase / orchestrator がセッションモデルを継承することが固定される
 
 ## AT-004: SKILL.md 行数バジェット ≤ 280 維持（AC4 / CS1）
 
-- [ ] [planned] AT-004: 変更後も SKILL.md の総行数が 280 行以下を維持する
+- [x] [green] AT-004: 変更後も SKILL.md の総行数が 280 行以下を維持する
   - Given: 変更後の `skills/autopilot/SKILL.md`
   - When: `wc -l < skills/autopilot/SKILL.md` で総行数を取得する
   - Then: 行数が 280 以下であり、既存の line budget pin（≤ 280）も非回帰のまま green である（3 回目の raise 禁止に抵触しない）
