@@ -112,6 +112,19 @@ run_lease() {
   grep -q 'by=sessB' "$audit"
 }
 
+@test "LS-12: scoped ATDD_LEASE_FORCE only overrides the named pool:key" {
+  run_lease acquire issue 318 sessA
+  run_lease acquire merge main-merge sessA
+  # issue:318 だけスコープ force → sessB が issue 318 を奪える
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= ATDD_LEASE_FORCE="issue:318" bash "$LIB_PATH" acquire issue 318 sessB
+  [ "$status" -eq 0 ]
+  # merge:main-merge は同 force では奪えない（スコープ外） → ブロック・holder 不変
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= ATDD_LEASE_FORCE="issue:318" bash "$LIB_PATH" acquire merge main-merge sessB
+  [ "$status" -ne 0 ]
+  run run_lease holder merge main-merge
+  [ "$output" = "sessA" ]
+}
+
 @test "LS-7: TTL-stale lease is cleaned at access and reacquirable" {
   run_lease acquire issue 318 sessA
   lf="$(run_lease path issue 318)"

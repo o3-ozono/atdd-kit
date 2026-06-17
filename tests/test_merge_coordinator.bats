@@ -67,6 +67,14 @@ mc() {
   [ "$output" = "merged:regression-failed" ]
 }
 
+@test "MC-7: counter write failure fails closed to escalate (no infinite retry)" {
+  ro="$(mktemp -d)"; chmod 555 "$ro"
+  run env MC_STATE_DIR="$ro/state" bash "$LIB_PATH" decide 101 5
+  chmod 755 "$ro"; rm -rf "$ro"
+  # カウンタを永続化できない → 無限 retry でなく escalate（fail-closed）
+  [ "$output" = "escalate" ]
+}
+
 @test "MC-5: failure counts are per-PR independent" {
   mc decide 101 2   # PR101 count1
   mc decide 101 2   # PR101 count2 -> escalate next; but check PR102 fresh

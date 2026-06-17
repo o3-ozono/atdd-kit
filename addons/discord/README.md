@@ -49,6 +49,7 @@ Filtering is service-agnostic (applied in the core runtime), so it works for any
   subsequent posts append via `thread_id`).
 - Messages over ~1900 chars are split.
 - `FA_DISCORD_WEBHOOK` unset ⇒ no-op (disabled). Nothing is sent unless configured.
+- **Robust HTTP**: `curl --fail` (4xx/5xx → non-zero), `--connect-timeout`/`--max-time` (webhook hang can't stall the dispatcher), HTTP exit code checked and failures recorded to `FA_NOTIFY_ERRLOG` (notifications are never silently lost). `json_str` falls back python3 → jq → pure bash (works without python3).
 - HTTP is injectable via `FA_HTTP_POST` (used by the tests to mock the webhook).
 
 ## Files
@@ -57,4 +58,4 @@ Filtering is service-agnostic (applied in the core runtime), so it works for any
 |------|---------|
 | `addon.yml` | Manifest (opt-in, deploy mapping, guidance) |
 | `scripts/fa-notify-discord.sh` | The notifier (`FA_NOTIFY_CMD` implementation) |
-| `tests/test_fa_notify_discord.bats` | Unit tests (DN-1..6, HTTP mock-injected) |
+| `tests/test_fa_notify_discord.bats` | Unit tests (DN-1..7: thread create/append, per-issue isolation, no-webhook no-op, chunking, escalate mention, **DN-7 HTTP failure detected & recorded**; HTTP mock-injected) |

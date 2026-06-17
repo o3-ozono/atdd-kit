@@ -120,9 +120,10 @@ cmd_acquire() {
   ld="$(lock_dir "$pool" "$key")"
   mkdir -p "$(pool_dir "$pool")" 2>/dev/null || true
   # 緊急上書き（#316 branch-lease-guard の ATDD_BRANCH_LEASE_FORCE 相当）。
-  # 安全と判断したときの意図的な奪取。既存 lock を捨てて自セッション名義で取り直す。
+  # スコープ可能: ATDD_LEASE_FORCE=1 は全 lease、ATDD_LEASE_FORCE="pool:key" はその1件のみ奪取。
+  # 共有 /tmp/CI で他プロジェクトの稼働中 lease を巻き込まないよう、限定形を推奨する。
   # 稼働中 lease を黙って奪うのは危険なので **必ず監査証跡を残す**（stderr ＋ LEASE_AUDIT_LOG）。
-  if [ "${ATDD_LEASE_FORCE:-}" = "1" ]; then
+  if [ "${ATDD_LEASE_FORCE:-}" = "1" ] || [ "${ATDD_LEASE_FORCE:-}" = "${pool}:${key}" ]; then
     local prev; prev="$(read_holder "$pool" "$key")"
     local amsg="lease-force pool=$pool key=$key by=$sid prev=${prev:-none} ts=$(date +%s)"
     printf '%s\n' "$amsg" >&2

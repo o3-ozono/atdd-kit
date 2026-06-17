@@ -22,9 +22,18 @@
 set -u
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# lease store をリポジトリ単位にスコープ（/tmp 共有での issue 番号衝突を防ぐ）。
+# lease-store.sh は source 時に LEASE_STORE_DIR を読むので、source 前に既定を確定させる。
+if [ -z "${LEASE_STORE_DIR:-}" ]; then
+  __repo_root="$(git -C "${FA_REPO:-.}" rev-parse --show-toplevel 2>/dev/null || pwd)"
+  __repo_key="$(printf '%s' "$__repo_root" | (shasum 2>/dev/null || sha1sum 2>/dev/null) | cut -c1-12)"
+  export LEASE_STORE_DIR="/tmp/claude-leases/${__repo_key:-default}"
+fi
 . "$HERE/lease-store.sh"
 
-SESSION="${FA_SESSION:-full-autopilot}"
+# session は dispatcher ごとに一意（既定 session 名が衝突すると holder 一致で排他が崩れる #318）。
+SESSION="${FA_SESSION:-full-autopilot-$$}"
 POLL="${FA_POLL_INTERVAL:-0.2}"
 RUNDIR="${FA_RUNDIR:-$(mktemp -d)}"
 export RUNDIR SESSION   # 外部 launcher / result / merge フックからも参照できるように
@@ -47,14 +56,42 @@ __default_result() {
     echo "failed"
   fi
 }
+# issue から PR ブランチを解決（autopilot 規約 <issue>-*）。FA_BRANCH で明示上書き可。
+__resolve_branch() {
+  local i="$1" b
+  [ -n "${FA_BRANCH:-}" ] && { echo "$FA_BRANCH"; return; }
+  b="$(git -C "${FA_REPO:-.}" branch --list "${i}-*" 2>/dev/null | head -1 | sed 's/^[* ]*//')"
+  [ -n "$b" ] && echo "$b" || echo "$i"
+}
 __default_merge() {
-  local i="$1"
-  # merge-lease（容量1）保持下で coordinator に委譲。branch は autopilot 規約 <issue>-*。
-  bash "$HERE/lease-store.sh" acquire merge main-merge "$SESSION" || return 3
-  bash "$HERE/merge-coordinator.sh" process "$i" "$i" "${FA_ESCALATE_N:-3}"
-  local rc=$?
+  local i="$1" branch rc
+  branch="$(__resolve_branch "$i")"
+  # merge-lease（容量1）保持下で coordinator に委譲。MC_*_CMD に **実 git ステップを配線**する
+  # （配線しないと process() の各ステップが空コマンド＝no-op success になり実際には merge されない）。
+  # 再ゲート/回帰は FA_GATE_CMD / FA_REGRESSION_CMD で注入（既定はプロジェクトの AT スイート想定）。
+  # merge-lease（容量1）を bounded retry で取得（並行 dispatcher の一時競合を吸収）。
+  local mtries=0 mmax="${FA_MERGE_LEASE_RETRIES:-10}"
+  until bash "$HERE/lease-store.sh" acquire merge main-merge "$SESSION"; do
+    mtries=$(( mtries + 1 ))
+    [ "$mtries" -ge "$mmax" ] && return 3
+    sleep "${FA_MERGE_LEASE_WAIT:-1}"
+  done
+  MC_REBASE_CMD="bash $HERE/fa-merge-steps.sh rebase" \
+  MC_REGATE_CMD="${FA_GATE_CMD:-true}" \
+  MC_MERGE_CMD="bash $HERE/fa-merge-steps.sh merge" \
+  MC_REGRESSION_CMD="${FA_REGRESSION_CMD:-true}" \
+    bash "$HERE/merge-coordinator.sh" process "$i" "$branch" "${FA_ESCALATE_N:-3}"
+  rc=$?
   bash "$HERE/lease-store.sh" release merge main-merge "$SESSION"
   return $rc
+}
+
+# プロセスツリーを再帰 kill（macOS bash 3.2 に setsid が無いので pgrep -P で子孫を辿る）。
+# サブシェル PID だけを kill すると実 `claude -p` 孫プロセスが孤児化するため、子孫から先に落とす。
+__kill_tree() {
+  local p="$1" c
+  for c in $(pgrep -P "$p" 2>/dev/null); do __kill_tree "$c"; done
+  kill "$p" 2>/dev/null || true
 }
 
 QUEUE_CMD="${FA_QUEUE_CMD:-__default_queue}"
@@ -93,9 +130,27 @@ notify() {
   fi
 }
 
+# graceful shutdown 時に in-flight worker を kill し、保持中の issue-lease を解放する
+# （trap が無いと Ctrl-C/SIGTERM で lease が TTL まで孤児化する #318）。
+__HELD_ISSUES=""
+__HELD_PIDS=""
+__cleanup() {
+  local h
+  for h in $__HELD_PIDS; do __kill_tree "$h"; done
+  for h in $__HELD_ISSUES; do cmd_release issue "$h" "$SESSION"; done
+  log_line "cleanup: released in-flight leases on shutdown"
+}
+# in-flight の issues/pids 配列から held トラッカを再構築（bash 動的スコープで run() の local を参照）。
+__rebuild_held() {
+  __HELD_ISSUES=""; __HELD_PIDS=""; local x
+  if [ "${#issues[@]}" -gt 0 ]; then for x in "${issues[@]}"; do [ -n "$x" ] && __HELD_ISSUES="$__HELD_ISSUES $x"; done; fi
+  if [ "${#pids[@]}" -gt 0 ]; then for x in "${pids[@]}"; do [ -n "$x" ] && __HELD_PIDS="$__HELD_PIDS $x"; done; fi
+}
+
 run() {
   local K="${1:-2}"
   mkdir -p "$RUNDIR"
+  trap '__cleanup' INT TERM
   # キュー取得
   local queue=() qline
   while IFS= read -r qline; do [ -n "$qline" ] && queue+=("$qline"); done < <($QUEUE_CMD)
@@ -113,6 +168,7 @@ run() {
         log_line "skip issue=$issue (lease held elsewhere)"
       fi
     done
+    __rebuild_held
     [ "$active" -eq 0 ] && break
     # いずれかの worker 完了を待つ（kill -0 poll, bash 3.2 移植）。
     # FA_WORKER_TIMEOUT(>0) 超過の worker は kill して失敗扱い（ハングで dispatcher が永久停止しない）。
@@ -127,7 +183,7 @@ run() {
         local now2 j2=0; now2="$(date +%s)"
         while [ "$j2" -lt "${#pids[@]}" ]; do
           if [ -n "${pids[$j2]}" ] && [ $(( now2 - ${starts[$j2]} )) -gt "$TIMEOUT" ]; then
-            kill "${pids[$j2]}" 2>/dev/null || true; wait "${pids[$j2]}" 2>/dev/null || true
+            __kill_tree "${pids[$j2]}"; wait "${pids[$j2]}" 2>/dev/null || true
             done_idx="$j2"; timed_out=1; break
           fi
           j2=$(( j2 + 1 ))
@@ -153,6 +209,10 @@ run() {
           # exit 2 = post-merge regression 失敗 = main 破損。常に escalate（@mention）で上げる。
           log_line "merge-regression-failed issue=$di (main may be broken: $mout)"
           notify escalate "$di" "post-merge regression failed — main may be broken: $mout"
+        elif [ "$mrc" -eq 3 ]; then
+          # exit 3 = merge-lease を retry 上限まで取得できず（並行競合）。false merge-failed にせず escalate。
+          log_line "merge-deferred issue=$di (merge-lease busy after retries)"
+          notify escalate "$di" "merge-lease busy — could not serialize merge after retries"
         else
           log_line "merge-failed issue=$di ($mout)"
           case "$mout" in
@@ -166,7 +226,9 @@ run() {
     fi
     # issue-lease を解放（スロットを空ける＝数珠つなぎ）
     cmd_release issue "$di" "$SESSION"
+    __rebuild_held
   done
+  trap - INT TERM
   log_line "drain-complete"
 }
 

@@ -171,6 +171,22 @@ max_concurrency() { sort -n "$CC/samples" | tail -1; }
   grep -q 'notify-failed' "$CC/log"
 }
 
+# AT-318-B: timeout kill は worker ツリー全体を落とす（実 claude -p 孫プロセスを孤児化しない）
+@test "AT-318-B: timeout kills the whole worker tree (no orphaned grandchild)" {
+  printf '318\n' > "$Q"
+  LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= FA_SESSION=fa CC_DIR="$CC" \
+    FA_WORKER_TIMEOUT=1 FA_LOG="$CC/log" FA_RUNDIR="$CC/run" FA_POLL_INTERVAL=0.1 \
+    FA_QUEUE_CMD="cat $Q" \
+    FA_LAUNCH_CMD="bash $ROOT/tests/fixtures/fa-mock-worker-spawn.sh" \
+    FA_RESULT_CMD="bash $ROOT/tests/fixtures/fa-mock-result.sh" \
+    FA_MERGE_CMD="bash $ROOT/tests/fixtures/fa-mock-merge.sh" \
+    bash "$RUN_PATH" 1
+  gc="$(cat "$CC/grandchild.318")"
+  grep -q 'worker-timeout issue=318' "$CC/log"
+  # 孫プロセス（sleep 60）が kill されている（孤児化していない）
+  ! kill -0 "$gc" 2>/dev/null
+}
+
 # 失敗 worker は merge されないが lease は解放される（数珠つなぎを止めない）
 @test "AT-318-B: failed worker is not merged but its lease is released" {
   printf '318\n319\n' > "$Q"

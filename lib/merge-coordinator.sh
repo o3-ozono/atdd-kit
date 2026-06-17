@@ -41,10 +41,16 @@ read_count() {
 # 失敗を1回記録し、累積が N 以上なら escalate、未満なら retry を出力。
 cmd_decide() {
   local pr="$1" n="$2" count
-  mkdir -p "$STATE_DIR"
+  mkdir -p "$STATE_DIR" 2>/dev/null || true
   count="$(read_count "$pr")"
   count=$(( count + 1 ))
-  printf '%s' "$count" > "$(count_file "$pr")" 2>/dev/null || true
+  # カウンタを永続化できない（ENOSPC/EROFS/EACCES）と閾値に到達せず無限 retry になる。
+  # fail-closed: 永続化に失敗したら escalate（無限ループより人間に上げる方が安全）。
+  # brace group ごと stderr を捨て、リダイレクト失敗のメッセージも漏らさない。
+  if ! { printf '%s' "$count" > "$(count_file "$pr")"; } 2>/dev/null; then
+    echo "escalate"
+    return 0
+  fi
   if [ "$count" -ge "$n" ]; then
     echo "escalate"
   else

@@ -22,8 +22,12 @@ WEBHOOK="${FA_DISCORD_WEBHOOK:-}"
 MENTION="${FA_DISCORD_MENTION:-}"
 LIMIT=1900   # Discord メッセージ上限 2000 未満で分割
 
-# --fail で 4xx/5xx を非ゼロにする（トークン失効・チャンネル削除・429 を握り潰さない）。
-__curl_post() { curl -fsS -H 'Content-Type: application/json' -X POST -d "$2" "$1"; }
+# --fail で 4xx/5xx を非ゼロに、--max-time/--connect-timeout で webhook ハング時に
+# dispatcher の critical path を止めない（同期呼び出しのため）。
+__curl_post() {
+  curl -fsS --connect-timeout "${FA_HTTP_CONNECT_TIMEOUT:-5}" --max-time "${FA_HTTP_MAX_TIME:-15}" \
+    -H 'Content-Type: application/json' -X POST -d "$2" "$1"
+}
 HTTP_POST="${FA_HTTP_POST:-__curl_post}"
 
 ERRLOG="${FA_NOTIFY_ERRLOG:-/dev/stderr}"

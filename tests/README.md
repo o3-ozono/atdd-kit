@@ -69,11 +69,12 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 
 | Test File | Target |
 |-----------|--------|
-| test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store, LS-10 ATDD_LEASE_FORCE override) |
-| test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) |
+| test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store, LS-10 ATDD_LEASE_FORCE override, LS-11 FORCE audit trail, LS-12 scoped FORCE `pool:key`) |
+| test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) + counter-write failure fails closed to escalate (MC-7) |
 | test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) + issue-lease release (FAD-5) |
+| test_fa_merge_steps.bats | lib/fa-merge-steps.sh + 本番 merge 経路統合 (FM-1 real git rebase+merge, FM-2 __default_merge が実際に main を前進＝no-op でない, FM-3 merge-lease busy→escalate) |
 | acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant, A3 FA_HANDOFF marker safety) |
-| acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, notify hook fired per issue (dispatch+merged), failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
+| acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, notify hook fired per issue, FA_NOTIFY_LEVEL granularity, FA_WORKER_TIMEOUT kills hung worker + frees lease, timeout kills whole tree (no orphan grandchild), exit-2 (regression) routes to escalate, notify failure recorded in FA_LOG, failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
 | acceptance/AT-318-C.bats | merge coordinator (C1 rebase→regate→merge order, C2 retry→escalate) |
 | acceptance/AT-318-D.bats | lease 拡張 (D1 issue-lease double-claim block, D2 merge-lease serialization) |
 | acceptance/AT-318-E.bats | epic 横断 (E2 intake restricted to ready-to-go — safety valve) |
