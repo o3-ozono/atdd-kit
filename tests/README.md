@@ -63,6 +63,20 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) / step-scoped sameness+stuck (#272: AT-001 cross-step false-halt fix, AT-002 same-step halt preserved, AT-003 backward compat, AT-004a/b/c check_stuck step filter) / FAIL-only population (#277: AT-001 false-stuck-halt repro, AT-002 PASS-row exclusion from sameness, AT-003 legacy-mode FAIL-only, AT-004 detection-power maintained, AT-006 cross-run FAIL adjacency semantics pin — 49 tests total) |
 | e2e/autopilot.bats | autopilot Skill E2E Test（#275: US-1 ゲート再提示の diff-in-body 回復を含む） |
 
+### full-autopilot — full-autopilot (#318)
+
+Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordinator / dispatch libraries.
+
+| Test File | Target |
+|-----------|--------|
+| test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store) |
+| test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) |
+| test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) |
+| acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant) |
+| acceptance/AT-318-C.bats | merge coordinator (C1 rebase→regate→merge order, C2 retry→escalate) |
+| acceptance/AT-318-D.bats | lease 拡張 (D1 issue-lease double-claim block, D2 merge-lease serialization) |
+| acceptance/AT-318-E.bats | epic 横断 (E2 intake restricted to ready-to-go — safety valve) |
+
 ### Skill Structure & Quality
 
 | Test File | Target |

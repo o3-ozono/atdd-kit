@@ -57,6 +57,16 @@ mc() {
   [ "$output" = "retry" ]
 }
 
+@test "MC-6: post-merge regression failure is surfaced (non-zero), not swallowed" {
+  ORDER="$STATE/order.log"
+  run env MC_STATE_DIR="$STATE" \
+    MC_REBASE_CMD="true" MC_REGATE_CMD="true" MC_MERGE_CMD="true" \
+    MC_REGRESSION_CMD="false" \
+    bash "$LIB_PATH" process 303 feat/z 3
+  [ "$status" -ne 0 ]
+  [ "$output" = "merged:regression-failed" ]
+}
+
 @test "MC-5: failure counts are per-PR independent" {
   mc decide 101 2   # PR101 count1
   mc decide 101 2   # PR101 count2 -> escalate next; but check PR102 fresh

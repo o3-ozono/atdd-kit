@@ -84,8 +84,13 @@ cmd_process() {
     echo "merge-failed:$decision"
     return 1
   fi
-  run_step "${MC_REGRESSION_CMD:-}" "$branch" || true
+  # post-merge regression。merge は済んでいるので失敗は差し戻しではなく
+  # 「main が壊れた」アラーム — 沈黙させず非ゼロで上げて human に escalate させる。
   cmd_clear "$pr"
+  if ! run_step "${MC_REGRESSION_CMD:-}" "$branch"; then
+    echo "merged:regression-failed"
+    return 2
+  fi
   echo "merged"
   return 0
 }

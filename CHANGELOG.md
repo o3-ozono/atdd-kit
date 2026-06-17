@@ -7,17 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.23.0] - 2026-06-17
+
 ### Added
 
 - **full-autopilot — キュー方式で複数 issue を並列・無人で merge まで回す（#318）**。`ready-to-go`（PRD 承認済み）の Issue をキューに積めば、実装〜レビュー〜merge を無人・並列で消化する上位オーケストレータ。人間の関与は冒頭の要件壁打ちのみ。`skills/full-autopilot/SKILL.md` を新規作成し、3 つのライブラリを束ねる:
-  - `lib/lease-store.sh` — 汎用 lease（issue-lease / merge-lease）。#316 branch-lease の store 形式（JSON + TTL orphan 掃除）を踏襲し pool 名前空間で分離。容量1/キー。`tests/test_lease_store.bats`（LS-1..7）/ `tests/acceptance/AT-318-D.bats`。
-  - `lib/merge-coordinator.sh` — `merge-ready` を容量1（merge-lease）で直列 drain。`rebase→フル再ゲート→merge→regression` の順序保証（broken-together 防止）と、失敗の自動差し戻し→閾値 N で human エスカレーション。外部ステップは env 注入で差し替え可能。`tests/test_merge_coordinator.bats`（MC-1..5）/ `tests/acceptance/AT-318-C.bats`。
+  - `lib/lease-store.sh` — 汎用 lease（issue-lease / merge-lease）。容量1/キー、pool 名前空間で分離。排他は lease の存在意義のため、取得は **アトミック（`mkdir` ロック）＋ fail-closed**（holder 永続化に失敗したら lock を返し取得失敗にし、未永続化を「取得成功」と誤報しない）。TTL orphan 掃除は holder.json ts ／無ければ lock dir mtime を使い、winner が holder を書く前の一瞬を loser が stale 誤判定する race を排除。`tests/test_lease_store.bats`（LS-1..9、並列レース LS-8・fail-closed LS-9 含む）/ `tests/acceptance/AT-318-D.bats`。
+  - `lib/merge-coordinator.sh` — `merge-ready` を容量1（merge-lease）で直列 drain。`rebase→フル再ゲート→merge→regression` の順序保証（broken-together 防止）と、失敗の自動差し戻し→閾値 N で human エスカレーション。post-merge regression 失敗は沈黙させず `merged:regression-failed` ＋非ゼロで上げる。外部ステップは env 注入で差し替え可能。`tests/test_merge_coordinator.bats`（MC-1..6）/ `tests/acceptance/AT-318-C.bats`。
   - `lib/full-autopilot-dispatch.sh` — K スロット下で issue-lease を取りつつ起動対象を選ぶ select ロジック（並列排他・数珠つなぎの心臓部）。`tests/test_full_autopilot_dispatch.bats`（FAD-1..4）。
-- 並列 worker は **独立 headless プロセス**（`claude -p "/atdd-kit:autopilot <issue> --hand-off"` を `run_in_background`）として起動。各 worker が top-level プロセスのため内部 Workflow が入れ子制約に当たらないこと・ログ3層（stdout json / `--session-id` 確定の transcript / 入れ子 Workflow の `subagents/workflows/wf_*/`）を回収できることを実証済み。
+- 並列 worker は **独立 headless プロセス**（`claude -p "/atdd-kit:autopilot <issue> --hand-off"` を `run_in_background`）として起動。各 worker が top-level プロセスのため内部 Workflow が入れ子制約に当たらないこと・ログ3層（stdout json / `--session-id` 確定の transcript / 入れ子 Workflow の `subagents/workflows/wf_*/`）を回収できることを実証済み。worker lifecycle（timeout・完了検出・crash 時 lease 解放）は `skills/full-autopilot/SKILL.md` に仕様化。
 
 ### Changed
 
-- **autopilot に hand-off モード（`--hand-off`）を追加（#318・full-autopilot 限定）**。`skills/autopilot/SKILL.md` に hand-off 節を追加し、`docs/methodology/autopilot-iron-law.md` に §AL-1 under full-autopilot を新設。hand-off 時のみ AL-1 三ゲートの担い手が移る（①=queue 事前承認 / ②=reviewer-oracle で自動承認 / ③=merge coordinator）。**通常 autopilot（フラグ無し）の厳密3ゲートは不変** — invariant を `tests/acceptance/AT-318-A.bats`（A2）で pin。`tests/test_skill_structure.bats` の `ALL_SKILLS` に full-autopilot を登録。
+- **autopilot に hand-off モード（`--hand-off`）を追加（#318・full-autopilot 限定）**。`skills/autopilot/SKILL.md` に hand-off 節を追加し、`docs/methodology/autopilot-iron-law.md` に §AL-1 under full-autopilot を新設。hand-off 時のみ AL-1 三ゲートの担い手が移る（①=queue 事前承認 / ②=reviewer-oracle で自動承認 / ③=merge coordinator）。**通常 autopilot（フラグ無し）の厳密3ゲートは不変** — invariant を `tests/acceptance/AT-318-A.bats`（A2）で pin。`tests/test_skill_structure.bats` の `ALL_SKILLS` に full-autopilot を登録。`lib/README.md`・`skills/README.md`・`tests/README.md` を同一 PR 内で更新。
 
 ## [3.22.0] - 2026-06-16
 

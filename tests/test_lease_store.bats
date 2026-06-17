@@ -74,6 +74,24 @@ run_lease() {
   [ "$status" -eq 0 ]
 }
 
+@test "LS-8: concurrent acquire of same key — exactly one winner" {
+  wins="$STORE/wins"; : > "$wins"
+  for i in 1 2 3 4 5 6 7 8; do
+    ( LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= bash "$LIB_PATH" acquire issue 500 "s$i" && echo "s$i" >> "$wins" ) &
+  done
+  wait
+  # アトミック mkdir なので勝者はちょうど1つ（TOCTOU 二重取得が無い）
+  [ "$(grep -c . "$wins")" -eq 1 ]
+}
+
+@test "LS-9: acquire fails (non-zero) when the store is not writable (fail-closed)" {
+  ro="$(mktemp -d)"; chmod 555 "$ro"
+  run env LEASE_STORE_DIR="$ro/leases" GITHUB_ACTIONS= bash "$LIB_PATH" acquire issue 318 sessA
+  chmod 755 "$ro"; rm -rf "$ro"
+  # 永続化できないなら「取得成功」と誤報しない
+  [ "$status" -ne 0 ]
+}
+
 @test "LS-7: TTL-stale lease is cleaned at access and reacquirable" {
   run_lease acquire issue 318 sessA
   lf="$(run_lease path issue 318)"
