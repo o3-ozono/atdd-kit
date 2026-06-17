@@ -39,7 +39,11 @@ setup() {
 # AT-318-A3: hand-off は FA_HANDOFF env マーカーが在るときだけ honored（誰でもバイパス不可）
 @test "AT-318-A3: hand-off requires the FA_HANDOFF marker (not bypassable by a bare flag)" {
   grep -q 'FA_HANDOFF=1' "$AP"
-  # 素の --hand-off では3ゲート維持 / マーカーは full-autopilot の launcher だけが設定
-  grep -Eq 'FA_HANDOFF.*無し.*無視|無視され、厳密3ゲート' "$AP"
+  # 素の --hand-off では3ゲート維持（hard precondition の明文）
+  grep -Eq 'マーカーが無い起動では.*--hand-off.*無視|無視され、厳密3ゲート|honor する.*前に必ず' "$AP"
   grep -q 'FA_HANDOFF=1' "$FA"
+  # launcher は inline（process-scoped）で設定し永続 export しない（stray export 事故防止）
+  RUN="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)/lib/full-autopilot-run.sh"
+  grep -q 'FA_HANDOFF=1 claude' "$RUN"
+  ! grep -qE '^[[:space:]]*export[[:space:]]+FA_HANDOFF' "$RUN"
 }

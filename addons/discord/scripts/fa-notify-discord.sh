@@ -22,14 +22,35 @@ WEBHOOK="${FA_DISCORD_WEBHOOK:-}"
 MENTION="${FA_DISCORD_MENTION:-}"
 LIMIT=1900   # Discord メッセージ上限 2000 未満で分割
 
-__curl_post() { curl -sS -H 'Content-Type: application/json' -X POST -d "$2" "$1"; }
+# --fail で 4xx/5xx を非ゼロにする（トークン失効・チャンネル削除・429 を握り潰さない）。
+__curl_post() { curl -fsS -H 'Content-Type: application/json' -X POST -d "$2" "$1"; }
 HTTP_POST="${FA_HTTP_POST:-__curl_post}"
 
-json_str() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
+ERRLOG="${FA_NOTIFY_ERRLOG:-/dev/stderr}"
+notify_err() { printf 'fa-notify-discord: %s\n' "$1" >> "$ERRLOG" 2>/dev/null || true; }
+
+# JSON 文字列エンコード。python3 → jq → 純 bash の順にフォールバック（python3 不在でも壊さない）。
+json_str() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+  elif command -v jq >/dev/null 2>&1; then
+    jq -Rs .
+  else
+    local s; s="$(cat)"
+    s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\t'/\\t}"; s="${s//$'\n'/\\n}"; s="${s//$'\r'/}"
+    printf '"%s"' "$s"
+  fi
+}
+
+# レスポンス JSON から thread id（channel_id 優先, 無ければ id）を取り出す（python3 非依存）。
+parse_thread_id() {
+  printf '%s' "$1" | grep -oE '"channel_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/'
+}
 
 thread_file() { printf '%s/thread.%s' "$STATE" "$1"; }
 
 # issue のスレッドを確保し thread_id を出力。無ければ thread_name 付き POST で新規作成。
+# HTTP 失敗は notify_err に記録し非ゼロで返す（bootstrap 失敗を握り潰さない）。
 ensure_thread() {
   local issue="$1" title="$2" tf resp id body
   tf="$(thread_file "$issue")"
@@ -38,27 +59,28 @@ ensure_thread() {
   mkdir -p "$STATE"
   body="$(printf '{"thread_name":%s,"content":%s}' \
     "$(printf '%s' "$title" | json_str)" "$(printf '%s' "🧵 $title — full-autopilot 開始" | json_str)")"
-  resp="$($HTTP_POST "${WEBHOOK}?wait=true" "$body")"
-  id="$(printf '%s' "$resp" | python3 -c 'import json,sys
-try: d=json.load(sys.stdin)
-except: d={}
-print(d.get("channel_id") or d.get("id") or "")' 2>/dev/null)"
-  [ -z "$id" ] && return 1
+  if ! resp="$($HTTP_POST "${WEBHOOK}?wait=true" "$body")"; then
+    notify_err "thread create POST failed for issue $issue (HTTP error)"; return 1
+  fi
+  id="$(parse_thread_id "$resp")"
+  if [ -z "$id" ]; then notify_err "thread create: no thread id in response for issue $issue"; return 1; fi
   printf '%s' "$id" > "$tf"
   printf '%s' "$id"
 }
 
-# issue のスレッドへメッセージを流す（上限超は分割）。
+# issue のスレッドへメッセージを流す（上限超は分割）。各 POST の HTTP 失敗を検査・記録。
 post_thread() {
-  local issue="$1" msg="$2" id chunk
+  local issue="$1" msg="$2" id chunk rc=0
   id="$(ensure_thread "$issue" "issue #$issue (full-autopilot)")" || return 1
   [ -z "$WEBHOOK" ] && return 1
   while [ -n "$msg" ]; do
     chunk="${msg:0:$LIMIT}"; msg="${msg:$LIMIT}"
-    $HTTP_POST "${WEBHOOK}?thread_id=${id}&wait=true" \
-      "$(printf '{"content":%s}' "$(printf '%s' "$chunk" | json_str)")" >/dev/null 2>&1 || true
+    if ! $HTTP_POST "${WEBHOOK}?thread_id=${id}&wait=true" \
+        "$(printf '{"content":%s}' "$(printf '%s' "$chunk" | json_str)")" >/dev/null; then
+      notify_err "post failed for issue $issue (thread_id=$id, HTTP error)"; rc=1
+    fi
   done
-  return 0
+  return $rc
 }
 
 main() {

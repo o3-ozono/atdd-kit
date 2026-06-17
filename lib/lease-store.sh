@@ -121,7 +121,12 @@ cmd_acquire() {
   mkdir -p "$(pool_dir "$pool")" 2>/dev/null || true
   # 緊急上書き（#316 branch-lease-guard の ATDD_BRANCH_LEASE_FORCE 相当）。
   # 安全と判断したときの意図的な奪取。既存 lock を捨てて自セッション名義で取り直す。
+  # 稼働中 lease を黙って奪うのは危険なので **必ず監査証跡を残す**（stderr ＋ LEASE_AUDIT_LOG）。
   if [ "${ATDD_LEASE_FORCE:-}" = "1" ]; then
+    local prev; prev="$(read_holder "$pool" "$key")"
+    local amsg="lease-force pool=$pool key=$key by=$sid prev=${prev:-none} ts=$(date +%s)"
+    printf '%s\n' "$amsg" >&2
+    [ -n "${LEASE_AUDIT_LOG:-}" ] && { printf '%s\n' "$amsg" >> "$LEASE_AUDIT_LOG" 2>/dev/null || true; }
     rm -rf "$ld" 2>/dev/null || true
     if mkdir "$ld" 2>/dev/null && write_holder "$pool" "$key" "$sid"; then
       return 0

@@ -123,6 +123,54 @@ max_concurrency() { sort -n "$CC/samples" | tail -1; }
   [ ! -s "$NL" ]
 }
 
+# AT-318-B: FA_WORKER_TIMEOUT がハング worker を kill し lease を解放（dispatcher を止めない）
+@test "AT-318-B: FA_WORKER_TIMEOUT kills a hung worker and frees its lease" {
+  printf '318\n' > "$Q"
+  LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= FA_SESSION=fa CC_DIR="$CC" MOCK_SLEEP=5 \
+    FA_WORKER_TIMEOUT=1 FA_LOG="$CC/log" FA_RUNDIR="$CC/run" FA_POLL_INTERVAL=0.1 \
+    FA_QUEUE_CMD="cat $Q" \
+    FA_LAUNCH_CMD="bash $ROOT/tests/fixtures/fa-mock-worker.sh" \
+    FA_RESULT_CMD="bash $ROOT/tests/fixtures/fa-mock-result.sh" \
+    FA_MERGE_CMD="bash $ROOT/tests/fixtures/fa-mock-merge.sh" \
+    bash "$RUN_PATH" 1
+  grep -q 'worker-timeout issue=318' "$CC/log"
+  grep -q 'drain-complete' "$CC/log"
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= bash "$ROOT/lib/lease-store.sh" holder issue 318
+  [ -z "$output" ]
+}
+
+# AT-318-B: post-merge regression 失敗(exit 2)は無印 merge-failed でなく escalate に振られる
+@test "AT-318-B: post-merge regression failure (exit 2) routes to escalate, not silent merge-failed" {
+  printf '318\n' > "$Q"
+  NL="$CC/nl"; : > "$NL"
+  LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= FA_SESSION=fa CC_DIR="$CC" MOCK_SLEEP=0.1 \
+    FA_FAIL_ISSUES="" FA_LOG="$CC/log" FA_RUNDIR="$CC/run" FA_POLL_INTERVAL=0.05 \
+    NOTIFY_LOG="$NL" \
+    FA_QUEUE_CMD="cat $Q" \
+    FA_LAUNCH_CMD="bash $ROOT/tests/fixtures/fa-mock-worker.sh" \
+    FA_RESULT_CMD="bash $ROOT/tests/fixtures/fa-mock-result.sh" \
+    FA_MERGE_CMD="bash -c 'echo merged:regression-failed; exit 2'" \
+    FA_NOTIFY_CMD="bash $ROOT/tests/fixtures/fa-mock-notify.sh" \
+    bash "$RUN_PATH" 1
+  grep -q '^escalate 318$' "$NL"
+  ! grep -q '^merge-failed 318$' "$NL"
+  grep -q 'merge-regression-failed issue=318' "$CC/log"
+}
+
+# AT-318-B: notifier 失敗は握り潰さず FA_LOG に記録（escalation の無音喪失を防ぐ）
+@test "AT-318-B: notify failure is recorded in FA_LOG (not silently swallowed)" {
+  printf '318\n' > "$Q"
+  LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= FA_SESSION=fa CC_DIR="$CC" MOCK_SLEEP=0.1 \
+    FA_FAIL_ISSUES="" FA_LOG="$CC/log" FA_RUNDIR="$CC/run" FA_POLL_INTERVAL=0.05 \
+    FA_QUEUE_CMD="cat $Q" \
+    FA_LAUNCH_CMD="bash $ROOT/tests/fixtures/fa-mock-worker.sh" \
+    FA_RESULT_CMD="bash $ROOT/tests/fixtures/fa-mock-result.sh" \
+    FA_MERGE_CMD="bash $ROOT/tests/fixtures/fa-mock-merge.sh" \
+    FA_NOTIFY_CMD="bash -c 'exit 1'" \
+    bash "$RUN_PATH" 1
+  grep -q 'notify-failed' "$CC/log"
+}
+
 # 失敗 worker は merge されないが lease は解放される（数珠つなぎを止めない）
 @test "AT-318-B: failed worker is not merged but its lease is released" {
   printf '318\n319\n' > "$Q"

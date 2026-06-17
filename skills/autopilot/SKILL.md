@@ -41,7 +41,7 @@ Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligi
 
 `full-autopilot` が autopilot を多重起動するとき **だけ** 渡すフラグ。autopilot 本体の収束・レビュー・near-green スコープは不変（疎結合 / C3）。三ゲートの担い手のみ移る: ①要件=queue の `ready-to-go` で事前承認済み / ②設計=人間サインオフを待たず **reviewer-oracle（AL-3 AND オラクル＋AL-4 evidence）で自動承認**（人間は Draft PR で override 可）/ ③merge=autopilot は従来どおり merge せず `merge-ready` で手放し coordinator が引き取る。
 
-**安全ゲート（誰でもバイパスできないこと）**: hand-off は **`FA_HANDOFF=1` 環境マーカーが在るときのみ honored**。このマーカーは `full-autopilot` の launcher だけが設定する。人間が単に `/atdd-kit:autopilot <issue> --hand-off` と打っても（`FA_HANDOFF` 無し）hand-off は**無視され、厳密3ゲートが維持される**。**フラグ無し起動も当然 AL-1 のまま**。詳細は `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
+**安全ゲート（誰でもバイパスできないこと・hard precondition）**: hand-off を honor する**前に必ず** `FA_HANDOFF=1` 環境マーカーを検査する — **マーカーが無い起動では `--hand-off` を完全に無視し、AL-1 の厳密3ゲートで進める**（設計 gate ② をスキップしない）。これは省略可能な推奨ではなく前提条件。マーカーは `full-autopilot` の launcher が **worker プロセスに inline で**（`FA_HANDOFF=1 claude -p …`）設定し、**永続 export はしない**（stray export がセッションに残って通常起動の gate を黙って外す事故を防ぐ）。人間が単に `--hand-off` と打っても（マーカー無し）3ゲート維持。**フラグ無し起動も当然 AL-1 のまま**。詳細は `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
 
 ## Dialog economy — all human-facing dialog under autopilot (#254)
 

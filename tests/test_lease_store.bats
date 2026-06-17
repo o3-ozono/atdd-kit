@@ -100,6 +100,18 @@ run_lease() {
   [ "$output" = "sessB" ]
 }
 
+@test "LS-11: ATDD_LEASE_FORCE leaves an audit trail (holder takeover is not silent)" {
+  run_lease acquire issue 318 sessA
+  audit="$STORE/audit.log"; : > "$audit"
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= ATDD_LEASE_FORCE=1 LEASE_AUDIT_LOG="$audit" \
+    bash "$LIB_PATH" acquire issue 318 sessB
+  [ "$status" -eq 0 ]
+  [ -s "$audit" ]
+  grep -q 'lease-force' "$audit"
+  grep -q 'prev=sessA' "$audit"
+  grep -q 'by=sessB' "$audit"
+}
+
 @test "LS-7: TTL-stale lease is cleaned at access and reacquirable" {
   run_lease acquire issue 318 sessA
   lf="$(run_lease path issue 318)"
