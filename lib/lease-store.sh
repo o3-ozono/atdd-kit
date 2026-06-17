@@ -119,6 +119,16 @@ cmd_acquire() {
   cleanup_stale "$pool"
   ld="$(lock_dir "$pool" "$key")"
   mkdir -p "$(pool_dir "$pool")" 2>/dev/null || true
+  # 緊急上書き（#316 branch-lease-guard の ATDD_BRANCH_LEASE_FORCE 相当）。
+  # 安全と判断したときの意図的な奪取。既存 lock を捨てて自セッション名義で取り直す。
+  if [ "${ATDD_LEASE_FORCE:-}" = "1" ]; then
+    rm -rf "$ld" 2>/dev/null || true
+    if mkdir "$ld" 2>/dev/null && write_holder "$pool" "$key" "$sid"; then
+      return 0
+    fi
+    rm -rf "$ld" 2>/dev/null || true
+    return 1
+  fi
   i=0
   while [ "$i" -lt "$ACQUIRE_RETRIES" ]; do
     if mkdir "$ld" 2>/dev/null; then

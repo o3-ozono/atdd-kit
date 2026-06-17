@@ -14,8 +14,10 @@
 #   LEASE_STORE_DIR   lease-store の store（lib/lease-store.sh に委譲）
 #
 # CLI:
-#   full-autopilot-dispatch.sh select <K> <issue...>
+#   full-autopilot-dispatch.sh select  <K> <issue...>
 #     → 取得できた issue を1行ずつ最大 K 件出力し、自セッション名義で lease 済みにする
+#   full-autopilot-dispatch.sh release <issue> [session]
+#     → worker 完了/失敗/回収時に issue-lease を解放する（数珠つなぎでスロットを空ける）
 
 set -u
 
@@ -39,10 +41,17 @@ cmd_select() {
   done
 }
 
+# worker 完了/失敗/回収時に issue-lease を解放する。
+cmd_release_issue() {
+  local issue="$1" sid="${2:-$SESSION}"
+  cmd_release issue "$issue" "$sid"
+}
+
 main() {
   case "${1:-}" in
-    select) shift; cmd_select "$@" ;;
-    *) echo "usage: full-autopilot-dispatch.sh select <K> <issue...>" >&2; return 2 ;;
+    select)  shift; cmd_select "$@" ;;
+    release) shift; cmd_release_issue "$@" ;;
+    *) echo "usage: full-autopilot-dispatch.sh {select <K> <issue...>|release <issue> [session]}" >&2; return 2 ;;
   esac
 }
 

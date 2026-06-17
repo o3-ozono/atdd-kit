@@ -92,6 +92,14 @@ run_lease() {
   [ "$status" -ne 0 ]
 }
 
+@test "LS-10: ATDD_LEASE_FORCE=1 overrides a lease held by another session" {
+  run_lease acquire issue 318 sessA
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= ATDD_LEASE_FORCE=1 bash "$LIB_PATH" acquire issue 318 sessB
+  [ "$status" -eq 0 ]
+  run run_lease holder issue 318
+  [ "$output" = "sessB" ]
+}
+
 @test "LS-7: TTL-stale lease is cleaned at access and reacquirable" {
   run_lease acquire issue 318 sessA
   lf="$(run_lease path issue 318)"

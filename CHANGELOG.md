@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **full-autopilot — キュー方式で複数 issue を並列・無人で merge まで回す（#318）**。`ready-to-go`（PRD 承認済み）の Issue をキューに積めば、実装〜レビュー〜merge を無人・並列で消化する上位オーケストレータ。人間の関与は冒頭の要件壁打ちのみ。`skills/full-autopilot/SKILL.md` を新規作成し、3 つのライブラリを束ねる:
-  - `lib/lease-store.sh` — 汎用 lease（issue-lease / merge-lease）。容量1/キー、pool 名前空間で分離。排他は lease の存在意義のため、取得は **アトミック（`mkdir` ロック）＋ fail-closed**（holder 永続化に失敗したら lock を返し取得失敗にし、未永続化を「取得成功」と誤報しない）。TTL orphan 掃除は holder.json ts ／無ければ lock dir mtime を使い、winner が holder を書く前の一瞬を loser が stale 誤判定する race を排除。`tests/test_lease_store.bats`（LS-1..9、並列レース LS-8・fail-closed LS-9 含む）/ `tests/acceptance/AT-318-D.bats`。
+  - `lib/lease-store.sh` — 汎用 lease（issue-lease / merge-lease）。容量1/キー、pool 名前空間で分離。排他は lease の存在意義のため、取得は **アトミック（`mkdir` ロック）＋ fail-closed**（holder 永続化に失敗したら lock を返し取得失敗にし、未永続化を「取得成功」と誤報しない）。TTL orphan 掃除は holder.json ts ／無ければ lock dir mtime を使い、winner が holder を書く前の一瞬を loser が stale 誤判定する race を排除。緊急上書き `ATDD_LEASE_FORCE=1`（#316 branch-lease の FORCE 相当）。`tests/test_lease_store.bats`（LS-1..10、並列レース LS-8・fail-closed LS-9・FORCE LS-10 含む）/ `tests/acceptance/AT-318-D.bats`。
   - `lib/merge-coordinator.sh` — `merge-ready` を容量1（merge-lease）で直列 drain。`rebase→フル再ゲート→merge→regression` の順序保証（broken-together 防止）と、失敗の自動差し戻し→閾値 N で human エスカレーション。post-merge regression 失敗は沈黙させず `merged:regression-failed` ＋非ゼロで上げる。外部ステップは env 注入で差し替え可能。`tests/test_merge_coordinator.bats`（MC-1..6）/ `tests/acceptance/AT-318-C.bats`。
-  - `lib/full-autopilot-dispatch.sh` — K スロット下で issue-lease を取りつつ起動対象を選ぶ select ロジック（並列排他・数珠つなぎの心臓部）。`tests/test_full_autopilot_dispatch.bats`（FAD-1..4）。
-- 並列 worker は **独立 headless プロセス**（`claude -p "/atdd-kit:autopilot <issue> --hand-off"` を `run_in_background`）として起動。各 worker が top-level プロセスのため内部 Workflow が入れ子制約に当たらないこと・ログ3層（stdout json / `--session-id` 確定の transcript / 入れ子 Workflow の `subagents/workflows/wf_*/`）を回収できることを実証済み。worker lifecycle（timeout・完了検出・crash 時 lease 解放）は `skills/full-autopilot/SKILL.md` に仕様化。
+  - `lib/full-autopilot-dispatch.sh` — K スロット下で issue-lease を取りつつ起動対象を選ぶ `select`、worker 完了/失敗/回収時の `release`（数珠つなぎでスロットを空ける実コード）。`tests/test_full_autopilot_dispatch.bats`（FAD-1..5）。
+- 並列 worker は **独立 headless プロセス**（`claude -p "/atdd-kit:autopilot <issue> --hand-off"` を `run_in_background`）として起動。各 worker が top-level プロセスのため内部 Workflow が入れ子制約に当たらないこと・ログ3層（stdout json / `--session-id` 確定の transcript / 入れ子 Workflow の `subagents/workflows/wf_*/`）を回収できることを実証済み。worker lifecycle（timeout・完了検出・crash 時 lease 解放3経路）と worker 起動の `--allowed-tools` 最小集合は `skills/full-autopilot/SKILL.md` に仕様化。暴走防止の安全弁（intake を `ready-to-go` に限定）は `tests/acceptance/AT-318-E.bats`（E2）で pin。
 
 ### Changed
 

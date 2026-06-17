@@ -63,3 +63,12 @@ claim_other() {
   run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= bash "$LEASE_PATH" holder issue 318
   [ "$output" = "dispatcher" ]
 }
+
+@test "FAD-5: release frees an issue-lease so the slot can be reused" {
+  fad select 1 318
+  run fad release 318
+  [ "$status" -eq 0 ]
+  # 解放後は別 dispatcher（or 次ラウンド）が取れる
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= bash "$LEASE_PATH" acquire issue 318 otherSession
+  [ "$status" -eq 0 ]
+}
