@@ -39,7 +39,9 @@ Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligi
 
 ## Hand-off mode — `--hand-off` (full-autopilot only, #318)
 
-`full-autopilot` が autopilot を多重起動するとき **だけ** 渡すフラグ。autopilot 本体の収束・レビュー・near-green スコープは不変（疎結合 / C3）。三ゲートの担い手のみ移る: ①要件=queue の `ready-to-go` で事前承認済み / ②設計=人間サインオフを待たず **reviewer-oracle（AL-3 AND オラクル＋AL-4 evidence）で自動承認**（人間は Draft PR で override 可）/ ③merge=autopilot は従来どおり merge せず `merge-ready` で手放し coordinator が引き取る。**フラグ無し起動は AL-1 のまま**（厳密3ゲート）。詳細は `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
+`full-autopilot` が autopilot を多重起動するとき **だけ** 渡すフラグ。autopilot 本体の収束・レビュー・near-green スコープは不変（疎結合 / C3）。三ゲートの担い手のみ移る: ①要件=queue の `ready-to-go` で事前承認済み / ②設計=人間サインオフを待たず **reviewer-oracle（AL-3 AND オラクル＋AL-4 evidence）で自動承認**（人間は Draft PR で override 可）/ ③merge=autopilot は従来どおり merge せず `merge-ready` で手放し coordinator が引き取る。
+
+**安全ゲート（誰でもバイパスできないこと）**: hand-off は **`FA_HANDOFF=1` 環境マーカーが在るときのみ honored**。このマーカーは `full-autopilot` の launcher だけが設定する。人間が単に `/atdd-kit:autopilot <issue> --hand-off` と打っても（`FA_HANDOFF` 無し）hand-off は**無視され、厳密3ゲートが維持される**。**フラグ無し起動も当然 AL-1 のまま**。詳細は `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
 
 ## Dialog economy — all human-facing dialog under autopilot (#254)
 

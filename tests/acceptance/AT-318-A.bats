@@ -31,7 +31,15 @@ setup() {
   grep -q 'Three User gates, fixed' "$IRON"
   grep -q '通常 autopilot（非 full-autopilot）では本 AL-1 は不変' "$IRON"
   # autopilot SKILL がフラグ無し起動の不変性を明記
-  grep -q 'フラグ無し起動は AL-1 のまま' "$AP"
+  grep -q 'フラグ無し起動も当然 AL-1 のまま' "$AP"
   # hand-off の上書きは hand-off フラグに閉じる（通常モードへ波及しない）
   grep -q 'hand-off フラグの無い起動には一切影響しない' "$IRON"
+}
+
+# AT-318-A3: hand-off は FA_HANDOFF env マーカーが在るときだけ honored（誰でもバイパス不可）
+@test "AT-318-A3: hand-off requires the FA_HANDOFF marker (not bypassable by a bare flag)" {
+  grep -q 'FA_HANDOFF=1' "$AP"
+  # 素の --hand-off では3ゲート維持 / マーカーは full-autopilot の launcher だけが設定
+  grep -Eq 'FA_HANDOFF.*無し.*無視|無視され、厳密3ゲート' "$AP"
+  grep -q 'FA_HANDOFF=1' "$FA"
 }

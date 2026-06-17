@@ -69,10 +69,11 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 
 | Test File | Target |
 |-----------|--------|
-| test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store) |
+| test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store, LS-10 ATDD_LEASE_FORCE override) |
 | test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) |
-| test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) |
-| acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant) |
+| test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) + issue-lease release (FAD-5) |
+| acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant, A3 FA_HANDOFF marker safety) |
+| acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
 | acceptance/AT-318-C.bats | merge coordinator (C1 rebase→regate→merge order, C2 retry→escalate) |
 | acceptance/AT-318-D.bats | lease 拡張 (D1 issue-lease double-claim block, D2 merge-lease serialization) |
 | acceptance/AT-318-E.bats | epic 横断 (E2 intake restricted to ready-to-go — safety valve) |

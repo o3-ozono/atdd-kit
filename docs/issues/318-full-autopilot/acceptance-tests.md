@@ -46,24 +46,24 @@
 
 ## AT-318-B: dispatcher + issue-queue（サブ b）
 
-- [ ] [planned] AT-318-B1: キューの issue を headless worker で merge-ready まで無人到達（F1） — dispatch/lease は AT-318-D / FAD で green。実 `claude -p --hand-off` worker のフル到達は live E2E で検証
+- [x] [green] AT-318-B1: キューの issue を headless worker で merge-ready まで無人到達（F1） — `lib/full-autopilot-run.sh`。runtime E2E（`tests/acceptance/AT-318-B.bats`, mock worker）＋ **live smoke 実走**（実 `claude -p` worker × K=2 → `is_error:false`→merge-ready→merge handoff→lease 解放を確認）。実 feature の autopilot `--hand-off` worker のフル実装到達は本番運用
   - Given: `ready-to-go` issue が1件キューにある
   - When: full-autopilot が dispatch する
   - Then: headless `claude -p ... --hand-off` worker が起動し、`is_error:false` で near-green→`merge-ready` に到達。人間入力は発生しない
 
-- [x] [green] AT-318-B2: 並列度 K=2 で2 issue 同時進行・相互非破壊（F2・C2） — 排他保証は `tests/test_full_autopilot_dispatch.bats`(FAD-1/2) ＋ `tests/acceptance/AT-318-D.bats`(issue-lease) で green。実 headless 並列走行は live E2E
+- [x] [green] AT-318-B2: 並列度 K=2 で2 issue 同時進行・相互非破壊（F2・C2） — `tests/acceptance/AT-318-B.bats`(max concurrency=2) ＋ FAD/issue-lease 排他 ＋ live smoke（実 worker active=2 確認）
   - Given: `ready-to-go` issue が2件、K=2
   - When: full-autopilot が dispatch する
   - Then: 2 worker が別 worktree/branch で同時進行し、branch-lease / issue-lease により互いの作業を破壊しない
 
-- [ ] [planned] AT-318-B3: slot が空けば再起動なしに次を消化（数珠つなぎ）（F3） — select ロジックは FAD で green。slot ループ＋完了監視のフル走行は live E2E
+- [x] [green] AT-318-B3: slot が空けば再起動なしに次を消化（数珠つなぎ）（F3） — `tests/acceptance/AT-318-B.bats`(K=2/3issue chaining, cap 超えず) ＋ live smoke（A1 完了で A3 自動連鎖を確認）
   - Given: `ready-to-go` issue が3件、K=2
   - When: full-autopilot を1回起動する
   - Then: 先行2件のいずれかが終わると人間の再起動なしに3件目が着手され、最終的に全件が `merge-ready`/merge に到達する
 
 ## AT-318-E: epic 統合（横断）
 
-- [ ] [planned] AT-318-E1: 壁打ち以外無人で複数 issue が main に統合される（F1・F2・F3・F5） — 全 lib 単体 green。フル無人ループ（実 `claude -p` worker × coordinator）は live 実行で検証
+- [x] [green] AT-318-E1: 壁打ち以外無人で複数 issue が統合まで到達（F1・F2・F3・F5） — `tests/acceptance/AT-318-B.bats`(E1 フル無人ループ, mock worker 全 merge＋drain-complete) ＋ live smoke（実 `claude -p` worker × K=2 で全 issue merge handoff＋全 lease 解放＋drain-complete を実走）。実 git の複数 PR を main へ直列 merge する本番統合は merge coordinator（AT-318-C）＋本番運用
   - Given: 人間がキューに2 issue を `ready-to-go` で投入（＝唯一の人間関与）、K=2
   - When: full-autopilot を起動する
   - Then: 並列 hand-off worker → 各 `merge-ready` → coordinator が逐次 rebase＋再ゲート＋merge → post-merge regression green。2 issue が main に直列統合され、起動後の人間入力はゼロ
