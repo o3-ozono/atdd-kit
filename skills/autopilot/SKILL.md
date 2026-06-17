@@ -250,7 +250,8 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
     // `recorded` is NOT incremented for the HALT line; check_log_integrity is NOT re-run after the append.
     if (halt !== 'none') {
       const haltFindings = [...(verdict?.findings || []).filter((f) => priorityOf(f) <= 1), ...uncovered.map((ac) => ({ priority: 0, evidence_ref: ac }))].map((f) => ({ priority: f.priority, evidence_ref: f.evidence_ref }))
-      await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and its audit log (${LOG_GLOB}). Via lib/autopilot_convergence.sh, append one terminating HALT record: \`record_halt "<resolved-log-path>" ${step} ${halt} '${JSON.stringify(haltFindings)}'\`. Then commit ONLY the log: \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): halt record ${step} ${halt} (#${NNN})"\`. Report haltRecorded = (record_halt exit code === 0).${GEN_GUARD}`, { label: `audit-halt:${step}`, phase: 'Rails', schema: { type: 'object', required: ['haltRecorded'], properties: { haltRecorded: { type: 'boolean' } } }, model: MODEL })
+      const { haltRecorded } = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and its audit log (${LOG_GLOB}). Via lib/autopilot_convergence.sh, append one terminating HALT record: \`record_halt "<resolved-log-path>" ${step} ${halt} '${JSON.stringify(haltFindings)}'\`. Then commit ONLY the log: \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): halt record ${step} ${halt} (#${NNN})"\`. Report haltRecorded = (record_halt exit code === 0).${GEN_GUARD}`, { label: `audit-halt:${step}`, phase: 'Rails', schema: { type: 'object', required: ['haltRecorded'], properties: { haltRecorded: { type: 'boolean' } } }, model: MODEL })
+      // haltRecorded=false: record_halt failed (best-effort) — HALT row may be absent from JSONL; human escalation via COMPLETED_WITH_DEBT proceeds regardless (#299 design gap: Non-Goal only covers record-error/rails-error/freeze-error).
       return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
     }
     prevFindings = verdict?.findings?.length ? verdict.findings : null
@@ -263,7 +264,7 @@ The rails (`fingerprint` / `record_iteration` / `record_halt` / `check_sameness`
 
 ## Model assignment (#259)
 
-- **impl phase subagents (gen / review / at-gate / coverage / audit / rails) default to Sonnet** (#311: each agent() opts carries `model`) — bench #259 showed equal functional quality at ~1/4 the cost. **Design-heavy Issues** (architecture judgment / trade-offs) start on the **session model** instead.
+- **impl phase subagents (gen / review / at-gate / coverage / audit / rails / audit-halt) default to Sonnet** (#311/#299: each agent() opts carries `model`) — bench #259 showed equal functional quality at ~1/4 the cost. **Design-heavy Issues** (architecture judgment / trade-offs) start on the **session model** instead.
 - **Escalation (one-way per Issue):** a Sonnet cycle ending `COMPLETED_WITH_DEBT` via a convergence-failure halt (`MAX_ITERATIONS` / `sameness-detector` / `stuck`) promotes that step's impl / review subagents to the session model from the next convergence cycle (after human intervention); never demote back within the same Issue. `ac-drift` / `record-error` are anchor / audit-integrity halts, not model-quality signals — they do not escalate.
 - **Out of scope:** the design phase (`extracting-user-stories` / `writing-plan-and-tests`) and this orchestrator stay on the session model (bench: design-judgment consistency Fable 20/20). Policy details: `agents/README.md`.
 
