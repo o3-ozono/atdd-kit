@@ -96,5 +96,5 @@ bugfix ルートは US/Plan/AT spec を作らないため、標準の**設計承
 - [ ] ドキュメント整合性チェック（`rules/atdd-kit.md` 60 行バジェット維持、`docs/workflow/` のルート分離記述整合）
 - [ ] verify: `wc -l rules/atdd-kit.md` が 60 以下、関連ドキュメントが bugfix ルート追加と整合している
 
-- [ ] **half-scope の User 明示確認＋ flaky フォローアップ Issue 作成（finding#4）**: Issue #308 のタイトル/提案は bugfix AND flaky-test-fix の 2 ルートを謳うが、本 Issue は bugfix ルートのみに scope を絞り flaky は次 Issue に defer する（prd.md:31 / Non-Goal）。この**半スコープを設計承認（bugfix では原因合意）ゲートで User に明示提示**し、`enhancement` ラベル＋両ルートを約束するタイトルとの差分を User が明示確認できるようにする。同時に flaky-test-fix ルートのフォローアップ Issue を**実際に作成**（`gh issue create`）し、本 plan からリンクする
-- [ ] verify: 設計承認ゲート提示文に「bugfix のみ／flaky は次 Issue」の half-scope 明示があること、flaky フォローアップ Issue が作成済み（番号付き）で本 plan から参照されていることを確認
+- [x] **half-scope の User 明示確認＋ flaky フォローアップ Issue 作成（finding#4）**: Issue #308 のタイトル/提案は bugfix AND flaky-test-fix の 2 ルートを謳うが、本 Issue は **bugfix ルートのみに scope を絞り flaky は次 Issue に defer** する（prd.md:31 / Non-Goal）。この**半スコープ（bugfix のみ／flaky は次 Issue）を設計承認（bugfix では原因合意 = cause-agreement）ゲートで User に明示提示**し、`enhancement` ラベル＋両ルートを約束するタイトルとの差分を User が明示確認できるようにする。flaky-test-fix ルートのフォローアップ Issue は **#322（flaky-test-fix 専用の軽量ルートを設ける）として実際に作成済み**（`gh issue create`）であり、本 plan からリンクする
+- [x] verify: 設計承認ゲート提示文に「bugfix のみ／flaky は次 Issue」の half-scope 明示があること、flaky フォローアップ Issue（**#322**）が作成済み（番号付き）で本 plan から参照されていることを確認

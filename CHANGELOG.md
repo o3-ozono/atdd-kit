@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.24.0] - 2026-06-17
+
+### Added
+
+- **bugfix 専用の軽量ルート `fixing-bugs`（フル機能ルートと分離）（#308）**。新スキル `skills/fixing-bugs/SKILL.md` を新設。既存スキルの**再利用のみ**で構成する thin orchestration スキルで、`bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` の 5 連鎖を構成し、定義系 3 スキル（`defining-requirements` / `extracting-user-stories` / `writing-plan-and-tests`）を**スキップ**する。`bug` のハードコード forward chain（`defining-requirements` への routing）を **orchestrator-driven invocation** で上書きするが `bug` SKILL.md は未編集（被連鎖スキルの「Next Step」は本ルート下では advisory）。再現確認は platform-aware（web: `playwright-cli`/`verify` 外部スキル、iOS: Xcode/simulator MCP + `sim-pool`、other: CLI/bats）に分岐し、失敗テスト（赤→緑 オラクルアンカー）へ符号化する。中間 User gate は design-approval から **cause-agreement**（承認対象 = 根本原因分類 A/B/C・evidence 付き ＋ 失敗再現テスト）へ specialize（AL-1 三ゲート不変条件維持・ゲート数は三のまま）、マージは常に User merge gate（自動マージしない）。Type A（AC Gap）の根本原因はフル機能ルート（`debugging → defining-requirements`）へ昇格する。明示コマンド `commands/autofix.md`（`/atdd-kit:autofix <issue>`）を新設。ルーティング判定信号は `docs/methodology/route-eligibility.md`（SoT）に追記（`type:bug` ラベル＋キーワード＋低確信時の #305 ワンタップ User 確認、No Auto-Routing 不変条件維持）、autopilot SKILL.md は loader-stub で参照のみ（≤280 行維持・第 3 回行バジェット昇格なし）。AL-3 の `AC→AT coverage` 項を bugfix では「失敗再現テスト被覆（赤→緑が外部コンテキストで確認）」へ specialize し、`docs/methodology/autopilot-iron-law.md`（AL-1/AL-3 特化）と `docs/methodology/autopilot-design-gate.md`（presentation contract）の両文書に **cause-agreement** 安定トークンで整合させる。`tests/test_fixing_bugs_skill.bats`（15 件）と `tests/acceptance/AT-308.bats`（14 件）を新設、`tests/test_autopilot_skill.bats` に bugfix wiring pin 3 件を追加。flaky-test-fix ルートは half-scope として #322 にフォローアップ defer。
+
 ## [3.23.0] - 2026-06-17
 
 ### Added
