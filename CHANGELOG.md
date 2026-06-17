@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.23.0] - 2026-06-17
+## [3.25.0] - 2026-06-18
 
 ### Added
 
@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **autopilot に hand-off モード（`--hand-off`）を追加（#318・full-autopilot 限定）**。`skills/autopilot/SKILL.md` に hand-off 節を追加し、`docs/methodology/autopilot-iron-law.md` に §AL-1 under full-autopilot を新設。hand-off 時のみ AL-1 三ゲートの担い手が移る（①=queue 事前承認 / ②=reviewer-oracle で自動承認 / ③=merge coordinator）。**通常 autopilot（フラグ無し）の厳密3ゲートは不変** — invariant を `tests/acceptance/AT-318-A.bats`（A2）で pin。`tests/test_skill_structure.bats` の `ALL_SKILLS` に full-autopilot を登録。`lib/README.md`・`skills/README.md`・`tests/README.md` を同一 PR 内で更新。
+
+## [3.24.0] - 2026-06-17
+
+### Added
+
+- **bugfix 専用の軽量ルート `fixing-bugs`（フル機能ルートと分離）（#308）**。新スキル `skills/fixing-bugs/SKILL.md` を新設。既存スキルの**再利用のみ**で構成する thin orchestration スキルで、`bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` の 5 連鎖を構成し、定義系 3 スキル（`defining-requirements` / `extracting-user-stories` / `writing-plan-and-tests`）を**スキップ**する。`bug` のハードコード forward chain（`defining-requirements` への routing）を **orchestrator-driven invocation** で上書きするが `bug` SKILL.md は未編集（被連鎖スキルの「Next Step」は本ルート下では advisory）。再現確認は platform-aware（web: `playwright-cli`/`verify` 外部スキル、iOS: Xcode/simulator MCP + `sim-pool`、other: CLI/bats）に分岐し、失敗テスト（赤→緑 オラクルアンカー）へ符号化する。中間 User gate は design-approval から **cause-agreement**（承認対象 = 根本原因分類 A/B/C・evidence 付き ＋ 失敗再現テスト）へ specialize（AL-1 三ゲート不変条件維持・ゲート数は三のまま）、マージは常に User merge gate（自動マージしない）。Type A（AC Gap）の根本原因はフル機能ルート（`debugging → defining-requirements`）へ昇格する。明示コマンド `commands/autofix.md`（`/atdd-kit:autofix <issue>`）を新設。ルーティング判定信号は `docs/methodology/route-eligibility.md`（SoT）に追記（`type:bug` ラベル＋キーワード＋低確信時の #305 ワンタップ User 確認、No Auto-Routing 不変条件維持）、autopilot SKILL.md は loader-stub で参照のみ（≤280 行維持・第 3 回行バジェット昇格なし）。AL-3 の `AC→AT coverage` 項を bugfix では「失敗再現テスト被覆（赤→緑が外部コンテキストで確認）」へ specialize し、`docs/methodology/autopilot-iron-law.md`（AL-1/AL-3 特化）と `docs/methodology/autopilot-design-gate.md`（presentation contract）の両文書に **cause-agreement** 安定トークンで整合させる。`tests/test_fixing_bugs_skill.bats`（15 件）と `tests/acceptance/AT-308.bats`（14 件）を新設、`tests/test_autopilot_skill.bats` に bugfix wiring pin 3 件を追加。flaky-test-fix ルートは half-scope として #322 にフォローアップ defer。
+- **autopilot halt 終端レコードの JSONL 監査ログ追記（#299）**。`lib/autopilot_convergence.sh` に `record_halt <jsonl> <step> <reason> <findings_digest>` 関数を追加し、収束失敗系 halt（`MAX_ITERATIONS` / `sameness-detector` / `stuck` / `ac-drift` / `log-integrity`）のみ終端 HALT レコードを JSONL に 1 行 append する。`reason` を enum に限定（範囲外は非ゼロ return）、`findings_digest` は整形済み JSON 配列値として verbatim 埋め込み（ネストした JSON 配列 — エスケープ済み文字列スカラではない）。`record_iteration` に `timestamp`（ISO 8601 UTC）フィールドを追加。`skills/autopilot/SKILL.md` の収束失敗系 halt 経路に `audit-halt:${step}` agent 呼び出しを挿入（`record_halt` + ログ単独 stage/commit、`recorded` 非インクリメント・`check_log_integrity` 再走なしの不変条件コメント付き）。`tests/test_autopilot_convergence.bats` に 14 件の新規 AT（record_halt 正常系・異常系・timestamp 付与・決定論不変）、`tests/test_autopilot_skill.bats` に 5 件の構造 pin（AT-299-5b/6/7/8/8b）、`tests/acceptance/AT-299.bats` に 9 件の Acceptance Tests を追加。全 70+97+165 テスト green。
 
 ## [3.22.0] - 2026-06-16
 

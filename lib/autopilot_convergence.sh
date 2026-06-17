@@ -8,7 +8,8 @@
 #
 # Functions:
 #   fingerprint                              stdin -> normalized sha256 of a failure signature
-#   record_iteration <jsonl> <it> <step> <verdict> <fp>   append one JSONL audit line (AL-4)
+#   record_iteration <jsonl> <it> <step> <verdict> <fp>   append one JSONL audit line (AL-4) with timestamp
+#   record_halt <jsonl> <step> <reason> <findings_digest>  append one terminating HALT record to JSONL (convergence-failure halts only — #299)
 #   check_sameness <jsonl> [step]            non-zero if the last 2 FAIL iterations share a fingerprint (step-scoped when step given; FAIL rows only — #277)
 #   check_stuck <jsonl> <window> [step]      non-zero if the last <window> FAIL iterations show no progress (step-scoped when step given; FAIL rows only — #277)
 #   check_max_iterations <current> <max>     non-zero if current >= max
@@ -79,8 +80,38 @@ record_iteration() {
       return 2
       ;;
   esac
-  printf '{"iteration":%s,"step":"%s","verdict":"%s","fingerprint":"%s"}\n' \
-    "$iteration" "$(_json_escape "$step")" "$(_json_escape "$verdict")" "$fp" >> "$jsonl"
+  local ts; ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf '{"iteration":%s,"step":"%s","verdict":"%s","fingerprint":"%s","timestamp":"%s"}\n' \
+    "$iteration" "$(_json_escape "$step")" "$(_json_escape "$verdict")" "$fp" "$ts" >> "$jsonl"
+}
+
+# Append one terminating HALT record to the JSONL audit log (#299).
+# Convergence-failure halts only — record-error / rails-error / freeze-error /
+# anchor-pin-failed return without a HALT record (they are not convergence failures).
+# Invariant: this HALT line is the last write of the current run, appended AFTER the
+# rails check (check_log_integrity included) and BEFORE return. The orchestrator MUST
+# NOT increment `recorded` for this line and MUST NOT re-run check_log_integrity
+# afterwards — the integrity check was already satisfied before this append, and the
+# next freeze re-entry will absorb the HALT line as a baseline (#262 baseline absorption).
+#
+# findings_digest must be a pre-formatted JSON array value (e.g. '[{"priority":1,"evidence_ref":"..."}]');
+# record_halt embeds it verbatim (%s, no _json_escape) so it becomes a nested JSON array,
+# not an escaped JSON string scalar. step / reason are scalar strings and ARE _json_escape'd.
+record_halt() {
+  local jsonl="$1" step="$2" reason="$3" findings_digest="${4:-[]}"
+  [ -n "$jsonl" ] || { echo "autopilot_convergence: record_halt: jsonl path required" >&2; return 2; }
+  # reason is restricted to the convergence-failure enum; out-of-range values are refused
+  # so an incorrect HALT record is never written (invariant enforcement).
+  case "$reason" in
+    MAX_ITERATIONS|sameness-detector|stuck|ac-drift|log-integrity) ;;
+    *)
+      echo "autopilot_convergence: record_halt: invalid reason '$reason' (must be one of MAX_ITERATIONS / sameness-detector / stuck / ac-drift / log-integrity)" >&2
+      return 2
+      ;;
+  esac
+  local ts; ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf '{"outcome":"HALT","step":"%s","reason":"%s","findings_digest":%s,"timestamp":"%s"}\n' \
+    "$(_json_escape "$step")" "$(_json_escape "$reason")" "$findings_digest" "$ts" >> "$jsonl"
 }
 
 # Echo the fingerprint column from the JSONL log, in order, one per line.

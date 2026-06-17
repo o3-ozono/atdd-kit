@@ -5,11 +5,7 @@ description: "Use when you want to run an Issue in autopilot — autonomously co
 
 # Autopilot
 
-The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle`, with `reviewing-deliverables` as the in-loop reviewer — and narrows human involvement to **three gates**: **requirements approval** at the start, **design approval** before any implementation, and **merge** at the end. Between gates, everything is looped `generate → review → fix` until a satisfaction oracle holds.
-
-The flow skills are **not permanently changed**; their role (specifically, where the User gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`.
-
-**Scope ends at a near-green Issue handed to the User merge gate.** Merging is never automated.
+The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle`, with `reviewing-deliverables` as the in-loop reviewer — and narrows human involvement to **three gates**: **requirements approval** at the start, **design approval** before any implementation, and **merge** at the end. Between gates, everything is looped `generate → review → fix` until a satisfaction oracle holds. The flow skills are **not permanently changed**; their role (specifically, where the User gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`. **Scope ends at a near-green Issue handed to the User merge gate.** Merging is never automated.
 
 ## autopilot Iron Law (overrides the standard Iron Law in this mode)
 
@@ -30,18 +26,13 @@ Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligi
 
 - **Express-eligible** (doc-grade, no behavior change): present **once** — "この Issue は express の方が低コストです。autopilot で続行しますか？（ok で続行）" — and wait. Without an explicit `ok`, do not proceed. This advisory does not count toward the three User gates (AL-1).
 - **Not express-eligible**: no message, proceed silently.
+- **bugfix route (#308):** consult `docs/methodology/route-eligibility.md` (bugfix Route Signals) for whether the Issue takes the `fixing-bugs` lightweight route (skips the three definition skills; middle gate specialized to **cause-agreement**). Logic lives in route-eligibility.md (SoT); this skill only references it — recommendation only, no auto-route (AL-1).
 
 ## User gates (exactly three — AL-1)
 
 1. **Start — requirements approval.** `defining-requirements` engages the human in 壁打ち (run it per Dialog economy below), the human approves the PRD, and it is frozen as the design phase's immutable anchor.
 2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human** (one batch presentation — Dialog economy below). Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment), carried into the design-phase re-invocation as `rejectionFindings` args (#261, Flow step 3); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
-3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges.
-
-## Hand-off mode — `--hand-off` (full-autopilot only, #318)
-
-`full-autopilot` が autopilot を多重起動するとき **だけ** 渡すフラグ。autopilot 本体の収束・レビュー・near-green スコープは不変（疎結合 / C3）。三ゲートの担い手のみ移る: ①要件=queue の `ready-to-go` で事前承認済み / ②設計=人間サインオフを待たず **reviewer-oracle（AL-3 AND オラクル＋AL-4 evidence）で自動承認**（人間は Draft PR で override 可）/ ③merge=autopilot は従来どおり merge せず `merge-ready` で手放し coordinator が引き取る。
-
-**安全ゲート（誰でもバイパスできないこと・hard precondition）**: hand-off を honor する**前に必ず** `FA_HANDOFF=1` 環境マーカーを検査する — **マーカーが無い起動では `--hand-off` を完全に無視し、AL-1 の厳密3ゲートで進める**（設計 gate ② をスキップしない）。これは省略可能な推奨ではなく前提条件。マーカーは `full-autopilot` の launcher が **worker プロセスに inline で**（`FA_HANDOFF=1 claude -p …`）設定し、**永続 export はしない**（stray export がセッションに残って通常起動の gate を黙って外す事故を防ぐ）。人間が単に `--hand-off` と打っても（マーカー無し）3ゲート維持。**フラグ無し起動も当然 AL-1 のまま**。詳細は `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
+3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges. **Hand-off mode — `--hand-off` (full-autopilot only, #318):** honor する前に必ず `FA_HANDOFF=1` マーカーを検査する hard precondition — **マーカーが無い起動では `--hand-off` を無視し AL-1 厳密3ゲートで進める**（launcher が `FA_HANDOFF=1 claude -p …` で inline 設定・永続 export しない。**フラグ無し起動も当然 AL-1 のまま**）。honor 時のみ担い手が移る: ①=queue 事前承認 / ②=**reviewer-oracle**（AL-3/AL-4）自動承認（人間は Draft PR で override）/ ③=autopilot は merge せず `merge-ready` で手放し coordinator へ。詳細 `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
 
 ## Dialog economy — all human-facing dialog under autopilot (#254)
 
@@ -251,19 +242,29 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
     // log-integrity outranks sameness / stuck: both read history FROM the log,
     // so their exit codes are meaningless when the log itself is compromised.
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.logIntegrityExit !== 0 ? 'log-integrity' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
-    // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5)
-    if (halt !== 'none') return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
+    // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5). #299: convergence-failure
+    // halts append a terminating HALT record AFTER all rails checks and BEFORE return.
+    // `recorded` is NOT incremented for the HALT line; check_log_integrity is NOT re-run after the append.
+    if (halt !== 'none') {
+      const haltFindings = [...(verdict?.findings || []).filter((f) => priorityOf(f) <= 1), ...uncovered.map((ac) => ({ priority: 0, evidence_ref: ac }))].map((f) => ({ priority: f.priority, evidence_ref: f.evidence_ref }))
+      const haltResult = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and its audit log (${LOG_GLOB}). Via lib/autopilot_convergence.sh, append one terminating HALT record: \`record_halt "<resolved-log-path>" ${step} ${halt} '${JSON.stringify(haltFindings)}'\`. Then commit ONLY the log: \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): halt record ${step} ${halt} (#${NNN})"\`. Report haltRecorded = (record_halt exit code === 0).${GEN_GUARD}`, { label: `audit-halt:${step}`, phase: 'Rails', schema: { type: 'object', required: ['haltRecorded'], properties: { haltRecorded: { type: 'boolean' } } }, model: MODEL })
+      const haltRecorded = haltResult?.haltRecorded ?? false
+      // haltRecorded=false: record_halt failed (best-effort) — HALT row may be absent from JSONL; human escalation via COMPLETED_WITH_DEBT proceeds regardless (#299 design gap: Non-Goal only covers record-error/rails-error/freeze-error).
+      return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
+    }
     prevFindings = verdict?.findings?.length ? verdict.findings : null
   }
 }
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
 
-The rails (`fingerprint` / `record_iteration` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green. On impl-phase re-entry after such a halt, carry the unresolved findings (the halt `verdict.findings` plus any coverage-gate uncovered AC, each with a non-empty `evidence_ref`) into the new Workflow call as `args.implSeedFindings` (#288) — the impl analogue of design's `rejectionFindings`; without it iteration 1 restarts blind (`prevFindings = null`) and review / coverage re-derive the same rejection.
+**bugfix oracle (#308):** on the `fixing-bugs` route the oracle is specialized — see `docs/methodology/autopilot-iron-law.md` (AL-3 bugfix specialization): `回帰テスト green ＋ 既存回帰なし ＋ 失敗再現テスト 赤→緑`, `AC→AT coverage` specialized to failing-repro-test coverage, middle gate = **cause-agreement**, merge = User gate (AL-1); wiring detail in that doc, referenced only.
+
+The rails (`fingerprint` / `record_iteration` / `record_halt` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green. On impl-phase re-entry after such a halt, carry the unresolved findings (the halt `verdict.findings` plus any coverage-gate uncovered AC, each with a non-empty `evidence_ref`) into the new Workflow call as `args.implSeedFindings` (#288) — the impl analogue of design's `rejectionFindings`; without it iteration 1 restarts blind (`prevFindings = null`) and review / coverage re-derive the same rejection.
 
 ## Model assignment (#259)
 
-- **impl phase subagents (gen / review / at-gate / coverage / audit / rails) default to Sonnet** (#311: each agent() opts carries `model`) — bench #259 showed equal functional quality at ~1/4 the cost. **Design-heavy Issues** (architecture judgment / trade-offs) start on the **session model** instead.
+- **impl phase subagents (gen / review / at-gate / coverage / audit / rails / audit-halt) default to Sonnet** (#311/#299: each agent() opts carries `model`) — bench #259 showed equal functional quality at ~1/4 the cost. **Design-heavy Issues** (architecture judgment / trade-offs) start on the **session model** instead.
 - **Escalation (one-way per Issue):** a Sonnet cycle ending `COMPLETED_WITH_DEBT` via a convergence-failure halt (`MAX_ITERATIONS` / `sameness-detector` / `stuck`) promotes that step's impl / review subagents to the session model from the next convergence cycle (after human intervention); never demote back within the same Issue. `ac-drift` / `record-error` are anchor / audit-integrity halts, not model-quality signals — they do not escalate.
 - **Out of scope:** the design phase (`extracting-user-stories` / `writing-plan-and-tests`) and this orchestrator stay on the session model (bench: design-judgment consistency Fable 20/20). Policy details: `agents/README.md`.
 
