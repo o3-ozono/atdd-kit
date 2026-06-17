@@ -570,6 +570,176 @@ _make_cross_step_log() {
   [ "$status" -eq 0 ]
 }
 
+# --- #299: record_halt 終端レコード / timestamp 付与 ----------------------------
+
+@test "AT-299-3: record_iteration appends a timestamp field in ISO 8601 UTC format" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "abc123"
+  run python3 -c 'import json,sys; d=json.loads(open(sys.argv[1]).readline()); print(d["timestamp"])' "$JSONL"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]
+}
+
+@test "AT-299-3b: record_iteration still outputs all prior fields unchanged" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "abc123"
+  run python3 -c '
+import json,sys
+d=json.loads(open(sys.argv[1]).readline())
+assert d["iteration"] == 1
+assert d["step"] == "US"
+assert d["verdict"] == "FAIL"
+assert d["fingerprint"] == "abc123"
+assert "timestamp" in d
+print("ok")
+' "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-299-4: record_iteration fingerprint is the input fp arg verbatim (timestamp does not alter fp)" {
+  local fp="deadbeef01234567"
+  record_iteration "$JSONL" 1 "US" "FAIL" "$fp"
+  run python3 -c '
+import json,sys
+d=json.loads(open(sys.argv[1]).readline())
+got=d["fingerprint"]
+exp=sys.argv[2]
+assert got == exp, "expected %r, got %r" % (exp, got)
+print("ok")
+' "$JSONL" "$fp"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-299-4b: fingerprint function does not accept a timestamp as input (structural invariant)" {
+  # fingerprint() reads stdin; passing two different timestamps yields different hashes
+  # because timestamp IS NOT part of a correctly structured fingerprint call.
+  # Here we assert that record_iteration's fp arg is passed through unchanged
+  # regardless of what date returns — by checking two consecutive calls keep distinct fps.
+  local fp1="aaa111" fp2="bbb222"
+  record_iteration "$JSONL" 1 "US" "FAIL" "$fp1"
+  record_iteration "$JSONL" 2 "US" "FAIL" "$fp2"
+  run python3 -c '
+import json,sys
+lines=[json.loads(l) for l in open(sys.argv[1])]
+assert lines[0]["fingerprint"] == sys.argv[2]
+assert lines[1]["fingerprint"] == sys.argv[3]
+print("ok")
+' "$JSONL" "$fp1" "$fp2"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-299-1: record_halt appends a HALT record with all required fields" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "somefp"
+  record_halt "$JSONL" "US" "MAX_ITERATIONS" '[{"priority":1,"evidence_ref":"AT-299-1#x"}]'
+  local line_count
+  line_count=$(wc -l < "$JSONL" | tr -d ' ')
+  [ "$line_count" -eq 2 ]
+  run python3 -c '
+import json,sys
+lines=[l for l in open(sys.argv[1]) if l.strip()]
+halt=json.loads(lines[-1])
+assert halt["outcome"] == "HALT", "outcome=" + halt["outcome"]
+assert halt["step"] == "US", "step=" + halt["step"]
+assert halt["reason"] == "MAX_ITERATIONS", "reason=" + halt["reason"]
+assert isinstance(halt["findings_digest"], list), "findings_digest is not a list"
+assert "timestamp" in halt, "missing timestamp"
+print("ok")
+' "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-299-2: record_halt findings_digest is a nested JSON array (not an escaped scalar)" {
+  record_halt "$JSONL" "US" "MAX_ITERATIONS" '[{"priority":1,"evidence_ref":"AT-299-2#x"}]'
+  # The line must contain "findings_digest":[ (nested array) not "findings_digest":"[" (string scalar)
+  run python3 -c '
+import json,sys
+line=open(sys.argv[1]).readline()
+# structural check: must parse as object with array value, not string value
+d=json.loads(line)
+fd=d["findings_digest"]
+assert isinstance(fd, list), "expected list, got %s" % type(fd)
+assert fd[0]["priority"] == 1
+assert fd[0]["evidence_ref"] == "AT-299-2#x"
+print("ok")
+' "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+  # also confirm raw text has the nested-array form, not escaped-string form
+  run grep -F '"findings_digest":[' "$JSONL"
+  [ "$status" -eq 0 ]
+  run grep -F '"findings_digest":"[' "$JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "AT-299-2b: record_halt with empty findings_digest defaults to []" {
+  record_halt "$JSONL" "US" "stuck" ""
+  run python3 -c '
+import json,sys
+d=json.loads(open(sys.argv[1]).readline())
+got=d["findings_digest"]
+assert got == [], "expected [], got %r" % got
+print("ok")
+' "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-299-1b: record_halt timestamp is ISO 8601 UTC" {
+  record_halt "$JSONL" "US" "MAX_ITERATIONS" "[]"
+  run python3 -c '
+import json,re,sys
+d=json.loads(open(sys.argv[1]).readline())
+ts=d["timestamp"]
+assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", ts), f"bad timestamp: {ts!r}"
+print("ok")
+' "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-299-5: record_halt rejects out-of-range reason and writes no HALT line" {
+  run record_halt "$JSONL" "US" "record-error" "[]"
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "AT-299-5b: record_halt rejects rails-error reason" {
+  run record_halt "$JSONL" "US" "rails-error" "[]"
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "AT-299-5c: record_halt accepts all five valid convergence-failure reasons" {
+  for reason in MAX_ITERATIONS sameness-detector stuck ac-drift log-integrity; do
+    local tmp; tmp="$(mktemp)"
+    run record_halt "$tmp" "US" "$reason" "[]"
+    [ "$status" -eq 0 ]
+    rm -f "$tmp"
+  done
+}
+
+@test "AT-299-1c: record_halt does not alter existing log lines" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "fp1"
+  record_iteration "$JSONL" 2 "US" "FAIL" "fp2"
+  local before; before=$(head -n 2 "$JSONL")
+  record_halt "$JSONL" "US" "MAX_ITERATIONS" "[]"
+  local after; after=$(head -n 2 "$JSONL")
+  [ "$before" = "$after" ]
+}
+
+@test "AT-299-3c: record_iteration log stays valid JSON after timestamp addition" {
+  record_iteration "$JSONL" 1 "US" "FAIL" "abc123"
+  record_iteration "$JSONL" 2 "US" "PASS" "def456"
+  _assert_valid_jsonl "$JSONL"
+}
+
+@test "AT-299-2c: record_halt log line is valid JSON" {
+  record_halt "$JSONL" "running-atdd-cycle" "stuck" '[{"priority":0,"evidence_ref":"AC-1"}]'
+  _assert_valid_jsonl "$JSONL"
+}
+
 @test "AT-006 (#277): cross-run same FAIL fingerprint recurrence halts (FAIL-only adjacency semantics pin)" {
   # 従来 continue → 新規 halt の意図された経路（#277 AT-006）。
   # FAIL-only フィルタにより PASS 行が除外されると、FAIL(A)・PASS・FAIL(A) の並びでは

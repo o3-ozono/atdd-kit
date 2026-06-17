@@ -11,7 +11,7 @@ Shell library scripts shared across skills, hooks, and the BATS test suite.
 | `skill_fix_dispatch.sh` | Dispatch, inflight registry, env scrubbing, and cleanup for the `skill-fix` background subagent flow. |
 | `skill_transcript_parser.sh` | Extract Skill `tool_use` events from a stream-json transcript. |
 | `spec_check.sh` | Single source of truth for spec-file detection and slug derivation (US/AC spec files). |
-| `autopilot_convergence.sh` | Convergence safety rails for autopilot (`autopilot`, #246): normalized-fingerprint sameness-detector and stuck detection using **same-step FAIL rows only** (PASS rows are never part of the comparison population — #277), max-iterations, and the JSONL audit log. A corruption guard (#248) refuses (non-zero → halt) when a FAIL row's fingerprint was partial-written / corrupted, instead of silently dropping it (fail-OPEN). Pure bash + coreutils. |
+| `autopilot_convergence.sh` | Convergence safety rails for autopilot (`autopilot`, #246): normalized-fingerprint sameness-detector and stuck detection using **same-step FAIL rows only** (PASS rows are never part of the comparison population — #277), max-iterations, and the JSONL audit log. Includes `record_halt` for appending a terminating HALT record on convergence-failure halts (#299), and `record_iteration` timestamps each audit line (ISO 8601 UTC). A corruption guard (#248) refuses (non-zero → halt) when a FAIL row's fingerprint was partial-written / corrupted, instead of silently dropping it (fail-OPEN). Pure bash + coreutils. |
 
 ## Usage
 
