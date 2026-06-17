@@ -23,6 +23,7 @@ guidance: |
     export FA_NOTIFY_CMD="bash .claude/addons/fa-notify-discord.sh"
     export FA_DISCORD_WEBHOOK="<forum-channel webhook URL>"   # required
     export FA_DISCORD_MENTION="<@USERID>"                      # optional, used on escalate
+    export FA_NOTIFY_LEVEL="normal"                            # quiet | normal | verbose (granularity)
 
   Requires a Discord **forum** channel webhook (thread_name creates a thread per Issue).
   Unset FA_DISCORD_WEBHOOK = no-op (notifications disabled). No data leaves the machine

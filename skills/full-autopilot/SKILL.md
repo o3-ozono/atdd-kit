@@ -58,7 +58,7 @@ hand-off は実行中に**人間へ対話的に質問しない**（gate ② は 
 
 3層で可視化する: **(1) GitHub state（永続・真実源）** ラベル／PR／Issue コメント、**(2) dispatcher イベントログ** `FA_LOG`、**(3) per-worker 3層ログ**。
 
-**通知フック `FA_NOTIFY_CMD <event> <issue> <detail>`（サービス非依存）**: runtime が `dispatch` / `merge-ready` / `merged` / `merge-failed` / `worker-failed` / `escalate` で発火。既定 no-op。具体的な通知先は **opt-in の通知 addon** が提供する（core はどのサービスにも依存しない）。同梱の **Discord addon**（`addons/discord/`, opt-in — session-start で `[y/N]` 確認 or `/atdd-kit:setup-discord`）は **issue ごとに forum スレッドを立て**状況・ログを流す。Slack 等も同契約で差し替え可。headless/cron の完全無人では対話セッション通知が人に届かないため webhook が確実。
+**通知フック `FA_NOTIFY_CMD <event> <issue> <detail>`（サービス非依存）**: runtime が `dispatch` / `merge-ready` / `merged` / `merge-failed` / `worker-failed` / `escalate` で発火。既定 no-op。粒度は **`FA_NOTIFY_LEVEL`** で段階制御 — `quiet`（alert＝escalate/merge-failed/worker-failed のみ）/ `normal`（既定: alert＋milestone＝dispatch/merged）/ `verbose`（detail＝merge-ready/progress/log も含む全イベント）。具体的な通知先は **opt-in の通知 addon** が提供する（core はどのサービスにも依存しない）。同梱の **Discord addon**（`addons/discord/`, opt-in — session-start で `[y/N]` 確認 or `/atdd-kit:setup-discord`）は **issue ごとに forum スレッドを立て**状況・ログを流す。Slack 等も同契約で差し替え可。headless/cron の完全無人では対話セッション通知が人に届かないため webhook が確実。
 
 ```
 FA_NOTIFY_CMD="bash .claude/addons/fa-notify-discord.sh" FA_DISCORD_WEBHOOK="<forum webhook>" \

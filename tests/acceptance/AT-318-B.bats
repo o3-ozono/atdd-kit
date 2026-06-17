@@ -91,6 +91,38 @@ max_concurrency() { sort -n "$CC/samples" | tail -1; }
   grep -q '^merged 319$' "$NOTIFY_LOG"
 }
 
+# AT-318-B: FA_NOTIFY_LEVEL がイベント粒度を段階制御する（quiet/normal/verbose）
+@test "AT-318-B: FA_NOTIFY_LEVEL gates notification verbosity" {
+  printf '318\n' > "$Q"
+  NL="$CC/nl"
+  run_level() {
+    : > "$NL"
+    LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= FA_SESSION=fa CC_DIR="$CC" MOCK_SLEEP=0.1 \
+      FA_FAIL_ISSUES="" FA_LOG="$CC/log" FA_RUNDIR="$CC/run.$1" FA_POLL_INTERVAL=0.05 \
+      NOTIFY_LOG="$NL" FA_NOTIFY_LEVEL="$1" \
+      FA_QUEUE_CMD="cat $Q" \
+      FA_LAUNCH_CMD="bash $ROOT/tests/fixtures/fa-mock-worker.sh" \
+      FA_RESULT_CMD="bash $ROOT/tests/fixtures/fa-mock-result.sh" \
+      FA_MERGE_CMD="bash $ROOT/tests/fixtures/fa-mock-merge.sh" \
+      FA_NOTIFY_CMD="bash $ROOT/tests/fixtures/fa-mock-notify.sh" \
+      bash "$RUN_PATH" 1
+    # 各 issue の issue-lease を掃除して次レベルの再 dispatch を許可
+    rm -rf "$STORE"/issue 2>/dev/null || true
+  }
+  # verbose: detail(merge-ready) も milestone も流れる
+  run_level verbose
+  grep -q '^merge-ready 318$' "$NL"
+  grep -q '^dispatch 318$' "$NL"
+  # normal: detail(merge-ready) は落ち、milestone(dispatch/merged) は流れる
+  run_level normal
+  ! grep -q '^merge-ready 318$' "$NL"
+  grep -q '^dispatch 318$' "$NL"
+  grep -q '^merged 318$' "$NL"
+  # quiet: 成功経路は alert 無し → 何も流れない
+  run_level quiet
+  [ ! -s "$NL" ]
+}
+
 # 失敗 worker は merge されないが lease は解放される（数珠つなぎを止めない）
 @test "AT-318-B: failed worker is not merged but its lease is released" {
   printf '318\n319\n' > "$Q"

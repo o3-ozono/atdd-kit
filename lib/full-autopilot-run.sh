@@ -61,11 +61,30 @@ LAUNCH_CMD="${FA_LAUNCH_CMD:-__default_launch}"
 RESULT_CMD="${FA_RESULT_CMD:-__default_result}"
 MERGE_CMD="${FA_MERGE_CMD:-__default_merge}"
 NOTIFY_CMD="${FA_NOTIFY_CMD:-}"
+NOTIFY_LEVEL="${FA_NOTIFY_LEVEL:-normal}"   # quiet | normal | verbose（サービス非依存の粒度）
 
-# 通知フック（サービス非依存）。FA_NOTIFY_CMD に notifier を設定すると issue ごとに
-# 通知が流れる（opt-in 通知 addon が実装を提供）。未設定なら no-op。失敗しても本体は止めない。
+# イベントを粒度クラスに分類: alert（要注意・常に通知）/ milestone（節目）/ detail（詳細）。
+__event_class() {
+  case "$1" in
+    escalate|merge-failed|worker-failed) echo alert ;;
+    dispatch|merged)                     echo milestone ;;
+    merge-ready|progress|log)            echo detail ;;
+    *)                                   echo milestone ;;
+  esac
+}
+
+# 通知フック（サービス非依存）。FA_NOTIFY_CMD に notifier を設定すると issue ごとに通知が
+# 流れる（opt-in 通知 addon が実装を提供）。FA_NOTIFY_LEVEL でイベント粒度を段階制御:
+#   quiet   = alert のみ（要注意イベントだけ） / normal = alert + milestone（既定） /
+#   verbose = 全イベント（detail 含む）。未設定/失敗でも本体は止めない。
 notify() {
   [ -z "$NOTIFY_CMD" ] && return 0
+  local cls; cls="$(__event_class "$1")"
+  case "$NOTIFY_LEVEL" in
+    quiet)   [ "$cls" = "alert" ] || return 0 ;;
+    verbose) : ;;                                  # 全部通す
+    *)       [ "$cls" = "detail" ] && return 0 ;;  # normal: detail を落とす
+  esac
   $NOTIFY_CMD "$1" "$2" "${3:-}" >/dev/null 2>&1 || true
 }
 

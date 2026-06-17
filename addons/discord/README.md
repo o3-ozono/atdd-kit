@@ -21,7 +21,18 @@ Then wire it before launching full-autopilot:
 export FA_NOTIFY_CMD="bash .claude/addons/fa-notify-discord.sh"
 export FA_DISCORD_WEBHOOK="<forum-channel webhook URL>"   # required
 export FA_DISCORD_MENTION="<@USERID>"                      # optional, used on escalate
+export FA_NOTIFY_LEVEL="normal"                            # quiet | normal | verbose
 ```
+
+## Notification granularity (`FA_NOTIFY_LEVEL`)
+
+Filtering is service-agnostic (applied in the core runtime), so it works for any notifier:
+
+| Level | Sends |
+|-------|-------|
+| `quiet` | **alert** only — `escalate` / `merge-failed` / `worker-failed` (things that need attention) |
+| `normal` (default) | alert + **milestone** — `dispatch` / `merged` |
+| `verbose` | + **detail** — `merge-ready` / `progress` / `log` (everything) |
 
 ## Behavior
 
