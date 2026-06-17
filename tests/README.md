@@ -64,6 +64,22 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_autopilot_convergence.bats | lib/autopilot_convergence.sh safety rails (behavioral: fingerprint / JSONL audit / sameness / stuck / max-iterations / log-integrity (#262: exact line-count match, fail-closed)) / step-scoped sameness+stuck (#272: AT-001 cross-step false-halt fix, AT-002 same-step halt preserved, AT-003 backward compat, AT-004a/b/c check_stuck step filter) / FAIL-only population (#277: AT-001 false-stuck-halt repro, AT-002 PASS-row exclusion from sameness, AT-003 legacy-mode FAIL-only, AT-004 detection-power maintained, AT-006 cross-run FAIL adjacency semantics pin) / record_halt + timestamp (#299: record_halt appends terminating HALT row; findings_digest as nested JSON array; timestamp field in record_iteration; timestamp not in fingerprint path; range-outside reason rejected — 70 tests total) |
 | e2e/autopilot.bats | autopilot Skill E2E Test（#275: US-1 ゲート再提示の diff-in-body 回復を含む） |
 
+### full-autopilot — full-autopilot (#318)
+
+Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordinator / dispatch libraries.
+
+| Test File | Target |
+|-----------|--------|
+| test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store, LS-10 ATDD_LEASE_FORCE override, LS-11 FORCE audit trail, LS-12 scoped FORCE `pool:key`) |
+| test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) + counter-write failure fails closed to escalate (MC-7) |
+| test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) + issue-lease release (FAD-5) |
+| test_fa_merge_steps.bats | lib/fa-merge-steps.sh + 本番 merge 経路統合 (FM-1 real git rebase+merge, FM-2 __default_merge が実際に main を前進＝no-op でない, FM-3 merge-lease busy→escalate) |
+| acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant, A3 FA_HANDOFF marker safety) |
+| acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, notify hook fired per issue, FA_NOTIFY_LEVEL granularity, FA_WORKER_TIMEOUT kills hung worker + frees lease, timeout kills whole tree (no orphan grandchild), exit-2 (regression) routes to escalate, notify failure recorded in FA_LOG, failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
+| acceptance/AT-318-C.bats | merge coordinator (C1 rebase→regate→merge order, C2 retry→escalate) |
+| acceptance/AT-318-D.bats | lease 拡張 (D1 issue-lease double-claim block, D2 merge-lease serialization) |
+| acceptance/AT-318-E.bats | epic 横断 (E2 intake restricted to ready-to-go — safety valve) |
+
 ### Skill Structure & Quality
 
 | Test File | Target |
@@ -172,7 +188,7 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | Test File | Target |
 |-----------|--------|
 | test_global_content_migration.bats | Global config → atdd-kit content migration (Issue #51) |
-| test_notification_removal.bats | Notification integration removal (Issue #169) |
+| test_discord_addon.bats | Discord notifications addon isolation & opt-in policy (#318): discord code confined to `addons/discord/`, core lib/templates discord-free, addon opt-in (no auto-detect, session-start `[y/N]` default N). Supersedes the #169 blanket removal. Addon's own unit tests live in `addons/discord/tests/test_fa_notify_discord.bats`. |
 | test_weekly_maintenance_removal.bats | Weekly maintenance cron removal (Issue #155) |
 | test_public_repo_prep.bats | Public repository preparation checks (Issue #16) |
 | test_pr_screenshot_security.bats | pr-screenshot-table.sh security hardening (Issue #26) |

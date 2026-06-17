@@ -83,8 +83,10 @@ If both `.claude/workflow-config.yml` and `.claude/config.yml` are absent after 
    - **Deploy files**: Copy each `deploy` entry from `${CLAUDE_PLUGIN_ROOT}/addons/<platform>/<src>` to `<dest>`
    - **Hooks**: Add `hooks.PreToolUse` entries to `.claude/settings.json` (preserve existing)
    - **Guidance**: Display the `guidance` text
-4. **Write** `.claude/config.yml` using the template spec in D-3 below.
-5. Continue to Phase 1-E
+4. **Optional addons (opt-in, default OFF):** these are **not** auto-detected from repo files; offer each and require an **explicit `y`** before enabling — never enable without consent.
+   - **Discord notifications** (`${CLAUDE_PLUGIN_ROOT}/addons/discord/`): per-issue Discord threads streaming full-autopilot progress / escalations. Ask `Enable Discord notifications addon? (needs a forum-channel webhook) [y/N]` — default **N**. Only on explicit `y`, run the `/atdd-kit:setup-discord` steps (deploy `addons/discord/scripts/fa-notify-discord.sh`, configure `FA_NOTIFY_CMD` / `FA_DISCORD_WEBHOOK`). On no/blank, skip silently.
+5. **Write** `.claude/config.yml` using the template spec in D-3 below.
+6. Continue to Phase 1-E
 
 #### D-3. `.claude/config.yml` template (idempotent)
 

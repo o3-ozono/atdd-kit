@@ -32,7 +32,7 @@ Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligi
 
 1. **Start — requirements approval.** `defining-requirements` engages the human in 壁打ち (run it per Dialog economy below), the human approves the PRD, and it is frozen as the design phase's immutable anchor.
 2. **Middle — design approval.** After the design phase converges `user-stories.md` / `plan.md` / `acceptance-tests.md` to near-green, autopilot **stops and presents them to the human** (one batch presentation — Dialog economy below). Explicit approval freezes the design anchor and unlocks the impl phase — ATDD never starts before this gate. Rejection comments re-enter the design loop as findings (`evidence_ref` = the human comment), carried into the design-phase re-invocation as `rejectionFindings` args (#261, Flow step 3); MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
-3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges.
+3. **End — merge.** A human reviews the near-green result and merges. autopilot never merges. **Hand-off mode — `--hand-off` (full-autopilot only, #318):** honor する前に必ず `FA_HANDOFF=1` マーカーを検査する hard precondition — **マーカーが無い起動では `--hand-off` を無視し AL-1 厳密3ゲートで進める**（launcher が `FA_HANDOFF=1 claude -p …` で inline 設定・永続 export しない。**フラグ無し起動も当然 AL-1 のまま**）。honor 時のみ担い手が移る: ①=queue 事前承認 / ②=**reviewer-oracle**（AL-3/AL-4）自動承認（人間は Draft PR で override）/ ③=autopilot は merge せず `merge-ready` で手放し coordinator へ。詳細 `docs/methodology/autopilot-iron-law.md` §AL-1 under full-autopilot。
 
 ## Dialog economy — all human-facing dialog under autopilot (#254)
 

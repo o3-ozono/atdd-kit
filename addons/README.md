@@ -7,6 +7,7 @@ Platform-specific addon packages. Each addon is a self-contained directory with 
 | Addon | Directory | Auto-Detection |
 |-------|-----------|----------------|
 | iOS | `ios/` | `*.xcodeproj`, `*.xcworkspace`, `Package.swift` |
+| Discord notifications | `discord/` | **opt-in** (no auto-detect; session-start asks `[y/N]` default N, or `/atdd-kit:setup-discord`) |
 
 ## Addon Structure
 

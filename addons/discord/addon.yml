@@ -1,0 +1,30 @@
+name: discord
+display_name: Discord notifications
+
+# opt-in addon — NOT auto-detected from repo files. The user explicitly enables it
+# (session-start Phase D step 4 asks [y/N], default N; or /atdd-kit:setup-discord).
+# full-autopilot wires it via the generic FA_NOTIFY_CMD hook (core stays
+# notification-service-agnostic; this addon is the only Discord-specific code).
+
+opt_in: true
+
+deploy:
+  - src: scripts/fa-notify-discord.sh
+    dest: .claude/addons/fa-notify-discord.sh
+
+guidance: |
+  Discord notifications addon (full-autopilot, opt-in).
+
+  Per-issue Discord threads: full-autopilot stands up one forum thread per Issue and
+  streams its status / logs there (dispatch / merge-ready / merged / merge-failed /
+  worker-failed / escalate).
+
+  Enable by wiring the notify hook before launching full-autopilot:
+    export FA_NOTIFY_CMD="bash .claude/addons/fa-notify-discord.sh"
+    export FA_DISCORD_WEBHOOK="<forum-channel webhook URL>"   # required
+    export FA_DISCORD_MENTION="<@USERID>"                      # optional, used on escalate
+    export FA_NOTIFY_LEVEL="normal"                            # quiet | normal | verbose (granularity)
+
+  Requires a Discord **forum** channel webhook (thread_name creates a thread per Issue).
+  Unset FA_DISCORD_WEBHOOK = no-op (notifications disabled). No data leaves the machine
+  unless the webhook is configured.
