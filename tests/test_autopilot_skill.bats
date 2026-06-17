@@ -929,3 +929,16 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
   [ "$n" -le 280 ]
 }
+
+@test "AT-299-9 (#299): audit-halt agent result uses null-safe pattern, not direct destructuring (FS-7)" {
+  # Given: SKILL.md の audit-halt ステップ（label: audit-halt:step）の agent() 呼び出し
+  # When: 構造 pin（grep）を実行する
+  # Then: agent() 戻り値を変数に受け取り optional chain で haltRecorded を取り出す安全な形式であること
+  #       (#292 FS-5 パターン: rec == null || ... と同型の null ガード)。
+  #       直接分割代入 `const { haltRecorded } = await agent(...)` は TypeError になるため禁止。
+  # 安全な形式: haltResult を受け取り、haltResult?.haltRecorded で取り出す
+  grep -qF 'const haltResult = await agent(' "$SKILL_FILE"
+  grep -qF 'haltResult?.haltRecorded' "$SKILL_FILE"
+  # 直接分割代入 (null guard なし) が残っていないこと
+  ! grep -qE 'const \{ haltRecorded \} = await agent\(' "$SKILL_FILE"
+}
