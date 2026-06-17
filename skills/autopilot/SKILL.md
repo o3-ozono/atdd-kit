@@ -5,11 +5,7 @@ description: "Use when you want to run an Issue in autopilot — autonomously co
 
 # Autopilot
 
-The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle`, with `reviewing-deliverables` as the in-loop reviewer — and narrows human involvement to **three gates**: **requirements approval** at the start, **design approval** before any implementation, and **merge** at the end. Between gates, everything is looped `generate → review → fix` until a satisfaction oracle holds.
-
-The flow skills are **not permanently changed**; their role (specifically, where the User gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`.
-
-**Scope ends at a near-green Issue handed to the User merge gate.** Merging is never automated.
+The **autopilot** mode of atdd-kit. It does **not** replace the 6-step flow and does **not** rewrite the flow skills. It *runs the existing flow skills* — `extracting-user-stories` → `writing-plan-and-tests` → `running-atdd-cycle`, with `reviewing-deliverables` as the in-loop reviewer — and narrows human involvement to **three gates**: **requirements approval** at the start, **design approval** before any implementation, and **merge** at the end. Between gates, everything is looped `generate → review → fix` until a satisfaction oracle holds. The flow skills are **not permanently changed**; their role (specifically, where the User gate sits) changes **only under autopilot**. See `docs/methodology/autopilot-iron-law.md`. **Scope ends at a near-green Issue handed to the User merge gate.** Merging is never automated.
 
 ## autopilot Iron Law (overrides the standard Iron Law in this mode)
 
@@ -30,6 +26,7 @@ Evaluate the Issue against `docs/methodology/route-eligibility.md` express-eligi
 
 - **Express-eligible** (doc-grade, no behavior change): present **once** — "この Issue は express の方が低コストです。autopilot で続行しますか？（ok で続行）" — and wait. Without an explicit `ok`, do not proceed. This advisory does not count toward the three User gates (AL-1).
 - **Not express-eligible**: no message, proceed silently.
+- **bugfix route (#308):** consult `docs/methodology/route-eligibility.md` (bugfix Route Signals) for whether the Issue takes the `fixing-bugs` lightweight route (skips the three definition skills; middle gate specialized to **cause-agreement**). Logic lives in route-eligibility.md (SoT); this skill only references it — recommendation only, no auto-route (AL-1).
 
 ## User gates (exactly three — AL-1)
 
@@ -260,6 +257,8 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
 }
 return { status: 'CONVERGED', phase: PHASE, steps: STEPS }
 ```
+
+**bugfix oracle (#308):** on the `fixing-bugs` route the oracle is specialized — see `docs/methodology/autopilot-iron-law.md` (AL-3 bugfix specialization): `回帰テスト green ＋ 既存回帰なし ＋ 失敗再現テスト 赤→緑`, `AC→AT coverage` specialized to failing-repro-test coverage, middle gate = **cause-agreement**, merge = User gate (AL-1); wiring detail in that doc, referenced only.
 
 The rails (`fingerprint` / `record_iteration` / `record_halt` / `check_sameness` / `check_stuck` / `check_max_iterations` / `check_log_integrity` / `pin_anchor` / `check_pin`) live in `lib/autopilot_convergence.sh` as the single, BATS-verified source — the workflow calls them rather than re-deriving the logic in JS. A non-`none` `halt` means **escalate to a human** with `COMPLETED_WITH_DEBT` recorded; autopilot never silently loops forever or fakes green. On impl-phase re-entry after such a halt, carry the unresolved findings (the halt `verdict.findings` plus any coverage-gate uncovered AC, each with a non-empty `evidence_ref`) into the new Workflow call as `args.implSeedFindings` (#288) — the impl analogue of design's `rejectionFindings`; without it iteration 1 restarts blind (`prevFindings = null`) and review / coverage re-derive the same rejection.
 

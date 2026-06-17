@@ -49,6 +49,7 @@ Structural unit tests for each step's skill. One `@test` per User Story.
 | test_bug_skill.bats | bug skill (special flow, Step C1 / #196) |
 | test_debugging_skill.bats | debugging skill (special flow, Step C1 / #196) |
 | test_express_skill.bats | express skill (documentation-grade fast path, Issue #284) |
+| test_fixing_bugs_skill.bats | fixing-bugs skill (bugfix lightweight route, #308) — frontmatter trigger-only description / 5-skill chain / skip 3 definition skills / forward-chain override (orchestrator-driven, `bug` unedited) / platform-aware reproduction + external-skill references / failing-test 赤→緑 oracle anchor / cause-agreement middle gate / Type A promotion / merge User gate / reuse-only contract |
 | test_skill_test_coverage.bats | all 10 flow skills have both Unit Test + Skill E2E Test (Step C1 / #196); and all E2E files specify `--model` + define `E2E_MODEL` (#278) |
 | test_v1_skill_skeletons.bats | v1.0 skill structure across all 6 steps + on-demand skills (skeleton set now empty) |
 | test_agents_dynamic_panel_align.bats | Fixed reviewer agents removal and #234 alignment regression pins (Issue #271) |
@@ -204,6 +205,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-302.bats | autopilot / express route determination step — session-start Recommended Tasks 推奨経路 column, Step 3 hybrid routing definition, express/autopilot signal alignment, ambiguous fallback to autopilot, advisory-only invariant (Issue #302) |
 | AT-304.bats | autopilot SKILL.md loader split + express eligibility precheck — route-eligibility.md single source, session-start Step 3 pointer replacement, loader split line budget + BATS pin integrity, Express precheck section (once / explicit ok / auto-route forbidden), User gate count invariant (Issue #304) |
 | AT-299.bats | autopilot halt 終端レコード JSONL 監査ログ記録 — record_halt による HALT 行追記・findings_digest はネスト JSON 配列値・record_iteration への timestamp 付与・timestamp が fingerprint に非関与・収束失敗系 reason enum 限定（Issue #299、9 tests） |
+| AT-308.bats | bugfix 専用の軽量ルート（フル機能ルートと分離）— route-eligibility.md bugfix 判定信号 + No Auto-Routing 維持・autofix コマンド配線・bugfix 収束オラクル（回帰 green + 既存回帰なし + 再現テスト赤→緑）・AL-3 coverage 項の失敗再現テスト被覆 specialize・cause-agreement 安定トークンの iron-law / design-gate 二文書整合・half-scope + flaky フォローアップ #322・version/CHANGELOG 不変条件。wiring pin（赤→緑 ランタイム fix loop は own せず out-of-band replay 経路が own）（Issue #308、14 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

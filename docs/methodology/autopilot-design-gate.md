@@ -55,3 +55,9 @@ On rejection:
 3. Re-invoke the Workflow with `args = { issue: NNN, phase: 'design', rejectionFindings: [...] }` (a JSON object, #256) so they reach iteration 1's generate verbatim. MAX_ITERATIONS restarts (human intervention = a new convergence cycle) while sameness history is kept.
 
 Changing the gate to selection-UI presentation changes **only how the choice is offered** — the approval / rejection semantics above are invariant.
+
+## bugfix route — cause-agreement gate (#308)
+
+On the **bugfix route** (`fixing-bugs`), this middle gate functions as a **cause-agreement** gate rather than a design-approval gate. The bugfix route writes no user-stories / plan / acceptance-tests, so the **approval target** is not those design artifacts but `debugging` Step 5's **root-cause classification (Type A/B/C, evidence 付き) + the failing reproduction test (赤)**. This is a **specialization of the same middle gate, not a fourth gate and not a removal** — the gate count stays three (AL-1). The approval target is non-empty (classification + repro test), so AL-1's "ATDD never starts before that gate" is preserved: the minimal fix begins only after the human agrees the cause.
+
+This **cause-agreement** specialization is stated identically in `docs/methodology/autopilot-iron-law.md` (AL-1 middle-gate specialization). Both docs name the bugfix middle gate the **cause-agreement** gate and name the same approval target (root-cause classification + failing reproduction test), so the two never drift apart. The presentation contract above (AskUserQuestion, `(Recommended)` approval first, whole-set semantics, diff-in-body) is reused as-is; only the **named approval target** changes for the bugfix route.

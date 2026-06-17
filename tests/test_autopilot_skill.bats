@@ -942,3 +942,24 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   # 直接分割代入 (null guard なし) が残っていないこと
   ! grep -qE 'const \{ haltRecorded \} = await agent\(' "$SKILL_FILE"
 }
+
+# --- #308: bugfix route wiring (loader stubs only; logic lives in referenced docs) ---
+
+@test "AT-308 (#308): Express precheck references route-eligibility.md for the bugfix route (no duplicated logic body)" {
+  # bugfix ルート判定は route-eligibility.md(SoT)を参照するローダースタブのみ
+  grep -q 'route-eligibility.md' "$SKILL_FILE"
+  grep -qiE 'bugfix' "$SKILL_FILE"
+}
+
+@test "AT-308 (#308): bugfix oracle is a loader stub referencing autopilot-iron-law.md (no wiring body inline)" {
+  grep -qiE 'bugfix oracle' "$SKILL_FILE"
+  grep -q 'autopilot-iron-law.md' "$SKILL_FILE"
+  # 特化マーカー cause-agreement を参照する
+  grep -qF 'cause-agreement' "$SKILL_FILE"
+}
+
+@test "AT-308 (#308): line budget still <= 280 after bugfix loader stubs (no 3rd raise)" {
+  local n
+  n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
+  [ "$n" -le 280 ]
+}

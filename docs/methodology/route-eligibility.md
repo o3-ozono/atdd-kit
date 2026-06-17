@@ -1,10 +1,11 @@
 > **Loaded by:** `session-start` (Step 3 route recommendation); referenced from `skills/autopilot/SKILL.md` (express precheck).
 
-# Route Eligibility — Express vs Autopilot
+# Route Eligibility — Express vs Autopilot vs bugfix
 
-Single source of truth for the express/autopilot route determination used in:
+Single source of truth for the express / autopilot / bugfix route determination used in:
 - `session-start` Step 3 (Recommended Tasks table 「推奨経路」column)
 - `autopilot` express precheck (pre-flight advisory before Gate ①)
+- `autopilot` bugfix-route precheck (which flow skills run — full feature route vs the `fixing-bugs` lightweight route)
 
 ## Express-Eligible Signals
 
@@ -27,13 +28,27 @@ Use autopilot when **any of the following** apply:
 - security-related change (セキュリティ関連)
 - Issue carries the `type:development` label
 
+## bugfix Route Signals
+
+An Issue routes to the **bugfix** lightweight route (`fixing-bugs` / `/atdd-kit:autofix`) — a code change that skips the full PRD/US/plan/AT spec and chains `bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` — when it is a **defect fix** rather than new behavior:
+
+- Issue carries the `type:bug` label (decisive signal).
+- Keywords in title / body: bug / defect / 不具合 / 壊れた / broken / crash / regression / 直す / fix（既存挙動の修正）.
+- Task content describes restoring intended-but-broken behavior, not adding a new feature.
+
+The bugfix route is still a code/behavior change, so it stays under autopilot's full flow (not express); it differs only in **which** flow skills run (skips the three definition skills). Promotion back to the full feature route happens at `debugging` Step 5 when the root cause is **Type A (AC Gap)** — see `skills/fixing-bugs/SKILL.md`.
+
 ## Hybrid Determination (label + keyword + LLM)
 
 Evaluate in order:
 
-1. **Labels** — `type:development` → autopilot (decisive).
-2. **Keywords** — scan Issue title and body for express or autopilot signal terms (キーワード).
+1. **Labels** — `type:development` → autopilot (decisive); `type:bug` → bugfix route (decisive).
+2. **Keywords** — scan Issue title and body for express / autopilot / bugfix signal terms (キーワード).
 3. **LLM judgment** — when labels and keywords do not produce a clear signal, apply judgment to title + body.
+
+### Low-confidence fallback (#305 one-tap)
+
+When the bugfix-vs-full-route signal is **low confidence** (label absent, mixed keywords, ambiguous task content), do not silently pick a route: present a **User confirmation** consistent with the #305 one-tap approval UI (AskUserQuestion, `(Recommended)` route first), and let the User choose. Absence of a clear bugfix signal is not bugfix eligibility — default to the full feature route.
 
 ## Ambiguous Fallback
 
