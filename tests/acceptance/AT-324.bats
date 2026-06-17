@@ -385,6 +385,52 @@ repo_root() {
   }
 }
 
+# --- AT-210f: collect_all_bats scope tradeoff documentation (review finding) ---
+
+@test "AT-210f: collect_all_bats comment explicitly explains maxdepth 1 scope tradeoff vs CI recursive suite" {
+  # Given: scripts/run-tests.sh の collect_all_bats 関数は maxdepth 1 を使用し、
+  #        tests/acceptance/*.bats および tests/e2e/*.bats を --all の対象から除外している。
+  #        CI は `bats tests/` で再帰実行し全ファイルをカバーする。
+  #        この差異は bats_runner.sh との意図的な一致（設計トレードオフ）であり、
+  #        レビュー知見として明示的にコメントで文書化する必要がある。
+  # When: scripts/run-tests.sh の collect_all_bats 関数定義前後のコメントを検査する
+  # Then: acceptance/ または e2e/ がスコープ外であること（またはCIとの差異）を説明する
+  #       コメント行（# で始まる行）が collect_all_bats 関数定義の前後 10 行以内に存在する
+  local root
+  root="$(repo_root)"
+
+  [[ -f "${root}/scripts/run-tests.sh" ]] || {
+    echo "FAIL: scripts/run-tests.sh が存在しない"
+    return 1
+  }
+
+  # collect_all_bats 関数の前後 15 行からコメント行だけを抽出してキーワード検索
+  local comment_lines
+  comment_lines=$(grep -n 'collect_all_bats' "${root}/scripts/run-tests.sh" | head -1 | cut -d: -f1)
+  [[ -n "$comment_lines" ]] || {
+    echo "FAIL: collect_all_bats 関数が見つからない"
+    return 1
+  }
+
+  local func_line="$comment_lines"
+  local start_line=$(( func_line - 5 ))
+  [[ "$start_line" -lt 1 ]] && start_line=1
+  local end_line=$(( func_line + 15 ))
+
+  # 関数周辺のコメント行に acceptance / e2e / CI / recursive のいずれかが含まれること
+  local relevant_comments
+  relevant_comments=$(sed -n "${start_line},${end_line}p" "${root}/scripts/run-tests.sh" | grep '^#' || true)
+
+  echo "$relevant_comments" | grep -qiE 'acceptance|e2e|CI|recursive|subdirector' || {
+    echo "FAIL: collect_all_bats 関数周辺のコメントに"
+    echo "      スコープ差異（acceptance/ / e2e/ 除外 / CI との差異）の説明がない"
+    echo ""
+    echo "関数周辺のコメント行:"
+    echo "$relevant_comments"
+    return 1
+  }
+}
+
 # --- AT-400: versioning invariant ---
 
 @test "AT-400: plugin.json version matches latest CHANGELOG release heading" {

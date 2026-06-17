@@ -59,6 +59,11 @@
   - When: `scripts/run-tests.sh --all` を実行する
   - Then: ランナー全体が exit 非0 を返す（全シャード pass のときのみ exit 0）
 
+- [x] [regression] AT-210f: collect_all_bats の maxdepth 1 スコープ設計トレードオフがコメントとして明文化されている
+  - Given: レビュー指摘（#324 iteration 2）— `collect_all_bats` が `maxdepth 1` を使用し `tests/acceptance/*.bats` / `tests/e2e/*.bats` が除外される。CI は再帰実行で全件カバー。意図的な設計トレードオフ（bats_runner.sh との一貫性）だがコメントに未記載
+  - When: `scripts/run-tests.sh` の `collect_all_bats` 関数定義前後のコメントを検査する
+  - Then: `acceptance/` / `e2e/` 除外、CI との差異、意図的な設計決定（bats_runner.sh との整合）がコード内コメントとして明記されている
+
 ## AT-300: フェーズ別実行ポリシーの配線（フロースキル）
 
 - [x] [regression] AT-300: フロースキルにフェーズ別実行ポリシーが明文化されている
