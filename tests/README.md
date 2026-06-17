@@ -146,6 +146,8 @@ Tests for the autopilot orchestrator and its convergence safety rails.
 | test_hook_distribution.bats | PostToolUse hook plugin distribution (Issue #85) |
 | test_token_measurement_tooling.bats | Token reduction measurement tooling (Issue #85) |
 | test_bats_runner.bats | scripts/bats_runner.sh impact-scoped runner |
+| test_run_tests.bats | scripts/run-tests.sh parallel runner — cpu-count fallback chain / zero GNU parallel dependency / --all mode / --impact mode delegating to impact_map.sh / weighted sharding N-way split / failure aggregation (#324, 13 tests) |
+| test_phase_test_policy.bats | Phase-based test execution policy pins — impact-only during ATDD / full suite before review+merge / e2e impact integration / reviewing-deliverables line budget + link ref / English only / README registration / Loaded-by meta (#324, 10 tests) |
 | test_check_bats_covers.bats | scripts/check_bats_covers.sh annotation validator |
 | test_impact_map.bats | scripts/impact_map.sh impact scope detection (Issue #135) |
 | test_run_skill_e2e_impact.bats | scripts/run-skill-e2e.sh path-based impact mapping (Issue #222) |
@@ -206,6 +208,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-304.bats | autopilot SKILL.md loader split + express eligibility precheck — route-eligibility.md single source, session-start Step 3 pointer replacement, loader split line budget + BATS pin integrity, Express precheck section (once / explicit ok / auto-route forbidden), User gate count invariant (Issue #304) |
 | AT-299.bats | autopilot halt 終端レコード JSONL 監査ログ記録 — record_halt による HALT 行追記・findings_digest はネスト JSON 配列値・record_iteration への timestamp 付与・timestamp が fingerprint に非関与・収束失敗系 reason enum 限定（Issue #299、9 tests） |
 | AT-308.bats | bugfix 専用の軽量ルート（フル機能ルートと分離）— route-eligibility.md bugfix 判定信号 + No Auto-Routing 維持・autofix コマンド配線・bugfix 収束オラクル（回帰 green + 既存回帰なし + 再現テスト赤→緑）・AL-3 coverage 項の失敗再現テスト被覆 specialize・cause-agreement 安定トークンの iron-law / design-gate 二文書整合・half-scope + flaky フォローアップ #322・version/CHANGELOG 不変条件。wiring pin（赤→緑 ランタイム fix loop は own せず out-of-band replay 経路が own）（Issue #308、14 tests） |
+| AT-324.bats | テスト高速化 — AT-006（AT-271 入れ子フルスイート再実行）撤去・run-tests.sh 並列ランナー検証・フェーズ別実行ポリシー配線・test-execution-policy.md 言語ポリシー/README登録/Loaded-by メタ・バージョニング不変条件（Issue #324、20 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

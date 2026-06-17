@@ -69,6 +69,19 @@ After all stories are green, mark the stabilized ATs `[green] → [regression]` 
 
 This skill **does not** spawn reviewer subagents — code and AT review happens at Step 5. This skill **does not** add or remove the `in-progress` label — that is skill-gate's responsibility.
 
+## Test Execution Policy (#324)
+
+Run **impact-affected files only** during each ATDD iteration to keep the feedback loop short:
+
+```
+scripts/run-tests.sh --impact --base <base-ref>
+```
+
+claude-based e2e tests (`tests/e2e/*.bats`) follow the same impact criterion — run them only when the
+change touches the skill or component they cover, not on every iteration.
+
+For the full policy doctrine, see [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
+
 ## Integration
 
 - **Upstream:** `writing-plan-and-tests` (consumes its `docs/issues/<NNN>/plan.md` and `docs/issues/<NNN>/acceptance-tests.md`)

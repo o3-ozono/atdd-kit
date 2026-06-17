@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.25.0] - 2026-06-18
+
+### Added
+
+- **依存なし並列 BATS ランナー `scripts/run-tests.sh`（#324）**。`bats_runner.sh` を置き換えずその上に乗る並列化レイヤーとして新設。コア数検出（`nproc` → `sysctl -n hw.ncpu` → `getconf _NPROCESSORS_ONLN` → フォールバック 4）＋重み均衡ファイルシャーディング（`@test` 数グリーディ N 分割）＋バックグラウンドジョブ `wait` による並列起動。GNU parallel 等の外部依存なし（pure bash + bats）。対象集合の決定は `impact_map.sh --layer BATS` に委譲。`scripts/README.md` に登録済み。`tests/test_run_tests.bats`（13 件）で動作を pin。
+- **フェーズ別テスト実行ポリシー `docs/methodology/test-execution-policy.md`（#324）**。「ATDD 各回＝影響範囲のみ（`--impact`）／ユーザー最終レビュー前・マージゲート＝全件（`--all`）」の標準ドクトリンを英語で明文化。claude 系 e2e の影響度基準統合、live e2e 実行条件の棚卸し対応表を収録。#323（impact ツール一般化）との別軸境界を明記。`docs/methodology/README.md` の Documents テーブルに登録済み。`tests/test_phase_test_policy.bats`（10 件）で言語ポリシー・README 登録・Loaded-by メタを pin。
+
+### Changed
+
+- **`running-atdd-cycle` / `merging-and-deploying` SKILL.md にフェーズ別実行ポリシーを明文化（#324）**。`running-atdd-cycle` に影響範囲のみ実行（`--impact`）・e2e 影響度基準統合を直接記述。`merging-and-deploying` に全件実行（`--all`）をマージゲート・デプロイ後回帰として直接記述。`reviewing-deliverables` は line-budget（224/240 行・引き上げ上限に近接）を考慮し inline 展開を避けて `test-execution-policy.md` への 1 行リンク参照のみ追加（228 行、240 行以下を維持）。
+
+### Removed
+
+- **AT-271.bats の AT-006（スイート全体の入れ子再実行）を撤去（#324）**。AT-006 は `run bats tests/` でスイートをネスト再実行しており AT-271.bats 全体（約 118s）の約 98% を占めていた。#271 の回帰意図は残存 AT-001〜AT-005・AT-007 が担保し、フルスイート green は CI が担保するため冗長と確定（PRD Open Question 確定済み）。
+
 ## [3.24.0] - 2026-06-17
 
 ### Added

@@ -1,0 +1,46 @@
+> **Loaded by:** running-atdd-cycle / reviewing-deliverables / merging-and-deploying skills
+
+# Test Execution Policy
+
+This document defines **when** and **which scope** of tests to run at each phase of the atdd-kit workflow.
+It is a policy doctrine for test execution scope — not a test-layer mapping.
+For AC-to-test-layer mapping, see [test-mapping.md](test-mapping.md).
+
+## Core Doctrine: Phase x Impact
+
+Test execution scope is determined by two axes: **what was modified (impact)** and **which phase you are in**.
+The physical location of a test file (local-only, CI-only) is not the deciding factor.
+
+| Phase | Scope | Rationale |
+|-------|-------|-----------|
+| Each ATDD iteration | **Affected files only** (`scripts/run-tests.sh --impact --base <ref>`) | Keeps the feedback loop short. Tests unrelated to the change are not run on every iteration. |
+| Before final user review | **All tests** (`scripts/run-tests.sh --all`) | Ensures full regression coverage before review judgment. |
+| Merge gate | **All tests** (`scripts/run-tests.sh --all` + CI full suite) | Guarantees full-suite green before merging. |
+
+## Handling claude-based e2e Tests
+
+`tests/e2e/*.bats` and similar live-LLM tests were historically gated by physical location (local-only or CI-only).
+Under this doctrine they are integrated into the impact-based criteria:
+
+- **Decision criterion:** whether the change touches the skill or code the e2e test covers (impact), not where the test file lives.
+- If an iteration modifies a skill's core logic → include the relevant e2e in the impact scope.
+- If an iteration does not touch the skill's core → the e2e is out of scope and may be skipped.
+
+## Live e2e Execution Condition Inventory
+
+The table below maps currently skip-guarded or CI-only live e2e tests to their impact-based equivalents.
+
+| Test group | Previous condition (physical) | Impact-based condition |
+|------------|-------------------------------|------------------------|
+| `tests/e2e/*.bats` (live LLM e2e) | skip guard / dedicated CI workflow — local or CI only | Include in impact scope only when the change touches the tested skill or component |
+
+## Scope Boundary with #323
+
+This document covers the **policy doctrine** for phase-based test execution scope (what to run, when).
+The **generalization and distribution of the impact-selection tool** itself is owned by Issue #323 and is
+explicitly out of scope here. This document does not implement or extend the impact selection mechanism.
+
+## Position as a Distributed Methodology
+
+This policy (all tests before final review / impact-only during each ATDD iteration) is the **standard doctrine**
+distributed to every project that adopts atdd-kit. It is a methodology artifact, not a project-specific configuration.
