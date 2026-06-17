@@ -72,6 +72,25 @@ max_concurrency() { sort -n "$CC/samples" | tail -1; }
   grep -q 'drain-complete' "$CC/log"
 }
 
+# AT-318-B: runtime が各 issue のイベントで通知フック(FA_NOTIFY_CMD)を発火する
+@test "AT-318-B: runtime fires the notify hook per issue (dispatch + merged)" {
+  printf '318\n319\n' > "$Q"
+  NOTIFY_LOG="$CC/notify"; : > "$NOTIFY_LOG"
+  LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= FA_SESSION=fa CC_DIR="$CC" MOCK_SLEEP=0.2 \
+    FA_FAIL_ISSUES="" FA_LOG="$CC/log" FA_RUNDIR="$CC/run" FA_POLL_INTERVAL=0.05 \
+    NOTIFY_LOG="$NOTIFY_LOG" \
+    FA_QUEUE_CMD="cat $Q" \
+    FA_LAUNCH_CMD="bash $ROOT/tests/fixtures/fa-mock-worker.sh" \
+    FA_RESULT_CMD="bash $ROOT/tests/fixtures/fa-mock-result.sh" \
+    FA_MERGE_CMD="bash $ROOT/tests/fixtures/fa-mock-merge.sh" \
+    FA_NOTIFY_CMD="bash $ROOT/tests/fixtures/fa-mock-notify.sh" \
+    bash "$RUN_PATH" 2
+  grep -q '^dispatch 318$' "$NOTIFY_LOG"
+  grep -q '^dispatch 319$' "$NOTIFY_LOG"
+  grep -q '^merged 318$' "$NOTIFY_LOG"
+  grep -q '^merged 319$' "$NOTIFY_LOG"
+}
+
 # 失敗 worker は merge されないが lease は解放される（数珠つなぎを止めない）
 @test "AT-318-B: failed worker is not merged but its lease is released" {
   printf '318\n319\n' > "$Q"

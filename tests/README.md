@@ -73,7 +73,7 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 | test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) |
 | test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) + issue-lease release (FAD-5) |
 | acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant, A3 FA_HANDOFF marker safety) |
-| acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
+| acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, notify hook fired per issue (dispatch+merged), failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
 | acceptance/AT-318-C.bats | merge coordinator (C1 rebase→regate→merge order, C2 retry→escalate) |
 | acceptance/AT-318-D.bats | lease 拡張 (D1 issue-lease double-claim block, D2 merge-lease serialization) |
 | acceptance/AT-318-E.bats | epic 横断 (E2 intake restricted to ready-to-go — safety valve) |
@@ -186,7 +186,7 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 | Test File | Target |
 |-----------|--------|
 | test_global_content_migration.bats | Global config → atdd-kit content migration (Issue #51) |
-| test_notification_removal.bats | Notification integration removal (Issue #169) |
+| test_discord_addon.bats | Discord notifications addon isolation & opt-in policy (#318): discord code confined to `addons/discord/`, core lib/templates discord-free, addon opt-in (no auto-detect, session-start `[y/N]` default N). Supersedes the #169 blanket removal. Addon's own unit tests live in `addons/discord/tests/test_fa_notify_discord.bats`. |
 | test_weekly_maintenance_removal.bats | Weekly maintenance cron removal (Issue #155) |
 | test_public_repo_prep.bats | Public repository preparation checks (Issue #16) |
 | test_pr_screenshot_security.bats | pr-screenshot-table.sh security hardening (Issue #26) |

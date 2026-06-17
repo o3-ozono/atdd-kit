@@ -60,6 +60,14 @@ QUEUE_CMD="${FA_QUEUE_CMD:-__default_queue}"
 LAUNCH_CMD="${FA_LAUNCH_CMD:-__default_launch}"
 RESULT_CMD="${FA_RESULT_CMD:-__default_result}"
 MERGE_CMD="${FA_MERGE_CMD:-__default_merge}"
+NOTIFY_CMD="${FA_NOTIFY_CMD:-}"
+
+# 通知フック（サービス非依存）。FA_NOTIFY_CMD に notifier を設定すると issue ごとに
+# 通知が流れる（opt-in 通知 addon が実装を提供）。未設定なら no-op。失敗しても本体は止めない。
+notify() {
+  [ -z "$NOTIFY_CMD" ] && return 0
+  $NOTIFY_CMD "$1" "$2" "${3:-}" >/dev/null 2>&1 || true
+}
 
 run() {
   local K="${1:-2}"
@@ -76,7 +84,7 @@ run() {
       if cmd_acquire issue "$issue" "$SESSION"; then
         ( $LAUNCH_CMD "$issue"; echo $? > "$RUNDIR/$issue.rc" ) &
         pids+=("$!"); issues+=("$issue"); active=$(( active + 1 ))
-        log_line "launch issue=$issue active=$active"
+        log_line "launch issue=$issue active=$active"; notify dispatch "$issue"
       else
         log_line "skip issue=$issue (lease held elsewhere)"
       fi
@@ -97,9 +105,21 @@ run() {
     # 結果判定 → merge-ready なら coordinator へ
     local status; status="$($RESULT_CMD "$di")"
     if [ "$status" = "merge-ready" ]; then
-      if $MERGE_CMD "$di"; then log_line "merged issue=$di"; else log_line "merge-failed issue=$di"; fi
+      notify merge-ready "$di"
+      local mout mrc
+      mout="$($MERGE_CMD "$di" 2>&1)"; mrc=$?
+      if [ "$mrc" -eq 0 ]; then
+        log_line "merged issue=$di"; notify merged "$di"
+      else
+        log_line "merge-failed issue=$di ($mout)"
+        # coordinator 出力に escalate を含めば高サリエンス通知
+        case "$mout" in
+          *escalate*) notify escalate "$di" "$mout" ;;
+          *)          notify merge-failed "$di" "$mout" ;;
+        esac
+      fi
     else
-      log_line "worker-failed issue=$di"
+      log_line "worker-failed issue=$di"; notify worker-failed "$di"
     fi
     # issue-lease を解放（スロットを空ける＝数珠つなぎ）
     cmd_release issue "$di" "$SESSION"
