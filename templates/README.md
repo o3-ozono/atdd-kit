@@ -16,6 +16,22 @@ Located in `issue/en/` and `issue/ja/`.
 | `issue/en/research.yml` | Research task Issue template |
 | `issue/en/refactoring.yml` | Refactoring task Issue template |
 
+#### development.yml field structure (#329 / US-0)
+
+The development template uses an **intent-seed model**: only the three intent fields are `required`; all detail fields are optional (Claude fills them in `defining-requirements` if left blank).
+
+| Field id | Label | required | Notes |
+|----------|-------|----------|-------|
+| `summary` | 痛み / Problem | **yes** | Describe the problem/pain, not what to implement |
+| `outcome` | 望む結果 / Desired outcome | **yes** | What "done" looks like |
+| `scope-boundary` | スコープ境界 / Scope boundary | **yes** | Explicit in-scope / out-of-scope |
+| `user-story` | ユーザーストーリー | no | Optional; Claude generates if blank |
+| `acceptance-criteria` | 受け入れ条件 | no | Optional; Claude generates if blank |
+| `subtasks` | サブタスク | no | Optional |
+| `completion-criteria` | 完了条件 | no | Optional |
+
+Both `ja/development.yml` and `en/development.yml` maintain the same required/optional structure (enforced by `tests/test_bilingual_templates.bats`).
+
 ### PR Templates
 
 | Template | Purpose |
