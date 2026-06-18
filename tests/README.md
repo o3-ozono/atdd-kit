@@ -72,7 +72,7 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 |-----------|--------|
 | test_lease_store.bats | lib/lease-store.sh — issue/merge lease (LS-1..7 acquire/holder/release/idempotent/pool-isolation/TTL-stale, LS-8 concurrent-acquire-exactly-one-winner via atomic mkdir, LS-9 fail-closed on non-writable store, LS-10 ATDD_LEASE_FORCE override, LS-11 FORCE audit trail, LS-12 scoped FORCE `pool:key`) |
 | test_merge_coordinator.bats | lib/merge-coordinator.sh — retry/escalate state machine (MC-1..5) + post-merge regression failure surfaced non-zero (MC-6) + counter-write failure fails closed to escalate (MC-7) |
-| test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) + issue-lease release (FAD-5) |
+| test_full_autopilot_dispatch.bats | lib/full-autopilot-dispatch.sh — K-slot issue-lease-gated select (FAD-1..4) + issue-lease release (FAD-5) + GitHub-state prefilter: busy Issue 除外 / lease 取得前スキップ / cmd_select 純粋性回帰（FAD-6/7/8、Issue #326） |
 | test_fa_merge_steps.bats | lib/fa-merge-steps.sh + 本番 merge 経路統合 (FM-1 real git rebase+merge, FM-2 __default_merge が実際に main を前進＝no-op でない, FM-3 merge-lease busy→escalate) |
 | acceptance/AT-318-A.bats | hand-off mode doc-grade (A1 flag/gate2-auto/merge-ready, A2 normal 3-gate invariant, A3 FA_HANDOFF marker safety) |
 | acceptance/AT-318-B.bats | dispatcher runtime lib/full-autopilot-run.sh (mock workers): B2 K=2 concurrency, B3 chaining within cap, lease release after worker, E1 full unattended loop, notify hook fired per issue, FA_NOTIFY_LEVEL granularity, FA_WORKER_TIMEOUT kills hung worker + frees lease, timeout kills whole tree (no orphan grandchild), exit-2 (regression) routes to escalate, notify failure recorded in FA_LOG, failed-worker not-merged-but-released. Real `claude -p` workers live-validated separately |
@@ -160,6 +160,7 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 | test_branch_lease_guard_e2e.bats | branch-lease guard end-to-end pin — 別セッション Draft ブランチへの push ブロック / 自セッション pass / リース自動取得 / TTL stale / override（実 lease store ＋ 実 git ＋ モック gh）。claude を呼ばない hook 統合 E2E のため tests/e2e/ ではなく tests/ 直下（Issue #316）|
 | test_bash_output_normalizer.bats | Bash PostToolUse output normalizer (Issue #85) |
 | test_hook_distribution.bats | PostToolUse hook plugin distribution (Issue #85) |
+| test_in_progress_label.bats | in-progress-label.sh PostToolUse hook — Draft PR 作成時の付与 (AT-326-1) / Issue 番号解決 2 経路 (AT-326-2) / --draft 無し負例 (AT-326-3) / close 時除去 (AT-326-4) / 冪等性 (AT-326-5) / fail-safe (AT-326-6)（Issue #326） |
 | test_token_measurement_tooling.bats | Token reduction measurement tooling (Issue #85) |
 | test_bats_runner.bats | scripts/bats_runner.sh impact-scoped runner |
 | test_check_bats_covers.bats | scripts/check_bats_covers.sh annotation validator |
