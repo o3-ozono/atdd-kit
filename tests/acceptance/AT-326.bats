@@ -265,13 +265,44 @@ STUBEOF
 
 # ── AT-326-9: cmd_select の純粋性（全 idle で既存 FAD-1〜4 が回帰なし） ────────
 
-@test "AT-326-9: all-idle busy stub preserves FAD-1 behavior (first K from unclaimed queue)" {
+# AC は all-idle busy スタブ下で既存 FAD-1〜FAD-4 の4挙動すべてが回帰なく green である
+# ことを要求する（プリフィルタ追加が cmd_select の純粋ロジックを壊さない＝C1）。
+# 4 サブ挙動を個別 @test で検証する（setup が @test ごとに STORE を作り直すため lease 蓄積なし）。
+
+@test "AT-326-9a (FAD-1): all-idle preserves first-K-from-unclaimed-queue" {
   # Given: 全 Issue idle（busy スタブ exits 1 always）
   run fad_with_busy "" select 2 318 319 320
   [ "$status" -eq 0 ]
   [ "${lines[0]}" = "318" ]
   [ "${lines[1]}" = "319" ]
   [ "${#lines[@]}" -eq 2 ]
+}
+
+@test "AT-326-9b (FAD-2): all-idle still skips issues claimed by another session" {
+  # Given: 全 Issue idle だが 318 は別セッションが claim 済み
+  LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= bash "$LEASE" acquire issue 318 otherSession
+  run fad_with_busy "" select 2 318 319 320
+  [ "$status" -eq 0 ]
+  [ "${lines[0]}" = "319" ]
+  [ "${lines[1]}" = "320" ]
+  [ "${#lines[@]}" -eq 2 ]
+}
+
+@test "AT-326-9c (FAD-3): all-idle still selects all when queue is shorter than K" {
+  # Given: 全 Issue idle、キュー長 < K
+  run fad_with_busy "" select 3 318 319
+  [ "$status" -eq 0 ]
+  [ "${lines[0]}" = "318" ]
+  [ "${lines[1]}" = "319" ]
+  [ "${#lines[@]}" -eq 2 ]
+}
+
+@test "AT-326-9d (FAD-4): all-idle still leases selected issues to the dispatcher" {
+  # Given: 全 Issue idle
+  fad_with_busy "" select 1 318 > /dev/null
+  # Then: 選択された 318 は dispatcher 名義で lease 済み
+  run env LEASE_STORE_DIR="$STORE" GITHUB_ACTIONS= bash "$LEASE" holder issue 318
+  [ "$output" = "dispatcher" ]
 }
 
 # ── AT-326-10: hook 配布・ドキュメント整合 ───────────────────────────────────

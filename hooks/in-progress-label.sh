@@ -59,7 +59,7 @@ resolve_issue_number() {
   return 0
 }
 
-# resolve_issue_number_from_pr <pr_num_or_branch>
+# resolve_issue_from_close_cmd <close/merge command string>
 # Used during close/merge: tries PR number → gh pr view → headRefName → prefix.
 # Falls back to git branch --show-current if gh unavailable or pr_num empty.
 resolve_issue_from_close_cmd() {
