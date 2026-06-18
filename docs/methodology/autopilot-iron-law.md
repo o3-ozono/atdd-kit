@@ -21,6 +21,8 @@ So some standard Iron Laws cannot hold verbatim inside autopilot. Rather than tr
 ### AL-1 — Three User gates, fixed
 The only User approval gates are **discover (requirements approval)**, **design approval** (the converged design deliverables — user-stories / plan / acceptance-tests — reviewed and approved before any implementation), and **merge**. At these three points the standard Iron Law is fully in force. autopilot must not silently remove, automate, or route around any gate; ATDD never starts before the design-approval gate (#249: this is the user-expected flow — 壁打ち → design review → approval → ATDD).
 
+**通常 autopilot（非 full-autopilot）では本 AL-1 は不変** — 三つの人間ゲートは常に発火する。`full-autopilot`（#318）の **hand-off モードでのみ** ①は queue 投入時の事前承認に、②は reviewer-oracle に、③は merge coordinator に委譲される（末尾の §AL-1 under full-autopilot を参照）。hand-off フラグの無い起動には一切影響しない。
+
 On the **bugfix route** (`fixing-bugs`, #308) the middle gate is **specialized** from design-approval to a **cause-agreement** gate: the bugfix route writes no user-stories / plan / acceptance-tests spec, so its middle gate's approval target is `debugging` Step 5's **root-cause classification (Type A/B/C, evidence 付き) + the failing reproduction test (赤)** instead. **The gate count stays three** — this is a specialization, not a removal or an added gate. The approval target is non-empty (classification + failing repro test), so AL-1's "ATDD never starts before that gate" is preserved: the minimal fix never starts before the cause-agreement gate. This middle-gate specialization is described identically in `docs/methodology/autopilot-design-gate.md` (the presentation contract) — both docs name the bugfix middle gate the **cause-agreement** gate and the same approval target, so neither goes stale.
 
 ### AL-2 — Immutable per-phase anchor (replaces standard #2)
@@ -50,3 +52,15 @@ autopilot does not fork or rewrite the flow skills. Each flow skill (`defining-r
 ## Why these overrides are legitimate (not rationalization)
 
 The standard Iron Law exists to keep a human in control of *what gets built* and *whether it is correct*. autopilot keeps both: **what** is anchored to the human-approved immutable requirements and design (AL-1, AL-2), and **whether it is correct** is gated by an objective AND oracle plus auditable evidence (AL-3, AL-4), with a guaranteed human-escalation exit (AL-5). The overrides relax *how often a human signs off mid-loop*, not *whether a human owns the boundaries*. This is the same boundary the strongest field players keep (Anthropic: *"Claude does not approve or block PRs"*; OpenAI: *"a support tool, not a replacement"*) — see `docs/issues/246-autopilot-revival/research.md`.
+
+## AL-1 under full-autopilot (hand-off mode)
+
+`full-autopilot`（#318）は autopilot を **headless worker として多重起動する上位オーケストレータ**であり、autopilot 自身を書き換えない（疎結合）。worker を `--hand-off` 付きで起動したときのみ、AL-1 の三ゲートは次のように **担い手が移る**（人間がゲートの境界を所有し続ける点は不変）:
+
+| ゲート | 通常 autopilot | full-autopilot hand-off |
+|--------|----------------|--------------------------|
+| ① 要件承認 | 起動時に人間が壁打ち承認 | **queue 投入時に事前承認済み**（`ready-to-go` の前提）。人間が queue をキュレーションすることで①を所有 |
+| ② 設計承認 | 人間がサインオフ | **reviewer-oracle に委譲**（設計ループ generate→review→fix と near-green 収束は維持。AL-3 の AND オラクル＋AL-4 の evidence で担保）。人間は Draft PR の設計成果物を見て差し戻す **override 権を保持** |
+| ③ merge | 人間が merge | **merge coordinator に委譲**（容量1直列・rebase 後フル再ゲート。autopilot は元々 merge しない） |
+
+**正当性**: hand-off は「人間が境界を所有するか」を緩めない。①は queue キュレーション、②は AL-3/AL-4 の客観オラクル＋人間 override、③は coordinator の再ゲート＋AL-5 のエスカレーション（N 回失敗で human フラグ）で担保される。緩めるのは「人間がループ途中で何回サインオフするか」だけで、これは通常 autopilot が②を人間に残すのに対し full-autopilot がそれを reviewer-oracle に委ねる差にすぎない。**この上書きは hand-off フラグが立っている起動に厳密に閉じ、通常 autopilot の AL-1 を変更しない。**
