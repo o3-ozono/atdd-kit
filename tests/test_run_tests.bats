@@ -156,7 +156,20 @@ EOF
     PATH="${tmpdir}:${PATH}" \
     bash "$RUN_TESTS_SH" --impact --base main --jobs 1 --repo /tmp >/dev/null 2>&1 || true
 
-  # モック bats が影響ファイル（test_foo / test_bar）の両方で呼ばれたことを確認
+  # モック bats が影響ファイル（test_foo / test_bar）の両方で呼ばれたことを確認。
+  # 注: シャードはバックグラウンド subshell で実行され calllog へ追記する。
+  # CI のファイルシステムでは子プロセス終了後の書き込み可視化に微小ラグがあり、
+  # run-tests.sh 復帰直後の read で取りこぼし得るため、有界ポーリング（最大 ~3s）で
+  # 書き込みの可視化を待ってから検証する（環境非依存・決定的）。
+  local tries=0
+  while [[ $tries -lt 30 ]]; do
+    if [[ -f "$calllog" ]] && grep -q 'test_foo' "$calllog" && grep -q 'test_bar' "$calllog"; then
+      break
+    fi
+    sleep 0.1
+    tries=$((tries + 1))
+  done
+
   [[ -f "$calllog" ]] && grep -q 'test_foo' "$calllog" && grep -q 'test_bar' "$calllog" || {
     echo "FAIL: --impact モードで影響ファイル(test_foo/test_bar)が bats に渡されなかった"
     echo "calllog: $([[ -f "$calllog" ]] && cat "$calllog" || echo MISSING)"
