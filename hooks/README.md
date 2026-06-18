@@ -18,6 +18,7 @@ Hooks are shell commands that execute automatically in response to Claude Code e
 | [main-branch-guard.sh](main-branch-guard.sh) | PreToolUse | Blocks Edit/Write/MultiEdit/NotebookEdit of project-repo files whose worktree is on `main`/`master` |
 | [branch-lease-guard.sh](branch-lease-guard.sh) | PreToolUse (Bash) | Blocks write-back operations (git push / gh pr edit / merge / ready) on branches with open Draft PRs held by another session |
 | [bash-output-normalizer.sh](bash-output-normalizer.sh) | PostToolUse (Bash) | Normalizes Bash tool output: JSON minify + blank line collapse + trailing whitespace removal (timeout=10s: balances normalization benefit vs hook overhead; large outputs complete in <1s on typical hardware) |
+| [in-progress-label.sh](in-progress-label.sh) | PostToolUse (Bash) | Adds `in-progress` label to the linked Issue on `gh pr create --draft`, removes it on `gh pr close`/`merge` — keeps GitHub state in sync with Draft PR existence (timeout=15s: allows for gh API round-trip) |
 
 ### main-branch-guard.sh + main_branch_guard.py
 
@@ -89,6 +90,19 @@ ATDD_BRANCH_LEASE_FORCE=1 git push origin <branch>
 **Option 3: Remove the hook entry from hooks.json (feature branch)**
 
 In the atdd-kit repository, on a feature branch, edit `hooks/hooks.json` and remove the Bash PreToolUse entry for `branch-lease-guard.sh` temporarily.
+
+### in-progress-label.sh
+
+Synchronizes GitHub Issue labels with Draft PR lifecycle (#326):
+
+1. Intercepts Bash PostToolUse events.
+2. On `gh pr create --draft`: resolves the linked Issue number from (a) `Closes #<N>` in the `--body` arg, or (b) the current branch name prefix `<N>-...`. Calls `gh issue edit <N> --add-label in-progress`.
+3. On `gh pr close` or `gh pr merge`: resolves the Issue from (a) branch prefix of the PR's `headRefName` (via `gh pr view`), or (b) current branch prefix. Calls `gh issue edit <N> --remove-label in-progress`.
+4. Both operations are **idempotent** — `--add-label` and `--remove-label` are no-ops when the label state already matches.
+
+**Fail-safe:** Any error condition (empty stdin, non-Bash tool_name, malformed JSON, jq absent, gh absent, unresolvable issue number) exits 0 with no side effects. The hook never blocks tool output delivery.
+
+**Why a hook instead of a skill step:** Draft PR creation (`gh pr create --draft`) happens across multiple skills (autopilot, full-autopilot, manual). A PostToolUse hook is the single interception point that covers all callers without requiring each skill to be edited (C3 from the design doc).
 
 ## References
 

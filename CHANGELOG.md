@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.27.0] - 2026-06-18
+
+### Added
+
+- **Draft PR 作成時に in-progress 付与 ＋ full-autopilot dispatch の GitHub-state プリフィルタ（#326）**。
+  - `hooks/in-progress-label.sh` を新規作成。`gh pr create --draft` を PostToolUse hook が検知し、リンク Issue（`Closes #<N>` body パターン / branch 名プレフィックス `<N>-...`）へ `in-progress` ラベルを付与する。`gh pr close` / `gh pr merge` 検知時は除去する。冪等（`--add-label`/`--remove-label` は既存状態でも no-op）。fail-safe: 空 stdin / 不正 JSON / 非 Bash tool_name / jq 不在 / gh 不在はすべて exit 0（副作用ゼロ）。`hooks/hooks.json` の PostToolUse(Bash) hooks 配列に登録（timeout=15s）。`tests/test_in_progress_label.bats`（AT-326-1〜6: 付与 / 番号解決2経路 / 負例 / 除去 / 冪等 / fail-safe、18 tests）。
+  - `lib/full-autopilot-dispatch.sh` に `is_issue_busy()` を追加。open PR または `in-progress` ラベルを持つ Issue を `cmd_select` の前段で除外し、lease 取得前に二重 dispatch を冪等にブロックする（C2）。`FAD_BUSY_CMD` env 注入でテスト/統合層が GitHub 問い合わせを差し替え可能（C1 純粋性維持）。`tests/test_full_autopilot_dispatch.bats` に FAD-6〜8（busy 除外 / lease 非取得 / 既存 FAD-1〜4 回帰）を追加。
 ## [3.26.0] - 2026-06-18
 
 ### Added

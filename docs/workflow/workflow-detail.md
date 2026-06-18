@@ -6,7 +6,7 @@
 
 ```
 [Issue]
-  (no label) --(work started)--> in-progress
+  (no label) --(Draft PR created)--> in-progress
   in-progress --(plan complete)--> ready-for-plan-review
   ready-for-plan-review --(Reviewer PASS)--> ready-to-go
   ready-for-plan-review --(Reviewer: revision needed)--> needs-plan-revision --(fix complete)--> ready-for-plan-review  (loop)
@@ -49,6 +49,8 @@ Work proceeds through the 6-step skill chain, each step invoked directly in the 
 ### Draft PR Locking
 
 After branching, create an empty commit (`git commit --allow-empty`) and push, then `gh pr create --draft`. This prevents duplicate work on the same Issue.
+
+The `in-progress-label.sh` PostToolUse hook (hooks/in-progress-label.sh) automatically adds the `in-progress` label to the linked Issue when `gh pr create --draft` runs, and removes it when the PR is closed or merged. The hook owns this label lifecycle — skill code does not need to manage `in-progress` manually.
 
 ### Notifications
 
