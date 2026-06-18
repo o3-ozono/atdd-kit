@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.28.0] - 2026-06-19
+
+### Added
+
+- **full-autopilot の使い勝手再設計（真因0-4 一括）（#329）**。
+  - **US-0 / 真因0 — Issue テンプレートを意図シードに軽量化**。`templates/issue/ja/development.yml` / `templates/issue/en/development.yml` を意図3点（痛み=`summary` / 望む結果=`outcome` / スコープ境界=`scope-boundary`）required・それ以外（`user-story` / `acceptance-criteria` / `subtasks` / `completion-criteria`）optional に整理。`outcome` / `scope-boundary` の2フィールドを新規追加、`user-story` を required から optional に降格。各 optional フィールドに「未記入なら Claude が defining-requirements で生成する」旨を追記。`.github/ISSUE_TEMPLATE/` への always-sync 経路は維持。`tests/acceptance/AT-329-template.bats`（0a/0b 各 ja/en、16 tests）。
+  - **US-1 / 真因1 — queue 動的化（起動時 freeze 撤廃）**。`lib/full-autopilot-run.sh` の起動時1回 freeze キュー（`queue` 配列 + `qi` インデックス）を、空きスロット充填ループ内で `$QUEUE_CMD` を再評価する動的 enqueue に置き換え。dedup ロジック（in-flight `issues[]` 集合 ＋ `done_set` 文字列）で同一 issue の二重起動を防止。`tests/acceptance/AT-329-queue.bats`（1a 動的追加 / 1b dedup × 2、3 tests）。
+  - **US-2 / 真因2 — 起動時に通知先を確認**。`lib/full-autopilot-run.sh` の `run()` 冒頭に `FA_NOTIFY_CMD` プリフライトを追加。未設定なら `preflight: NOTIFY_CMD unset` 警告1行、設定済みなら `preflight: NOTIFY_CMD=<value>` 確認1行を `FA_LOG` に出力（本体は停止しない）。`tests/acceptance/AT-329-notify.bats`（2a 未設定警告 / 2b 設定確認、2 tests）。
+  - **US-3 / 真因3 — merge-ready の GitHub ラベル二重確認（produce ＋ consume 対で実装）**。produce①: `commands/setup-github.md` に `merge-ready` ラベル定義を追加（ラベル数 15→16）。produce②: `skills/autopilot/SKILL.md` の Gate ③ 手放し記述に `FA_HANDOFF=1` 起動のみ `gh issue edit --add-label merge-ready` する経路を追記。consume: `lib/full-autopilot-run.sh` の `__default_result()` を `is_error:false` 自己申告 ＋ `gh issue view --json labels` の `merge-ready` ラベル照合二重確認に変更（ラベル不在なら `failed`）。`tests/acceptance/AT-329-result.bats`（3a consume-failed / 3b consume-pass / 3c produce-pin、9 tests）。
+  - **US-4 / 真因4 — skill-gate に route-eligibility 必須チェック**。`skills/skill-gate/SKILL.md` に「Route Eligibility (mandatory)」セクションを追加。`docs/methodology/route-eligibility.md` の必須評価手順・非適合モード抑止（express on behavior-change Issue）・override 手段を明文化。`tests/acceptance/AT-329-skillgate.bats`（4a 構造 pin、6 tests）。
+  - **US-5 / doc 整合 — DoR 記述の修正**。`skills/full-autopilot/SKILL.md` の `ready-to-go` 前提記述を「PRD が承認済み」から「DoR（`docs/methodology/definition-of-ready.md`）＋ plan review PASS」に修正（正典 DoR と整合）。`tests/acceptance/AT-329-dor.bats`（5a 構造 pin、5 tests）。
+
 ## [3.27.0] - 2026-06-18
 
 ### Added
