@@ -188,9 +188,9 @@ repo_root() {
 }
 
 @test "AT-212: shard failure aggregates to runner exit non-zero" {
-  # Given: 引数なし呼び出しで usage エラー（exit 非0）を確認する
-  # When: scripts/run-tests.sh を引数なしで実行する
-  # Then: exit 非0 が返る（失敗集約の最小確認）
+  # Given: 並列シャードのいずれかに失敗テストを含む状態
+  # When: scripts/run-tests.sh --all を実行する
+  # Then: ランナー全体が exit 非0 を返す（全シャード pass のときのみ exit 0）
   local root
   root="$(repo_root)"
 
@@ -199,9 +199,25 @@ repo_root() {
     return 1
   }
 
-  run bash "${root}/scripts/run-tests.sh"
+  # テンポラリ repos: tests/ 直下に失敗する .bats ファイルを 1 件配置
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf '${tmpdir}'" RETURN
+
+  mkdir -p "${tmpdir}/tests"
+  cat > "${tmpdir}/tests/fail_shard.bats" << 'BATS_EOF'
+#!/usr/bin/env bats
+bats_require_minimum_version 1.5.0
+@test "deliberately failing test for AT-212 shard aggregation check" {
+  false
+}
+BATS_EOF
+
+  run bash "${root}/scripts/run-tests.sh" --all --repo "${tmpdir}"
   [[ "$status" -ne 0 ]] || {
-    echo "FAIL: 引数なし run-tests.sh が exit 0 を返した（usage エラー未実装）"
+    echo "FAIL: 失敗テストを含むシャードがあるのに run-tests.sh --all が exit 0 を返した"
+    echo "$output"
     return 1
   }
 }
