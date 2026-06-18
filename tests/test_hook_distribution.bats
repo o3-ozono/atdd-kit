@@ -89,6 +89,27 @@ print('OK')
   [ "$status" -eq 0 ]
 }
 
+@test "AT-326-10: in-progress-label.sh is registered in PostToolUse Bash hooks array" {
+  run python3 -c "
+import json, sys
+with open('$HOOKS_JSON') as f:
+    d = json.load(f)
+post_hooks = d['hooks']['PostToolUse']
+found = False
+for entry in post_hooks:
+    matcher = entry.get('matcher', '')
+    if 'Bash' in matcher:
+        for h in entry.get('hooks', []):
+            cmd = h.get('command', '')
+            if 'in-progress-label' in cmd:
+                found = True
+                break
+assert found, 'in-progress-label.sh not found in PostToolUse Bash hooks array'
+print('OK')
+"
+  [ "$status" -eq 0 ]
+}
+
 @test "AC6: chezmoi-managed global settings.json does not contain bash-output-normalizer PostToolUse" {
   if [ ! -f "$GLOBAL_SETTINGS" ]; then
     skip "Global settings.json not found"

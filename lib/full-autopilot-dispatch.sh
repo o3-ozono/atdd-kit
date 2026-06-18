@@ -54,9 +54,10 @@ is_issue_busy() {
   fi
 
   # Check for open PR on any branch whose head starts with "<issue>-"
+  # Note: gh CLI does not accept --arg for --jq; use shell variable expansion directly.
   local open_prs
   open_prs=$(gh pr list --state open --json number,headRefName \
-    --jq --arg n "$issue" '[.[] | select(.headRefName | startswith($n + "-"))] | length' \
+    --jq "[.[] | select(.headRefName | startswith(\"${issue}-\"))] | length" \
     2>/dev/null || echo "0")
   [ "${open_prs:-0}" -gt 0 ] && return 0
 
