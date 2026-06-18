@@ -19,7 +19,7 @@
 # Idempotent (C2): gh issue edit --add-label / --remove-label are no-ops when the
 # label is already present / already absent.
 
-set -uo pipefail
+set -uo
 
 # ── Fail-safe helpers ─────────────────────────────────────────────────────────
 

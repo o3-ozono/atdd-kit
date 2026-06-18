@@ -1,7 +1,7 @@
 # Acceptance Tests: Draft PR 作成時に in-progress 付与 ＋ full-autopilot dispatch の GitHub-state プリフィルタ
 
 <!-- AT lifecycle: planned → draft → green → regression
-     各エントリには状態マーカー [green] / [draft] / [green] / [regression] を付与する。
+     各エントリには状態マーカー [planned] / [draft] / [green] / [regression] を付与する。
      状態は実装の進行に合わせて更新する。 -->
 
 ## AT-326-1: Draft PR 作成時の in-progress 自動付与（F1）
@@ -69,7 +69,7 @@
 
 ## AT-326-11: デフォルト is_issue_busy の gh pr list 構文が open PR を正しく検出する（FAD-9 トレーサビリティ）
 
-- [ ] [green] AT-326-11: `FAD_BUSY_CMD` 未設定のデフォルト実装パスで `gh pr list` の構文がブランチプレフィックスマッチを正しく評価し、open PR を持つ Issue を busy と判定する
+- [ ] [regression] AT-326-11: `FAD_BUSY_CMD` 未設定のデフォルト実装パスで `gh pr list` の構文がブランチプレフィックスマッチを正しく評価し、open PR を持つ Issue を busy と判定する
   - Given: モック `gh` を `FAKE_BIN` に置き（`gh pr list` が issue 318 のブランチ `318-foo` を持つ open PR JSON を返す）、`FAD_BUSY_CMD` は未設定
   - When: `full-autopilot-dispatch.sh select 2 318 319 320` を実行する
   - Then: 318 は出力されず（open PR あり → busy → 除外）、319 と 320 が出力される（シェル変数直接展開による `startswith("${issue}-")` フィルタが正しく動作すること。旧来の `--jq --arg n "$issue"` 構文は gh CLI では無効で常に open_prs=0 になり C2 違反を引き起こしていた）
@@ -90,7 +90,7 @@
 
 | 状態 | 意味 |
 |------|------|
-| [green] | テスト設計済み・未実装 |
+| [planned] | テスト設計済み・未実装 |
 | [draft] | 実装中・まだ通過していない |
 | [green] | テスト通過済み |
 | [regression] | リグレッション対象として継続監視中 |
