@@ -55,6 +55,19 @@ If the review verdict is not PASS, instruct the user to return to `reviewing-del
 
 This skill **does not** add or remove the `in-progress` label — that is skill-gate's responsibility. This skill **does not** write or fix code — a failing post-deploy regression is reported back to Step 4, not patched here.
 
+## Test Execution Policy (#324)
+
+Run **all tests** before merge and after deploy:
+
+```
+scripts/run-tests.sh --all      # pre-merge gate
+scripts/run-tests.sh --all      # post-deploy regression
+```
+
+claude-based e2e tests (`tests/e2e/*.bats`) are included in the full suite at merge gate.
+
+For the full policy doctrine, see [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
+
 ## Integration
 
 - **Upstream:** `reviewing-deliverables` (merges only on its PASS verdict)

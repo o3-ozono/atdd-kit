@@ -18,6 +18,7 @@ Methodology deep-dives: detailed guidance on ATDD, User Story quality, Scrumban 
 | [test-mapping.md](test-mapping.md) | AC-to-test-layer mapping reference |
 | [us-ac-format.md](us-ac-format.md) | User Story and AC spec file format (frontmatter schema, status transitions) |
 | [us-quality-standard.md](us-quality-standard.md) | User Story quality standard: MUST/SHOULD criteria, anti-patterns, and LLM guidelines |
+| [test-execution-policy.md](test-execution-policy.md) | Phase-based test execution doctrine — impact-only during ATDD iterations, full suite before review/merge |
 
 ## Conventions
 
