@@ -308,33 +308,6 @@
   }
 }
 
-# --- AT-006: BATS suite 全体 green（CS-2） ---
-
-@test "AT-006: bats tests/ and tests/acceptance/ suite passes without failure" {
-  # Given: 本 Issue の全変更（削除・置換・テスト差し替え・version bump）
-  # When: bats tests/ および tests/acceptance/（AT-271.bats 自身を除く）を実行する
-  # Then: fail 0 件（test_phase_model_assignment / test_docs_restructure / AT-269 含む既存 pin もすべて green）
-  #
-  # NOTE: tests/acceptance/AT-271.bats（本ファイル）を再帰実行すると無限ループになるため除外する。
-  #       tests/acceptance/ の他の AT ファイル（AT-269.bats 等）は明示的に追加する。
-  local repo_root
-  repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-
-  # tests/acceptance/ 内の AT ファイルを収集（本ファイル自身を除く）
-  local acceptance_files=()
-  while IFS= read -r -d '' f; do
-    [[ "$f" == "$BATS_TEST_FILENAME" ]] && continue
-    acceptance_files+=("$f")
-  done < <(find "${repo_root}/tests/acceptance" -name "*.bats" -print0 2>/dev/null)
-
-  run bats "${repo_root}/tests/" "${acceptance_files[@]}"
-  [[ "$status" -eq 0 ]] || {
-    echo "FAIL: tests/ または tests/acceptance/ suite に失敗があった"
-    echo "$output"
-    return 1
-  }
-}
-
 # --- AT-007: Non-Goals 不可侵（CS-3） ---
 #
 # CS-3 の 5 条項のうち、ブランチ非依存の不変条件のみを実行可能 pin とする。

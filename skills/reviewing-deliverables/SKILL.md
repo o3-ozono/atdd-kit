@@ -218,6 +218,10 @@ return await agent(
 
 This skill **does not** add or remove the `in-progress` label — that is skill-gate's responsibility. It **does not** merge, deploy, or write code — it only reviews.
 
+## Test Execution Policy (#324)
+
+Run **all tests** before invoking this skill. See [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
+
 ## Integration
 
 - **Upstream:** `running-atdd-cycle` (its green Acceptance Tests and production code are the primary review targets)
