@@ -67,6 +67,14 @@
   - When: 既存 dispatch テスト（未 claim キューから先頭 K 件選択・他セッション claim skip・K 未満全件・dispatcher 名義 lease）を実行
   - Then: 既存 FAD-1〜FAD-4 が全て従来どおり green（プリフィルタによる回帰なし）
 
+## AT-326-11: デフォルト is_issue_busy の gh pr list 構文が open PR を正しく検出する（FAD-9 トレーサビリティ）
+
+- [ ] [green] AT-326-11: `FAD_BUSY_CMD` 未設定のデフォルト実装パスで `gh pr list` の構文がブランチプレフィックスマッチを正しく評価し、open PR を持つ Issue を busy と判定する
+  - Given: モック `gh` を `FAKE_BIN` に置き（`gh pr list` が issue 318 のブランチ `318-foo` を持つ open PR JSON を返す）、`FAD_BUSY_CMD` は未設定
+  - When: `full-autopilot-dispatch.sh select 2 318 319 320` を実行する
+  - Then: 318 は出力されず（open PR あり → busy → 除外）、319 と 320 が出力される（シェル変数直接展開による `startswith("${issue}-")` フィルタが正しく動作すること。旧来の `--jq --arg n "$issue"` 構文は gh CLI では無効で常に open_prs=0 になり C2 違反を引き起こしていた）
+  - Notes: この AT は FAD-9 テスト（tests/test_full_autopilot_dispatch.bats:212-226）の AT 仕様レベルのトレーサビリティを提供する。レビューフィンディング #326 priority-3 で AT エントリ欠如が指摘されたため追加
+
 ## AT-326-10: hook 配布・ドキュメント整合（regression 不変量）
 
 - [ ] [regression] AT-326-10: 新 hook が hooks.json に登録され README・配布整合が保たれる
