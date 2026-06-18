@@ -136,26 +136,28 @@ echo "/mock/tests/test_bar.bats"
 EOF
   chmod +x "${tmpdir}/mock_impact_map.sh"
 
-  # モック bats コマンドを作成（実行しない）
-  cat > "${tmpdir}/bats" << 'EOF'
+  # モック bats コマンド: 渡された引数をファイルに追記する（実行しない）。
+  # 注: シャードは並列バックグラウンド subshell で起動され、その stdout は
+  # ログファイル経由で集約される。bats-in-bats ＋ set -e 環境（CI）では
+  # 親プロセスでの stdout キャプチャがタイミング依存で取りこぼされ得るため、
+  # stdout ではなく決定的なマーカーファイルへ追記して検証する（環境非依存）。
+  local calllog="${tmpdir}/bats_calls.log"
+  cat > "${tmpdir}/bats" << EOF
 #!/usr/bin/env bash
-echo "mock bats called with: $*"
+printf '%s\n' "\$*" >> "${calllog}"
 exit 0
 EOF
   chmod +x "${tmpdir}/bats"
 
   # run-tests.sh を --impact モードで呼び出し
-  local output
-  output=$(
-    _RUN_TESTS_IMPACT_MAP_OVERRIDE="${tmpdir}/mock_impact_map.sh" \
+  _RUN_TESTS_IMPACT_MAP_OVERRIDE="${tmpdir}/mock_impact_map.sh" \
     PATH="${tmpdir}:${PATH}" \
-    bash "$RUN_TESTS_SH" --impact --base main --repo /tmp 2>&1 || true
-  )
+    bash "$RUN_TESTS_SH" --impact --base main --repo /tmp >/dev/null 2>&1 || true
 
-  # モック bats が呼ばれ、test_foo / test_bar が渡されたことを確認
-  echo "$output" | grep -q 'test_foo\|test_bar\|mock bats' || {
-    echo "FAIL: --impact モードで影響ファイルが bats に渡されなかった"
-    echo "output: $output"
+  # モック bats が影響ファイル（test_foo / test_bar）で呼ばれたことを確認
+  [[ -f "$calllog" ]] && grep -q 'test_foo' "$calllog" && grep -q 'test_bar' "$calllog" || {
+    echo "FAIL: --impact モードで影響ファイル(test_foo/test_bar)が bats に渡されなかった"
+    echo "calllog: $([[ -f "$calllog" ]] && cat "$calllog" || echo MISSING)"
     return 1
   }
 }
