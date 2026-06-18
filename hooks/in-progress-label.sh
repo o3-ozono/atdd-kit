@@ -19,7 +19,7 @@
 # Idempotent (C2): gh issue edit --add-label / --remove-label are no-ops when the
 # label is already present / already absent.
 
-set -uo
+set -uo pipefail
 
 # ── Fail-safe helpers ─────────────────────────────────────────────────────────
 
@@ -65,9 +65,18 @@ resolve_issue_number() {
 resolve_issue_from_close_cmd() {
   local cmd="$1"
 
-  # Extract PR number from positional arg
+  # Extract PR number from positional arg.
+  # Handles both "gh pr close 324" and "gh pr merge --squash 324" (flags before number).
+  # Strategy: confirm the command starts with gh pr close|merge, then scan all
+  # whitespace-separated tokens for the first that is purely numeric (non-flag).
   local pr_num
-  pr_num=$(printf '%s' "$cmd" | grep -oE '(gh[[:space:]]+pr[[:space:]]+(close|merge)[[:space:]]+)([0-9]+)' | grep -oE '[0-9]+$' || true)
+  if printf '%s' "$cmd" | grep -qE '^gh[[:space:]]+pr[[:space:]]+(close|merge)([[:space:]]|$)'; then
+    pr_num=$(printf '%s' "$cmd" \
+      | sed 's/^gh[[:space:]]*pr[[:space:]]*\(close\|merge\)[[:space:]]*//' \
+      | tr ' \t' '\n' \
+      | grep -E '^[0-9]+$' \
+      | head -1 || true)
+  fi
 
   if [ -n "$pr_num" ] && command -v gh >/dev/null 2>&1; then
     local head_branch

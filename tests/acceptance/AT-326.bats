@@ -163,6 +163,13 @@ STUBEOF
   gh_was_called_with "--remove-label in-progress"
 }
 
+@test "AT-326-4b2: gh pr merge --squash 324 (flags before number) removes in-progress" {
+  # フラグが PR 番号より前に置かれるパターン（finding #326 priority-3 正規表現修正の回帰ガード）
+  local json='{"tool_name":"Bash","tool_input":{"command":"gh pr merge --squash 324"},"session_id":"s1"}'
+  run_hook "$json" "GIT_BRANCH_MOCK=324-foo" > /dev/null
+  gh_was_called_with "--remove-label in-progress"
+}
+
 @test "AT-326-4c: hook exits 0 on close" {
   local json='{"tool_name":"Bash","tool_input":{"command":"gh pr close 324"},"session_id":"s1"}'
   run run_hook "$json" "GIT_BRANCH_MOCK=324-foo"
