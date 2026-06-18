@@ -233,6 +233,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-329-result.bats | merge-ready GitHub ラベル二重確認（produce＋consume 対） — consume: ラベル不在 failed / 自己申告＋ラベル両立 merge-ready / is_error:true は merge-ready ラベルがあっても failed; produce: setup-github.md 定義・件数16・autopilot SKILL.md hand-off 付与記述・通常起動ラベル不付与（Issue #329、9 tests） |
 | AT-329-skillgate.bats | skill-gate route-eligibility 必須チェック — セクション存在・route-eligibility.md 参照・非適合抑止・override 記述・mandatory キーワード（Issue #329、6 tests） |
 | AT-329-dor.bats | full-autopilot SKILL.md DoR 整合 — ready-to-go = DoR + plan review PASS 記述・旧 PRD 単独前提の撤去・definition-of-ready.md 存在・定義一致（Issue #329、5 tests） |
+| AT-329-worktree.bats | full-autopilot headless worker の worktree プラグイン設定播種 — `__seed_worktree_settings` が source 存在時に `.claude/settings.local.json` を播種・冪等・source 不在 no-op・異なる既存 dest 上書き・`FA_NO_WORKTREE=1` で worktree 解決が空（Issue #329、5 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

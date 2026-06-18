@@ -40,13 +40,55 @@ export RUNDIR SESSION   # 外部 launcher / result / merge フックからも参
 
 # ---- 既定フック（本番）。テストは env で差し替える。 ----
 __default_queue() { gh issue list --label ready-to-go --json number --jq '.[].number' 2>/dev/null; }
-__default_launch() {
+# worker を起動する worktree を確定（SKILL flow step 3: 1 issue = 1 worktree 隔離）。
+# 既定は <repo の親>/<repo 名>-<issue>。FA_WORKTREE_DIR（'{i}' を issue で置換）で明示上書き、
+# FA_NO_WORKTREE=1 で従来どおり cwd 起動（テスト/単純構成向け）。解決不能なら空（=cwd 起動）。
+__worker_worktree() {
   local i="$1"
+  [ -n "${FA_NO_WORKTREE:-}" ] && { echo ""; return; }
+  if [ -n "${FA_WORKTREE_DIR:-}" ]; then printf '%s\n' "${FA_WORKTREE_DIR//\{i\}/$i}"; return; fi
+  local root name
+  root="$(git -C "${FA_REPO:-.}" rev-parse --show-toplevel 2>/dev/null)" || { echo ""; return; }
+  [ -n "$root" ] || { echo ""; return; }
+  name="$(basename "$root")"
+  printf '%s\n' "$(dirname "$root")/${name}-${i}"
+}
+
+# #329: プラグイン有効化設定(.claude/settings.local.json: enabledPlugins + extraKnownMarketplaces)を
+# worktree に播種する。gitignore 対象で worktree には複製されないため、headless `claude -p` worker が
+# atdd-kit プラグインを読み込めず「Unknown command: /atdd-kit:autopilot」で即失敗する。冪等
+# （source 不在なら no-op / 既存と一致なら skip）。
+__seed_worktree_settings() {
+  local wt="$1" root src
+  root="$(git -C "${FA_REPO:-.}" rev-parse --show-toplevel 2>/dev/null)" || return 0
+  src="$root/.claude/settings.local.json"
+  [ -f "$src" ] || return 0
+  mkdir -p "$wt/.claude"
+  if [ ! -f "$wt/.claude/settings.local.json" ] || ! cmp -s "$src" "$wt/.claude/settings.local.json"; then
+    cp "$src" "$wt/.claude/settings.local.json"
+  fi
+}
+
+__default_launch() {
+  local i="$1" wt
+  wt="$(__worker_worktree "$i")"
+  if [ -n "$wt" ]; then
+    # worktree が無ければ issue ブランチで作成（既存ブランチ→そのまま add / 無ければ -b で新規）。
+    if [ ! -d "$wt" ]; then
+      local branch; branch="$(__resolve_branch "$i")"
+      git -C "${FA_REPO:-.}" worktree add "$wt" "$branch" >/dev/null 2>&1 \
+        || git -C "${FA_REPO:-.}" worktree add -b "$branch" "$wt" >/dev/null 2>&1 || true
+    fi
+    # #329: 起動前に必ずプラグイン設定を播種（無いと Unknown command で落ちる）。
+    __seed_worktree_settings "$wt"
+  fi
   # FA_HANDOFF=1 が hand-off の安全マーカー（autopilot は env が在るときだけ hand-off を honor）。
-  FA_HANDOFF=1 claude -p "/atdd-kit:autopilot $i --hand-off" \
-    --output-format json --permission-mode acceptEdits \
-    --allowed-tools "Bash Read Edit Write Glob Grep Workflow ToolSearch TaskCreate TaskUpdate TaskList" \
-    > "$RUNDIR/$i.out.json" 2>"$RUNDIR/$i.err" < /dev/null
+  # RUNDIR は絶対パス（mktemp -d）なので worktree へ cd しても出力先は不変。
+  ( [ -n "$wt" ] && cd "$wt"
+    FA_HANDOFF=1 claude -p "/atdd-kit:autopilot $i --hand-off" \
+      --output-format json --permission-mode acceptEdits \
+      --allowed-tools "Bash Read Edit Write Glob Grep Workflow ToolSearch TaskCreate TaskUpdate TaskList" \
+      > "$RUNDIR/$i.out.json" 2>"$RUNDIR/$i.err" < /dev/null )
 }
 __default_result() {
   local i="$1"
