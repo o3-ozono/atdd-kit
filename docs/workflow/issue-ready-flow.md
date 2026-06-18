@@ -8,6 +8,7 @@ After creating an Issue, execute the following steps in order before approval (`
 
 - **No code edits before approval.** Do not start implementation until all steps are complete and the user approves.
 - **Deliverables go in Issue comments.** Design artifacts, ACs, and implementation plans are posted as Issue comments. Repository commits happen only on the work branch after `ready-to-go` approval.
+- **`in-progress` label is hook-managed.** The `in-progress-label.sh` PostToolUse hook automatically adds `in-progress` when `gh pr create --draft` runs and removes it on PR close/merge. Skills and steps in this flow do not need to manage the label manually.
 
 ## Development Tasks (`type:development`)
 
@@ -15,7 +16,7 @@ After creating an Issue, execute the following steps in order before approval (`
 |------|--------|---------------|--------|
 | 1 | **Create Issue** | `issue` | Issue (no `in-progress` label yet) |
 | 1.5 | **Design exploration (optional)** | `ideate` (post-Issue mode) | Approach comparison, design decision -> Issue comment (Context Block). Skippable. |
-| 2 | **Brainstorming** | `discover` (brainstorming mode) | Acquires `in-progress` lock. Requirements, approach, impact analysis -> Issue comment |
+| 2 | **Brainstorming** | `discover` (brainstorming mode) | Requirements, approach, impact analysis -> Issue comment |
 | 3 | **User story and AC** | `discover` (AC mode) | ATDD-based ACs -> Issue comment |
 | 4 | **Test strategy and implementation strategy** | `plan` | Test strategy (AC→test layer mapping) + implementation strategy -> Issue comment |
 | 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-go` |
@@ -41,7 +42,7 @@ Same flow as development tasks.
 | Step | Action | Skill/Command | Output |
 |------|--------|---------------|--------|
 | 1 | **Create Issue** | -- | Issue (no `in-progress` label yet) |
-| 2 | **Brainstorming** | `discover` | Acquires `in-progress` lock. Scope and approach -> Issue comment |
+| 2 | **Brainstorming** | `discover` | Scope and approach -> Issue comment |
 | 3 | **DoD derivation** | -- | Verifiable DoD items -> Issue comment |
 | 4 | **Work plan** | `plan` | Work plan -> Issue comment |
 | 5 | **Plan review** | Reviewer (`ready-for-plan-review`) | Plan review results -> Issue comment. Reviewer PASS -> label: `ready-to-go` |
