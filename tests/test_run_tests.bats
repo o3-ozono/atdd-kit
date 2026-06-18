@@ -137,10 +137,12 @@ EOF
   chmod +x "${tmpdir}/mock_impact_map.sh"
 
   # モック bats コマンド: 渡された引数をファイルに追記する（実行しない）。
-  # 注: シャードは並列バックグラウンド subshell で起動され、その stdout は
-  # ログファイル経由で集約される。bats-in-bats ＋ set -e 環境（CI）では
-  # 親プロセスでの stdout キャプチャがタイミング依存で取りこぼされ得るため、
-  # stdout ではなく決定的なマーカーファイルへ追記して検証する（環境非依存）。
+  # 注: 本テストは「--impact が影響ファイルを選択して bats に渡す」という
+  # 選択ロジック（AT-210）の検証であり、並列実行（AT-211/AT-212 が担当）は対象外。
+  # シャードを並列バックグラウンド subshell で起動すると、bats-in-bats ＋ set -e
+  # 環境（CI）で複数 mock bats プロセスが共有追記ファイル上で競合し非決定的に
+  # 取りこぼし得る。よって --jobs 1 で単一シャード（全対象を 1 回の bats 呼び出し）に
+  # 固定し、決定的なマーカーファイルで選択結果を検証する（環境非依存）。
   local calllog="${tmpdir}/bats_calls.log"
   cat > "${tmpdir}/bats" << EOF
 #!/usr/bin/env bash
@@ -149,12 +151,12 @@ exit 0
 EOF
   chmod +x "${tmpdir}/bats"
 
-  # run-tests.sh を --impact モードで呼び出し
+  # run-tests.sh を --impact モードで呼び出し（--jobs 1 で逐次化＝決定的）
   _RUN_TESTS_IMPACT_MAP_OVERRIDE="${tmpdir}/mock_impact_map.sh" \
     PATH="${tmpdir}:${PATH}" \
-    bash "$RUN_TESTS_SH" --impact --base main --repo /tmp >/dev/null 2>&1 || true
+    bash "$RUN_TESTS_SH" --impact --base main --jobs 1 --repo /tmp >/dev/null 2>&1 || true
 
-  # モック bats が影響ファイル（test_foo / test_bar）で呼ばれたことを確認
+  # モック bats が影響ファイル（test_foo / test_bar）の両方で呼ばれたことを確認
   [[ -f "$calllog" ]] && grep -q 'test_foo' "$calllog" && grep -q 'test_bar' "$calllog" || {
     echo "FAIL: --impact モードで影響ファイル(test_foo/test_bar)が bats に渡されなかった"
     echo "calllog: $([[ -f "$calllog" ]] && cat "$calllog" || echo MISSING)"
