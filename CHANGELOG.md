@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.29.0] - 2026-06-19
+
+### Added
+
+- **flaky-test-fix 専用の軽量ルート `fixing-flaky-tests`（bugfix ルートの兄弟）（#322）**。
+  - `skills/fixing-flaky-tests/SKILL.md` を新設。`bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` の 5 連鎖で既存スキルのみを再利用（定義 3 スキル・新メソドロジー追加なし）。`bug` の組込み forward chain は `fixing-flaky-tests` オーケストレーター側の override 機構（orchestrator-driven invocation）でインターセプト（`bug` SKILL.md 無編集）。
+  - 確率的再現確認: platform-aware N 回反復実行（other=bats ループ、web=`playwright-cli` 外部参照、iOS=Xcode/simulator MCP 外部参照 + `sim-pool`）で失敗率を記録し、単発再現確認を禁止。非決定性カテゴリ（タイミング依存 / 順序依存 / 共有状態 / 外部依存 / リソースリーク）を `debugging` の既存 Type C 配下の運用サブ軸として扱う（`debugging` SKILL.md 無編集）。
+  - cause-agreement ゲート: middle gate を設計承認ゲートから cause-agreement ゲート（承認対象 = 非決定性分類 + 反復失敗率）に特化。ゲート数は三のまま（AL-1 維持）。収束オラクルは N 回連続 green（決定化）＋ 既存テスト非破壊（単発 green を収束としない）。
+  - quarantine 判断ポイント: platform-aware 一時隔離マーク（other=bats skip、web=Playwright fixme/skip、iOS=XCTSkip、いずれも外部ランナー機能参照）＋ 追跡 Issue 残置必須。
+  - Type A 昇格: `debugging` の Root Cause が Type A（AC Gap）の場合はフル機能ルートへ昇格（`fixing-bugs` と同方式）。
+  - `docs/methodology/route-eligibility.md` に flaky ルート判定信号（`type:flaky` ラベル + `flaky`/`不安定`/`間欠的に失敗`/`intermittent` キーワード + flaky/bugfix 境界）と低確信 #305 ワンタップ User 確認を追記（SoT）。
+  - `docs/methodology/autopilot-iron-law.md` に AL-1 flaky specialization（cause-agreement ゲート・承認対象 = 非決定性分類＋失敗率）と AL-3 flaky specialization（反復 failing アンカー被覆・N 回連続 green オラクル・単発 green 収束禁止）を追記。
+  - `docs/methodology/autopilot-design-gate.md` に flaky ルート cause-agreement ゲート節を追記（`autopilot-iron-law.md` と二文書整合）。
+  - `skills/autopilot/SKILL.md` に flaky oracle loader-stub 1 行を追記（≤280 行バジェット維持、3 回目昇格禁止）。
+  - `commands/flaky-fix.md` を新設（`/atdd-kit:flaky-fix <issue>` で `fixing-flaky-tests` ルートを明示起動）。
+  - `tests/test_fixing_flaky_tests_skill.bats`（31 tests）と `tests/acceptance/AT-322.bats`（19 tests）を新設。`tests/test_skill_structure.bats` の `ALL_SKILLS` に `fixing-flaky-tests` を追記。
+
 ## [3.28.1] - 2026-06-19
 
 ### Fixed

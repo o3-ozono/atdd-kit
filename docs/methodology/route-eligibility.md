@@ -1,6 +1,6 @@
 > **Loaded by:** `session-start` (Step 3 route recommendation); referenced from `skills/autopilot/SKILL.md` (express precheck).
 
-# Route Eligibility — Express vs Autopilot vs bugfix
+# Route Eligibility — Express vs Autopilot vs bugfix vs flaky
 
 Single source of truth for the express / autopilot / bugfix route determination used in:
 - `session-start` Step 3 (Recommended Tasks table 「推奨経路」column)
@@ -38,17 +38,29 @@ An Issue routes to the **bugfix** lightweight route (`fixing-bugs` / `/atdd-kit:
 
 The bugfix route is still a code/behavior change, so it stays under autopilot's full flow (not express); it differs only in **which** flow skills run (skips the three definition skills). Promotion back to the full feature route happens at `debugging` Step 5 when the root cause is **Type A (AC Gap)** — see `skills/fixing-bugs/SKILL.md`.
 
+## flaky Route Signals
+
+An Issue routes to the **flaky** lightweight route (`fixing-flaky-tests` / `/atdd-kit:flaky-fix`) — a code change that skips the full PRD/US/plan/AT spec and chains `bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` — when it describes a **non-deterministically failing test** rather than a deterministic defect or new feature:
+
+- Issue carries the `type:flaky` label (decisive signal).
+- Keywords in title / body: `flaky` / `不安定` / `間欠的に失敗` / `intermittent` / probabilistically failing / sometimes fails.
+- Task content describes determinizing a test that passes sometimes and fails other times (non-deterministic), not restoring always-broken behavior.
+
+**flaky vs bugfix boundary:** flaky = test fails *non-deterministically* (outcome varies across runs without code changes); bugfix = test or behavior fails *deterministically* (reproducible every time). When in doubt, use the low-confidence fallback below.
+
+The flaky route is still a code/behavior change, so it stays under autopilot's full flow (not express); it differs only in **which** flow skills run (skips the three definition skills) and in the convergence oracle (iterative N-consecutive-green rather than a single red→green). Promotion back to the full feature route happens at `debugging` Step 5 when the root cause is **Type A (AC Gap)** — see `skills/fixing-flaky-tests/SKILL.md`.
+
 ## Hybrid Determination (label + keyword + LLM)
 
 Evaluate in order:
 
-1. **Labels** — `type:development` → autopilot (decisive); `type:bug` → bugfix route (decisive).
-2. **Keywords** — scan Issue title and body for express / autopilot / bugfix signal terms (キーワード).
+1. **Labels** — `type:development` → autopilot (decisive); `type:bug` → bugfix route (decisive); `type:flaky` → flaky route (decisive).
+2. **Keywords** — scan Issue title and body for express / autopilot / bugfix / flaky signal terms (キーワード).
 3. **LLM judgment** — when labels and keywords do not produce a clear signal, apply judgment to title + body.
 
 ### Low-confidence fallback (#305 one-tap)
 
-When the bugfix-vs-full-route signal is **low confidence** (label absent, mixed keywords, ambiguous task content), do not silently pick a route: present a **User confirmation** consistent with the #305 one-tap approval UI (AskUserQuestion, `(Recommended)` route first), and let the User choose. Absence of a clear bugfix signal is not bugfix eligibility — default to the full feature route.
+When the bugfix-vs-flaky-vs-full-route signal is **low confidence** (label absent, mixed keywords, ambiguous task content), do not silently pick a route: present a **User confirmation** consistent with the #305 one-tap approval UI (AskUserQuestion, `(Recommended)` route first), and let the User choose. Absence of a clear bugfix or flaky signal is not eligibility for those routes — default to the full feature route.
 
 ## Ambiguous Fallback
 

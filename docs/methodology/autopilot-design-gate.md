@@ -56,6 +56,12 @@ On rejection:
 
 Changing the gate to selection-UI presentation changes **only how the choice is offered** — the approval / rejection semantics above are invariant.
 
+## flaky route — cause-agreement gate (#322)
+
+On the **flaky route** (`fixing-flaky-tests`), this middle gate functions as a **cause-agreement** gate rather than a design-approval gate. The flaky route writes no user-stories / plan / acceptance-tests, so the **approval target** is not those design artifacts but `debugging` Step 5's **non-determinism root-cause classification (Type, flaky sub-axis, evidence 付き) ＋ the repeatedly-failing anchor ＋ failure rate (修正前 X% → 修正後 0%)**. This is a **specialization of the same middle gate, not a fourth gate and not a removal** — the gate count stays three (AL-1). The approval target is non-empty (classification + iterative failing anchor + failure rate), so AL-1's "ATDD never starts before that gate" is preserved: the determinization fix begins only after the human agrees the cause.
+
+This **cause-agreement** specialization for the flaky route is stated identically in `docs/methodology/autopilot-iron-law.md` (AL-1 flaky middle-gate specialization). Both docs name the flaky middle gate the **cause-agreement** gate and name the same approval target (non-determinism classification + failure rate), so the two never drift apart. The presentation contract above (AskUserQuestion, `(Recommended)` approval first, whole-set semantics, diff-in-body) is reused as-is; only the **named approval target** changes for the flaky route.
+
 ## bugfix route — cause-agreement gate (#308)
 
 On the **bugfix route** (`fixing-bugs`), this middle gate functions as a **cause-agreement** gate rather than a design-approval gate. The bugfix route writes no user-stories / plan / acceptance-tests, so the **approval target** is not those design artifacts but `debugging` Step 5's **root-cause classification (Type A/B/C, evidence 付き) + the failing reproduction test (赤)**. This is a **specialization of the same middle gate, not a fourth gate and not a removal** — the gate count stays three (AL-1). The approval target is non-empty (classification + repro test), so AL-1's "ATDD never starts before that gate" is preserved: the minimal fix begins only after the human agrees the cause.
