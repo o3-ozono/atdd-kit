@@ -56,12 +56,12 @@
 
 ## AT-334-D: 効率は test-first 逸脱の理由にしない（C2）
 
-- [ ] [planned] AT-334-D1: iron-law に効率逸脱禁止が正典として明記
+- [x] [green] AT-334-D1: iron-law に効率逸脱禁止が正典として明記
   - Given: `docs/methodology/autopilot-iron-law.md`
   - When: 該当節を読む
   - Then: 「効率（session limit / トークン / 速さ）は test-first 逸脱（red 先行スキップを含む）の理由にしない」が文言として存在する
 
-- [ ] [planned] AT-334-D2: rules が正典を参照しつつバジェット維持
+- [x] [green] AT-334-D2: rules が正典を参照しつつバジェット維持
   - Given: `rules/atdd-kit.md`
   - When: Iron Laws / Workflow 節を読む
   - Then: 効率逸脱禁止の参照が存在し、かつ全体行数が 60 行以下のバジェットを維持している（invariant; 行数を exact-pin しない）

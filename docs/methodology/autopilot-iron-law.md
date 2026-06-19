@@ -58,6 +58,16 @@ Inside the loop, one cycle may produce a whole phase's deliverable set (design p
 
 autopilot does not fork or rewrite the flow skills. Each flow skill (`defining-requirements` … `reviewing-deliverables`) keeps its normal behavior. What changes **only while autopilot runs** is *where the User gate sits*: outside autopilot a human reviews each step; under autopilot the User gates collapse to requirements approval (start), design approval (before ATDD), and merge (end), and the steps between gates are looped autonomously. This is why autopilot is implemented as a **thin orchestrator** (`autopilot`) over the existing skills rather than as edits to them — the skills' role is mode-dependent, their code is not. (`reviewing-deliverables`'s machine-readable verdict is a backward-compatible addition: non-autopilot callers ignore it.)
 
+## 効率は test-first 逸脱の理由にしない (#334)
+
+**効率（session limit / トークン / 速さ）は test-first 逸脱（red 先行スキップを含む）の理由にしない。** これは AL-3 の deterministic gate と対をなす原則であり、理由の如何を問わず適用される。
+
+- AT を書いた後に red を確認せず実装に進む（red skip）= test-first 逸脱
+- 「今回は小さい変更だから」「セッション上限が近いから」「トークン節約のため」= いずれも逸脱の正当化に使えない
+- test-first deviation の唯一の正当な根拠は「技術的に AT を先行させることが構造上不可能な変更（例: AT フレームワーク自体の入れ替え）」のみであり、それ以外は逸脱ではなく手順の問題として扱う
+
+正典: 本節 (`docs/methodology/autopilot-iron-law.md`)。`rules/atdd-kit.md` から参照される。
+
 ## Why these overrides are legitimate (not rationalization)
 
 The standard Iron Law exists to keep a human in control of *what gets built* and *whether it is correct*. autopilot keeps both: **what** is anchored to the human-approved immutable requirements and design (AL-1, AL-2), and **whether it is correct** is gated by an objective AND oracle plus auditable evidence (AL-3, AL-4), with a guaranteed human-escalation exit (AL-5). The overrides relax *how often a human signs off mid-loop*, not *whether a human owns the boundaries*. This is the same boundary the strongest field players keep (Anthropic: *"Claude does not approve or block PRs"*; OpenAI: *"a support tool, not a replacement"*) — see `docs/issues/246-autopilot-revival/research.md`.
