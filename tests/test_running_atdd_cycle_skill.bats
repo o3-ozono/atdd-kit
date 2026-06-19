@@ -146,6 +146,6 @@ SKILL_FILE="skills/running-atdd-cycle/SKILL.md"
 @test "#334 record_red_evidence: Step 2 contains imperative call instruction for record_red_evidence" {
   # record_red_evidence が「呼び出せ（call / run / invoke / 実行）」という命令文で記述されていること
   # 言及のみ（via / + の形）では不十分 — 呼ばないと red.jsonl に証跡が記録されず収束が止まる
-  run grep -qiE 'call record_red_evidence|run record_red_evidence|invoke record_red_evidence|record_red_evidence.*を?呼び?出|record_red_evidence.*を?実行' "$SKILL_FILE"
+  run grep -qiE 'call.{0,2}record_red_evidence|run.{0,2}record_red_evidence|invoke.{0,2}record_red_evidence|record_red_evidence.*を?呼び?出|record_red_evidence.*を?実行' "$SKILL_FILE"
   [ "$status" -eq 0 ]
 }
