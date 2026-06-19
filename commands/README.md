@@ -10,6 +10,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 |---------|---------|------------|
 | [express](express.md) | Documentation-grade Issue fast path — skips PRD/US/plan/AT/review; requires explicit approval and CI gate | `/atdd-kit:express <issue>` |
 | [autofix](autofix.md) | bugfix lightweight route — chains `bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying`, skips PRD/US/plan/AT spec; middle gate is cause-agreement, merge stays a User gate | `/atdd-kit:autofix <issue>` |
+| [flaky-fix](flaky-fix.md) | flaky-test-fix lightweight route — chains `bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying`, skips PRD/US/plan/AT spec; middle gate is cause-agreement (non-determinism classification + failure rate); convergence oracle is N consecutive greens | `/atdd-kit:flaky-fix <issue>` |
 | [maintenance](maintenance.md) | On-demand rule and documentation health check; creates/updates maintenance Issue | `/atdd-kit:maintenance` |
 | [skill-fix](skill-fix.md) | Manually trigger the atdd-kit skill-defect report flow | `/atdd-kit:skill-fix` |
 | [setup-github](setup-github.md) | Set up GitHub issue/PR templates and labels | `/atdd-kit:setup-github` |
