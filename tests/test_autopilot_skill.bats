@@ -229,11 +229,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -q 'Run EXACTLY' "$SKILL_FILE"
 }
 
-@test "audit (#252): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
+@test "audit (#252 #334): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
   grep -q 'BEGIN-PAYLOAD' "$SKILL_FILE"
   grep -q 'END-PAYLOAD' "$SKILL_FILE"
-  # #272: payload が oracle 状態込みの新形式であること（blocking を含む）
-  grep -qE 'JSON\.stringify\(\{ atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
+  # #272 #334: payload が oracle 状態込みの新形式であること（redObserved を先頭に追加）
+  grep -qE 'JSON\.stringify\(\{ redObserved, atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
   # 旧 JSON.stringify(blocking) 単独 payload が残っていないこと
   ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
   grep -qi 'quoted heredoc' "$SKILL_FILE"
@@ -552,18 +552,19 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qE '\(d\) check_stuck "<log>" 3;' "$SKILL_FILE"
 }
 
-@test "AT-006 (#272): audit payload includes oracle state (atGreen, coverageOk, uncovered, blocking)" {
+@test "AT-006 (#272 #334): audit payload includes oracle state (redObserved, atGreen, coverageOk, uncovered, blocking)" {
   # Given: SKILL.md の audit ステップ（label: audit:step）
   # When: 構造 pin（grep）を実行する
-  # Then: payload が JSON.stringify({ atGreen, coverageOk, uncovered, blocking }) であり、
+  # Then: payload が JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking }) であり、
   #       旧 JSON.stringify(blocking) 単独 payload が残っていない
-  grep -qF 'JSON.stringify({ atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
+  # (#334 review Finding 2: redObserved を #272 oracle-state fingerprinting に追加)
+  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
   # 旧 JSON.stringify(blocking) 単独（中括弧なし）が BEGIN-PAYLOAD 直後に残っていないこと
   ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
   # uncovered が payload より前にループスコープで宣言・代入されていること
   local uline pline
   uline=$(grep -n 'let uncovered' "$SKILL_FILE" | head -1 | cut -d: -f1)
-  pline=$(grep -nF 'JSON.stringify({ atGreen' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  pline=$(grep -nF 'JSON.stringify({ redObserved' "$SKILL_FILE" | head -1 | cut -d: -f1)
   [ -n "$uline" ] && [ -n "$pline" ] && [ "$uline" -lt "$pline" ]
 }
 

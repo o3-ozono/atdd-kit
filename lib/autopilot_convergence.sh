@@ -319,8 +319,13 @@ record_red_evidence() {
 #   [git-dir] defaults to "." (current working directory); pass an explicit path in tests.
 check_red_evidence() {
   local test_sha="$1" impl_sha="$2" red_jsonl="$3" git_dir="${4:-.}"
-  # Both SHAs must be non-empty
-  [ -n "$test_sha" ] || { echo "autopilot_convergence: check_red_evidence: test-commit sha required" >&2; return 2; }
+  # Both SHAs must be non-empty and JSON-safe (symmetric with record_red_evidence case validation)
+  case "$test_sha" in
+    '' | *[!A-Za-z0-9._:-]*)
+      echo "autopilot_convergence: check_red_evidence: invalid commit sha: '$test_sha'" >&2
+      return 2
+      ;;
+  esac
   [ -n "$impl_sha" ] || { echo "autopilot_convergence: check_red_evidence: impl-commit sha required" >&2; return 2; }
   # The red-jsonl must exist (evidence must have been recorded before this check)
   [ -f "$red_jsonl" ] || { echo "autopilot_convergence: check_red_evidence: red evidence file not found: '$red_jsonl'" >&2; return 1; }

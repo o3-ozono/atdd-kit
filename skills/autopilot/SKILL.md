@@ -229,7 +229,7 @@ for (const step of STEPS) {
     //    record_iteration full sig: <jsonl> <it> <step> <verdict> <fp>. non-zero = halt (#252 verbatim payload, #272 oracle state in fp).
     const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. The blocking-findings payload to fingerprint is the exact text between the two marker lines below (hash the payload only, never the markers):
 BEGIN-PAYLOAD
-${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}
+${JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })}
 END-PAYLOAD
 Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`; (4) #288: if record_iteration succeeded, IMMEDIATELY commit ONLY the audit log so a later working-tree rollback by the next gen agent cannot delete this row — \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): audit ${step} iteration ${it} (#${NNN})"\` (stage the log file alone, nothing else). Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } }, model: MODEL })
     if (rec == null || rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
