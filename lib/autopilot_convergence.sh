@@ -326,7 +326,12 @@ check_red_evidence() {
       return 2
       ;;
   esac
-  [ -n "$impl_sha" ] || { echo "autopilot_convergence: check_red_evidence: impl-commit sha required" >&2; return 2; }
+  case "$impl_sha" in
+    '' | *[!A-Za-z0-9._:-]*)
+      echo "autopilot_convergence: check_red_evidence: invalid commit sha: '$impl_sha'" >&2
+      return 2
+      ;;
+  esac
   # The red-jsonl must exist (evidence must have been recorded before this check)
   [ -f "$red_jsonl" ] || { echo "autopilot_convergence: check_red_evidence: red evidence file not found: '$red_jsonl'" >&2; return 1; }
   # There must be at least one record for the test commit sha (red-exit evidence)
