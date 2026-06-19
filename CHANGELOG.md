@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.30.0] - 2026-06-19
+
+### Added
+
+- **フロー完了時の自動振り返り（メトリクス + フィードバック抽出）（#309）**。
+  - `scripts/retrospective.sh` を新規作成。引数: `--issue <N> [--pr <PR>] [--dry-run] [--json-output] [--help]`。ゼロ LLM 呼び出し・ゼロ対話入力・5 秒以内完了（CS-1 軽量性）。一次ソース: headless worker 出力 JSON（`usage`/`total_cost_usd`）・セッション transcript（ターン数）・`autopilot-log.jsonl`（フェーズ境界のみ、トークン不使用）・`gh` コメント（摩擦点）。自動起票なし（No Auto-Routing）。横断 JSONL `docs/retrospective-log.jsonl` に append-only 追記。
+  - `templates/docs/issues/retrospective.md` を新規作成（5 区分テンプレート: 対話量 / コスト / 前回比 / 摩擦点 / 改善候補）。
+  - `skills/merging-and-deploying/SKILL.md` Step 5（Report + Retrospective）に振り返り呼び出しを追記。唯一の起動点として明記。express は `merging-and-deploying` を経由しない構造的スキップ（`if 非 express` 分岐不要）。全チャネル同期（ターミナル + Issue/PR コメント）を明記。
+  - `tests/test_retrospective_skill.bats` 新規作成（merging-and-deploying SKILL 構造 pin: 起動点・express スキップ・全チャネル同期・5 ステップ維持・200 行以下、8 tests）。
+  - `tests/test_retrospective_script.bats` 新規作成（script 出力契約: 各メトリクス・JSONL valid・自動起票なし・CS-1 軽量性、16 tests）。
+  - `tests/acceptance/AT-309.bats` 新規作成（受け入れシナリオ AT-309-1〜AT-309-9、29 tests）。うち 6 件は fixture 注入による **behavioral テスト**（worker-out.json の usage → 数値トークン出力 / transcript jsonl → ターン数 / autopilot-log の `verdict:"FAIL"` → ゲート別摩擦分類 / PR コメント → 摩擦シグナル / トークン+diff → 数値正規化比 / 非 dry-run → retrospective.md 生成＋append-only JSONL）。この behavioral 化で `extract_friction` の `${step,,}`（bash 4+ 専用）が macOS bash 3.2 の `set -e` 下で abort する移植バグを検知し `tr` へ修正、`gh pr view --comments` を摩擦シグナル(b)に追加。
 ## [3.29.0] - 2026-06-19
 
 ### Added

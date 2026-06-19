@@ -11,6 +11,7 @@
 | `plan.md` | Plan（2-5 分粒度タスク + verification 交互配置） |
 | `acceptance-tests.md` | Acceptance Tests（lifecycle: planned → draft → green → regression） |
 | `design-doc.md` | Design Doc（Context / Goals / Proposal / Alternatives / Trade-offs / Risks） — **optional** |
+| `retrospective.md` | Retrospective レポートテンプレート（対話量 / コスト / 前回比 / 摩擦点 / 改善候補）。`scripts/retrospective.sh` が自動生成する — **auto-generated** |
 
 ## 使い方
 
