@@ -226,6 +226,14 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-299.bats | autopilot halt 終端レコード JSONL 監査ログ記録 — record_halt による HALT 行追記・findings_digest はネスト JSON 配列値・record_iteration への timestamp 付与・timestamp が fingerprint に非関与・収束失敗系 reason enum 限定（Issue #299、9 tests） |
 | AT-308.bats | bugfix 専用の軽量ルート（フル機能ルートと分離）— route-eligibility.md bugfix 判定信号 + No Auto-Routing 維持・autofix コマンド配線・bugfix 収束オラクル（回帰 green + 既存回帰なし + 再現テスト赤→緑）・AL-3 coverage 項の失敗再現テスト被覆 specialize・cause-agreement 安定トークンの iron-law / design-gate 二文書整合・half-scope + flaky フォローアップ #322・version/CHANGELOG 不変条件。wiring pin（赤→緑 ランタイム fix loop は own せず out-of-band replay 経路が own）（Issue #308、14 tests） |
 | AT-324.bats | テスト高速化 — AT-006（AT-271 入れ子フルスイート再実行）撤去・run-tests.sh 並列ランナー検証・フェーズ別実行ポリシー配線・test-execution-policy.md 言語ポリシー/README登録/Loaded-by メタ・バージョニング不変条件（Issue #324、20 tests） |
+| AT-326.bats | Draft PR 作成時 in-progress 付与 ＋ full-autopilot dispatch GitHub-state プリフィルタ — in-progress-label.sh 付与/番号解決/負例/除去/冪等/fail-safe（AT-326-1〜6）/ full-autopilot-dispatch.sh busy 除外・lease 非取得・既存回帰（AT-326-7〜11）（Issue #326、29 tests） |
+| AT-329-template.bats | Issue テンプレート意図シード軽量化 — ja/en development.yml の AC/サブタスク/完了条件/US が optional・意図3点（summary/outcome/scope-boundary）が required・正確に3フィールドのみ required（Issue #329、16 tests） |
+| AT-329-queue.bats | full-autopilot queue 動的化 — 走行中追加 issue の同セッション拾い上げ・in-flight/完了済み issue の dedup 二重起動防止（Issue #329、3 tests） |
+| AT-329-notify.bats | full-autopilot 起動時通知先確認 — FA_NOTIFY_CMD 未設定時警告1回・設定済み確認1回・本体は停止しない（Issue #329、2 tests） |
+| AT-329-result.bats | merge-ready GitHub ラベル二重確認（produce＋consume 対） — consume: ラベル不在 failed / 自己申告＋ラベル両立 merge-ready / is_error:true は merge-ready ラベルがあっても failed; produce: setup-github.md 定義・件数16・autopilot SKILL.md hand-off 付与記述・通常起動ラベル不付与（Issue #329、9 tests） |
+| AT-329-skillgate.bats | skill-gate route-eligibility 必須チェック — セクション存在・route-eligibility.md 参照・非適合抑止・override 記述・mandatory キーワード（Issue #329、6 tests） |
+| AT-329-dor.bats | full-autopilot SKILL.md DoR 整合 — ready-to-go = DoR + plan review PASS 記述・旧 PRD 単独前提の撤去・definition-of-ready.md 存在・定義一致（Issue #329、5 tests） |
+| AT-329-worktree.bats | full-autopilot headless worker の worktree プラグイン設定播種 — `__seed_worktree_settings` が source 存在時に `.claude/settings.local.json` を播種・冪等・source 不在 no-op・異なる既存 dest 上書き・`FA_NO_WORKTREE=1` で worktree 解決が空（Issue #329、5 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

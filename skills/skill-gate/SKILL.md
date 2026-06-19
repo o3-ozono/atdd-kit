@@ -22,6 +22,19 @@ Enforce governance rules before any action, including clarifying questions.
    The flow then chains Step 1 → 6 (defining-requirements → extracting-user-stories → writing-plan-and-tests → running-atdd-cycle → reviewing-deliverables → merging-and-deploying). Resume mid-flow by invoking the skill for the next incomplete step.
 4. **Not matched** (e.g., "What is Issue #16 about?"): Proceed to Governance Rules.
 
+## Pre-check: Route Eligibility (mandatory)
+
+Before routing any Issue to a skill, **evaluate `docs/methodology/route-eligibility.md`** to determine the correct route (express / full-flow / bugfix). This check is mandatory — skipping it may route a behavior-change Issue to express (incorrect) or a doc-only Issue through full ATDD (unnecessarily expensive).
+
+**Steps:**
+
+1. Load `docs/methodology/route-eligibility.md` and evaluate Express-Eligible Signals, Full-Flow Signals, and bugfix Route Signals against the Issue title and body.
+2. **If express-eligible** (doc-grade, no behavior change): recommend `/atdd-kit:express <N>` and confirm with the user before proceeding. Do NOT auto-route.
+3. **If full-flow / bugfix signals present** (behavior change, code change, CI, etc.): route to the appropriate flow (6-step flow or `/atdd-kit:autofix`). A message that invokes a non-eligible route (e.g., express for a behavior-change Issue) is **non-compliant** — surface the mismatch and ask the user to confirm or override.
+4. **Override:** The user may always override the route recommendation explicitly (e.g., "use express anyway"). Announce the override and proceed.
+
+**Non-compliant example (suppress):** `/atdd-kit:express` on an Issue with `type:development` label or code-change keywords — surface the mismatch ("この Issue は挙動変更を含むため express は不適切です。フル6ステップフローで進めますか？") before proceeding.
+
 ## Pre-check: Parallel Collision Detection
 
 Before starting work on Issue `#N` (a matched work-start above), check that no other worktree is already working the same Issue:

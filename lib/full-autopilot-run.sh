@@ -40,18 +40,69 @@ export RUNDIR SESSION   # 外部 launcher / result / merge フックからも参
 
 # ---- 既定フック（本番）。テストは env で差し替える。 ----
 __default_queue() { gh issue list --label ready-to-go --json number --jq '.[].number' 2>/dev/null; }
-__default_launch() {
+# worker を起動する worktree を確定（SKILL flow step 3: 1 issue = 1 worktree 隔離）。
+# 既定は <repo の親>/<repo 名>-<issue>。FA_WORKTREE_DIR（'{i}' を issue で置換）で明示上書き、
+# FA_NO_WORKTREE=1 で従来どおり cwd 起動（テスト/単純構成向け）。解決不能なら空（=cwd 起動）。
+__worker_worktree() {
   local i="$1"
+  [ -n "${FA_NO_WORKTREE:-}" ] && { echo ""; return; }
+  if [ -n "${FA_WORKTREE_DIR:-}" ]; then printf '%s\n' "${FA_WORKTREE_DIR//\{i\}/$i}"; return; fi
+  local root name
+  root="$(git -C "${FA_REPO:-.}" rev-parse --show-toplevel 2>/dev/null)" || { echo ""; return; }
+  [ -n "$root" ] || { echo ""; return; }
+  name="$(basename "$root")"
+  printf '%s\n' "$(dirname "$root")/${name}-${i}"
+}
+
+# #329: プラグイン有効化設定(.claude/settings.local.json: enabledPlugins + extraKnownMarketplaces)を
+# worktree に播種する。gitignore 対象で worktree には複製されないため、headless `claude -p` worker が
+# atdd-kit プラグインを読み込めず「Unknown command: /atdd-kit:autopilot」で即失敗する。冪等
+# （source 不在なら no-op / 既存と一致なら skip）。
+__seed_worktree_settings() {
+  local wt="$1" root src
+  root="$(git -C "${FA_REPO:-.}" rev-parse --show-toplevel 2>/dev/null)" || return 0
+  src="$root/.claude/settings.local.json"
+  [ -f "$src" ] || return 0
+  mkdir -p "$wt/.claude"
+  if [ ! -f "$wt/.claude/settings.local.json" ] || ! cmp -s "$src" "$wt/.claude/settings.local.json"; then
+    cp "$src" "$wt/.claude/settings.local.json"
+  fi
+}
+
+__default_launch() {
+  local i="$1" wt
+  wt="$(__worker_worktree "$i")"
+  if [ -n "$wt" ]; then
+    # worktree が無ければ issue ブランチで作成（既存ブランチ→そのまま add / 無ければ -b で新規）。
+    if [ ! -d "$wt" ]; then
+      local branch; branch="$(__resolve_branch "$i")"
+      git -C "${FA_REPO:-.}" worktree add "$wt" "$branch" >/dev/null 2>&1 \
+        || git -C "${FA_REPO:-.}" worktree add -b "$branch" "$wt" >/dev/null 2>&1 || true
+    fi
+    # #329: 起動前に必ずプラグイン設定を播種（無いと Unknown command で落ちる）。
+    __seed_worktree_settings "$wt"
+  fi
   # FA_HANDOFF=1 が hand-off の安全マーカー（autopilot は env が在るときだけ hand-off を honor）。
-  FA_HANDOFF=1 claude -p "/atdd-kit:autopilot $i --hand-off" \
-    --output-format json --permission-mode acceptEdits \
-    --allowed-tools "Bash Read Edit Write Glob Grep Workflow ToolSearch TaskCreate TaskUpdate TaskList" \
-    > "$RUNDIR/$i.out.json" 2>"$RUNDIR/$i.err" < /dev/null
+  # RUNDIR は絶対パス（mktemp -d）なので worktree へ cd しても出力先は不変。
+  # worktree 指定時に cd 失敗（作成失敗・権限不足）したら起動を中止する。失敗を握り潰して
+  # メインチェックアウトで worker を走らせると別ブランチを汚染するため fail-closed（exit 1 →
+  # out.json 不在 → __default_result が "failed" を返す）。
+  ( if [ -n "$wt" ]; then cd "$wt" || { echo "launch: cd to worktree failed: $wt" >&2; exit 1; }; fi
+    FA_HANDOFF=1 claude -p "/atdd-kit:autopilot $i --hand-off" \
+      --output-format json --permission-mode acceptEdits \
+      --allowed-tools "Bash Read Edit Write Glob Grep Workflow ToolSearch TaskCreate TaskUpdate TaskList" \
+      > "$RUNDIR/$i.out.json" 2>"$RUNDIR/$i.err" < /dev/null )
 }
 __default_result() {
   local i="$1"
+  # US-3 / 真因3: is_error:false 自己申告 ＋ GitHub merge-ready ラベル二重確認
   if [ -f "$RUNDIR/$i.out.json" ] && grep -q '"is_error":false' "$RUNDIR/$i.out.json" 2>/dev/null; then
-    echo "merge-ready"
+    # merge-ready ラベルが Issue に存在することを gh で照合（produce→consume の往復検証）
+    if gh issue view "$i" --json labels --jq '.labels[].name' 2>/dev/null | grep -q '^merge-ready$'; then
+      echo "merge-ready"
+    else
+      echo "failed"
+    fi
   else
     echo "failed"
   fi
@@ -151,25 +202,45 @@ run() {
   local K="${1:-2}"
   mkdir -p "$RUNDIR"
   trap '__cleanup' INT TERM
-  # キュー取得
-  local queue=() qline
-  while IFS= read -r qline; do [ -n "$qline" ] && queue+=("$qline"); done < <($QUEUE_CMD)
+  # 通知先プリフライト確認（US-2 / 真因2）
+  if [ -z "$NOTIFY_CMD" ]; then
+    log_line "preflight: NOTIFY_CMD unset — no notifications will be sent"
+  else
+    log_line "preflight: NOTIFY_CMD=$NOTIFY_CMD"
+  fi
 
-  local pids=() issues=() starts=() qi=0 active=0
-  while [ "$qi" -lt "${#queue[@]}" ] || [ "$active" -gt 0 ]; do
-    # 空きスロットを埋める（issue-lease を取れたものだけ起動）
-    while [ "$active" -lt "$K" ] && [ "$qi" -lt "${#queue[@]}" ]; do
-      local issue="${queue[$qi]}"; qi=$(( qi + 1 ))
-      if cmd_acquire issue "$issue" "$SESSION"; then
-        ( $LAUNCH_CMD "$issue"; echo $? > "$RUNDIR/$issue.rc" ) &
-        pids+=("$!"); issues+=("$issue"); starts+=("$(date +%s)"); active=$(( active + 1 ))
-        log_line "launch issue=$issue active=$active"; notify dispatch "$issue"
-      else
-        log_line "skip issue=$issue (lease held elsewhere)"
-      fi
-    done
+  local pids=() issues=() starts=() active=0 done_set=""
+  # 動的キュー再評価フラグ: 初回は必ず1回評価
+  local need_refill=1
+  while :; do
+    # 空きスロット充填時に $QUEUE_CMD を再評価（動的 enqueue / US-1 / 真因1）
+    if [ "$need_refill" -eq 1 ] && [ "$active" -lt "$K" ]; then
+      need_refill=0
+      local qline
+      while IFS= read -r qline; do
+        [ -z "$qline" ] && continue
+        # dedup: lease 保持中 / in-flight / 完了済みを除外
+        local already=0
+        local _x
+        for _x in "${issues[@]+"${issues[@]}"}"; do [ "$_x" = "$qline" ] && already=1 && break; done
+        [ "$already" -eq 1 ] && continue
+        case " $done_set " in *" $qline "*) continue ;; esac
+        # lease 取得できたものだけ起動
+        if cmd_acquire issue "$qline" "$SESSION"; then
+          ( $LAUNCH_CMD "$qline"; echo $? > "$RUNDIR/$qline.rc" ) &
+          pids+=("$!"); issues+=("$qline"); starts+=("$(date +%s)"); active=$(( active + 1 ))
+          log_line "launch issue=$qline active=$active"; notify dispatch "$qline"
+          [ "$active" -ge "$K" ] && break
+        else
+          log_line "skip issue=$qline (lease held elsewhere)"
+        fi
+      done < <($QUEUE_CMD)
+    fi
     __rebuild_held
-    [ "$active" -eq 0 ] && break
+    # キューが空 かつ in-flight ゼロ で終了
+    [ "$active" -eq 0 ] && [ "$need_refill" -eq 0 ] && break
+    # in-flight が無く次回の refill が必要な場合は refill させてから再チェック
+    [ "$active" -eq 0 ] && continue
     # いずれかの worker 完了を待つ（kill -0 poll, bash 3.2 移植）。
     # FA_WORKER_TIMEOUT(>0) 超過の worker は kill して失敗扱い（ハングで dispatcher が永久停止しない）。
     local done_idx=-1 timed_out=0
@@ -193,6 +264,7 @@ run() {
     done
     local di="${issues[$done_idx]}"
     pids[$done_idx]=""; issues[$done_idx]=""; starts[$done_idx]=""; active=$(( active - 1 ))
+    done_set="$done_set $di"
 
     if [ "$timed_out" -eq 1 ]; then
       log_line "worker-timeout issue=$di (>${TIMEOUT}s)"; notify worker-failed "$di" "timeout >${TIMEOUT}s"
@@ -224,8 +296,9 @@ run() {
         log_line "worker-failed issue=$di"; notify worker-failed "$di"
       fi
     fi
-    # issue-lease を解放（スロットを空ける＝数珠つなぎ）
+    # issue-lease を解放（スロットを空ける＝数珠つなぎ）＋次ラウンドで再評価
     cmd_release issue "$di" "$SESSION"
+    need_refill=1
     __rebuild_held
   done
   trap - INT TERM
