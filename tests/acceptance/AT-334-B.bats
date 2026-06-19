@@ -5,7 +5,7 @@
 # running-atdd-cycle の Flow ステップ2（Confirm RED）に、test コミットと impl コミットの
 # 分離を必須化する文言が追加されていることを grep で確認する。
 #
-# lifecycle: [draft]
+# lifecycle: [regression]
 
 SKILL_FILE="skills/running-atdd-cycle/SKILL.md"
 

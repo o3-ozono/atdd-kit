@@ -2,7 +2,7 @@
 # @covers: docs/methodology/autopilot-iron-law.md, rules/atdd-kit.md
 # AT-334-D: 効率は test-first 逸脱の理由にしない（C2）
 #
-# lifecycle: [draft]
+# lifecycle: [regression]
 
 IRON_LAW="docs/methodology/autopilot-iron-law.md"
 RULES="rules/atdd-kit.md"

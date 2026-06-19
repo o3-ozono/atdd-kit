@@ -5,7 +5,7 @@
 # plugin.json の version が CHANGELOG 最上位リリース見出しと一致することを invariant として確認する。
 # 特定バージョン値は固定しない（post-merge regression で次の bump の度に壊れるため）。
 #
-# lifecycle: [draft]
+# lifecycle: [regression]
 
 @test "AT-334-E1: plugin.json version matches CHANGELOG topmost release heading (invariant)" {
   # Given: .claude-plugin/plugin.json と CHANGELOG.md

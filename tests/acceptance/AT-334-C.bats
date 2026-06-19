@@ -2,7 +2,7 @@
 # @covers: docs/methodology/autopilot-iron-law.md, docs/methodology/autopilot-overview.md
 # AT-334-C: Gate③後フィードバックの正規ルート（F3）
 #
-# lifecycle: [draft]
+# lifecycle: [regression]
 
 IRON_LAW="docs/methodology/autopilot-iron-law.md"
 OVERVIEW="docs/methodology/autopilot-overview.md"
