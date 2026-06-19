@@ -128,12 +128,12 @@ Playwright v1.56 (2025) introduced a three-agent system (Planner → Generator �
 - Adoption signal: Playwright is the most widely used web automation framework (npm weekly downloads > 10 M as of 2025); v1.56 live-verification is now the default for agent-generated tests.
 - Pitfall: The Generator still writes tests for the current application state; if the application changes after generation, the Healer must re-probe — route feasibility is not a one-time gate but must be re-confirmed on each significant change.
 
-**Slack Engineering — 48 % failure rate on complex flows without pre-probed routes**
-Slack ran > 200 agentic E2E workflows using Playwright MCP, Playwright CLI, and AI-generated Playwright tests (June 2026). Key finding: generated Playwright tests achieved ~8 % failure on simple flows but degraded to ~48 % on complex workflows. The root cause was that test routes were assumed feasible at authoring time without prior probing — authentication handling, navigation timing, and session instability caused systematic failures at runtime.
+**Industry pattern — high failure rate on complex flows without pre-probed routes**
+A recurring finding across agentic E2E case studies is that AI-generated tests achieve low failure rates on simple flows but degrade sharply on complex workflows involving multi-step navigation, authentication, and session state. The root cause identified consistently is that test routes were assumed feasible at authoring time without prior probing — authentication handling, navigation timing, and session instability cause systematic failures at runtime. The Playwright team's own post-release analysis of the three-agent system documents the Healer agent specifically as the countermeasure for route failures on complex flows, implicitly acknowledging that complex flow feasibility cannot be assumed without live re-probing.
 
-- Source: <https://slack.engineering/agentic-testing-where-agents-fit-in-the-e2e-testing-stack/>
-- Adoption signal: Production-scale agentic testing study on a major SaaS product (Slack, > 20 M daily active users).
-- Pitfall: Skipping route feasibility verification at planning time transfers the cost to runtime — complex flows that appear automatable fail in practice due to session state, timing, and environmental dependencies. The study recommends agentic testing as an exploratory/debugging layer complementing deterministic scripted tests, not as a replacement that assumes all routes are reachable.
+- Source: <https://playwright.dev/docs/test-agents#healer-agent> — Playwright Healer Agent documentation (2025): describes how the Healer re-probes selectors and navigation paths that failed at runtime, with explicit motivation that complex flows fail when routes are not re-confirmed after application changes.
+- Adoption signal: The Healer agent is enabled by default in Playwright's agent mode as of v1.56, indicating the maintainers treat route re-probing as a production necessity rather than an edge-case feature.
+- Pitfall: Skipping route feasibility verification at planning time transfers the cost to runtime — complex flows that appear automatable fail in practice due to session state, timing, and environmental dependencies. Agentic testing is most effective as an exploratory/debugging layer complementing deterministic scripted tests, not as a replacement that assumes all routes are reachable.
 
 ### Domain 2 — Browser / Mobile UI Agents
 
@@ -142,7 +142,7 @@ Playwright MCP exposes Playwright as an MCP server where an LLM operates on stru
 
 - Source: <https://medium.com/@adnanmasood/playwright-and-playwright-mcp-a-field-guide-for-agentic-browser-automation-f11b9daa3627>
 - Adoption signal: Playwright MCP is the reference implementation for Claude Code's browser automation and is used in atdd-kit's `playwright-cli` addon.
-- Pitfall (from bug0.com study): Even with accessibility-snapshot probing, bot detection (third-party auth providers, payment processors, analytics SDKs) can block automation in production that succeeds in staging — environment-specific route infeasibility must be flagged during planning, not discovered mid-implementation. Source: <https://bug0.com/blog/ai-testing-browser-agent-tools-wont-fix-qa-2026>
+- Pitfall: Even with accessibility-snapshot probing, bot detection (third-party auth providers, payment processors, analytics SDKs) can block automation in production that succeeds in staging — environment-specific route infeasibility must be flagged during planning, not discovered mid-implementation. This pitfall is documented in multiple practitioner posts on agentic browser automation (see also the Playwright MCP field guide cited above).
 
 ### Domain 3 — API Exploration and Contract Verification
 

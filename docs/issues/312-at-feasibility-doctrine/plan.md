@@ -46,8 +46,8 @@
 
 ## Testing
 
-- [ ] `tests/test_at_feasibility_doctrine.bats` を新規作成し、doctrine の必須 5 セクション存在・`> **Loaded by:**` メタ・既存 doc 相互参照健全性・README 登録を構造的に検証する AT を実装する
-- [ ] verify: `bats tests/test_at_feasibility_doctrine.bats` が green（acceptance-tests.md の AT-312-01〜06 に対応）
+- [x] `tests/acceptance/AT-312.bats` を新規作成し、doctrine の必須セクション存在・`> **Loaded by:**` メタ・既存 doc 相互参照健全性・README 登録・外部調査根拠・双方向逆参照を構造的に検証する AT を実装する
+- [x] verify: `bats tests/acceptance/AT-312.bats` が green（acceptance-tests.md の AT-312-01〜08 に対応、25 tests）
 
 ## Finishing
 
