@@ -84,7 +84,10 @@ __default_launch() {
   fi
   # FA_HANDOFF=1 が hand-off の安全マーカー（autopilot は env が在るときだけ hand-off を honor）。
   # RUNDIR は絶対パス（mktemp -d）なので worktree へ cd しても出力先は不変。
-  ( [ -n "$wt" ] && cd "$wt"
+  # worktree 指定時に cd 失敗（作成失敗・権限不足）したら起動を中止する。失敗を握り潰して
+  # メインチェックアウトで worker を走らせると別ブランチを汚染するため fail-closed（exit 1 →
+  # out.json 不在 → __default_result が "failed" を返す）。
+  ( if [ -n "$wt" ]; then cd "$wt" || { echo "launch: cd to worktree failed: $wt" >&2; exit 1; }; fi
     FA_HANDOFF=1 claude -p "/atdd-kit:autopilot $i --hand-off" \
       --output-format json --permission-mode acceptEdits \
       --allowed-tools "Bash Read Edit Write Glob Grep Workflow ToolSearch TaskCreate TaskUpdate TaskList" \
