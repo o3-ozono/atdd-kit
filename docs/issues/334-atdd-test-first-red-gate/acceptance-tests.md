@@ -68,7 +68,7 @@
 
 ## AT-334-E: リリース整合（invariant 回帰）
 
-- [ ] [planned] AT-334-E1: バージョンと CHANGELOG が整合
+- [x] [green] AT-334-E1: バージョンと CHANGELOG が整合
   - Given: `.claude-plugin/plugin.json` と `CHANGELOG.md`
   - When: バージョンと最上位リリース見出しを照合する
   - Then: plugin.json の version が CHANGELOG 最上位リリース見出しと一致する（特定バージョン値を固定しない invariant）

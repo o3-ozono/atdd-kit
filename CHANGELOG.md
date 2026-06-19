@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.29.0] - 2026-06-19
+
+### Added
+
+- **ATDD の test-first（AT red 先行）を構造的に担保する（#334）**。
+  - **決定的 red ゲート（F1/C1）**: `lib/autopilot_convergence.sh` に `record_red_evidence` / `check_red_evidence` を追加。test コミット時点の AT red exit 証跡を `red.jsonl` に記録し、deterministic に検証する（AL-3 green ゲートの対）。`skills/autopilot/SKILL.md` の satisfaction oracle を 5 項 AND `AND(redObserved, atGreen, coverageOk, overall_correctness, P0/P1==0)` に更新。
+  - **test/impl コミット分離必須化（F2）**: `skills/running-atdd-cycle/SKILL.md` の C2・Flow ステップ2 に test コミットと impl コミットの分離必須化と machine-verifiable 根拠を追記。
+  - **Gate③後フィードバックの正規ルート（F3）**: `docs/methodology/autopilot-iron-law.md` に AL-5b（Gate③後ルート・設計アンカー変更の有無で「design 差し戻し / 新Issue」に分岐）を追加。`docs/methodology/autopilot-overview.md` に要約と iron-law への正典参照を追記。
+  - **効率は test-first 逸脱の理由にしない（C2）**: `docs/methodology/autopilot-iron-law.md` に効率（session limit / トークン / 速さ）を test-first 逸脱の正当化に使えない旨を正典として明記。
+  - `tests/acceptance/AT-334-A.bats`（red ゲート unit / oracle 構造アサーション、10 tests）、`AT-334-B.bats`（コミット分離 SKILL.md アサーション、2 tests）、`AT-334-C.bats`（Gate③後ルート doc アサーション、6 tests）、`AT-334-D.bats`（効率逸脱禁止 doc アサーション、4 tests）、`AT-334-E.bats`（バージョン整合 invariant、1 test）。
+
 ## [3.28.1] - 2026-06-19
 
 ### Fixed
