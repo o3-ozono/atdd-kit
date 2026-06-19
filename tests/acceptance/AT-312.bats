@@ -293,3 +293,114 @@ README="docs/methodology/README.md"
     return 1
   }
 }
+
+# ---------------------------------------------------------------------------
+# AT-312-07: 外部調査根拠節（一次情報リンク付き 3 件以上の要約）
+# PRD Outcome line 24: 外部調査（agentic E2E / self-verifying AC / browser・mobile UI agent /
+# API 探索検証）の傾向・採用事例・落とし穴が doctrine の根拠として要約・引用されている
+# ---------------------------------------------------------------------------
+
+@test "AT-312-07a: doctrine has an external-research-basis section" {
+  # Given: PRD Outcome line 24 — 外部調査根拠が doctrine に含まれることが必須
+  # When: docs/methodology/acceptance-test-feasibility.md の見出しを検査する
+  # Then: Research / Evidence / External / 根拠 等を含む ## 見出しが存在する
+  local root
+  root="$(repo_root)"
+  [[ -f "${root}/${DOCTRINE}" ]] || skip "${DOCTRINE} does not exist yet"
+  grep -qiE '^## .*(Research|Evidence|External|Empirical|Prior Art|Industry|Basis)' "${root}/${DOCTRINE}" || {
+    echo "FAIL: ${DOCTRINE} has no external-research-basis section (## Research / Evidence / External / Basis etc.)"
+    return 1
+  }
+}
+
+@test "AT-312-07b: doctrine research section contains at least 3 primary-source URLs" {
+  # Given: plan Story 2 verify — 「一次情報リンク付きで 3 件以上要約」
+  # When: docs/methodology/acceptance-test-feasibility.md 内の https:// リンクを数える
+  # Then: https:// URL が 3 件以上存在する
+  local root url_count
+  root="$(repo_root)"
+  [[ -f "${root}/${DOCTRINE}" ]] || skip "${DOCTRINE} does not exist yet"
+  url_count=$(grep -oE 'https?://[^ )>]+' "${root}/${DOCTRINE}" | wc -l | tr -d ' ')
+  [[ "${url_count}" -ge 3 ]] || {
+    echo "FAIL: ${DOCTRINE} has ${url_count} URL(s); need at least 3 primary-source links"
+    return 1
+  }
+}
+
+@test "AT-312-07c: doctrine research section covers agentic-E2E, browser-mobile-agent, and API-contract-verification domains" {
+  # Given: PRD line 24 — agentic E2E / self-verifying AC / browser・mobile UI agent / API 探索検証
+  # When: docs/methodology/acceptance-test-feasibility.md を検査する
+  # Then: 3 領域（agentic E2E, browser/mobile agent, API contract verification）への言及がある
+  local root
+  root="$(repo_root)"
+  [[ -f "${root}/${DOCTRINE}" ]] || skip "${DOCTRINE} does not exist yet"
+  # Domain 1: agentic E2E
+  grep -qiE '(agentic.*E2E|E2E.*agent|agentic.*test|autonomous.*test)' "${root}/${DOCTRINE}" || {
+    echo "FAIL: ${DOCTRINE} does not mention agentic E2E testing in research section"
+    return 1
+  }
+  # Domain 2: browser / mobile UI agent
+  grep -qiE '(browser.*agent|mobile.*agent|Playwright.*agent|UI.*agent|agent.*browser|agent.*mobile)' "${root}/${DOCTRINE}" || {
+    echo "FAIL: ${DOCTRINE} does not mention browser/mobile UI agent in research section"
+    return 1
+  }
+  # Domain 3: API / contract verification
+  grep -qiE '(API.*contract|contract.*test|OpenAPI|contract.*verif|API.*verif)' "${root}/${DOCTRINE}" || {
+    echo "FAIL: ${DOCTRINE} does not mention API contract verification in research section"
+    return 1
+  }
+}
+
+# ---------------------------------------------------------------------------
+# AT-312-08: back-references from existing 4 docs (bidirectional cross-references)
+# PRD Outcome line 23: 「既存 methodology doc と矛盾せず、相互参照が張られている」
+# — implies bidirectional: doctrine->4 docs + 4 docs->doctrine
+# ---------------------------------------------------------------------------
+
+@test "AT-312-08a: atdd-guide.md back-references acceptance-test-feasibility.md" {
+  # Given: PRD line 23 — 双方向相互参照
+  # When: docs/methodology/atdd-guide.md を検査する
+  # Then: acceptance-test-feasibility への参照が存在する
+  local root
+  root="$(repo_root)"
+  grep -qF 'acceptance-test-feasibility' "${root}/docs/methodology/atdd-guide.md" || {
+    echo "FAIL: docs/methodology/atdd-guide.md does not reference acceptance-test-feasibility.md"
+    return 1
+  }
+}
+
+@test "AT-312-08b: test-mapping.md back-references acceptance-test-feasibility.md" {
+  # Given: PRD line 23 — 双方向相互参照
+  # When: docs/methodology/test-mapping.md を検査する
+  # Then: acceptance-test-feasibility への参照が存在する
+  local root
+  root="$(repo_root)"
+  grep -qF 'acceptance-test-feasibility' "${root}/docs/methodology/test-mapping.md" || {
+    echo "FAIL: docs/methodology/test-mapping.md does not reference acceptance-test-feasibility.md"
+    return 1
+  }
+}
+
+@test "AT-312-08c: definition-of-ready.md back-references acceptance-test-feasibility.md" {
+  # Given: PRD line 23 — 双方向相互参照
+  # When: docs/methodology/definition-of-ready.md を検査する
+  # Then: acceptance-test-feasibility への参照が存在する
+  local root
+  root="$(repo_root)"
+  grep -qF 'acceptance-test-feasibility' "${root}/docs/methodology/definition-of-ready.md" || {
+    echo "FAIL: docs/methodology/definition-of-ready.md does not reference acceptance-test-feasibility.md"
+    return 1
+  }
+}
+
+@test "AT-312-08d: test-execution-policy.md back-references acceptance-test-feasibility.md" {
+  # Given: PRD line 23 — 双方向相互参照
+  # When: docs/methodology/test-execution-policy.md を検査する
+  # Then: acceptance-test-feasibility への参照が存在する
+  local root
+  root="$(repo_root)"
+  grep -qF 'acceptance-test-feasibility' "${root}/docs/methodology/test-execution-policy.md" || {
+    echo "FAIL: docs/methodology/test-execution-policy.md does not reference acceptance-test-feasibility.md"
+    return 1
+  }
+}

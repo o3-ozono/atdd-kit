@@ -50,6 +50,20 @@
   - When: autopilot 整合節と相互参照を検査する
   - Then: design phase と Gate ②（設計承認）への反映が記述され、doctrine が参照する既存 doc（atdd-guide / test-mapping / definition-of-ready / test-execution-policy）の相対リンク先がすべて実在し、README の Documents 表に `acceptance-test-feasibility.md` 行が存在する
 
+## AT-312-07: 外部調査根拠節（一次情報リンク付き 3 件以上）
+
+- [draft] AT-312-07: doctrine の根拠節に、agentic E2E / browser・mobile UI agent / API 探索検証の 3 領域にわたる外部調査が、一次情報 URL 付きで 3 件以上要約・引用されている
+  - Given: PRD Outcome line 24 — 外部調査（agentic E2E / self-verifying AC / browser・mobile UI agent / API 探索検証）の傾向・採用事例・落とし穴が doctrine の根拠として要約・引用されている
+  - When: docs/methodology/acceptance-test-feasibility.md の外部調査根拠節を検査する
+  - Then: 外部調査根拠節の見出しが存在し、https:// URL が 3 件以上あり、3 領域（agentic E2E、browser/mobile UI agent、API contract verification）が言及されている
+
+## AT-312-08: 既存 4 doc からの逆参照（双方向相互参照）
+
+- [draft] AT-312-08: 既存 methodology 4 doc（atdd-guide / test-mapping / definition-of-ready / test-execution-policy）がそれぞれ acceptance-test-feasibility.md を逆参照している
+  - Given: PRD Outcome line 23 — 「既存 methodology doc と矛盾せず、相互参照が張られている」（双方向を含意）
+  - When: 各既存 doc を検査する
+  - Then: 4 doc それぞれに acceptance-test-feasibility への参照（リンクまたは言及）が存在する
+
 <!-- 実装開始後は [planned] → [draft] に変更する -->
 <!-- テストが通過したら [draft] → [green] に変更する -->
 <!-- リグレッション対象になったら [green] → [regression] に変更する -->
