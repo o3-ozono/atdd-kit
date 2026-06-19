@@ -1,0 +1,28 @@
+name: web
+display_name: Web
+
+deploy:
+  - src: scripts/impact_map.sh
+    dest: scripts/impact_map.sh
+  - src: addons/web/config/impact_rules.yml
+    dest: config/impact_rules.yml
+
+detect:
+  patterns:
+    - "package.json"
+    - "next.config.js"
+    - "next.config.ts"
+    - "nuxt.config.ts"
+    - "vite.config.ts"
+    - "vite.config.js"
+    - "svelte.config.js"
+
+guidance: |
+  Impact-based test runner for Web projects:
+
+  1. The deployed config/impact_rules.yml maps your source paths to test identifiers.
+  2. Customize the rules to match your project structure (src/, components/, pages/, etc.).
+  3. Run impact-scoped tests during ATDD iteration:
+       scripts/impact_map.sh --platform web --config config/impact_rules.yml --base <ref> --layer skill-e2e
+  4. At merge gate, always run the full suite:
+       scripts/run-tests.sh --all

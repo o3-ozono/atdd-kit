@@ -33,6 +33,10 @@ deploy:
     dest: .claude/hooks/sim-pool-guard.sh
   - src: scripts/lint-xcstrings.sh
     dest: scripts/lint-xcstrings.sh
+  - src: scripts/impact_map.sh
+    dest: scripts/impact_map.sh
+  - src: addons/ios/config/impact_rules.yml
+    dest: config/impact_rules.yml
 
 ci_job: ci/build-and-test.yml
 

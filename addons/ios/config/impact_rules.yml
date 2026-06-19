@@ -1,0 +1,35 @@
+# impact_rules.yml — iOS project template
+# Deploy this file to config/impact_rules.yml in your iOS project.
+# Customize target names to match your Xcode project structure.
+#
+# Usage: scripts/impact_map.sh --platform ios --config config/impact_rules.yml --base <ref> --layer skill-e2e
+#
+# Common iOS project structure:
+#   Sources/<TargetName>/   — application source code
+#   Tests/<TargetNameTests>/ — unit test targets
+#   UITests/<TargetNameUITests>/ — UI test targets
+#   Packages/<LocalPackage>/ — Swift Package Manager local packages
+
+rules:
+  - path: Sources/**
+    skill-e2e: AppTests
+  - path: Sources/App/**
+    skill-e2e: AppTests AppUITests
+  - path: Sources/Core/**
+    skill-e2e: CoreTests
+  - path: Sources/Networking/**
+    skill-e2e: NetworkingTests
+  - path: Sources/UI/**
+    skill-e2e: AppTests AppUITests
+  - path: Tests/**
+    skill-e2e: AppTests
+  - path: UITests/**
+    skill-e2e: AppUITests
+  - path: Packages/**
+    skill-e2e: AppTests
+  - path: "*.xcodeproj/**"
+    skill-e2e: AppTests AppUITests
+  - path: Package.swift
+    skill-e2e: AppTests
+  - path: Package.resolved
+    skill-e2e: AppTests

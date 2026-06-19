@@ -1,0 +1,55 @@
+# impact_rules.yml — Web project template
+# Deploy this file to config/impact_rules.yml in your web project.
+# Customize paths and test identifiers to match your project structure.
+#
+# Usage: scripts/impact_map.sh --platform web --config config/impact_rules.yml --base <ref> --layer skill-e2e
+#
+# Common web project structure:
+#   src/          — application source code
+#   tests/ or __tests__/ — test files
+#   public/       — static assets
+#   components/   — React/Vue/Svelte components
+#   pages/        — page components (Next.js / Nuxt / SvelteKit)
+#   styles/       — CSS/SCSS/Tailwind
+
+rules:
+  - path: src/**
+    skill-e2e: unit integration
+  - path: src/components/**
+    skill-e2e: unit integration e2e
+  - path: src/pages/**
+    skill-e2e: unit integration e2e
+  - path: src/app/**
+    skill-e2e: unit integration e2e
+  - path: components/**
+    skill-e2e: unit integration e2e
+  - path: pages/**
+    skill-e2e: unit integration e2e
+  - path: app/**
+    skill-e2e: unit integration e2e
+  - path: tests/**
+    skill-e2e: unit integration
+  - path: __tests__/**
+    skill-e2e: unit integration
+  - path: public/**
+    skill-e2e: e2e
+  - path: styles/**
+    skill-e2e: unit
+  - path: package.json
+    skill-e2e: unit integration e2e
+  - path: package-lock.json
+    skill-e2e: unit integration e2e
+  - path: yarn.lock
+    skill-e2e: unit integration e2e
+  - path: pnpm-lock.yaml
+    skill-e2e: unit integration e2e
+  - path: tsconfig.json
+    skill-e2e: unit integration
+  - path: vite.config.*
+    skill-e2e: unit integration e2e
+  - path: next.config.*
+    skill-e2e: unit integration e2e
+  - path: nuxt.config.*
+    skill-e2e: unit integration e2e
+  - path: tailwind.config.*
+    skill-e2e: unit e2e

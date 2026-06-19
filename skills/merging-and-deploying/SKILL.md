@@ -55,16 +55,21 @@ If the review verdict is not PASS, instruct the user to return to `reviewing-del
 
 This skill **does not** add or remove the `in-progress` label — that is skill-gate's responsibility. This skill **does not** write or fix code — a failing post-deploy regression is reported back to Step 4, not patched here.
 
-## Test Execution Policy (#324)
+## Test Execution Policy (#324 / #323)
 
-Run **all tests** before merge and after deploy:
+**Pre-merge gate: full suite** — run all tests before merging to guarantee full regression coverage:
 
 ```
-scripts/run-tests.sh --all      # pre-merge gate
-scripts/run-tests.sh --all      # post-deploy regression
+scripts/run-tests.sh --all      # pre-merge gate (full suite — mandatory)
 ```
 
-claude-based e2e tests (`tests/e2e/*.bats`) are included in the full suite at merge gate.
+**Post-deploy regression: impact scope** — after deploy, re-run the Acceptance Tests using impact scope against the deployed commit:
+
+```
+scripts/run-tests.sh --impact --base <merge-sha>   # post-deploy regression (impact scope)
+```
+
+The asymmetry is by design: merge gate uses `--all` (fail-safe guarantee); post-deploy regression uses `--impact --base <ref>` (targeted verification of what was deployed). claude-based e2e tests (`tests/e2e/*.bats`) are included in the full suite at merge gate; at post-deploy they follow the impact criterion.
 
 For the full policy doctrine, see [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
 

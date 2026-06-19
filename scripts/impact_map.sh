@@ -7,10 +7,11 @@
 #   impact_map.sh --base <ref> --all --layer {skill-e2e|BATS}
 #
 # Options:
-#   --base <ref>      git ref to diff against (required unless --all)
-#   --layer <name>    test layer: skill-e2e or BATS (required)
-#   --all             force full scan (--base optional)
-#   --config <path>   path to impact_rules.yml (default: $PWD/config/impact_rules.yml)
+#   --base <ref>              git ref to diff against (required unless --all)
+#   --layer <name>            test layer: skill-e2e or BATS (required)
+#   --all                     force full scan (--base optional)
+#   --config <path>           path to impact_rules.yml (default: $PWD/config/impact_rules.yml)
+#   --platform {web|ios|other} select platform adapter (default: other)
 #
 # Exit codes:
 #   0 — success
@@ -29,16 +30,24 @@ OPT_BASE=""
 OPT_LAYER=""
 OPT_ALL=0
 OPT_CONFIG="${REPO_ROOT}/config/impact_rules.yml"
+OPT_PLATFORM="other"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --base)   OPT_BASE="$2";   shift 2 ;;
-    --layer)  OPT_LAYER="$2";  shift 2 ;;
-    --all)    OPT_ALL=1;       shift   ;;
-    --config) OPT_CONFIG="$2"; shift 2 ;;
+    --base)     OPT_BASE="$2";     shift 2 ;;
+    --layer)    OPT_LAYER="$2";    shift 2 ;;
+    --all)      OPT_ALL=1;         shift   ;;
+    --config)   OPT_CONFIG="$2";   shift 2 ;;
+    --platform) OPT_PLATFORM="$2"; shift 2 ;;
     *) echo "ERROR: unknown option '$1'" >&2; exit 1 ;;
   esac
 done
+
+# Validate --platform
+case "$OPT_PLATFORM" in
+  web|ios|other) ;;
+  *) echo "ERROR: invalid --platform '$OPT_PLATFORM'. Valid values: web, ios, other" >&2; exit 1 ;;
+esac
 
 # Validate --layer
 if [[ -z "$OPT_LAYER" ]]; then
@@ -244,6 +253,58 @@ resolve_path_rules() {
 }
 
 # ---------------------------------------------------------------------------
+# Platform adapter functions
+# ---------------------------------------------------------------------------
+
+# select_other: current bats/@covers-based selection (non-breaking extraction)
+select_other() {
+  local diff_file="$1"
+  local layer="$2"
+  local matched=0
+  local rule_results
+  rule_results=$(resolve_path_rules "$diff_file" "$layer")
+  if [[ -n "$rule_results" ]]; then
+    printf '%s\n' "$rule_results"
+    matched=1
+  fi
+  if [[ "$layer" == "BATS" ]]; then
+    local cover_results
+    cover_results=$(scan_covers "$diff_file")
+    if [[ -n "$cover_results" ]]; then
+      printf '%s\n' "$cover_results"
+      matched=1
+    fi
+  fi
+  return $((matched == 0 ? 1 : 0))
+}
+
+# select_web: src/** glob → skill-e2e test identifiers from impact_rules.yml
+select_web() {
+  local diff_file="$1"
+  local layer="$2"
+  local rule_results
+  rule_results=$(resolve_path_rules "$diff_file" "$layer")
+  if [[ -n "$rule_results" ]]; then
+    printf '%s\n' "$rule_results"
+    return 0
+  fi
+  return 1
+}
+
+# select_ios: *.swift glob → XCTest target identifiers from impact_rules.yml
+select_ios() {
+  local diff_file="$1"
+  local layer="$2"
+  local rule_results
+  rule_results=$(resolve_path_rules "$diff_file" "$layer")
+  if [[ -n "$rule_results" ]]; then
+    printf '%s\n' "$rule_results"
+    return 0
+  fi
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Main logic
 # ---------------------------------------------------------------------------
 
@@ -272,31 +333,36 @@ if [[ ${#diff_files[@]} -eq 0 ]]; then
   exit 0
 fi
 
-# Classify each diff file
+# Classify each diff file via platform adapter
 unmatched=()
 results=()
 
 for f in "${diff_files[@]}"; do
   local_matched=0
+  adapter_results=""
 
-  # Check path rules
-  rule_results=$(resolve_path_rules "$f" "$OPT_LAYER")
-  if [[ -n "$rule_results" ]]; then
+  case "$OPT_PLATFORM" in
+    other)
+      if adapter_results=$(select_other "$f" "$OPT_LAYER"); then
+        local_matched=1
+      fi
+      ;;
+    web)
+      if adapter_results=$(select_web "$f" "$OPT_LAYER"); then
+        local_matched=1
+      fi
+      ;;
+    ios)
+      if adapter_results=$(select_ios "$f" "$OPT_LAYER"); then
+        local_matched=1
+      fi
+      ;;
+  esac
+
+  if [[ -n "$adapter_results" ]]; then
     while IFS= read -r r; do
       results+=("$r")
-    done <<< "$rule_results"
-    local_matched=1
-  fi
-
-  # Check @covers (BATS layer only)
-  if [[ "$OPT_LAYER" == "BATS" ]]; then
-    cover_results=$(scan_covers "$f")
-    if [[ -n "$cover_results" ]]; then
-      while IFS= read -r r; do
-        results+=("$r")
-      done <<< "$cover_results"
-      local_matched=1
-    fi
+    done <<< "$adapter_results"
   fi
 
   if [[ $local_matched -eq 0 ]]; then

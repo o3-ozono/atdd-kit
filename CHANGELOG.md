@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.34.0] - 2026-06-20
+
+### Added
+
+- **影響範囲ベースのテスト選択を利用プロジェクトに提供する（一般化＋addon配布＋フロースキル配線）（#323）**。
+  - **ランナーの一般化（アダプタ化）**: `scripts/impact_map.sh` に `--platform {web|ios|other}` オプションを追加。未指定時は `other`（現行 bats/`@covers` 挙動）にフォールバック（非破壊）。選択ロジックを内部関数 `select_other()` / `select_web()` / `select_ios()` に分岐。共通契約は「変更パス集合 → 実行すべきテスト識別子集合（stdout, 1行1件）」。全プラットフォームでルール未一致パスはフル実行フォールバック。
+  - **`impact_rules.yml` テンプレート配布**: `addons/web/config/impact_rules.yml`（web 標準構造 `src/**` / `components/**` / `pages/**` / `tests/**` 等）と `addons/ios/config/impact_rules.yml`（iOS ターゲット構造 `Sources/**` / `Tests/**` / `UITests/**` 等）を新規作成。両テンプレートとも `impact_map.sh --all` でエラーなく読める。
+  - **addon 配布**: `addons/web/` を新設し `addon.yml` を作成（`name` / `display_name` / `deploy`（impact_map.sh ＋ impact_rules.yml テンプレート）/ `detect`（`package.json` 等）/ `guidance`）。`addons/ios/addon.yml` の `deploy:` に iOS 向け影響度ランナー（`scripts/impact_map.sh`）＋ `addons/ios/config/impact_rules.yml` テンプレートを追加。
+  - **フロースキル配線**: `commands/setup-web.md` のプレースホルダを実装に置き換え（addon.yml 読込 → ランナー＋ルールテンプレート deploy → サマリ表示）。`commands/setup-ios.md` の Deploy Scripts 表に影響度ランナー＋ルールテンプレートの行を追加。
+  - **テスト**: `tests/test_impact_map_platform.bats`（16 tests: プラットフォームオプション検証 / other 非破壊 / web / ios / unmatched フォールバック）、`addons/web/tests/test_web_addon.bats`（14 tests: addon.yml スキーマ / impact_rules テンプレート構造）、`addons/ios/tests/test_ios_impact_rules.bats`（10 tests: deploy エントリ / impact_rules テンプレート構造）、`tests/acceptance/AT-323.bats`（24 tests: AT-001〜AT-009）を新設。
+
+### Changed
+
+- **`docs/methodology/test-execution-policy.md`**: 「Scope Boundary with #323」の保留節を「Platform-Agnostic Application」セクションに置き換え（#323 一般化完了を反映）。web / iOS / other 全プラットフォームに適用されるプラットフォーム非依存の「実行は絞る／ゲートはフル」原則とコマンド対応表を明記。
+- **`skills/merging-and-deploying/SKILL.md`**: Test Execution Policy 節を更新。pre-merge ゲート = `--all`（フルスイート強制）、post-deploy 回帰 = `--impact --base <merge-sha>`（影響スコープ）の非対称を明示（#323）。
+
 ## [3.33.0] - 2026-06-20
 
 ### Added
@@ -47,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `tests/test_retrospective_skill.bats` 新規作成（merging-and-deploying SKILL 構造 pin: 起動点・express スキップ・全チャネル同期・5 ステップ維持・200 行以下、8 tests）。
   - `tests/test_retrospective_script.bats` 新規作成（script 出力契約: 各メトリクス・JSONL valid・自動起票なし・CS-1 軽量性、16 tests）。
   - `tests/acceptance/AT-309.bats` 新規作成（受け入れシナリオ AT-309-1〜AT-309-9、29 tests）。うち 6 件は fixture 注入による **behavioral テスト**（worker-out.json の usage → 数値トークン出力 / transcript jsonl → ターン数 / autopilot-log の `verdict:"FAIL"` → ゲート別摩擦分類 / PR コメント → 摩擦シグナル / トークン+diff → 数値正規化比 / 非 dry-run → retrospective.md 生成＋append-only JSONL）。この behavioral 化で `extract_friction` の `${step,,}`（bash 4+ 専用）が macOS bash 3.2 の `set -e` 下で abort する移植バグを検知し `tr` へ修正、`gh pr view --comments` を摩擦シグナル(b)に追加。
+
 ## [3.29.0] - 2026-06-19
 
 ### Added

@@ -34,11 +34,17 @@ The table below maps currently skip-guarded or CI-only live e2e tests to their i
 |------------|-------------------------------|------------------------|
 | `tests/e2e/*.bats` (live LLM e2e) | skip guard / dedicated CI workflow — local or CI only | Include in impact scope only when the change touches the tested skill or component |
 
-## Scope Boundary with #323
+## Platform-Agnostic Application
 
-This document covers the **policy doctrine** for phase-based test execution scope (what to run, when).
-The **generalization and distribution of the impact-selection tool** itself is owned by Issue #323 and is
-explicitly out of scope here. This document does not implement or extend the impact selection mechanism.
+This policy applies to **all platforms** supported by atdd-kit: `other` (bats/@covers), `web` (jest/vitest), and `iOS` (XCTest). The `--platform` flag on `scripts/impact_map.sh` selects the adapter; the phase-based scoping rule is the same regardless of platform.
+
+| Platform | Impact-scope command | Full-suite command |
+|----------|---------------------|--------------------|
+| other (bats) | `scripts/impact_map.sh --platform other --base <ref> --layer BATS` | `scripts/run-tests.sh --all` |
+| web (jest/vitest) | `scripts/impact_map.sh --platform web --config config/impact_rules.yml --base <ref> --layer skill-e2e` | `scripts/run-tests.sh --all` |
+| iOS (XCTest) | `scripts/impact_map.sh --platform ios --config config/impact_rules.yml --base <ref> --layer skill-e2e` | `scripts/run-tests.sh --all` |
+
+The generalization and distribution of the impact-selection tool was completed in Issue #323. The impact runner (`scripts/impact_map.sh`) and platform-specific rule templates (`addons/web/config/impact_rules.yml`, `addons/ios/config/impact_rules.yml`) are deployed to consumer projects via `setup-web` / `setup-ios`.
 
 ## Position as a Distributed Methodology
 

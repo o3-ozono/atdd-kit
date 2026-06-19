@@ -16,7 +16,7 @@ See [DEVELOPMENT.md](../DEVELOPMENT.md) for the distinction between skills and c
 | [setup-github](setup-github.md) | Set up GitHub issue/PR templates and labels | `/atdd-kit:setup-github` |
 | [setup-ci](setup-ci.md) | Generate CI workflow from base + addon CI fragments | `/atdd-kit:setup-ci` |
 | [setup-ios](setup-ios.md) | Manually set up iOS addon (MCP servers, hooks, scripts) | `/atdd-kit:setup-ios` |
-| [setup-web](setup-web.md) | Manually set up Web addon (placeholder for future) | `/atdd-kit:setup-web` |
+| [setup-web](setup-web.md) | Manually set up Web addon (deploys impact_map.sh + impact_rules.yml template) | `/atdd-kit:setup-web` |
 | [setup-discord](setup-discord.md) | Opt-in: set up the Discord notifications addon (per-issue threads for full-autopilot) | `/atdd-kit:setup-discord` |
 
 ## References
