@@ -128,14 +128,16 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 
 # --- Line budget ----------------------------------------------------------
 
-@test "line budget (#254: Dialog economy section): SKILL.md is at most 280 lines" {
+@test "line budget (#254: Dialog economy section): SKILL.md is at most 285 lines" {
   # 240 → 260 (#254): the Dialog economy section adds ~10 lines of human-dialog
   # discipline that must live in the orchestrator (C1: flow skills stay unedited)
   # 260 → 280 (#275): #272 step-scoped rails + #275 diff-in-body left the file
   # at 260/260 with zero headroom; raised per the #276 review headroom finding
+  # 280 → 285 (#334 review Finding 3): redObserved added to fingerprint payload
+  # (Finding 2); 280 was exactly at the limit with zero headroom for future edits
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
-  [ "$n" -le 280 ]
+  [ "$n" -le 285 ]
 }
 
 # --- Code-deep oracle (#246 review: rails/oracle must be code, not just prose)
@@ -563,6 +565,14 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   uline=$(grep -n 'let uncovered' "$SKILL_FILE" | head -1 | cut -d: -f1)
   pline=$(grep -nF 'JSON.stringify({ atGreen' "$SKILL_FILE" | head -1 | cut -d: -f1)
   [ -n "$uline" ] && [ -n "$pline" ] && [ "$uline" -lt "$pline" ]
+}
+
+@test "AT-006b (#334 review): audit payload includes redObserved for oracle-state fingerprinting consistency" {
+  # Given: SKILL.md の audit ステップ（label: audit:step）
+  # When: fingerprint payload を読む
+  # Then: JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking }) であり、
+  #       redObserved が先頭に含まれる（#272 方針との一貫性 / #334 review Finding 2）
+  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
 }
 
 @test "AT-007 (#287): rails prompt resolves real paths and bans synthetic fixtures" {

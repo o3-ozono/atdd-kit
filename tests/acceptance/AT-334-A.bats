@@ -121,6 +121,30 @@ teardown() {
   [ ! -s "$RED_JSONL" ]
 }
 
+# --- AT-334-A4f/g: check_red_evidence の文字種バリデーション（対称性確保）---
+# Finding 1 (#334 review): record_red_evidence は case 文で改行・引用符を拒否するが、
+# check_red_evidence には同等バリデーションが存在しない。対称性のため追加する。
+
+@test "AT-334-A4f: check_red_evidence refuses test-commit sha with newline (symmetric to record_red_evidence)" {
+  # Given: test コミット引数に改行が含まれる（破損）— red.jsonl を先に作成して
+  #        file-not-found による偽陰性を排除し、明示的な文字種バリデーションを検証する
+  touch "$RED_JSONL"
+  run check_red_evidence "$(printf 'abc\ndef')" "$IMPL_COMMIT" "$RED_JSONL" "$GIT_REPO"
+  # Then: 非 0 exit かつ "invalid commit sha" メッセージ（record_red_evidence の case 文と対称）
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid commit sha"* ]]
+}
+
+@test "AT-334-A4g: check_red_evidence refuses test-commit sha with double-quote (symmetric to record_red_evidence)" {
+  # Given: test コミット引数に引用符が含まれる（破損）— red.jsonl を先に作成して
+  #        file-not-found による偽陰性を排除し、明示的な文字種バリデーションを検証する
+  touch "$RED_JSONL"
+  run check_red_evidence 'abc"def' "$IMPL_COMMIT" "$RED_JSONL" "$GIT_REPO"
+  # Then: 非 0 exit かつ "invalid commit sha" メッセージ（record_red_evidence の case 文と対称）
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid commit sha"* ]]
+}
+
 # --- AT-334-A5: satisfaction oracle が 5 項 AND で redObserved を含む ---
 
 @test "AT-334-A5: SKILL.md satisfaction oracle includes redObserved term" {
