@@ -42,7 +42,7 @@ If the review verdict is not PASS, instruct the user to return to `reviewing-del
 2. **Merge.** Squash-merge the PR to `main`, closing the Issue (`Closes #<NNN>`).
 3. **Deploy.** Deploy the merged change via the project's configured deploy path (platform-specific; see `.claude/config.yml`).
 4. **Post-deploy regression.** Re-run the Acceptance Tests in `tests/acceptance/` against the deployed build as a **regression** check. These are the `[regression]`-marked ATs stabilized at Step 4. If any fails, report it immediately and treat the deploy as suspect.
-5. **Report.** Summarize merge SHA, deploy result, and the post-deploy regression outcome in one message.
+5. **Report + Retrospective.** Summarize merge SHA, deploy result, and the post-deploy regression outcome in one message. Output the same content to both the terminal and as an Issue/PR comment (all-channel sync: terminal + Issue/PR comment). Then run `scripts/retrospective.sh --issue <NNN> --pr <PR>` — this is the **sole entry point** for retrospective execution. The express skill does not call `merging-and-deploying`, so express Issues skip retrospective structurally — no `if non-express` branch is needed (express skip is structural, not a flag).
 
 ## Responsibility Boundary
 
