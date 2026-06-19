@@ -74,3 +74,18 @@ STUBEOF
   result=$(call_default_result "$ISSUE" "merge-ready")
   [ "$result" = "merge-ready" ]
 }
+
+# fail-closed: out.json が存在しない（worker が出力前に kill / cd 失敗で exit 1）
+# 場合は merge-ready ラベルがあっても failed（lib:89 で文書化された安全特性のピン留め）。
+@test "AT-333-f: missing out.json is failed even with merge-ready label" {
+  rm -f "$RUNDIR/$ISSUE.out.json"
+  result=$(call_default_result "$ISSUE" "merge-ready")
+  [ "$result" = "failed" ]
+}
+
+# 整形済み JSON（コロン後スペース）の num_turns:0 も空成果として failed に倒す。
+@test "AT-333-g: pretty-printed num_turns: 0 is detected as zero-turn" {
+  printf '{\n  "is_error": false,\n  "num_turns": 0,\n  "result": "ok"\n}\n' > "$RUNDIR/$ISSUE.out.json"
+  result=$(call_default_result "$ISSUE" "merge-ready")
+  [ "$result" = "failed" ]
+}
