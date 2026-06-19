@@ -210,9 +210,11 @@ extract_friction() {
     [[ -f "$f" ]] || continue
     while IFS= read -r line; do
       if echo "$line" | grep -q '"verdict":"FAIL"'; then
-        local step
+        local step step_lc
         step=$(echo "$line" | grep -oE '"step":"[^"]*"' | grep -oE '"[^"]*"$' | tr -d '"')
-        case "${step,,}" in
+        # bash 3.2 (macOS default) has no ${var,,}; lowercase via tr for portability.
+        step_lc=$(printf '%s' "$step" | tr '[:upper:]' '[:lower:]')
+        case "$step_lc" in
           *req*|*defin*|*require*) req_friction="${req_friction:+$req_friction,}${step}" ;;
           *design*|*plan*|*writing*) design_friction="${design_friction:+$design_friction,}${step}" ;;
           *merge*|*deploy*|*review*) merge_friction="${merge_friction:+$merge_friction,}${step}" ;;
@@ -223,13 +225,20 @@ extract_friction() {
   done
 
   # (b) Issue/PR comments via gh (persistent signal, read-only)
-  local issue_comment_count=0
-  local ic
+  local issue_comment_count=0 pr_comment_count=0
+  local ic pc
   ic=$(gh issue view "${ISSUE_NUM}" --comments 2>/dev/null | grep -icE 'reject|deny|needs.revision|差し戻し' || true)
   issue_comment_count=$(safe_int "$ic")
+  # PR comments are a persistent friction signal too (design send-back / merge hand-off
+  # remarks land on the PR under the all-channel-sync convention). AT-309-6 Given (b).
+  if [[ -n "${PR_NUM:-}" ]]; then
+    pc=$(gh pr view "${PR_NUM}" --comments 2>/dev/null | grep -icE 'reject|deny|needs.revision|差し戻し' || true)
+    pr_comment_count=$(safe_int "$pc")
+  fi
 
+  local total_comment_count=$(( issue_comment_count + pr_comment_count ))
   local gate_note=""
-  [[ "$issue_comment_count" -gt 0 ]] && gate_note="(${issue_comment_count} rejection-related comments found)"
+  [[ "$total_comment_count" -gt 0 ]] && gate_note="(${total_comment_count} rejection-related comments found)"
 
   echo "friction: requirements=${req_friction:-none} design=${design_friction:-none} merge=${merge_friction:-none} ${gate_note}"
 }

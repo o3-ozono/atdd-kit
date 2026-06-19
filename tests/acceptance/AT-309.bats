@@ -535,3 +535,113 @@ STUB
     return 1
   }
 }
+
+# ===========================================================================
+# Behavioral scenarios (fixture injection) -- these exercise actual behavior,
+# not keyword presence. The script computes REPO_ROOT from its own location,
+# so we copy it into a temp repo and inject fixtures (worker-out.json,
+# autopilot-log.jsonl, transcript jsonl, stub gh) to assert real output.
+# ===========================================================================
+
+# Copy retrospective.sh into a throwaway repo root so REPO_ROOT (= script/..)
+# points at our fixture tree. HOME is overridden per-test for transcript fixtures.
+_behavioral_temp_repo() {
+  local t
+  t=$(mktemp -d)
+  mkdir -p "${t}/scripts" "${t}/docs/issues/1-demo"
+  cp "$(repo_root)/${RETRO_SCRIPT}" "${t}/scripts/retrospective.sh"
+  chmod +x "${t}/scripts/retrospective.sh"
+  echo "$t"
+}
+
+# A stub gh that echoes '{}' (overridden inline where specific output is needed).
+_behavioral_stub_gh() {
+  local d
+  d=$(mktemp -d)
+  printf '#!/usr/bin/env bash\necho '\''{}'\''\nexit 0\n' > "${d}/gh"
+  chmod +x "${d}/gh"
+  echo "$d"
+}
+
+@test "AT-309-4-behavioral: headless worker-out.json usage yields numeric token output (FS-3)" {
+  local t gh; t=$(_behavioral_temp_repo); gh=$(_behavioral_stub_gh)
+  trap "rm -rf '${t}' '${gh}'" RETURN
+  printf '{"usage":{"input_tokens":111,"output_tokens":222},"total_cost_usd":0.5}\n' > "${t}/worker-out.json"
+  local out
+  out=$(PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 --dry-run 2>&1 || true)
+  echo "$out" | grep -qE 'input=111' || { echo "FAIL: no input=111 in: $out"; return 1; }
+  echo "$out" | grep -qE 'output=222' || { echo "FAIL: no output=222 in: $out"; return 1; }
+}
+
+@test "AT-309-3-behavioral: transcript jsonl user/assistant records counted as turns (FS-2)" {
+  local t gh munged; t=$(_behavioral_temp_repo); gh=$(_behavioral_stub_gh)
+  trap "rm -rf '${t}' '${gh}'" RETURN
+  munged=$(echo "${t}" | sed 's|/|-|g; s|^-||')
+  mkdir -p "${t}/.claude/projects/${munged}"
+  printf '{"type":"user"}\n{"type":"assistant"}\n{"type":"assistant"}\n' > "${t}/.claude/projects/${munged}/sess.jsonl"
+  local out
+  out=$(PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 --dry-run 2>&1 || true)
+  echo "$out" | grep -qE 'turns: user=1 assistant=2 total=3' || { echo "FAIL: turns miscounted: $(echo "$out" | grep -i turns)"; return 1; }
+}
+
+@test "AT-309-6-behavioral: autopilot-log FAIL entries classify friction by gate (FS-5)" {
+  local t gh; t=$(_behavioral_temp_repo); gh=$(_behavioral_stub_gh)
+  trap "rm -rf '${t}' '${gh}'" RETURN
+  cat > "${t}/docs/issues/1-demo/autopilot-log.jsonl" << 'LOG'
+{"iteration":1,"step":"writing-plan-and-tests","verdict":"FAIL","fingerprint":"x","timestamp":"t"}
+{"iteration":2,"step":"merging-and-deploying","verdict":"FAIL","fingerprint":"y","timestamp":"t"}
+LOG
+  local out
+  out=$(PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 --dry-run 2>&1 || true)
+  local fr; fr=$(echo "$out" | grep -E '^friction:')
+  echo "$fr" | grep -qE 'design=writing-plan-and-tests' || { echo "FAIL: design not classified: $fr"; return 1; }
+  echo "$fr" | grep -qE 'merge=merging-and-deploying' || { echo "FAIL: merge not classified: $fr"; return 1; }
+}
+
+@test "AT-309-6b-behavioral: PR comments contribute rejection signal to friction (FS-5 (b))" {
+  local t gh; t=$(_behavioral_temp_repo); gh=$(mktemp -d)
+  trap "rm -rf '${t}' '${gh}'" RETURN
+  cat > "${gh}/gh" << 'STUB'
+#!/usr/bin/env bash
+if [[ "$*" == *"pr view"* && "$*" == *"--comments"* ]]; then echo "needs-revision: please fix"; exit 0; fi
+echo '{}'; exit 0
+STUB
+  chmod +x "${gh}/gh"
+  local out
+  out=$(PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 --pr 7 --dry-run 2>&1 || true)
+  echo "$out" | grep -E '^friction:' | grep -qiE 'rejection-related comments found' || { echo "FAIL: PR-comment friction not detected: $(echo "$out" | grep -i friction)"; return 1; }
+}
+
+@test "AT-309-5-behavioral: tokens + PR diff yield numeric normalized_ratio (FS-4)" {
+  local t gh; t=$(_behavioral_temp_repo); gh=$(mktemp -d)
+  trap "rm -rf '${t}' '${gh}'" RETURN
+  printf '{"usage":{"input_tokens":100,"output_tokens":100},"total_cost_usd":0.1}\n' > "${t}/worker-out.json"
+  cat > "${gh}/gh" << 'STUB'
+#!/usr/bin/env bash
+if [[ "$*" == *"pr view"* && "$*" == *"--json"* ]]; then echo '{"additions":10,"deletions":10}'; exit 0; fi
+if [[ "$*" == *"pr list"* ]]; then echo "42 merged"; exit 0; fi
+echo '{}'; exit 0
+STUB
+  chmod +x "${gh}/gh"
+  local out ratio
+  out=$(PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 --pr 42 --json-output 2>/dev/null || true)
+  echo "$out" | jq . >/dev/null 2>&1 || { echo "FAIL: invalid JSON: $out"; return 1; }
+  ratio=$(echo "$out" | jq -r '.normalized_ratio')
+  [[ "$ratio" != "null" ]] || { echo "FAIL: normalized_ratio is null with tokens+diff present: $out"; return 1; }
+  echo "$ratio" | grep -qE '^[0-9]+(\.[0-9]+)?$' || { echo "FAIL: ratio not numeric: $ratio"; return 1; }
+}
+
+@test "AT-309-8-behavioral: non-dry-run writes retrospective.md and append-only JSONL (FS-7)" {
+  local t gh; t=$(_behavioral_temp_repo); gh=$(_behavioral_stub_gh)
+  trap "rm -rf '${t}' '${gh}'" RETURN
+  PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 >/dev/null 2>&1 || true
+  [[ -f "${t}/docs/issues/1-demo/retrospective.md" ]] || { echo "FAIL: retrospective.md not written"; return 1; }
+  [[ -f "${t}/docs/retrospective-log.jsonl" ]] || { echo "FAIL: cross-cutting JSONL not created"; return 1; }
+  local n1 n2; n1=$(grep -c . "${t}/docs/retrospective-log.jsonl")
+  PATH="${gh}:${PATH}" HOME="${t}" bash "${t}/scripts/retrospective.sh" --issue 1 >/dev/null 2>&1 || true
+  n2=$(grep -c . "${t}/docs/retrospective-log.jsonl")
+  [[ "$n2" -gt "$n1" ]] || { echo "FAIL: JSONL not append-only (${n1} -> ${n2})"; return 1; }
+  while IFS= read -r ln; do
+    echo "$ln" | jq . >/dev/null 2>&1 || { echo "FAIL: invalid JSONL line: $ln"; return 1; }
+  done < "${t}/docs/retrospective-log.jsonl"
+}
