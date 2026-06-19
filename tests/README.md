@@ -244,6 +244,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-334-C.bats | Gate③後フィードバックの正規ルート（F3）— autopilot-iron-law.md に規模分岐（小=同一 Issue 内 design 差し戻し / 大=新 Issue、一次基準=設計アンカー変更の有無）が明文化・autopilot-overview.md が iron-law を正典参照する相互参照で陳腐化防止（Issue #334、6 tests） |
 | AT-334-D.bats | 効率は test-first 逸脱の理由にしない（C2）— autopilot-iron-law.md に「効率（session limit / トークン / 速さ）は test-first 逸脱（red 先行スキップを含む）の理由にしない」が正典として明記・rules/atdd-kit.md が参照しつつ 60 行以下バジェットを維持（Issue #334、4 tests） |
 | AT-334-E.bats | リリース整合 invariant — plugin.json version が CHANGELOG 最上位リリース見出しと一致する（特定バージョン値を固定しない invariant、Issue #334、1 test） |
+| AT-312.bats | AT 計画前 feasibility 実地探索の正典フロー確立 — doctrine ファイル存在・Loaded-by メタ・普遍ルール（GUI/非 GUI 二分岐）・フロー統合点（[planned] 確定前プローブ・writing-plan-and-tests）・ユーザーゲート・ツール抽象（プローブ抽象・addon 非密結合）・autopilot 整合（design phase / Gate ②）・相互参照健全性・README 登録（Issue #312、6 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 

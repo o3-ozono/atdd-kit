@@ -5,7 +5,7 @@
      状態は実装の進行に合わせて更新する。
 
      本 Issue は doc-only 成果物のため、AT はすべて構造テスト（bats）として実装する
-     （`tests/test_at_feasibility_doctrine.bats`）。doctrine 本文の文言・存在・相互参照を
+     （`tests/acceptance/AT-312.bats`）。doctrine 本文の文言・存在・相互参照を
      不変条件（invariant）として検証し、point-in-time の値（version 数値・行数・日付）は固定しない。 -->
 
 ## AT-312-01: doctrine ファイルが存在し Loaded-by メタを持つ
