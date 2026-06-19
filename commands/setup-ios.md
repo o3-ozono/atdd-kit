@@ -58,6 +58,6 @@ Print addon guidance from `addon.yml` (Golden Image Device Set isolation).
 ```
 iOS addon setup complete:
 - MCP servers: 4 registered
-- Scripts: 2 deployed
+- Scripts: 4 deployed
 - Hooks: 2 configured
 ```

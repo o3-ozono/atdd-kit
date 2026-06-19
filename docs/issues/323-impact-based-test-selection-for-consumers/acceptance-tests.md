@@ -1,7 +1,7 @@
 # Acceptance Tests: 影響範囲ベースのテスト選択を利用プロジェクトにも提供する（一般化＋addon配布＋フロースキル配線）
 
 <!-- AT lifecycle: planned → draft → green → regression
-     各エントリには状態マーカー [green] / [draft] / [green] / [regression] を付与する。
+     各エントリには状態マーカー [planned] / [draft] / [green] / [regression] を付与する。
      状態は実装の進行に合わせて更新する。 -->
 
 ## AT-001: ランナーのプラットフォーム別アダプタ一般化
