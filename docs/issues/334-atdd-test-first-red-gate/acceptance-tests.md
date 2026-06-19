@@ -44,12 +44,12 @@
 
 ## AT-334-C: Gate③後フィードバックの正規ルート（F3）
 
-- [ ] [planned] AT-334-C1: iron-law に規模分岐ルートが明文化されている
+- [x] [green] AT-334-C1: iron-law に規模分岐ルートが明文化されている
   - Given: `docs/methodology/autopilot-iron-law.md`
   - When: Gate③後フィードバックの節を読む
   - Then: 「Gate③後の新ACは直接実装しない」「小（設計アンカー不変）= 同一Issue内 design 差し戻し / 大（設計アンカー変更を伴う）= 新Issue」「一次基準は設計アンカー変更の有無」が記述されている
 
-- [ ] [planned] AT-334-C2: overview が iron-law を正典参照する（陳腐化防止）
+- [x] [green] AT-334-C2: overview が iron-law を正典参照する（陳腐化防止）
   - Given: `docs/methodology/autopilot-overview.md`
   - When: ライフサイクル節を読む
   - Then: Gate③後ルートの要約があり、正典として iron-law を参照している（両ドキュメントが独立に乖離しない相互参照）

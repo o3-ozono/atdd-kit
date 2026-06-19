@@ -42,6 +42,15 @@ Every finding carries an `evidence_ref`: a failing-AT name / log path, or a quot
 ### AL-5 — Fail safe
 autopilot halts and escalates to a human on non-convergence, budget overrun, or repeated identical failure. Mechanisms: `MAX_ITERATIONS` per step, a **sameness-detector** (normalized sha256 fingerprint identical twice in a row among **same-step FAIL rows only**), **stuck detection** (no progress across a window of 3 using **same-step FAIL rows only** — PASS rows are never part of the comparison population, #277), and `COMPLETED_WITH_DEBT` (record unresolved findings and hand to a human). Silent infinite loops and silent fake-green are structurally impossible.
 
+### AL-5b — Gate③後フィードバックの正規ルート (#334)
+
+Gate③（merge）後にユーザーの実機フィードバックで新たなACが生じた場合、**直接実装しない**。規模で次の分岐に従う:
+
+- **小（設計アンカー変更不要・少数AC）**: 同一Issue内 design 差し戻し。設計アンカー（pin）が不変のまま吸収できる少数ACは、同一Issueの design phase に差し戻して既存 acceptance-tests に追加・収束させる。
+- **大（設計アンカー変更を伴うまとまった新機能）**: 新Issue。アンカー変更を伴う場合は新Issueを立てて AL-1 の三ゲートを踏む。
+
+**一次基準は「設計アンカー（pin）変更を伴うか」**。AC数の数値閾値は補助的目安にすぎない。AL-2（immutable anchor）の思想と整合し、既存 pin が変更不要なら同一Issue内で吸収できる。
+
 ### AL-6 — One convergence cycle may produce many deliverables (relaxes "1 PR = 1 thing")
 Inside the loop, one cycle may produce a whole phase's deliverable set (design phase: US → plan → AT; impl phase: code + green AT), and one Issue still ships as one PR. The "one thing" discipline is preserved at the User **merge** gate, where a person reviews the near-green result as a whole.
 
