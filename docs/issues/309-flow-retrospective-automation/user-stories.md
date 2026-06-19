@@ -16,7 +16,7 @@
 
 ### FS-3: トークンコストの集計（harness 値一次ソース）
 
-**I want to** 使用トークン量（input / output / 合計）を harness 提供値（Workflow `subagent_tokens` / headless `total_cost_usd` / `autopilot-log.jsonl`）を一次ソースとして、autopilot は subagent を含む総量で集計する,
+**I want to** 使用トークン量（input / output / 合計）を headless `claude -p` の `--output-format json` stdout（`total_cost_usd` / `usage`）および transcript jsonl を一次ソースとして集計し、対話セッション（非 headless）は取得不能のため best-effort 注記にとどめる（`autopilot-log.jsonl` はトークンフィールドを持たないため一次ソースから除外),
 **so that** 1 Issue あたりの実コストを確実な経路で把握し、コスト管理の基礎データにできる.
 
 ### FS-4: 前回比較（コード量正規化込み）

@@ -180,11 +180,11 @@ get_pr_diff_lines() {
   fi
 
   if [[ -n "$pr" ]]; then
-    # Fetch PR JSON and extract additions/deletions with portable parsing
+    # Fetch PR JSON (--json flag) and extract additions/deletions via jq
     local pr_json additions deletions
-    pr_json=$(gh pr view "$pr" 2>/dev/null || true)
-    additions=$(echo "$pr_json" | grep -oE '"additions"[[:space:]]*:[[:space:]]*[0-9]+' | grep -oE '[0-9]+$' | head -1 || true)
-    deletions=$(echo "$pr_json" | grep -oE '"deletions"[[:space:]]*:[[:space:]]*[0-9]+' | grep -oE '[0-9]+$' | head -1 || true)
+    pr_json=$(gh pr view "$pr" --json additions,deletions 2>/dev/null || true)
+    additions=$(echo "$pr_json" | jq -r '.additions // empty' 2>/dev/null | head -1 || true)
+    deletions=$(echo "$pr_json" | jq -r '.deletions // empty' 2>/dev/null | head -1 || true)
     local a_int d_int total
     a_int=$(safe_int "$additions")
     d_int=$(safe_int "$deletions")
