@@ -836,3 +836,12 @@ print("ok")
   run check_red_evidence "test123" "" "$RED_JSONL"
   [ "$status" -ne 0 ]
 }
+
+@test "#334: check_red_evidence rejects impl-commit sha with invalid charset (symmetric with test_sha)" {
+  # impl_sha のバリデーションが test_sha と対称であること（将来の JSON 埋め込み拡張時の安全性担保）
+  # チェックが red_jsonl の存在確認より先に走ることで、ファイルなしの失敗と区別できる
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "test123" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "test123" "impl/sha;bad" "$RED_JSONL"
+  [ "$status" -eq 2 ]  # charset 拒否は return 2（file-not-found の return 1 と区別）
+}
