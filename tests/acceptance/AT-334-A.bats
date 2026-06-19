@@ -12,12 +12,23 @@ setup() {
   source "$LIB"
   TMP="$(mktemp -d)"
   RED_JSONL="$TMP/red.jsonl"
-  TEST_COMMIT="abc1234"
-  IMPL_COMMIT="def5678"
+  # 正順コミット履歴: test → impl の順（test が先、impl が後）
+  GIT_REPO="$(mktemp -d)"
+  git -C "$GIT_REPO" init -q
+  git -C "$GIT_REPO" config user.email "test@example.com"
+  git -C "$GIT_REPO" config user.name "Test"
+  echo "test" > "$GIT_REPO/test.bats"
+  git -C "$GIT_REPO" add test.bats
+  git -C "$GIT_REPO" commit -q -m "test commit (AT)"
+  TEST_COMMIT="$(git -C "$GIT_REPO" rev-parse HEAD)"
+  echo "impl" > "$GIT_REPO/impl.sh"
+  git -C "$GIT_REPO" add impl.sh
+  git -C "$GIT_REPO" commit -q -m "impl commit"
+  IMPL_COMMIT="$(git -C "$GIT_REPO" rev-parse HEAD)"
 }
 
 teardown() {
-  rm -rf "$TMP"
+  rm -rf "$TMP" "$GIT_REPO"
 }
 
 # --- AT-334-A1: red 証跡ありで check_red_evidence exit 0 ---
@@ -25,8 +36,8 @@ teardown() {
 @test "AT-334-A1: red evidence present and commit order correct returns exit 0" {
   # Given: test コミットが impl コミットより先行し、test コミット時点の red 証跡が記録済み
   record_red_evidence "$RED_JSONL" "$TEST_COMMIT" "tests/acceptance/AT-334-A.bats"
-  # When: check_red_evidence を実行する
-  run check_red_evidence "$TEST_COMMIT" "$IMPL_COMMIT" "$RED_JSONL"
+  # When: check_red_evidence を実行する（GIT_REPO 経由でコミット順序を検証）
+  run check_red_evidence "$TEST_COMMIT" "$IMPL_COMMIT" "$RED_JSONL" "$GIT_REPO"
   # Then: exit 0（redObserved を真にできる）
   [ "$status" -eq 0 ]
 }
@@ -36,35 +47,52 @@ teardown() {
 @test "AT-334-A2: missing red evidence returns non-zero exit (fail-closed)" {
   # Given: red 証跡が記録されていない（red を一度も踏まず green になった）
   # When: check_red_evidence を実行する（空の red.jsonl）
-  run check_red_evidence "$TEST_COMMIT" "$IMPL_COMMIT" "$RED_JSONL"
+  run check_red_evidence "$TEST_COMMIT" "$IMPL_COMMIT" "$RED_JSONL" "$GIT_REPO"
   # Then: 非 0 exit（satisfaction oracle の redObserved 項が false になる）
   [ "$status" -ne 0 ]
 }
 
 # --- AT-334-A3: コミット順序逆転で fail-closed ---
 
-@test "AT-334-A3: evidence recorded for a different commit does not satisfy check_red_evidence (wrong test_sha)" {
-  # Given: test コミット(TEST_COMMIT)とは別コミット(IMPL_COMMIT)の証跡しか存在しない
-  # （impl より先に test が red だった証跡を持つ）
-  record_red_evidence "$RED_JSONL" "$IMPL_COMMIT" "tests/acceptance/AT-334-A.bats"
-  # When: check_red_evidence に TEST_COMMIT を渡す（IMPL_COMMIT の証跡は存在するが TEST_COMMIT には無い）
-  run check_red_evidence "$TEST_COMMIT" "$IMPL_COMMIT" "$RED_JSONL"
-  # Then: 非 0 exit（TEST_COMMIT の red 証跡が無いため fail-closed）
+@test "AT-334-A3: impl commit precedes test commit in history returns non-zero exit (commit order reversed)" {
+  # Given: impl コミットが test コミットより先行している（実装が先・test が後）
+  # 一時 git リポジトリを作成してコミット順序を制御する
+  local git_repo; git_repo="$(mktemp -d)"
+  git -C "$git_repo" init -q
+  git -C "$git_repo" config user.email "test@example.com"
+  git -C "$git_repo" config user.name "Test"
+  # 1st commit: impl（実装を先にコミット）
+  echo "impl" > "$git_repo/impl.txt"
+  git -C "$git_repo" add impl.txt
+  git -C "$git_repo" commit -q -m "impl commit first"
+  local impl_sha; impl_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  # 2nd commit: test AT（test を後にコミット — 順序逆転）
+  echo "test" > "$git_repo/test.bats"
+  git -C "$git_repo" add test.bats
+  git -C "$git_repo" commit -q -m "test commit second"
+  local test_sha; test_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  # red 証跡を test_sha で記録（証跡自体は存在する）
+  record_red_evidence "$RED_JSONL" "$test_sha" "tests/acceptance/AT-334-A.bats"
+  # When: check_red_evidence を実行する（test_sha は impl_sha の子孫 = 順序逆転）
+  # impl が先、test が後 → test が impl の祖先ではないため fail-closed
+  run check_red_evidence "$test_sha" "$impl_sha" "$RED_JSONL" "$git_repo"
+  # Then: 非 0 exit（commit 順序逆転のため fail-closed）
   [ "$status" -ne 0 ]
+  rm -rf "$git_repo"
 }
 
 # --- AT-334-A4: 空入力・破損入力は fail-closed ---
 
 @test "AT-334-A4a: empty test-commit arg returns non-zero exit" {
   # Given: test コミット引数が空
-  run check_red_evidence "" "$IMPL_COMMIT" "$RED_JSONL"
+  run check_red_evidence "" "$IMPL_COMMIT" "$RED_JSONL" "$GIT_REPO"
   # Then: 非 0 exit（fail-safe）
   [ "$status" -ne 0 ]
 }
 
 @test "AT-334-A4b: empty impl-commit arg returns non-zero exit" {
   # Given: impl コミット引数が空
-  run check_red_evidence "$TEST_COMMIT" "" "$RED_JSONL"
+  run check_red_evidence "$TEST_COMMIT" "" "$RED_JSONL" "$GIT_REPO"
   # Then: 非 0 exit（fail-safe）
   [ "$status" -ne 0 ]
 }
