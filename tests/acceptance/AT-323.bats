@@ -192,6 +192,13 @@ _commit_changed_file() {
   grep -qE "\-\-impact|\-\-base" "$SKILL"
 }
 
+@test "AT-323-004c: autopilot SKILL.md documents AT_COMMAND should use impact-scope command (--impact)" {
+  # AT_COMMAND は caller-provided だが、autopilot は impact-scope コマンドを推奨例として文書化する必要がある
+  # (PRD Non-Goal: CI YAML の自動改変なし; 設計「ゲートはフル」との非対称はコメントで明示)
+  SKILL="$REPO_ROOT/skills/autopilot/SKILL.md"
+  grep -qE "\-\-impact|impact.scope|impact-scope" "$SKILL"
+}
+
 # ---------------------------------------------------------------------------
 # AT-005: "run narrow / gate full" principle in methodology docs
 # Given: docs/methodology/test-execution-policy.md exists
