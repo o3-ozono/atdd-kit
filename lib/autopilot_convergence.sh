@@ -274,6 +274,59 @@ pin_anchor() {
   printf '%s\n' "$fp" > "$pinfile"
 }
 
+# #334 red evidence — record that a test commit was observed RED (non-zero exit) before
+# implementation. This is the symmetric counterpart to AL-3's green gate: the green gate
+# verifies the AT passes after implementation; the red gate verifies the AT failed before it.
+#
+# record_red_evidence <red-jsonl> <test-commit-sha> <at-file>
+#   Append one JSONL line recording that <at-file> was observed RED at <test-commit-sha>.
+#   Validates inputs with the same fail-closed rules as record_iteration:
+#   - commit sha must be non-empty and JSON-safe (no quotes / backslashes / newlines)
+#   - at-file is _json_escape'd to allow path separators and dots
+#   Returns non-zero on any invalid input and writes nothing.
+record_red_evidence() {
+  local red_jsonl="$1" commit_sha="$2" at_file="$3"
+  [ -n "$red_jsonl" ] || { echo "autopilot_convergence: record_red_evidence: jsonl path required" >&2; return 2; }
+  # commit sha must be non-empty and safe (git SHAs are hex, but allow the same charset as fingerprint)
+  case "$commit_sha" in
+    '' | *[!A-Za-z0-9._:-]*)
+      echo "autopilot_convergence: record_red_evidence: invalid commit sha: '$commit_sha'" >&2
+      return 2
+      ;;
+  esac
+  [ -n "$at_file" ] || { echo "autopilot_convergence: record_red_evidence: at-file required" >&2; return 2; }
+  local ts; ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf '{"step":"red","commit":"%s","at_file":"%s","timestamp":"%s"}\n' \
+    "$(_json_escape "$commit_sha")" "$(_json_escape "$at_file")" "$ts" >> "$red_jsonl"
+}
+
+# #334 red evidence check — verify that red evidence exists for the given test commit.
+# This is a deterministic gate (exit code only, no LLM opinion) symmetric to AL-3 green gate.
+#
+# check_red_evidence <test-commit-sha> <impl-commit-sha> <red-jsonl>
+#   Returns 0 (redObserved=true) iff:
+#     - both test-commit and impl-commit are non-empty
+#     - test-commit != impl-commit (they are different commits)
+#     - red-jsonl exists and has at least one record for test-commit-sha
+#   Returns non-zero (fail-closed) on:
+#     - empty test-commit or impl-commit
+#     - no red evidence for test-commit-sha (AT was never observed failing)
+#     - missing red-jsonl (no evidence file)
+check_red_evidence() {
+  local test_sha="$1" impl_sha="$2" red_jsonl="$3"
+  # Both SHAs must be non-empty
+  [ -n "$test_sha" ] || { echo "autopilot_convergence: check_red_evidence: test-commit sha required" >&2; return 2; }
+  [ -n "$impl_sha" ] || { echo "autopilot_convergence: check_red_evidence: impl-commit sha required" >&2; return 2; }
+  # The red-jsonl must exist (evidence must have been recorded before this check)
+  [ -f "$red_jsonl" ] || { echo "autopilot_convergence: check_red_evidence: red evidence file not found: '$red_jsonl'" >&2; return 1; }
+  # There must be at least one record for the test commit sha
+  if ! grep -qF "\"commit\":\"${test_sha}\"" "$red_jsonl"; then
+    echo "autopilot_convergence: check_red_evidence: no red evidence found for commit '$test_sha'" >&2
+    return 1
+  fi
+  return 0
+}
+
 # AL-2 drift check — compare the CURRENT approved-AC fingerprint against the pin.
 # Non-zero (halt) when the anchor drifted, the pin is missing, or the current
 # fingerprint is empty/unsafe — autopilot must never edit its own frozen AC.

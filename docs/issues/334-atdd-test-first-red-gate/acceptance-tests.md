@@ -10,27 +10,27 @@
 
 新規 AT について red 証跡が無い限り impl phase の satisfaction oracle が満たされないことを、LLM 判断ではなく exit code で機械検証する。
 
-- [ ] [planned] AT-334-A1: red 証跡ありで redObserved=true（収束可）
+- [x] [green] AT-334-A1: red 証跡ありで redObserved=true（収束可）
   - Given: 新規 AT を含む test コミットが impl コミットより先行し、test コミット時点で当該 AT が red（非0 exit）だった証跡が記録されている
   - When: `check_red_evidence <test-commit> <impl-commit>` を実行する
   - Then: exit 0（redObserved を真にできる）を返す
 
-- [ ] [planned] AT-334-A2: red 証跡欠如で fail-closed（収束不可）
+- [x] [green] AT-334-A2: red 証跡欠如で fail-closed（収束不可）
   - Given: 新規 AT について red 証跡が記録されていない（red を一度も踏まず green になった）
   - When: `check_red_evidence` を実行する
   - Then: 非0 exit を返し、satisfaction oracle の redObserved 項が false になる（green でも収束しない）
 
-- [ ] [planned] AT-334-A3: コミット順序逆転で fail-closed
+- [x] [green] AT-334-A3: コミット順序逆転で fail-closed
   - Given: impl コミットが test コミットより先行している（実装が先・test が後）
   - When: `check_red_evidence <test-commit> <impl-commit>` を実行する
   - Then: 非0 exit を返す
 
-- [ ] [planned] AT-334-A4: 空入力・破損入力は fail-closed（fail-safe）
+- [x] [green] AT-334-A4: 空入力・破損入力は fail-closed（fail-safe）
   - Given: test/impl コミット引数が空、または red 証跡行が空 exit・改行・引用符混入で破損している
   - When: `check_red_evidence` / `record_red_evidence` を実行する
   - Then: 非0 exit を返し、破損行を dark に書かない（既存 `record_iteration` の fail-closed 規約と同型）
 
-- [ ] [planned] AT-334-A5: satisfaction oracle が5項 AND で redObserved を含む
+- [x] [green] AT-334-A5: satisfaction oracle が5項 AND で redObserved を含む
   - Given: `skills/autopilot/SKILL.md` の impl phase オラクル定義
   - When: オラクル式を読む
   - Then: `AND(redObserved, atGreen, coverageOk, overall_correctness == "correct", confirmed P0/P1 == 0)` であり、redObserved が deterministic（exit code 由来）かつ AL-3 green ゲートの対であると明記されている
