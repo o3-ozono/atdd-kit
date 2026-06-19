@@ -170,6 +170,8 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 | test_run_skill_e2e_impact.bats | scripts/run-skill-e2e.sh path-based impact mapping (Issue #222) |
 | test_skill_gate_collision.bats | scripts/check-issue-collision.sh + skill-gate parallel collision detection (Step C2 / #197) |
 | test_check_plugin_version.bats | scripts/check-plugin-version.sh — legacy tokens (FIRST_RUN/NO_UPDATE/UPDATED/VERSIONS/BREAKING) + STALE_SESSION (AT-002: loaded < cached, marker unchanged) + RESTART_REQUIRED (AT-001: installed > loaded, marker unchanged) + simultaneous-condition priority STALE wins (AT-007) + fallback when installed_plugins.json absent/unparseable/no-matching-entry (AT-006: 5 cases) + CHANGELOG guard VERSIONS:UNKNOWN when cached heading absent (AT-004: 2 cases) + post-restart recovery to UPDATED/NO_UPDATE (AT-008: 2 cases) + network-independence static inspection (AT-009: 2 cases) (#280) |
+| test_retrospective_script.bats | scripts/retrospective.sh — existence / permissions / usage / CS-1 lightweight / output contract (turns / phase / tokens / ratio / friction / feedback) / JSONL schema / no-auto-routing / token-source exclusion (#309) |
+| test_retrospective_skill.bats | merging-and-deploying skill retrospective integration — invocation call point / --issue + --pr args / express structural-skip rationale / all-channel sync / flow step count / line budget (#309) |
 
 ### Templates, Docs & Config
 
@@ -235,6 +237,8 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-329-dor.bats | full-autopilot SKILL.md DoR 整合 — ready-to-go = DoR + plan review PASS 記述・旧 PRD 単独前提の撤去・definition-of-ready.md 存在・定義一致（Issue #329、5 tests） |
 | AT-329-worktree.bats | full-autopilot headless worker の worktree プラグイン設定播種 — `__seed_worktree_settings` が source 存在時に `.claude/settings.local.json` を播種・冪等・source 不在 no-op・異なる既存 dest 上書き・`FA_NO_WORKTREE=1` で worktree 解決が空（Issue #329、5 tests） |
 | AT-333-empty-guard.bats | full-autopilot `__default_result` の空成果 fail-closed ガード — `num_turns:0`/`result` の `Unknown command` は merge-ready ラベルがあっても `failed`・実成果は merge-ready 維持・`num_turns:20` を zero-turn と誤検知しない・out.json 不在も `failed`・整形済み JSON の `num_turns: 0` も検知（Issue #333、7 tests） |
+| AT-309.bats | フロー完了時の自動振り返り（メトリクス + フィードバック抽出）— retrospective.sh 存在/実行権/ヘルプ・CS-1 軽量性・express 構造スキップ・ターン数/フェーズ・トークン/コスト best-effort・diff 正規化比・摩擦点分類・フィードバック候補・JSONL 出力スキーマ・全チャネル同期・バージョン整合（Issue #309、23 tests） |
+| AT-314.bats | 全 Skill の SKILL.md ローダー stub 分割方針（行数バジェット恒久対策）— skill-loader-split.md の Split Pattern / Skill Inventory / Impact Analysis / Pin Operation / Rollout Plan 各節の構造 pin・autopilot reference implementation 参照・Loaded-by メタコメント・docs/methodology/README.md 登録・SKILL.md 無変更 invariant・English-only invariant・翻訳ファイル不在 invariant（Issue #314、13 tests） |
 | AT-334-A.bats | 決定的 red ゲート（F1 / C1）— `check_red_evidence` / `record_red_evidence` の deterministic 判定: red 証跡ありで exit 0・証跡欠如で非 0・コミット順序逆転で非 0・空/破損入力 fail-closed・satisfaction oracle が 5 項 AND(redObserved, atGreen, coverageOk, overall_correctness, P0/P1==0) で redObserved が AL-3 green ゲートと対称な deterministic gate と明記（Issue #334、10 tests） |
 | AT-334-B.bats | test/impl コミット分離による red→green の機械検証（F2）— running-atdd-cycle SKILL.md の Flow ステップ 2 が test コミットと impl コミットの分離を必須として記述し、コミット履歴から red→green 粒度を機械検証できる根拠であることが明記されている（Issue #334、2 tests） |
 | AT-334-C.bats | Gate③後フィードバックの正規ルート（F3）— autopilot-iron-law.md に規模分岐（小=同一 Issue 内 design 差し戻し / 大=新 Issue、一次基準=設計アンカー変更の有無）が明文化・autopilot-overview.md が iron-law を正典参照する相互参照で陳腐化防止（Issue #334、6 tests） |

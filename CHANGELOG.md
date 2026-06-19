@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.29.0] - 2026-06-19
+## [3.32.0] - 2026-06-19
 
 ### Added
 
@@ -17,6 +17,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - **Gate③後フィードバックの正規ルート（F3）**: `docs/methodology/autopilot-iron-law.md` に AL-5b（Gate③後ルート・設計アンカー変更の有無で「design 差し戻し / 新Issue」に分岐）を追加。`docs/methodology/autopilot-overview.md` に要約と iron-law への正典参照を追記。
   - **効率は test-first 逸脱の理由にしない（C2）**: `docs/methodology/autopilot-iron-law.md` に効率（session limit / トークン / 速さ）を test-first 逸脱の正当化に使えない旨を正典として明記。
   - `tests/acceptance/AT-334-A.bats`（red ゲート unit / oracle 構造アサーション、10 tests）、`AT-334-B.bats`（コミット分離 SKILL.md アサーション、2 tests）、`AT-334-C.bats`（Gate③後ルート doc アサーション、6 tests）、`AT-334-D.bats`（効率逸脱禁止 doc アサーション、4 tests）、`AT-334-E.bats`（バージョン整合 invariant、1 test）。
+
+## [3.31.0] - 2026-06-19
+
+### Added
+
+- **全 Skill の SKILL.md ローダー stub 分割方針（行数バジェット恒久対策）の research doc（#314）**。
+  - `docs/methodology/skill-loader-split.md` を新規作成。Split Pattern（stub 残存基準 / 分離基準 / 参照ポインタ形式）・Skill Inventory 表（全 20 Skill の行数・pin 上限・逼迫度ランク）・Impact Analysis（string-pin AT / テンプレート同期 / 行数 pin テストへの影響と対応方針）・Pin Operation（DEVELOPMENT.md Line-Budget Raises ルールとの整合）・Rollout Plan（逼迫度降順の派生 Issue 計画）を網羅。autopilot (#283/#304) を reference implementation として掲載。English-only・Loaded-by メタコメント・README 登録を遵守。実装（Skill 実改変）は派生 Issue 群が担う。
+  - `docs/methodology/README.md` の Documents 表に `skill-loader-split.md` 行を追記。
+  - `tests/acceptance/AT-314.bats` 新規作成（AT-314-1〜AT-314-CS3b、13 tests）。
+
+## [3.30.0] - 2026-06-19
+
+### Added
+
+- **フロー完了時の自動振り返り（メトリクス + フィードバック抽出）（#309）**。
+  - `scripts/retrospective.sh` を新規作成。引数: `--issue <N> [--pr <PR>] [--dry-run] [--json-output] [--help]`。ゼロ LLM 呼び出し・ゼロ対話入力・5 秒以内完了（CS-1 軽量性）。一次ソース: headless worker 出力 JSON（`usage`/`total_cost_usd`）・セッション transcript（ターン数）・`autopilot-log.jsonl`（フェーズ境界のみ、トークン不使用）・`gh` コメント（摩擦点）。自動起票なし（No Auto-Routing）。横断 JSONL `docs/retrospective-log.jsonl` に append-only 追記。
+  - `templates/docs/issues/retrospective.md` を新規作成（5 区分テンプレート: 対話量 / コスト / 前回比 / 摩擦点 / 改善候補）。
+  - `skills/merging-and-deploying/SKILL.md` Step 5（Report + Retrospective）に振り返り呼び出しを追記。唯一の起動点として明記。express は `merging-and-deploying` を経由しない構造的スキップ（`if 非 express` 分岐不要）。全チャネル同期（ターミナル + Issue/PR コメント）を明記。
+  - `tests/test_retrospective_skill.bats` 新規作成（merging-and-deploying SKILL 構造 pin: 起動点・express スキップ・全チャネル同期・5 ステップ維持・200 行以下、8 tests）。
+  - `tests/test_retrospective_script.bats` 新規作成（script 出力契約: 各メトリクス・JSONL valid・自動起票なし・CS-1 軽量性、16 tests）。
+  - `tests/acceptance/AT-309.bats` 新規作成（受け入れシナリオ AT-309-1〜AT-309-9、29 tests）。うち 6 件は fixture 注入による **behavioral テスト**（worker-out.json の usage → 数値トークン出力 / transcript jsonl → ターン数 / autopilot-log の `verdict:"FAIL"` → ゲート別摩擦分類 / PR コメント → 摩擦シグナル / トークン+diff → 数値正規化比 / 非 dry-run → retrospective.md 生成＋append-only JSONL）。この behavioral 化で `extract_friction` の `${step,,}`（bash 4+ 専用）が macOS bash 3.2 の `set -e` 下で abort する移植バグを検知し `tr` へ修正、`gh pr view --comments` を摩擦シグナル(b)に追加。
+## [3.29.0] - 2026-06-19
+
+### Added
+
+- **flaky-test-fix 専用の軽量ルート `fixing-flaky-tests`（bugfix ルートの兄弟）（#322）**。
+  - `skills/fixing-flaky-tests/SKILL.md` を新設。`bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` の 5 連鎖で既存スキルのみを再利用（定義 3 スキル・新メソドロジー追加なし）。`bug` の組込み forward chain は `fixing-flaky-tests` オーケストレーター側の override 機構（orchestrator-driven invocation）でインターセプト（`bug` SKILL.md 無編集）。
+  - 確率的再現確認: platform-aware N 回反復実行（other=bats ループ、web=`playwright-cli` 外部参照、iOS=Xcode/simulator MCP 外部参照 + `sim-pool`）で失敗率を記録し、単発再現確認を禁止。非決定性カテゴリ（タイミング依存 / 順序依存 / 共有状態 / 外部依存 / リソースリーク）を `debugging` の既存 Type C 配下の運用サブ軸として扱う（`debugging` SKILL.md 無編集）。
+  - cause-agreement ゲート: middle gate を設計承認ゲートから cause-agreement ゲート（承認対象 = 非決定性分類 + 反復失敗率）に特化。ゲート数は三のまま（AL-1 維持）。収束オラクルは N 回連続 green（決定化）＋ 既存テスト非破壊（単発 green を収束としない）。
+  - quarantine 判断ポイント: platform-aware 一時隔離マーク（other=bats skip、web=Playwright fixme/skip、iOS=XCTSkip、いずれも外部ランナー機能参照）＋ 追跡 Issue 残置必須。
+  - Type A 昇格: `debugging` の Root Cause が Type A（AC Gap）の場合はフル機能ルートへ昇格（`fixing-bugs` と同方式）。
+  - `docs/methodology/route-eligibility.md` に flaky ルート判定信号（`type:flaky` ラベル + `flaky`/`不安定`/`間欠的に失敗`/`intermittent` キーワード + flaky/bugfix 境界）と低確信 #305 ワンタップ User 確認を追記（SoT）。
+  - `docs/methodology/autopilot-iron-law.md` に AL-1 flaky specialization（cause-agreement ゲート・承認対象 = 非決定性分類＋失敗率）と AL-3 flaky specialization（反復 failing アンカー被覆・N 回連続 green オラクル・単発 green 収束禁止）を追記。
+  - `docs/methodology/autopilot-design-gate.md` に flaky ルート cause-agreement ゲート節を追記（`autopilot-iron-law.md` と二文書整合）。
+  - `skills/autopilot/SKILL.md` に flaky oracle loader-stub 1 行を追記（≤280 行バジェット維持、3 回目昇格禁止）。
+  - `commands/flaky-fix.md` を新設（`/atdd-kit:flaky-fix <issue>` で `fixing-flaky-tests` ルートを明示起動）。
+  - `tests/test_fixing_flaky_tests_skill.bats`（31 tests）と `tests/acceptance/AT-322.bats`（19 tests）を新設。`tests/test_skill_structure.bats` の `ALL_SKILLS` に `fixing-flaky-tests` を追記。
 
 ## [3.28.1] - 2026-06-19
 
