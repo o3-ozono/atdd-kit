@@ -72,3 +72,5 @@ When building the test strategy in plan Step 3, apply this framework per AC:
 5. **Note Q3/Q4 scope** — if an AC implies exploratory or NFR concerns, note them explicitly; they are out of scope for the atdd skill unless a separate AC exists.
 
 **Reference:** [atdd-guide.md](atdd-guide.md) for Double-Loop TDD rules and Inner Loop constraints.
+
+**Note:** Before selecting a test layer, a feasibility probe must confirm the route is executable. The GUI vs Non-GUI bifurcation in this table directly informs which probe type to use. See [acceptance-test-feasibility.md](acceptance-test-feasibility.md) for the probe doctrine and pre-planning gate.

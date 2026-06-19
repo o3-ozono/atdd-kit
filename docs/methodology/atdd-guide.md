@@ -84,6 +84,10 @@ Outer loop: Story Test (E2E / Integration)  <- 1 AC = 1 Outer Loop cycle
 - **Never write implementation code before its test.**
 - **Never weaken a test to make it pass.**
 
+## Feasibility Probe (Pre-Planning Gate)
+
+Before any AT can be marked `[planned]`, its route must be verified by a live feasibility probe. See [acceptance-test-feasibility.md](acceptance-test-feasibility.md) for the canonical doctrine: GUI vs Non-GUI bifurcation, the user escalation gate when no feasible route exists, and how this integrates with the autopilot design phase.
+
 ## ATDD Applicability
 
 The default is **write tests.** If you realize mid-implementation that something needs a test, stop and write the test first.

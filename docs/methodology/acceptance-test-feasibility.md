@@ -115,6 +115,46 @@ See [autopilot-design-gate.md](autopilot-design-gate.md) for the Gate ② presen
 
 ---
 
+## External Research Basis
+
+This section summarises the external evidence that grounds the probe-before-plan principle. Three domains are covered: agentic E2E test planning, browser/mobile UI agents, and API contract verification. Each entry cites a primary source.
+
+### Domain 1 — Agentic E2E Test Planning
+
+**Playwright Test Agents — live selector and assertion verification during generation**
+Playwright v1.56 (2025) introduced a three-agent system (Planner → Generator → Healer). The Generator agent "verifies selectors and assertions live as it performs the scenarios" — it probes the running application before writing any test code, confirming that element references and assertions are reachable before the test file is committed. This is the closest publicly documented instance of a "probe before plan" pattern in a mainstream test framework.
+
+- Source: <https://playwright.dev/docs/test-agents>
+- Adoption signal: Playwright is the most widely used web automation framework (npm weekly downloads > 10 M as of 2025); v1.56 live-verification is now the default for agent-generated tests.
+- Pitfall: The Generator still writes tests for the current application state; if the application changes after generation, the Healer must re-probe — route feasibility is not a one-time gate but must be re-confirmed on each significant change.
+
+**Slack Engineering — 48 % failure rate on complex flows without pre-probed routes**
+Slack ran > 200 agentic E2E workflows using Playwright MCP, Playwright CLI, and AI-generated Playwright tests (June 2026). Key finding: generated Playwright tests achieved ~8 % failure on simple flows but degraded to ~48 % on complex workflows. The root cause was that test routes were assumed feasible at authoring time without prior probing — authentication handling, navigation timing, and session instability caused systematic failures at runtime.
+
+- Source: <https://slack.engineering/agentic-testing-where-agents-fit-in-the-e2e-testing-stack/>
+- Adoption signal: Production-scale agentic testing study on a major SaaS product (Slack, > 20 M daily active users).
+- Pitfall: Skipping route feasibility verification at planning time transfers the cost to runtime — complex flows that appear automatable fail in practice due to session state, timing, and environmental dependencies. The study recommends agentic testing as an exploratory/debugging layer complementing deterministic scripted tests, not as a replacement that assumes all routes are reachable.
+
+### Domain 2 — Browser / Mobile UI Agents
+
+**Playwright MCP — structured accessibility snapshots as the feasibility probe substrate**
+Playwright MCP exposes Playwright as an MCP server where an LLM operates on structured accessibility snapshots (not screenshots) with deterministic element refs. This architecture decouples route probing from pixel-based recognition: the agent queries what is actionable on the page before committing to any interaction, enabling a feasibility assessment that feeds into maintainable CI tests. The verify-then-commit approach — confirm reachability via accessibility snapshot, then promote to a test — is the recommended pattern for agentic browser workflows.
+
+- Source: <https://medium.com/@adnanmasood/playwright-and-playwright-mcp-a-field-guide-for-agentic-browser-automation-f11b9daa3627>
+- Adoption signal: Playwright MCP is the reference implementation for Claude Code's browser automation and is used in atdd-kit's `playwright-cli` addon.
+- Pitfall (from bug0.com study): Even with accessibility-snapshot probing, bot detection (third-party auth providers, payment processors, analytics SDKs) can block automation in production that succeeds in staging — environment-specific route infeasibility must be flagged during planning, not discovered mid-implementation. Source: <https://bug0.com/blog/ai-testing-browser-agent-tools-wont-fix-qa-2026>
+
+### Domain 3 — API Exploration and Contract Verification
+
+**OpenAPI contract-first verification — probe the API contract before writing integration tests**
+Contract testing sits between unit testing and integration testing. It verifies that a consumer can create requests with specific data and correctly handle the provider's expected responses, using the OpenAPI spec as the feasibility proof before integration tests are authored. A practical pipeline: lint the spec with Spectral → generate and execute contract tests against staging (Portman / Pact) → only then commit integration test suites. When a provider changes a field type (e.g. integer → string), the consumer's contract test fails early — without this probe layer, breaking changes reach production.
+
+- Source: <https://www.speakeasy.com/blog/contract-testing-with-openapi>
+- Adoption signal: According to a 2024 Postman survey, API issues account for > 60 % of integration failures in microservices architectures — the majority preventable with upfront contract verification. PactFlow supports generating Pact tests from OpenAPI definitions as of 2026.
+- Pitfall: Bi-directional contract testing requires both the consumer and provider to publish artifacts; teams that skip this mutual verification discover incompatibilities only during end-to-end test runs, replicating the same late-discovery problem this doctrine addresses for GUI tests.
+
+---
+
 ## Cross-References
 
 | Document | Relationship |
