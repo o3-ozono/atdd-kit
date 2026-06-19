@@ -778,14 +778,15 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   [ "$model_line" -eq $(( phase_line + 1 )) ]
 }
 
-@test "#311 AT-002: all 7 impl agent labels carry model: MODEL; total count is exactly 7" {
-  # AT-002: gen / review / at-gate / coverage / audit / rails / audit-halt (#299) のすべてに model: MODEL が付与されている
+@test "#311 AT-002: all 8 impl agent labels carry model: MODEL; total count is exactly 8 (#334 red-gate added)" {
+  # AT-002: gen / review / red-gate (#334) / at-gate / coverage / audit / rails / audit-halt (#299) のすべてに model: MODEL が付与されている
   local count
   count=$(grep -cF 'model: MODEL' "$SKILL_FILE")
-  [ "$count" -eq 7 ]
+  [ "$count" -eq 8 ]
   # each label's line must contain model: MODEL
   grep -qF 'model: MODEL' <(grep 'label: `gen:' "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`review:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`red-gate:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`at-gate:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`coverage:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`audit:" "$SKILL_FILE")
@@ -962,4 +963,31 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
   [ "$n" -le 280 ]
+}
+
+# --- #334: deterministic red gate oracle + structure assertions ---------------
+
+@test "AT-334-oracle: satisfaction oracle is 5-term AND with redObserved (#334)" {
+  # oracle が AND(redObserved, atGreen, coverageOk, overall_correctness, P0/P1==0) の 5 項になっている
+  grep -q 'redObserved' "$SKILL_FILE"
+  # converged 式に全5項が含まれる
+  run grep -E 'redObserved &&.*atGreen|atGreen &&.*redObserved' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-334-gate: red gate is described as symmetric counterpart to AL-3 green gate" {
+  # red ゲートが AL-3 green ゲートの対として明記されている
+  run grep -iE 'red.*gate.*AL-3|AL-3.*red.*gate|symmetric.*red.*green|red.*green.*symmetric' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-334-gate: red gate uses check_red_evidence from lib/autopilot_convergence.sh" {
+  # red ゲートが lib/autopilot_convergence.sh の check_red_evidence を呼ぶ
+  grep -q 'check_red_evidence' "$SKILL_FILE"
+}
+
+@test "AT-334-gate: red gate default false (fail-closed) when evidence unavailable" {
+  # fail-closed: 証跡なし = false
+  run grep -iE 'default false|fail-closed' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
 }

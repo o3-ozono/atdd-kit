@@ -758,3 +758,69 @@ print("ok")
   # 「同じ失敗の繰り返し」として検出される（従来 continue → 新規 halt の意図経路 #277 AT-006）
   [ "$status" -ne 0 ]
 }
+
+# --- #334: record_red_evidence / check_red_evidence (deterministic red gate) ------
+
+@test "#334: record_red_evidence appends one JSONL line with step=red and the commit sha" {
+  # red 証跡が JSONL に追記されること（AL-3 green gate の対として）
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "abc1234" "tests/acceptance/AT-334-A.bats"
+  [ -f "$RED_JSONL" ]
+  run grep -q '"step":"red"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+  run grep -q '"commit":"abc1234"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334: check_red_evidence returns 0 when red evidence exists for test commit" {
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "test123" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "test123" "impl456" "$RED_JSONL"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334: check_red_evidence returns non-zero when no evidence exists (fail-closed)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run check_red_evidence "test123" "impl456" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: check_red_evidence returns non-zero when evidence is for a different commit" {
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "other999" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "test123" "impl456" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: record_red_evidence refuses empty commit sha (fail-closed, same as record_iteration)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run record_red_evidence "$RED_JSONL" "" "tests/acceptance/AT-334-A.bats"
+  [ "$status" -ne 0 ]
+  [ ! -s "$RED_JSONL" ]
+}
+
+@test "#334: record_red_evidence refuses commit sha with newline (would split JSONL)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run record_red_evidence "$RED_JSONL" "$(printf 'abc\ndef')" "tests/acceptance/AT-334-A.bats"
+  [ "$status" -ne 0 ]
+  [ ! -s "$RED_JSONL" ]
+}
+
+@test "#334: record_red_evidence refuses commit sha with double-quote (would forge JSON)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run record_red_evidence "$RED_JSONL" 'abc"def' "tests/acceptance/AT-334-A.bats"
+  [ "$status" -ne 0 ]
+  [ ! -s "$RED_JSONL" ]
+}
+
+@test "#334: check_red_evidence requires non-empty test-commit sha" {
+  RED_JSONL="$TMP/red.jsonl"
+  run check_red_evidence "" "impl456" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: check_red_evidence requires non-empty impl-commit sha" {
+  RED_JSONL="$TMP/red.jsonl"
+  run check_red_evidence "test123" "" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
