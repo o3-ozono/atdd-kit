@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.31.0] - 2026-06-19
+
+### Added
+
+- **全 Skill の SKILL.md ローダー stub 分割方針（行数バジェット恒久対策）の research doc（#314）**。
+  - `docs/methodology/skill-loader-split.md` を新規作成。Split Pattern（stub 残存基準 / 分離基準 / 参照ポインタ形式）・Skill Inventory 表（全 20 Skill の行数・pin 上限・逼迫度ランク）・Impact Analysis（string-pin AT / テンプレート同期 / 行数 pin テストへの影響と対応方針）・Pin Operation（DEVELOPMENT.md Line-Budget Raises ルールとの整合）・Rollout Plan（逼迫度降順の派生 Issue 計画）を網羅。autopilot (#283/#304) を reference implementation として掲載。English-only・Loaded-by メタコメント・README 登録を遵守。実装（Skill 実改変）は派生 Issue 群が担う。
+  - `docs/methodology/README.md` の Documents 表に `skill-loader-split.md` 行を追記。
+  - `tests/acceptance/AT-314.bats` 新規作成（AT-314-1〜AT-314-CS3b、13 tests）。
+
 ## [3.30.0] - 2026-06-19
 
 ### Added

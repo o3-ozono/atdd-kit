@@ -238,6 +238,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-329-worktree.bats | full-autopilot headless worker の worktree プラグイン設定播種 — `__seed_worktree_settings` が source 存在時に `.claude/settings.local.json` を播種・冪等・source 不在 no-op・異なる既存 dest 上書き・`FA_NO_WORKTREE=1` で worktree 解決が空（Issue #329、5 tests） |
 | AT-333-empty-guard.bats | full-autopilot `__default_result` の空成果 fail-closed ガード — `num_turns:0`/`result` の `Unknown command` は merge-ready ラベルがあっても `failed`・実成果は merge-ready 維持・`num_turns:20` を zero-turn と誤検知しない・out.json 不在も `failed`・整形済み JSON の `num_turns: 0` も検知（Issue #333、7 tests） |
 | AT-309.bats | フロー完了時の自動振り返り（メトリクス + フィードバック抽出）— retrospective.sh 存在/実行権/ヘルプ・CS-1 軽量性・express 構造スキップ・ターン数/フェーズ・トークン/コスト best-effort・diff 正規化比・摩擦点分類・フィードバック候補・JSONL 出力スキーマ・全チャネル同期・バージョン整合（Issue #309、23 tests） |
+| AT-314.bats | 全 Skill の SKILL.md ローダー stub 分割方針（行数バジェット恒久対策）— skill-loader-split.md の Split Pattern / Skill Inventory / Impact Analysis / Pin Operation / Rollout Plan 各節の構造 pin・autopilot reference implementation 参照・Loaded-by メタコメント・docs/methodology/README.md 登録・SKILL.md 無変更 invariant・English-only invariant・翻訳ファイル不在 invariant（Issue #314、13 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 
