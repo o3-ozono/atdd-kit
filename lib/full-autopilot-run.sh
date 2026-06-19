@@ -95,8 +95,17 @@ __default_launch() {
 }
 __default_result() {
   local i="$1"
+  local f="$RUNDIR/$i.out.json"
+  # #333: 自己申告 is_error:false でも、num_turns:0（worker が実装に未到達）や
+  # result の "Unknown command"（プラグイン/コマンド未解決）は空成果の直接証左。
+  # stale な merge-ready ラベルがあっても誤って merge-ready と判定しないよう、
+  # ラベル照合の前段で fail-closed に倒す（#329 H6 の「成否判定の自己申告依存」を縦深防御）。
+  # 正規表現はコロン後の任意スペースを許容（compact / pretty いずれの JSON でも取りこぼさない）。
+  if [ -f "$f" ] && { grep -qE '"num_turns":[[:space:]]*0[,}]' "$f" 2>/dev/null || grep -q 'Unknown command' "$f" 2>/dev/null; }; then
+    echo "failed"; return
+  fi
   # US-3 / 真因3: is_error:false 自己申告 ＋ GitHub merge-ready ラベル二重確認
-  if [ -f "$RUNDIR/$i.out.json" ] && grep -q '"is_error":false' "$RUNDIR/$i.out.json" 2>/dev/null; then
+  if [ -f "$f" ] && grep -q '"is_error":false' "$f" 2>/dev/null; then
     # merge-ready ラベルが Issue に存在することを gh で照合（produce→consume の往復検証）
     if gh issue view "$i" --json labels --jq '.labels[].name' 2>/dev/null | grep -q '^merge-ready$'; then
       echo "merge-ready"
