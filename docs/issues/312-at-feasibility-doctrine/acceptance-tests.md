@@ -10,42 +10,42 @@
 
 ## AT-312-01: doctrine ファイルが存在し Loaded-by メタを持つ
 
-- [ ] [planned] AT-312-01: 正典ドキュメントが規定パスに存在し、冒頭に参照 skill を列挙する `> **Loaded by:**` メタコメントを持つ
+- [x] [green] AT-312-01: 正典ドキュメントが規定パスに存在し、冒頭に参照 skill を列挙する `> **Loaded by:**` メタコメントを持つ
   - Given: methodology 正典群の配置規約（`docs/methodology/README.md` Conventions）に従う
   - When: `docs/methodology/acceptance-test-feasibility.md` を検査する
   - Then: ファイルが実在し、本文に `> **Loaded by:**` 行が含まれる
 
 ## AT-312-02: 普遍ルール（GUI / 非 GUI 二分岐と判定基準）
 
-- [ ] [planned] AT-312-02: doctrine が技術スタック非依存の「計画前 feasibility 実地探索」原則として、GUI=実操作／非 GUI=実 API call の二分岐とその判定基準を明記する
+- [x] [green] AT-312-02: doctrine が技術スタック非依存の「計画前 feasibility 実地探索」原則として、GUI=実操作／非 GUI=実 API call の二分岐とその判定基準を明記する
   - Given: doctrine 本文を読む
   - When: 普遍ルール節を検査する
   - Then: GUI（実操作）と 非 GUI（実 API call）の二分岐、および両者を振り分ける判定基準が記述されている
 
 ## AT-312-03: フロー統合点（[planned] 確定前のプローブ）
 
-- [ ] [planned] AT-312-03: doctrine が 6-step flow への統合点として、AT を `[planned]` 確定にする前に feasibility プローブを通すこと、および `writing-plan-and-tests` を統合点として言及する
+- [x] [green] AT-312-03: doctrine が 6-step flow への統合点として、AT を `[planned]` 確定にする前に feasibility プローブを通すこと、および `writing-plan-and-tests` を統合点として言及する
   - Given: doctrine 本文を読む
   - When: フロー統合点節を検査する
   - Then: `[planned]` と `writing-plan-and-tests` への言及があり、プローブを `[planned]` 確定前に通す旨が記述されている
 
 ## AT-312-04: ユーザーゲート（ルート不在／不安定時）
 
-- [ ] [planned] AT-312-04: doctrine が、実現可能ルートが見つからない／不安定なときに計画段階でユーザー判断を仰ぐゲートを記述する
+- [x] [green] AT-312-04: doctrine が、実現可能ルートが見つからない／不安定なときに計画段階でユーザー判断を仰ぐゲートを記述する
   - Given: doctrine 本文を読む
   - When: ユーザーゲート節を検査する
   - Then: 「ルート不在／不安定 → 計画段階でユーザー判断を仰ぐ」というゲート条件が記述されている
 
 ## AT-312-05: ツール抽象（プローブ抽象・非密結合）
 
-- [ ] [planned] AT-312-05: doctrine が feasibility プローブを抽象として扱い、addon が具体手段（Playwright CLI / Xcode MCP / API client 等）を供給する非密結合の形を記述する
+- [x] [green] AT-312-05: doctrine が feasibility プローブを抽象として扱い、addon が具体手段（Playwright CLI / Xcode MCP / API client 等）を供給する非密結合の形を記述する
   - Given: doctrine 本文を読む
   - When: ツール抽象節を検査する
   - Then: 「プローブ」抽象と、具体手段を addon が供給し特定ツールに密結合しない旨が記述されている
 
 ## AT-312-06: autopilot 整合（design phase / Gate ②）と相互参照健全性
 
-- [ ] [planned] AT-312-06: doctrine が autopilot design phase での feasibility プローブ実行と Gate ②（設計承認）への反映を記述し、既存 methodology doc への相互参照リンクが健全で README に登録されている
+- [x] [green] AT-312-06: doctrine が autopilot design phase での feasibility プローブ実行と Gate ②（設計承認）への反映を記述し、既存 methodology doc への相互参照リンクが健全で README に登録されている
   - Given: doctrine 本文と `docs/methodology/README.md` を読む
   - When: autopilot 整合節と相互参照を検査する
   - Then: design phase と Gate ②（設計承認）への反映が記述され、doctrine が参照する既存 doc（atdd-guide / test-mapping / definition-of-ready / test-execution-policy）の相対リンク先がすべて実在し、README の Documents 表に `acceptance-test-feasibility.md` 行が存在する
