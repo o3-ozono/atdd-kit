@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.28.1] - 2026-06-19
+
+### Fixed
+
+- **full-autopilot の成否判定が「空成果」を merge-ready 誤判定する穴を塞ぐ（#333）**。`lib/full-autopilot-run.sh` の `__default_result()` に、merge-ready ラベル照合の前段で fail-closed ガードを追加: worker の出力 JSON が `num_turns:0`（worker が実装に未到達）または `result` に `Unknown command`（プラグイン/コマンド未解決）を含む場合は、`is_error:false` の自己申告や stale な `merge-ready` ラベルの有無に関わらず `failed` を返す（#329 H6「成否判定の自己申告依存」の縦深防御）。
+  - **科学的デバッグの結論**: #333 が挙げた上流原因「headless worker が `/atdd-kit:autopilot` を `Unknown command` で解決できない」は、worktree に gitignore 対象 `.claude/settings.local.json` が複製されずプラグイン未ロードになることが真因で、**#329（#331）の `__seed_worktree_settings` で既に対処済み**（実証: 播種なし worktree で `num_turns:0`/`Unknown command` を完全再現、播種ありでは `Skill` 不在でも正常解決）。#333 の再現ログは #329 マージ前の stale evidence。仮説「`--allowed-tools` に `Skill` 不在が原因」は反証（autopilot は Workflow ツールでフェーズ駆動し Skill ツールを使わないため追加不要）。残存していた下流の成否判定の脆弱性のみを本 PR で修正。
+  - `tests/acceptance/AT-333-empty-guard.bats`（a/b/c: 空成果/Unknown command ＋ merge-ready ラベル時 `failed` / d/e: 実成果・`num_turns:20` 部分一致ガードの happy-path 回帰防止、5 tests）。
+
 ## [3.28.0] - 2026-06-19
 
 ### Added

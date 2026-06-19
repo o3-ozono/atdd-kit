@@ -234,6 +234,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-329-skillgate.bats | skill-gate route-eligibility 必須チェック — セクション存在・route-eligibility.md 参照・非適合抑止・override 記述・mandatory キーワード（Issue #329、6 tests） |
 | AT-329-dor.bats | full-autopilot SKILL.md DoR 整合 — ready-to-go = DoR + plan review PASS 記述・旧 PRD 単独前提の撤去・definition-of-ready.md 存在・定義一致（Issue #329、5 tests） |
 | AT-329-worktree.bats | full-autopilot headless worker の worktree プラグイン設定播種 — `__seed_worktree_settings` が source 存在時に `.claude/settings.local.json` を播種・冪等・source 不在 no-op・異なる既存 dest 上書き・`FA_NO_WORKTREE=1` で worktree 解決が空（Issue #329、5 tests） |
+| AT-333-empty-guard.bats | full-autopilot `__default_result` の空成果 fail-closed ガード — `num_turns:0`/`result` の `Unknown command` は merge-ready ラベルがあっても `failed`・実成果は merge-ready 維持・`num_turns:20` を zero-turn と誤検知しない（Issue #333、5 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 
