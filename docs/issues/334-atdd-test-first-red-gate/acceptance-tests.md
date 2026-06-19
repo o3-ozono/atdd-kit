@@ -37,7 +37,7 @@
 
 ## AT-334-B: test/impl コミット分離による red→green の機械検証（F2）
 
-- [ ] [planned] AT-334-B1: running-atdd-cycle が test/impl コミット分離を必須化する
+- [x] [green] AT-334-B1: running-atdd-cycle が test/impl コミット分離を必須化する
   - Given: `skills/running-atdd-cycle/SKILL.md` の Flow（C2 RED-first）
   - When: ステップ2「Confirm RED」周辺を読む
   - Then: test を含むコミットと impl コミットの分離が必須として記述され、コミット履歴から red→green 粒度が機械検証できる根拠であることが明記されている
