@@ -77,10 +77,17 @@ Run **impact-affected files only** during each ATDD iteration to keep the feedba
 scripts/run-tests.sh --impact --base <base-ref>
 ```
 
+For consumer projects that use `--platform {web|ios}`, pass the platform flag to scope to that platform's impact rules:
+
+```
+scripts/impact_map.sh --config config/impact_rules.yml --platform web --base <base-ref> --layer skill-e2e
+scripts/impact_map.sh --config config/impact_rules.yml --platform ios --base <base-ref> --layer skill-e2e
+```
+
+Omitting `--platform` defaults to `other` (atdd-kit's own bats/`@covers` selection). The full policy with platform-specific examples is in [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
+
 claude-based e2e tests (`tests/e2e/*.bats`) follow the same impact criterion — run them only when the
 change touches the skill or component they cover, not on every iteration.
-
-For the full policy doctrine, see [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
 
 ## Integration
 
