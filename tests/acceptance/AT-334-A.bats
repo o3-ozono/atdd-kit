@@ -5,7 +5,7 @@
 # 新規 AT について red 証跡が無い限り impl phase の satisfaction oracle が満たされないことを、
 # LLM 判断ではなく exit code で機械検証する。
 #
-# lifecycle: [draft]
+# lifecycle: [regression]
 
 setup() {
   LIB="lib/autopilot_convergence.sh"

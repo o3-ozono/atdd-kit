@@ -773,9 +773,21 @@ print("ok")
 }
 
 @test "#334: check_red_evidence returns 0 when red evidence exists for test commit" {
+  # 正順コミット（test → impl）と red 証跡があれば exit 0 を返すこと
   RED_JSONL="$TMP/red.jsonl"
-  record_red_evidence "$RED_JSONL" "test123" "tests/acceptance/AT-334-A.bats"
-  run check_red_evidence "test123" "impl456" "$RED_JSONL"
+  local git_repo; git_repo="$(mktemp -d)"
+  git -C "$git_repo" init -q
+  git -C "$git_repo" config user.email "t@t.com"
+  git -C "$git_repo" config user.name "T"
+  echo "t" > "$git_repo/t.bats"; git -C "$git_repo" add t.bats
+  git -C "$git_repo" commit -q -m "test"
+  local test_sha; test_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  echo "i" > "$git_repo/i.sh"; git -C "$git_repo" add i.sh
+  git -C "$git_repo" commit -q -m "impl"
+  local impl_sha; impl_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  record_red_evidence "$RED_JSONL" "$test_sha" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "$test_sha" "$impl_sha" "$RED_JSONL" "$git_repo"
+  rm -rf "$git_repo"
   [ "$status" -eq 0 ]
 }
 

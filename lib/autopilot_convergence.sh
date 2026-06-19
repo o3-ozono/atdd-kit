@@ -302,26 +302,38 @@ record_red_evidence() {
 
 # #334 red evidence check — verify that red evidence exists for the given test commit.
 # This is a deterministic gate (exit code only, no LLM opinion) symmetric to AL-3 green gate.
+# Implements design-doc Decision 1 Case C: commit separation AND red-exit record (both required).
 #
-# check_red_evidence <test-commit-sha> <impl-commit-sha> <red-jsonl>
-#   Returns 0 (redObserved=true) iff:
-#     - both test-commit and impl-commit are non-empty
-#     - test-commit != impl-commit (they are different commits)
-#     - red-jsonl exists and has at least one record for test-commit-sha
+# check_red_evidence <test-commit-sha> <impl-commit-sha> <red-jsonl> [git-dir]
+#   Returns 0 (redObserved=true) iff ALL of:
+#     1. both test-commit and impl-commit are non-empty
+#     2. red-jsonl exists and has at least one record for test-commit-sha (red-exit record)
+#     3. test-commit is a strict ancestor of impl-commit in git history
+#        (git merge-base --is-ancestor test_sha impl_sha) — commit separation anchor
 #   Returns non-zero (fail-closed) on:
 #     - empty test-commit or impl-commit
 #     - no red evidence for test-commit-sha (AT was never observed failing)
 #     - missing red-jsonl (no evidence file)
+#     - test-commit is NOT an ancestor of impl-commit (impl preceded test in history)
+#     - git ancestry check fails (e.g. unknown SHAs, not a git repo)
+#   [git-dir] defaults to "." (current working directory); pass an explicit path in tests.
 check_red_evidence() {
-  local test_sha="$1" impl_sha="$2" red_jsonl="$3"
+  local test_sha="$1" impl_sha="$2" red_jsonl="$3" git_dir="${4:-.}"
   # Both SHAs must be non-empty
   [ -n "$test_sha" ] || { echo "autopilot_convergence: check_red_evidence: test-commit sha required" >&2; return 2; }
   [ -n "$impl_sha" ] || { echo "autopilot_convergence: check_red_evidence: impl-commit sha required" >&2; return 2; }
   # The red-jsonl must exist (evidence must have been recorded before this check)
   [ -f "$red_jsonl" ] || { echo "autopilot_convergence: check_red_evidence: red evidence file not found: '$red_jsonl'" >&2; return 1; }
-  # There must be at least one record for the test commit sha
+  # There must be at least one record for the test commit sha (red-exit evidence)
   if ! grep -qF "\"commit\":\"${test_sha}\"" "$red_jsonl"; then
     echo "autopilot_convergence: check_red_evidence: no red evidence found for commit '$test_sha'" >&2
+    return 1
+  fi
+  # Commit separation: test_sha must be a strict ancestor of impl_sha (test preceded impl in history).
+  # This is the hard-to-forge temporal anchor (design-doc Decision 1 Case C) that prevents
+  # post-hoc log injection — git history is an immutable, external record that the LLM cannot alter.
+  if ! git -C "$git_dir" merge-base --is-ancestor "$test_sha" "$impl_sha" 2>/dev/null; then
+    echo "autopilot_convergence: check_red_evidence: test commit '$test_sha' is not an ancestor of impl commit '$impl_sha' (commit order violation or unknown sha)" >&2
     return 1
   fi
   return 0
