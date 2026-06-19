@@ -122,3 +122,30 @@ SKILL_FILE="skills/running-atdd-cycle/SKILL.md"
   # the normal (main-session) flow is unaffected by the note
   grep -qiE 'normal flow|main-session|unaffected' "$SKILL_FILE"
 }
+
+# --- #334: test/impl commit separation (C2 RED-first extension) ---
+
+@test "#334 commit-separation: C2 requires committing the AT before writing implementation (test commit)" {
+  # C2 の説明に test コミットと impl コミットの分離が必須として記述されている
+  run grep -qiE 'commit.*separ|separ.*commit|コミット.*分離|分離.*コミット' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334 commit-separation: Step 2 mandates committing the AT file before implementation" {
+  # Flow ステップ2 に「Commit the AT file」または同等の分離必須指示が存在する
+  run grep -qiE 'Commit.*AT|commit.*test.*file|test.*commit.*before|commit.*before.*impl' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334 commit-separation: machine-verifiable red-green evidence via commit history" {
+  # コミット履歴が red→green の machine-verifiable 根拠であることが明記されている
+  run grep -qiE 'machine.*verif|deterministic.*commit|commit.*evidence' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334 record_red_evidence: Step 2 contains imperative call instruction for record_red_evidence" {
+  # record_red_evidence が「呼び出せ（call / run / invoke / 実行）」という命令文で記述されていること
+  # 言及のみ（via / + の形）では不十分 — 呼ばないと red.jsonl に証跡が記録されず収束が止まる
+  run grep -qiE 'call.{0,2}record_red_evidence|run.{0,2}record_red_evidence|invoke.{0,2}record_red_evidence|record_red_evidence.*を?呼び?出|record_red_evidence.*を?実行' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}

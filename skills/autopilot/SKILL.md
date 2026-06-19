@@ -70,9 +70,9 @@ Invoking this skill opts into the **Workflow tool**. For each step S of the curr
 
 1. **generate** — run S's flow skill to produce or repair its artifact, anchored to this phase's immutable approved anchor.
 2. **review** — run `reviewing-deliverables` (single-pass primitive, unchanged) → its structured verdict (`overall_correctness` + `findings[]`, each carrying `priority` and `evidence_ref`).
-3. **deterministic AT gate (AL-3)** — impl phase only: `atGreen` is set from the **test command's exit code**, captured by running it — never from an LLM opinion of whether tests "would" pass.
+3. **deterministic AT gates** — impl phase only: (a) **red gate (#334)** `redObserved` from `check_red_evidence` exit code — AT failing BEFORE impl (red.jsonl), symmetric to AL-3; (b) **green gate (AL-3)** `atGreen` from test command exit code — AT passing AFTER impl. Both exit-code-derived; never LLM opinion. Both default false (fail-closed).
 4. **AC→AT coverage gate (AL-2)** — impl phase only: a check **run in a context separate from the AT author** confirms the AT encode every approved AC; any uncovered AC is a P0. This is the external anchor that stops the loop from grading its own AT.
-5. **satisfaction oracle** — `AND(atGreen [deterministic], coverageOk, overall_correctness == "correct", confirmed P0/P1 == 0)`. A finding with an absent / non-numeric `priority` is treated as **blocking** (fail-safe), and a confirmed P0/P1 blocks **regardless of `evidence_ref`** — AL-4 is fail-safe, never fail-open.
+5. **satisfaction oracle (#334)** — `AND(redObserved, atGreen [AL-3], coverageOk [AL-2], overall_correctness == "correct", confirmed P0/P1 == 0)`. A finding with an absent / non-numeric `priority` is treated as **blocking** (fail-safe), and a confirmed P0/P1 blocks **regardless of `evidence_ref`** — AL-4 is fail-safe, never fail-open.
    - satisfied → advance to the next step.
    - not satisfied → feed the findings **verbatim** back into generate (fix) and re-loop.
 6. **safety rails** (`lib/autopilot_convergence.sh`, AL-5) — record the iteration to the JSONL, then check the rails, including `check_log_integrity` against the orchestrator-tracked expected line count (#262: a deleted / rolled-back audit log silently resets sameness & stuck — fail-closed instead); a **non-zero `record_iteration`** (corrupt / empty fingerprint) is itself a halt. **Halt + escalate to a human** on any.
@@ -217,18 +217,19 @@ for (const step of STEPS) {
       coverageOk = cov != null && cov.allCovered === true && uncovered.length === 0
     }
     const blocking = (verdict != null ? verdict.findings || [] : []).filter((f) => priorityOf(f) <= 1)
-    // 5. satisfaction oracle — AL-3 deterministic AT AND AL-2 coverage AND
-    //    reviewer correctness AND zero confirmed P0/P1 (fail-safe, never fail-open: null = not converged).
-    const converged = atGreen && coverageOk && verdict != null && verdict.overall_correctness === 'correct' && blocking.length === 0
-    // 6. AUDIT FIRST (AL-4) — record EVERY iteration (incl. the converged one)
-    //    before deciding, so the JSONL is the complete external source of truth.
-    //    record_iteration's full signature is <jsonl> <iteration> <step> <verdict> <fp>;
-    //    a non-zero return (corrupt / empty fingerprint) is itself a halt.
-    //    #252: payload is embedded verbatim (JSON.stringify, never a placeholder). #272: oracle
-    //    state included — gate change alone (atGreen/coverageOk/uncovered) yields a distinct fp.
+    // #334 red gate (impl only) — symmetric to AL-3 green gate: AT failing BEFORE impl (exit code, red.jsonl). Default false.
+    let redObserved = !atRequired
+    if (atRequired) {
+      const red = await agent(`Via lib/autopilot_convergence.sh, check red evidence for Issue #${NNN}. Steps: (1) resolve the issue directory glob docs/issues/${NNN}-*; (2) resolve the red evidence file glob docs/issues/${NNN}-*/red.jsonl; (3) find the test-commit SHA — the most recent commit that added the AT file(s) for Issue #${NNN} (search git log for commits touching tests/acceptance/AT-${NNN}.*); (4) find the impl-commit SHA — the most recent commit on this branch that is NOT the test commit (i.e. the head impl commit, obtained via \`git rev-parse HEAD\` if HEAD is not the test commit, otherwise \`git log --oneline | awk 'NR==2{print $1}'\`); (5) run: \`source lib/autopilot_convergence.sh; test_sha=<resolved-test-sha>; impl_sha=<resolved-impl-sha>; red_jsonl=<resolved-red-jsonl>; check_red_evidence "$test_sha" "$impl_sha" "$red_jsonl"; echo exit:$?\`; (6) report exitCode (integer from step 5) and redObserved=(exitCode===0).`, { label: `red-gate:${step}`, phase: 'AT-gate', schema: { type: 'object', required: ['exitCode', 'redObserved'], properties: { exitCode: { type: 'integer' }, redObserved: { type: 'boolean' } } }, model: MODEL })
+      redObserved = red != null && red.exitCode === 0 && red.redObserved === true
+    }
+    // 5. satisfaction oracle (#334) — AND(redObserved, atGreen [AL-3], coverageOk [AL-2], overall_correctness, P0/P1==0). Fail-safe.
+    const converged = redObserved && atGreen && coverageOk && verdict != null && verdict.overall_correctness === 'correct' && blocking.length === 0
+    // 6. AUDIT FIRST (AL-4) — record EVERY iteration before deciding (JSONL = external truth).
+    //    record_iteration full sig: <jsonl> <it> <step> <verdict> <fp>. non-zero = halt (#252 verbatim payload, #272 oracle state in fp).
     const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. The blocking-findings payload to fingerprint is the exact text between the two marker lines below (hash the payload only, never the markers):
 BEGIN-PAYLOAD
-${JSON.stringify({ atGreen, coverageOk, uncovered, blocking })}
+${JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })}
 END-PAYLOAD
 Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc (\`cat > "$tmp" <<'PAYLOAD_EOF'\` … \`PAYLOAD_EOF\` — quoted so nothing expands); (2) \`fp="$(fingerprint < "$tmp")"\`; (3) \`record_iteration "<resolved-log-path>" ${it} ${step} ${converged ? 'PASS' : 'FAIL'} "$fp"\`; (4) #288: if record_iteration succeeded, IMMEDIATELY commit ONLY the audit log so a later working-tree rollback by the next gen agent cannot delete this row — \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): audit ${step} iteration ${it} (#${NNN})"\` (stage the log file alone, nothing else). Report recordOk = (record_iteration exit code === 0).`, { label: `audit:${step}`, phase: 'Rails', schema: { type: 'object', required: ['recordOk'], properties: { recordOk: { type: 'boolean' } } }, model: MODEL })
     if (rec == null || rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }

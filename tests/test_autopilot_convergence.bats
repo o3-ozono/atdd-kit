@@ -758,3 +758,90 @@ print("ok")
   # 「同じ失敗の繰り返し」として検出される（従来 continue → 新規 halt の意図経路 #277 AT-006）
   [ "$status" -ne 0 ]
 }
+
+# --- #334: record_red_evidence / check_red_evidence (deterministic red gate) ------
+
+@test "#334: record_red_evidence appends one JSONL line with step=red and the commit sha" {
+  # red 証跡が JSONL に追記されること（AL-3 green gate の対として）
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "abc1234" "tests/acceptance/AT-334-A.bats"
+  [ -f "$RED_JSONL" ]
+  run grep -q '"step":"red"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+  run grep -q '"commit":"abc1234"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334: check_red_evidence returns 0 when red evidence exists for test commit" {
+  # 正順コミット（test → impl）と red 証跡があれば exit 0 を返すこと
+  RED_JSONL="$TMP/red.jsonl"
+  local git_repo; git_repo="$(mktemp -d)"
+  git -C "$git_repo" init -q
+  git -C "$git_repo" config user.email "t@t.com"
+  git -C "$git_repo" config user.name "T"
+  echo "t" > "$git_repo/t.bats"; git -C "$git_repo" add t.bats
+  git -C "$git_repo" commit -q -m "test"
+  local test_sha; test_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  echo "i" > "$git_repo/i.sh"; git -C "$git_repo" add i.sh
+  git -C "$git_repo" commit -q -m "impl"
+  local impl_sha; impl_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  record_red_evidence "$RED_JSONL" "$test_sha" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "$test_sha" "$impl_sha" "$RED_JSONL" "$git_repo"
+  rm -rf "$git_repo"
+  [ "$status" -eq 0 ]
+}
+
+@test "#334: check_red_evidence returns non-zero when no evidence exists (fail-closed)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run check_red_evidence "test123" "impl456" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: check_red_evidence returns non-zero when evidence is for a different commit" {
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "other999" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "test123" "impl456" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: record_red_evidence refuses empty commit sha (fail-closed, same as record_iteration)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run record_red_evidence "$RED_JSONL" "" "tests/acceptance/AT-334-A.bats"
+  [ "$status" -ne 0 ]
+  [ ! -s "$RED_JSONL" ]
+}
+
+@test "#334: record_red_evidence refuses commit sha with newline (would split JSONL)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run record_red_evidence "$RED_JSONL" "$(printf 'abc\ndef')" "tests/acceptance/AT-334-A.bats"
+  [ "$status" -ne 0 ]
+  [ ! -s "$RED_JSONL" ]
+}
+
+@test "#334: record_red_evidence refuses commit sha with double-quote (would forge JSON)" {
+  RED_JSONL="$TMP/red.jsonl"
+  run record_red_evidence "$RED_JSONL" 'abc"def' "tests/acceptance/AT-334-A.bats"
+  [ "$status" -ne 0 ]
+  [ ! -s "$RED_JSONL" ]
+}
+
+@test "#334: check_red_evidence requires non-empty test-commit sha" {
+  RED_JSONL="$TMP/red.jsonl"
+  run check_red_evidence "" "impl456" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: check_red_evidence requires non-empty impl-commit sha" {
+  RED_JSONL="$TMP/red.jsonl"
+  run check_red_evidence "test123" "" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+@test "#334: check_red_evidence rejects impl-commit sha with invalid charset (symmetric with test_sha)" {
+  # impl_sha のバリデーションが test_sha と対称であること（将来の JSON 埋め込み拡張時の安全性担保）
+  # チェックが red_jsonl の存在確認より先に走ることで、ファイルなしの失敗と区別できる
+  RED_JSONL="$TMP/red.jsonl"
+  record_red_evidence "$RED_JSONL" "test123" "tests/acceptance/AT-334-A.bats"
+  run check_red_evidence "test123" "impl/sha;bad" "$RED_JSONL"
+  [ "$status" -eq 2 ]  # charset 拒否は return 2（file-not-found の return 1 と区別）
+}

@@ -28,7 +28,7 @@ Platform-specific addons are in `${CLAUDE_PLUGIN_ROOT}/addons/`. Each addon has 
 | 6. Merge + Deploy | `merging-and-deploying` | merged PR + post-deploy regression |
 
 - Exclusive lock: do not start work on an Issue with `in-progress` label.
-- Test-first, always. 1 PR = 1 thing.
+- Test-first, always. 1 PR = 1 thing. **効率（session limit / トークン / 速さ）は test-first 逸脱の理由にしない**（正典: `${CLAUDE_PLUGIN_ROOT}/docs/methodology/autopilot-iron-law.md` 「効率は test-first 逸脱の理由にしない」節）。
 - **Step B (B1-B8 new skill impl): must read `docs/issues/179-atdd-kit-v1-redesign/step-b-playbook.md` before touching `skills/`, `tests/test_*_skill.bats`, or `tests/e2e/*.bats`. Auto-deprecated when B8 #195 merges.**
 
 ## Commits

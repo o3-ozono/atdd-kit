@@ -128,14 +128,16 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 
 # --- Line budget ----------------------------------------------------------
 
-@test "line budget (#254: Dialog economy section): SKILL.md is at most 280 lines" {
+@test "line budget (#254: Dialog economy section): SKILL.md is at most 285 lines" {
   # 240 → 260 (#254): the Dialog economy section adds ~10 lines of human-dialog
   # discipline that must live in the orchestrator (C1: flow skills stay unedited)
   # 260 → 280 (#275): #272 step-scoped rails + #275 diff-in-body left the file
   # at 260/260 with zero headroom; raised per the #276 review headroom finding
+  # 280 → 285 (#334 review Finding 3): redObserved added to fingerprint payload
+  # (Finding 2); 280 was exactly at the limit with zero headroom for future edits
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
-  [ "$n" -le 280 ]
+  [ "$n" -le 285 ]
 }
 
 # --- Code-deep oracle (#246 review: rails/oracle must be code, not just prose)
@@ -227,11 +229,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -q 'Run EXACTLY' "$SKILL_FILE"
 }
 
-@test "audit (#252): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
+@test "audit (#252 #334): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
   grep -q 'BEGIN-PAYLOAD' "$SKILL_FILE"
   grep -q 'END-PAYLOAD' "$SKILL_FILE"
-  # #272: payload が oracle 状態込みの新形式であること（blocking を含む）
-  grep -qE 'JSON\.stringify\(\{ atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
+  # #272 #334: payload が oracle 状態込みの新形式であること（redObserved を先頭に追加）
+  grep -qE 'JSON\.stringify\(\{ redObserved, atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
   # 旧 JSON.stringify(blocking) 単独 payload が残っていないこと
   ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
   grep -qi 'quoted heredoc' "$SKILL_FILE"
@@ -550,19 +552,28 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qE '\(d\) check_stuck "<log>" 3;' "$SKILL_FILE"
 }
 
-@test "AT-006 (#272): audit payload includes oracle state (atGreen, coverageOk, uncovered, blocking)" {
+@test "AT-006 (#272 #334): audit payload includes oracle state (redObserved, atGreen, coverageOk, uncovered, blocking)" {
   # Given: SKILL.md の audit ステップ（label: audit:step）
   # When: 構造 pin（grep）を実行する
-  # Then: payload が JSON.stringify({ atGreen, coverageOk, uncovered, blocking }) であり、
+  # Then: payload が JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking }) であり、
   #       旧 JSON.stringify(blocking) 単独 payload が残っていない
-  grep -qF 'JSON.stringify({ atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
+  # (#334 review Finding 2: redObserved を #272 oracle-state fingerprinting に追加)
+  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
   # 旧 JSON.stringify(blocking) 単独（中括弧なし）が BEGIN-PAYLOAD 直後に残っていないこと
   ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
   # uncovered が payload より前にループスコープで宣言・代入されていること
   local uline pline
   uline=$(grep -n 'let uncovered' "$SKILL_FILE" | head -1 | cut -d: -f1)
-  pline=$(grep -nF 'JSON.stringify({ atGreen' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  pline=$(grep -nF 'JSON.stringify({ redObserved' "$SKILL_FILE" | head -1 | cut -d: -f1)
   [ -n "$uline" ] && [ -n "$pline" ] && [ "$uline" -lt "$pline" ]
+}
+
+@test "AT-006b (#334 review): audit payload includes redObserved for oracle-state fingerprinting consistency" {
+  # Given: SKILL.md の audit ステップ（label: audit:step）
+  # When: fingerprint payload を読む
+  # Then: JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking }) であり、
+  #       redObserved が先頭に含まれる（#272 方針との一貫性 / #334 review Finding 2）
+  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
 }
 
 @test "AT-007 (#287): rails prompt resolves real paths and bans synthetic fixtures" {
@@ -778,14 +789,15 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   [ "$model_line" -eq $(( phase_line + 1 )) ]
 }
 
-@test "#311 AT-002: all 7 impl agent labels carry model: MODEL; total count is exactly 7" {
-  # AT-002: gen / review / at-gate / coverage / audit / rails / audit-halt (#299) のすべてに model: MODEL が付与されている
+@test "#311 AT-002: all 8 impl agent labels carry model: MODEL; total count is exactly 8 (#334 red-gate added)" {
+  # AT-002: gen / review / red-gate (#334) / at-gate / coverage / audit / rails / audit-halt (#299) のすべてに model: MODEL が付与されている
   local count
   count=$(grep -cF 'model: MODEL' "$SKILL_FILE")
-  [ "$count" -eq 7 ]
+  [ "$count" -eq 8 ]
   # each label's line must contain model: MODEL
   grep -qF 'model: MODEL' <(grep 'label: `gen:' "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`review:" "$SKILL_FILE")
+  grep -qF 'model: MODEL' <(grep "label: \`red-gate:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`at-gate:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`coverage:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`audit:" "$SKILL_FILE")
@@ -962,4 +974,31 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   local n
   n=$(wc -l < "$SKILL_FILE" | tr -d ' ')
   [ "$n" -le 280 ]
+}
+
+# --- #334: deterministic red gate oracle + structure assertions ---------------
+
+@test "AT-334-oracle: satisfaction oracle is 5-term AND with redObserved (#334)" {
+  # oracle が AND(redObserved, atGreen, coverageOk, overall_correctness, P0/P1==0) の 5 項になっている
+  grep -q 'redObserved' "$SKILL_FILE"
+  # converged 式に全5項が含まれる
+  run grep -E 'redObserved &&.*atGreen|atGreen &&.*redObserved' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-334-gate: red gate is described as symmetric counterpart to AL-3 green gate" {
+  # red ゲートが AL-3 green ゲートの対として明記されている
+  run grep -iE 'red.*gate.*AL-3|AL-3.*red.*gate|symmetric.*red.*green|red.*green.*symmetric' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-334-gate: red gate uses check_red_evidence from lib/autopilot_convergence.sh" {
+  # red ゲートが lib/autopilot_convergence.sh の check_red_evidence を呼ぶ
+  grep -q 'check_red_evidence' "$SKILL_FILE"
+}
+
+@test "AT-334-gate: red gate default false (fail-closed) when evidence unavailable" {
+  # fail-closed: 証跡なし = false
+  run grep -iE 'default false|fail-closed' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
 }
