@@ -375,8 +375,17 @@ SPLIT_DOC="docs/methodology/skill-loader-split.md"
   # Given: 本 Issue ブランチ（research フェーズ）
   # When: git diff main...HEAD -- skills/ を実行する
   # Then: 出力が空である（skills/*/SKILL.md への変更が存在しない）
+  #
+  # CS-2 is a PR-scoped guard for Issue #314's research phase: #314 split skills
+  # into loaders/stubs WITHOUT touching SKILL.md bodies. It is inert post-merge
+  # (HEAD == main → empty) and would false-fail on any later branch that
+  # legitimately edits a SKILL.md, so it only runs on the #314 issue branch.
   local root
   root="$(repo_root)"
+
+  local branch
+  branch=$(git -C "${root}" branch --show-current 2>/dev/null || true)
+  [[ "$branch" == *314* ]] || skip "CS-2 applies only to the #314 issue branch (inert elsewhere)"
 
   local diff_output
   diff_output=$(git -C "${root}" diff main...HEAD -- skills/ 2>/dev/null || true)

@@ -5,9 +5,10 @@ All tests use [BATS](https://github.com/bats-core/bats-core) (Bash Automated Tes
 ## Running Tests
 
 ```bash
-bats tests/                      # Run core tests
-bats addons/ios/tests/           # Run iOS addon tests
-bats tests/ addons/ios/tests/    # Run all tests
+bats tests/                                      # Run core tests
+bats addons/ios/tests/                           # Run iOS addon tests
+bats addons/web/tests/                           # Run Web addon tests
+bats tests/ addons/ios/tests/ addons/web/tests/  # Run all tests
 ```
 
 ### Impact-Scoped Execution (fast feedback)
@@ -18,7 +19,7 @@ Run only the BATS files affected by your current changes:
 # Run only tests covering files changed since origin/main
 scripts/bats_runner.sh --impact --base origin/main
 
-# Run all tests (same as bats tests/ addons/ios/tests/)
+# Run all tests (same as bats tests/ addons/ios/tests/ addons/web/tests/)
 scripts/bats_runner.sh --all
 ```
 
@@ -167,6 +168,7 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 | test_phase_test_policy.bats | Phase-based test execution policy pins — impact-only during ATDD / full suite before review+merge / e2e impact integration / reviewing-deliverables line budget + link ref / English only / README registration / Loaded-by meta (#324, 10 tests) |
 | test_check_bats_covers.bats | scripts/check_bats_covers.sh annotation validator |
 | test_impact_map.bats | scripts/impact_map.sh impact scope detection (Issue #135) |
+| test_impact_map_platform.bats | scripts/impact_map.sh platform adapter generalization — --platform {other\|web\|ios} routing / select_other non-breaking preservation / web src glob / ios Sources glob / unmatched fallback (Issue #323, 16 tests) |
 | test_run_skill_e2e_impact.bats | scripts/run-skill-e2e.sh path-based impact mapping (Issue #222) |
 | test_skill_gate_collision.bats | scripts/check-issue-collision.sh + skill-gate parallel collision detection (Step C2 / #197) |
 | test_check_plugin_version.bats | scripts/check-plugin-version.sh — legacy tokens (FIRST_RUN/NO_UPDATE/UPDATED/VERSIONS/BREAKING) + STALE_SESSION (AT-002: loaded < cached, marker unchanged) + RESTART_REQUIRED (AT-001: installed > loaded, marker unchanged) + simultaneous-condition priority STALE wins (AT-007) + fallback when installed_plugins.json absent/unparseable/no-matching-entry (AT-006: 5 cases) + CHANGELOG guard VERSIONS:UNKNOWN when cached heading absent (AT-004: 2 cases) + post-restart recovery to UPDATED/NO_UPDATE (AT-008: 2 cases) + network-independence static inspection (AT-009: 2 cases) (#280) |
@@ -227,6 +229,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-304.bats | autopilot SKILL.md loader split + express eligibility precheck — route-eligibility.md single source, session-start Step 3 pointer replacement, loader split line budget + BATS pin integrity, Express precheck section (once / explicit ok / auto-route forbidden), User gate count invariant (Issue #304) |
 | AT-299.bats | autopilot halt 終端レコード JSONL 監査ログ記録 — record_halt による HALT 行追記・findings_digest はネスト JSON 配列値・record_iteration への timestamp 付与・timestamp が fingerprint に非関与・収束失敗系 reason enum 限定（Issue #299、9 tests） |
 | AT-308.bats | bugfix 専用の軽量ルート（フル機能ルートと分離）— route-eligibility.md bugfix 判定信号 + No Auto-Routing 維持・autofix コマンド配線・bugfix 収束オラクル（回帰 green + 既存回帰なし + 再現テスト赤→緑）・AL-3 coverage 項の失敗再現テスト被覆 specialize・cause-agreement 安定トークンの iron-law / design-gate 二文書整合・half-scope + flaky フォローアップ #322・version/CHANGELOG 不変条件。wiring pin（赤→緑 ランタイム fix loop は own せず out-of-band replay 経路が own）（Issue #308、14 tests） |
+| AT-323.bats | 影響範囲ベースのテスト選択を利用プロジェクトへ提供 — --platform {other\|web\|ios} アダプタ一般化・テンプレート配布（addons/web/config / addons/ios/config）・addon deploy+setup 配線・フロースキル --impact 既定・「実行絞る/ゲートはフル」原則 methodology 文書化・unmatched フォールバック・version/CHANGELOG 不変条件（Issue #323、25 tests） |
 | AT-324.bats | テスト高速化 — AT-006（AT-271 入れ子フルスイート再実行）撤去・run-tests.sh 並列ランナー検証・フェーズ別実行ポリシー配線・test-execution-policy.md 言語ポリシー/README登録/Loaded-by メタ・バージョニング不変条件（Issue #324、20 tests） |
 | AT-326.bats | Draft PR 作成時 in-progress 付与 ＋ full-autopilot dispatch GitHub-state プリフィルタ — in-progress-label.sh 付与/番号解決/負例/除去/冪等/fail-safe（AT-326-1〜6）/ full-autopilot-dispatch.sh busy 除外・lease 非取得・既存回帰（AT-326-7〜11）（Issue #326、29 tests） |
 | AT-329-template.bats | Issue テンプレート意図シード軽量化 — ja/en development.yml の AC/サブタスク/完了条件/US が optional・意図3点（summary/outcome/scope-boundary）が required・正確に3フィールドのみ required（Issue #329、16 tests） |
@@ -261,6 +264,13 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | test_sim_pool_docs.bats | sim-pool documentation |
 | test_sim_clone_required_variants.bats | Clone-required device variants |
 | test_sim_pattern_match.bats | Device pattern matching |
+| test_ios_impact_rules.bats | iOS addon impact_rules.yml テンプレート構造 ＋ addon.yml deploy エントリ — impact_map.sh entry / impact_rules.yml entry / Sources/ 構造 / Tests/ 構造 / パーサ解釈（Issue #323、10 tests） |
+
+## Web Addon Tests (addons/web/tests/)
+
+| Test File | Target |
+|-----------|--------|
+| test_web_addon.bats | Web addon deploy entries ＋ impact_rules.yml テンプレート構造 — addon.yml 必須フィールド（name/display_name/deploy/detect）/ impact_map.sh・impact_rules.yml エントリ / package.json detect / src/ ・ tests/ パスルール / パーサ解釈（Issue #323、14 tests） |
 
 ## Skill E2E Tests (`tests/e2e/`)
 

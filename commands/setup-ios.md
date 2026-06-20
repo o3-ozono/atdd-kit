@@ -31,6 +31,8 @@ Copy addon scripts to the project:
 |-----------------|----------------------|
 | `addons/ios/scripts/sim-pool-guard.sh` | `.claude/hooks/sim-pool-guard.sh` |
 | `addons/ios/scripts/lint-xcstrings.sh` | `scripts/lint-xcstrings.sh` |
+| `scripts/impact_map.sh` | `scripts/impact_map.sh` |
+| `addons/ios/config/impact_rules.yml` | `config/impact_rules.yml` |
 
 ### Step 4: Configure Hooks
 
@@ -56,6 +58,6 @@ Print addon guidance from `addon.yml` (Golden Image Device Set isolation).
 ```
 iOS addon setup complete:
 - MCP servers: 4 registered
-- Scripts: 2 deployed
+- Scripts: 4 deployed
 - Hooks: 2 configured
 ```

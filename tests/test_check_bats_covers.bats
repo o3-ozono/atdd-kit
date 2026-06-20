@@ -32,7 +32,8 @@ FIXTURE_DIR="$REPO_ROOT/tests/fixtures/impact"
 @test "check_bats_covers: all real BATS files pass (integration gate)" {
   run "$SCRIPT" \
     "$REPO_ROOT"/tests/*.bats \
-    "$REPO_ROOT"/addons/ios/tests/*.bats
+    "$REPO_ROOT"/addons/ios/tests/*.bats \
+    "$REPO_ROOT"/addons/web/tests/*.bats
   [ "$status" -eq 0 ]
   [[ "$output" == *"OK:"* ]]
 }

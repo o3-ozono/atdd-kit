@@ -96,14 +96,14 @@ Current line counts were measured with `wc -l` on 2026-06-19.
 
 | Skill | Current lines | Pin limit | Headroom | Rank | Notes |
 |-------|--------------|-----------|----------|------|-------|
-| autopilot | 279 | 280 | 1 | **CRITICAL** | Split already in progress (#283/#304); stub is already thin |
+| autopilot | 280 | 280 | 0 | **CRITICAL** | Split already in progress (#283/#304); stub at the pin ceiling (#323) |
 | reviewing-deliverables | 228 | 240 | 12 | **HIGH** | Pin raised twice (first raise #302, second for embedded script) |
 | session-start | 231 | none | — | **MEDIUM** | No budget pin — unguarded; 231 lines is high-risk without a ceiling |
 | skill-fix | 157 | none | — | **LOW** | No pin; moderate size |
 | express | 128 | 200 | 72 | **LOW** | Pin at 200; comfortable headroom |
 | fixing-flaky-tests | 121 | none | — | **LOW** | No pin; moderate size |
 | full-autopilot | 97 | none | — | **LOW** | No pin; manageable |
-| running-atdd-cycle | 88 | 200 | 112 | **LOW** | Pin at 200; ample headroom |
+| running-atdd-cycle | 95 | 200 | 105 | **LOW** | Pin at 200; ample headroom |
 | skill-gate | 88 | none | — | **LOW** | No pin; small |
 | debugging | 105 | none | — | **LOW** | No pin; moderate |
 | ui-test-debugging | 113 | none | — | **LOW** | No pin; moderate |
@@ -112,7 +112,7 @@ Current line counts were measured with `wc -l` on 2026-06-19.
 | writing-plan-and-tests | 62 | 200 | 138 | **LOW** | Pin at 200; ample headroom |
 | fixing-bugs | 87 | none | — | **LOW** | No pin; small |
 | bug | 92 | none | — | **LOW** | No pin; small |
-| merging-and-deploying | 74 | 200 | 126 | **LOW** | Pin at 200; ample headroom |
+| merging-and-deploying | 79 | 200 | 121 | **LOW** | Pin at 200; ample headroom |
 | writing-design-doc | 71 | 200 | 129 | **LOW** | Pin at 200; ample headroom |
 | launching-preview | 60 | 200 | 140 | **LOW** | Pin at 200; ample headroom |
 | sim-pool | 65 | none | — | **LOW** | No pin; small |

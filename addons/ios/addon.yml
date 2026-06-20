@@ -33,6 +33,13 @@ deploy:
     dest: .claude/hooks/sim-pool-guard.sh
   - src: scripts/lint-xcstrings.sh
     dest: scripts/lint-xcstrings.sh
+  # src is resolved relative to this addon dir (addons/ios/), matching the
+  # sim-pool-guard entries above and session-start E2 Auto-Sync. impact_map.sh
+  # is the shared top-level script, hence ../../scripts/...
+  - src: ../../scripts/impact_map.sh
+    dest: scripts/impact_map.sh
+  - src: config/impact_rules.yml
+    dest: config/impact_rules.yml
 
 ci_job: ci/build-and-test.yml
 
@@ -56,3 +63,13 @@ guidance: |
   Related environment variables:
     SIM_GOLDEN_SET   -- Device Set path for golden image (default: empty = default Device Set)
     SIM_DEFAULT_SET  -- Device Set path for clones (default: ~/Library/Developer/CoreSimulator/Devices)
+
+  Impact-based test runner for iOS projects:
+
+  1. The deployed config/impact_rules.yml maps your source paths to XCTest/XCUITest targets.
+  2. REQUIRED: customize BOTH the path: globs and the skill-e2e: target names to
+     match your Xcode project layout (Sources/, Tests/, UITests/, Packages/, ...).
+     A path that matches no rule falls back to the FULL suite (safe but slow).
+  3. Run impact-scoped tests during ATDD iteration:
+       scripts/impact_map.sh --platform ios --config config/impact_rules.yml --base <ref> --layer skill-e2e
+  4. At merge gate, always run the full suite (impact scope is for inner-loop speed only).

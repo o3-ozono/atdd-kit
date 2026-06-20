@@ -6,6 +6,7 @@ Platform-specific addon packages. Each addon is a self-contained directory with 
 
 | Addon | Directory | Auto-Detection |
 |-------|-----------|----------------|
+| Web | `web/` | `package.json`, `next.config.*`, `vite.config.*`, `nuxt.config.*`, `svelte.config.*` |
 | iOS | `ios/` | `*.xcodeproj`, `*.xcworkspace`, `Package.swift` |
 | Discord notifications | `discord/` | **opt-in** (no auto-detect; session-start asks `[y/N]` default N, or `/atdd-kit:setup-discord`) |
 

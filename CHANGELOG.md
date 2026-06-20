@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.34.0] - 2026-06-20
+
+### Added
+
+- **影響範囲ベースのテスト選択を利用プロジェクトに提供する（一般化＋addon配布＋フロースキル配線）（#323）**。
+  - **ランナーの一般化（アダプタ化）**: `scripts/impact_map.sh` に `--platform {web|ios|other}` オプションを追加。未指定時は `other`（現行 bats/`@covers` 挙動）にフォールバック（非破壊）。選択ロジックを内部関数 `select_other()` / `select_web()` / `select_ios()` に分岐。共通契約は「変更パス集合 → 実行すべきテスト識別子集合（stdout, 1行1件）」。全プラットフォームでルール未一致パスはフル実行フォールバック。
+  - **`impact_rules.yml` テンプレート配布**: `addons/web/config/impact_rules.yml`（web 標準構造 `src/**` / `components/**` / `pages/**` / `tests/**` 等）と `addons/ios/config/impact_rules.yml`（iOS ターゲット構造 `Sources/**` / `Tests/**` / `UITests/**` 等）を新規作成。両テンプレートとも `impact_map.sh --all` でエラーなく読める。
+  - **addon 配布**: `addons/web/` を新設し `addon.yml` を作成（`name` / `display_name` / `deploy`（impact_map.sh ＋ impact_rules.yml テンプレート）/ `detect`（`package.json` 等）/ `guidance`）。`addons/ios/addon.yml` の `deploy:` に iOS 向け影響度ランナー（`scripts/impact_map.sh`）＋ `addons/ios/config/impact_rules.yml` テンプレートを追加。
+  - **フロースキル配線**: `commands/setup-web.md` のプレースホルダを実装に置き換え（addon.yml 読込 → ランナー＋ルールテンプレート deploy → サマリ表示）。`commands/setup-ios.md` の Deploy Scripts 表に影響度ランナー＋ルールテンプレートの行を追加。
+  - **テスト**: `tests/test_impact_map_platform.bats`（16 tests: プラットフォームオプション検証 / other 非破壊 / web / ios / unmatched フォールバック）、`addons/web/tests/test_web_addon.bats`（14 tests: addon.yml スキーマ / impact_rules テンプレート構造）、`addons/ios/tests/test_ios_impact_rules.bats`（10 tests: deploy エントリ / impact_rules テンプレート構造）、`tests/acceptance/AT-323.bats`（25 tests: AT-001〜AT-009）を新設。
+
+### Changed
+
+- **`docs/methodology/test-execution-policy.md`**: 「Scope Boundary with #323」の保留節を「Platform-Agnostic Application」セクションに置き換え（#323 一般化完了を反映）。web / iOS / other 全プラットフォームに適用されるプラットフォーム非依存の「実行は絞る／ゲートはフル」原則とコマンド対応表を明記。
+- **`skills/merging-and-deploying/SKILL.md`**: Test Execution Policy 節を更新。pre-merge ゲート = `--all`（フルスイート強制）、post-deploy 回帰 = `--impact --base <merge-sha>`（影響スコープ）の非対称を明示（#323）。
+
+### Fixed
+
+- **レビュー指摘の修正（#323）**:
+  - **CI 配線**: `.github/workflows/pr.yml` の BATS 実行と `tests/test_check_bats_covers.bats` 統合ゲートに `addons/web/tests/` を追加。#323 が新設した `test_web_addon.bats`（14 tests）が CI と `@covers` ゲートを素通りしていた問題を解消。
+  - **`scripts/impact_map.sh`**: unmatched fallback の診断メッセージに config パスと `--platform` を明記し、意図的な未マップと `impact_rules.yml` の glob 設定ミスを区別可能にした（silent full-suite fallback の見落とし防止）。
+  - **テスト堅牢化**: `test_impact_map_platform.bats` / `AT-323.bats` の web/ios fallback テストに `--all` 出力との等価＋非空アサーションを追加。`AT-323-003b/c` を `deploy:` ブロック限定の `src:`/`dest:` 構造検証に強化（guidance の文字列一致では通らない）。
+  - **`addons/ios/config/impact_rules.yml` / `addons/ios/addon.yml`**: path glob を必須編集プレースホルダとして明示し、guidance に影響度ランナーの利用手順を追加。
+  - **ドキュメント整合**: `tests/README.md` の run-all コマンドに `addons/web/tests/` を追加・AT-323 テスト数 24→25、`acceptance-tests.md` lifecycle 凡例 `[green]→[planned]` の重複修正、`docs/methodology/skill-loader-split.md` Skill Inventory 表の行数を実測値へ更新。
+  - **`tests/acceptance/AT-314.bats`**: AT-314-CS2（`git diff main...HEAD -- skills/` 空を要求）を #314 ブランチ専用ガードへ再スコープ。skills/ を変更する他 Issue ブランチで構造的に false-fail する全ブランチ汚染を解消。
+- **レビュー2巡目の実在バグ修正（#323）**:
+  - **`scripts/impact_map.sh` クオート付き glob の dead rule**: `path:` パーサが YAML ダブルクオートを除去せず、iOS テンプレートの `- path: "*.xcodeproj/**"` がリテラルクオート込みで格納され fnmatch に永久に一致しなかった（xcodeproj 変更が常にフルスイートへサイレント・フォールバック）。`bats:` ブランチと同様にクオート除去を追加し、回帰テスト（`test_impact_map_platform.bats`）を新設。
+  - **addon.yml deploy `src` の規約不一致**: `addons/{web,ios}/addon.yml` の deploy `src` は addon ディレクトリ相対（discord 先行例・session-start E2 Auto-Sync 準拠）だが、#323 追加の `impact_map.sh`/`impact_rules.yml` entry が plugin-root 相対で書かれ E2 Auto-Sync で解決不能だった。共有 top-level スクリプトは `../../scripts/impact_map.sh`、テンプレートは `config/impact_rules.yml` へ修正。AT-323-003b/c と `test_ios_impact_rules.bats` の assertion も正値へ更新。
+
 ## [3.33.0] - 2026-06-20
 
 ### Added
@@ -47,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `tests/test_retrospective_skill.bats` 新規作成（merging-and-deploying SKILL 構造 pin: 起動点・express スキップ・全チャネル同期・5 ステップ維持・200 行以下、8 tests）。
   - `tests/test_retrospective_script.bats` 新規作成（script 出力契約: 各メトリクス・JSONL valid・自動起票なし・CS-1 軽量性、16 tests）。
   - `tests/acceptance/AT-309.bats` 新規作成（受け入れシナリオ AT-309-1〜AT-309-9、29 tests）。うち 6 件は fixture 注入による **behavioral テスト**（worker-out.json の usage → 数値トークン出力 / transcript jsonl → ターン数 / autopilot-log の `verdict:"FAIL"` → ゲート別摩擦分類 / PR コメント → 摩擦シグナル / トークン+diff → 数値正規化比 / 非 dry-run → retrospective.md 生成＋append-only JSONL）。この behavioral 化で `extract_friction` の `${step,,}`（bash 4+ 専用）が macOS bash 3.2 の `set -e` 下で abort する移植バグを検知し `tr` へ修正、`gh pr view --comments` を摩擦シグナル(b)に追加。
+
 ## [3.29.0] - 2026-06-19
 
 ### Added
