@@ -1,0 +1,10 @@
+{"iteration":1,"step":"extracting-user-stories","verdict":"FAIL","fingerprint":"9a40ff3461192ed4c52f491326bbcad4d78ef4f251868de1f89fc43957bdae12","timestamp":"2026-06-19T17:04:24Z"}
+{"iteration":2,"step":"extracting-user-stories","verdict":"PASS","fingerprint":"35d0108d4f2ca7c48a960f70fa80ed33c47c7ff9fa8b301fd3c8af14e46160d5","timestamp":"2026-06-19T17:07:31Z"}
+{"iteration":1,"step":"writing-plan-and-tests","verdict":"PASS","fingerprint":"35d0108d4f2ca7c48a960f70fa80ed33c47c7ff9fa8b301fd3c8af14e46160d5","timestamp":"2026-06-19T17:12:08Z"}
+{"iteration":1,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"e7d0589ba238313b4a510c9987b02d9003d3d4cd9655aebf27b515dbb541be7e","timestamp":"2026-06-19T17:30:12Z"}
+{"iteration":2,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"3191fb8475989b9f6ff13f6f259c7f5f9e937283fb0334e8f931c75f9fdf70f2","timestamp":"2026-06-19T17:47:24Z"}
+{"iteration":3,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"f0d17628df166dc16a494e82637f869e0184ddbc3ff379331468d32fb89c4115","timestamp":"2026-06-19T18:09:35Z"}
+{"iteration":4,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"59779611340679a5abbddec5824433163555d450d141fff906e8e3803e149c1d","timestamp":"2026-06-19T19:54:35Z"}
+{"iteration":5,"step":"running-atdd-cycle","verdict":"FAIL","fingerprint":"59779611340679a5abbddec5824433163555d450d141fff906e8e3803e149c1d","timestamp":"2026-06-19T20:03:26Z"}
+{"outcome":"HALT","step":"running-atdd-cycle","reason":"sameness-detector","findings_digest":[],"timestamp":"2026-06-19T20:04:51Z"}
+{"outcome":"HALT","step":"running-atdd-cycle","reason":"sameness-detector","findings_digest":[],"timestamp":"2026-06-19T20:05:05Z"}

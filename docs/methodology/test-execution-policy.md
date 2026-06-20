@@ -44,3 +44,5 @@ explicitly out of scope here. This document does not implement or extend the imp
 
 This policy (all tests before final review / impact-only during each ATDD iteration) is the **standard doctrine**
 distributed to every project that adopts atdd-kit. It is a methodology artifact, not a project-specific configuration.
+
+**Related doctrine:** [acceptance-test-feasibility.md](acceptance-test-feasibility.md) governs which ATs are executable in the first place (feasibility probe at Step 3). This execution policy governs *when* to run those ATs once they are confirmed feasible and marked `[planned]`.

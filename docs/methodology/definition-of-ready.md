@@ -49,3 +49,4 @@ See [scrumban.md](./scrumban.md) for the full label correspondence table.
 - [us-quality-standard.md](./us-quality-standard.md) — AC quality MUST criteria
 - [scrumban.md](./scrumban.md) — Full methodology context and label table
 - [impact-map.md](../product/impact-map.md) — R1 Impact reference
+- [acceptance-test-feasibility.md](./acceptance-test-feasibility.md) — Feasibility probe doctrine: the bridge between R3/R4 (AC completeness / questions = 0) and committing an AT as `[planned]`. DoR is necessary but not sufficient — a feasibility probe must pass before `[planned]` status is confirmed.

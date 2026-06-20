@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.33.0] - 2026-06-20
+
+### Added
+
+- **AT 計画前 feasibility 実地探索の正典フロー確立（#312）**。
+  - `docs/methodology/acceptance-test-feasibility.md` を新規作成。GUI=実操作／非 GUI=実 API call の二分岐と判定基準（Universal Rules）、6-step flow への統合点（Step 3 `writing-plan-and-tests` 前）、ルート不在／不安定時のユーザーエスカレーションゲート、addon が具体手段を供給するプローブ抽象（非密結合）、autopilot design phase と Gate ②（設計承認）への反映を正典として記述。
+  - `docs/methodology/README.md` の Documents 表に `acceptance-test-feasibility.md` 行を追記。
+  - `tests/acceptance/AT-312.bats` 新規作成（AT-312-01a/b, 02a/b/c, 03a/b/c, 04a/b, 05a/b/c, 06a/b/c/d/e, 07a/b/c, 08a/b/c/d、25 tests）。
+
 ## [3.32.0] - 2026-06-19
 
 ### Added
