@@ -3,7 +3,7 @@
 # AT-343: session-start の「別セッション作業中」検出を branch-lease store ベースにする
 # Issue #343
 #
-# lifecycle: [green]
+# lifecycle: [regression]
 
 # ── ヘルパー ──────────────────────────────────────────────────────────────────
 
