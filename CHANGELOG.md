@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `scripts/session-lease-scan.sh` を新規作成。`BRANCH_LEASE_DIR`（既定 `/tmp/claude-branch-leases`）を走査し、`BRANCH_LEASE_TTL_LOCAL`（既定 7200s）以内の fresh lease を持つ branch 名を 1 行ずつ stdout に出力する。`hooks/branch-lease-guard.sh` と同一 env 名・同一 freshness 式（`now - timestamp <= ttl`）・同一 encode 5 文字セット（`%2F %2E %20 %23 %7E`）を採用（二重定義禁止）。store は read-only（write/delete なし）。案A（session-start 実行時点の fresh lease はすべて別セッション扱い）を採用し Draft 非依存。
   - `skills/session-start/SKILL.md` Phase 1-B に lease スキャン手順を追加。Previous Work の `🔒 別セッション作業中` 条件を「open Draft PR」から「ヘルパ出力に headRefName が含まれる open PR（Draft/非 Draft・CI 状態・mergeable 問わず）」に拡張。Task Recommendation Rules Step 1 に lease ベース除外（Step 1-3）を追加。Step 2.1 の CONFLICTING rebase 推奨に「ヘルパ出力に含まれない（別セッション fresh lease 未保持）こと」を前提条件として追記。
   - `tests/acceptance/AT-343.bats` 新規作成（AT-343-01〜12、12 tests）。exit-code ベース回帰 AT（AT-012: timestamp フィールド無し lease の ts=0 fail-safe を追加）。
-<<<<<<< HEAD
 
 ## [3.34.1] - 2026-06-21
 
