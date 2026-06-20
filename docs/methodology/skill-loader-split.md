@@ -92,14 +92,13 @@ The thresholds use 30 lines as the HIGH boundary because a typical feature PR ad
 
 ### Inventory table
 
-Current line counts were measured with `wc -l` on 2026-06-21.
-<!-- session-start は #343（branch-lease store 別セッション検出）の SKILL.md 改訂により 231 → 235 に増加した（+4 行）。 -->
+Current line counts were measured with `wc -l` on 2026-06-19.
 
 | Skill | Current lines | Pin limit | Headroom | Rank | Notes |
 |-------|--------------|-----------|----------|------|-------|
 | autopilot | 280 | 280 | 0 | **CRITICAL** | Split already in progress (#283/#304); stub at the pin ceiling (#323) |
 | reviewing-deliverables | 228 | 240 | 12 | **HIGH** | Pin raised twice (first raise #302, second for embedded script) |
-| session-start | 235 | none | — | **MEDIUM** | No budget pin — unguarded; 235 lines is high-risk without a ceiling |
+| session-start | 231 | none | — | **MEDIUM** | No budget pin — unguarded; 231 lines is high-risk without a ceiling |
 | skill-fix | 157 | none | — | **LOW** | No pin; moderate size |
 | express | 128 | 200 | 72 | **LOW** | Pin at 200; comfortable headroom |
 | fixing-flaky-tests | 121 | none | — | **LOW** | No pin; moderate size |
@@ -122,7 +121,7 @@ Current line counts were measured with `wc -l` on 2026-06-21.
 
 ### session-start finding (FS-2)
 
-`session-start` has **no budget pin** (`tests/test_session_start_*.bats` contains no `wc -l` line-budget assertion). At 235 lines it is the second largest SKILL.md and growing. Without a pin, additions can silently push it past the split-threshold without triggering a test failure. This is a latent risk.
+`session-start` has **no budget pin** (`tests/test_session_start_*.bats` contains no `wc -l` line-budget assertion). At 231 lines it is the second largest SKILL.md and growing. Without a pin, additions can silently push it past the split-threshold without triggering a test failure. This is a latent risk.
 
 Recommended remediation (tracked in Rollout Plan below): add a budget pin at 240 lines in a near-term Issue so the file is guarded before the next feature PR.
 
@@ -207,7 +206,7 @@ Dependencies: the FS-2 threshold definitions above must be finalised (done in th
 |----------|-------|------|--------------|-----------|-------------------|--------------|
 | 1 | autopilot | CRITICAL | 279 | 280 | Split is already applied (#283/#304). Monitor for stub creep; if stub exceeds ~140 lines, split again. | #283 / #304 complete |
 | 2 | reviewing-deliverables | HIGH | 228 | 240 | Split before the next feature PR adds to this file. Target stub ≤ 150 lines. | FS-2 thresholds (this doc) |
-| 3 | session-start | MEDIUM | 235 | none | Add budget pin at 240 lines first (near-term Issue), then plan split if pin is hit. | Pin Issue must land first |
+| 3 | session-start | MEDIUM | 231 | none | Add budget pin at 240 lines first (near-term Issue), then plan split if pin is hit. | Pin Issue must land first |
 | 4 | skill-fix | LOW | 157 | none | Add a budget pin at 200 lines to guard against silent growth. | None |
 | 5–20 | All others | LOW | ≤ 128 | 200 or none | No action needed now. Re-evaluate when any file approaches its pin or 180 lines without a pin. | FS-2 threshold monitoring |
 
