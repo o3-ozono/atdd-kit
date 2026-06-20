@@ -22,12 +22,12 @@ IMPACT_SCRIPT="$REPO_ROOT/scripts/impact_map.sh"
   grep -q "impact_rules.yml" "$IOS_ADDON"
 }
 
-@test "ios-addon: addon.yml deploy impact_map.sh src matches scripts/impact_map.sh" {
-  grep -q "scripts/impact_map.sh" "$IOS_ADDON"
+@test "ios-addon: addon.yml deploy impact_map.sh src is addon-relative (../../scripts/impact_map.sh)" {
+  grep -qE "src:[[:space:]]*\.\./\.\./scripts/impact_map\.sh" "$IOS_ADDON"
 }
 
-@test "ios-addon: addon.yml deploy impact_rules.yml src matches addons/ios/config/impact_rules.yml" {
-  grep -q "addons/ios/config/impact_rules.yml" "$IOS_ADDON"
+@test "ios-addon: addon.yml deploy impact_rules.yml src is addon-relative (config/impact_rules.yml)" {
+  grep -qE "src:[[:space:]]*config/impact_rules\.yml" "$IOS_ADDON"
 }
 
 # ---------------------------------------------------------------------------

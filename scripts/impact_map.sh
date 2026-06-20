@@ -101,7 +101,15 @@ parse_impact_rules() {
 
     if [[ $in_rules -eq 1 ]]; then
       if [[ "$line" =~ ^"  - path: "(.+)$ ]]; then
-        path_globs+=("${BASH_REMATCH[1]}")
+        local raw_path="${BASH_REMATCH[1]}"
+        # strip surrounding YAML double-quotes if present (mirrors bats: branch);
+        # without this a quoted glob like "*.xcodeproj/**" is stored with literal
+        # quotes and never fnmatch-matches → the rule is dead, silently falling
+        # back to the full suite.
+        if [[ "$raw_path" =~ ^'"'(.*)'"'$ ]]; then
+          raw_path="${BASH_REMATCH[1]}"
+        fi
+        path_globs+=("$raw_path")
         skill_e2e_targets+=("")
         bats_tags+=("")
         continue

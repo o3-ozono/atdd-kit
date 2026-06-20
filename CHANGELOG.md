@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - **`addons/ios/config/impact_rules.yml` / `addons/ios/addon.yml`**: path glob を必須編集プレースホルダとして明示し、guidance に影響度ランナーの利用手順を追加。
   - **ドキュメント整合**: `tests/README.md` の run-all コマンドに `addons/web/tests/` を追加・AT-323 テスト数 24→25、`acceptance-tests.md` lifecycle 凡例 `[green]→[planned]` の重複修正、`docs/methodology/skill-loader-split.md` Skill Inventory 表の行数を実測値へ更新。
   - **`tests/acceptance/AT-314.bats`**: AT-314-CS2（`git diff main...HEAD -- skills/` 空を要求）を #314 ブランチ専用ガードへ再スコープ。skills/ を変更する他 Issue ブランチで構造的に false-fail する全ブランチ汚染を解消。
+- **レビュー2巡目の実在バグ修正（#323）**:
+  - **`scripts/impact_map.sh` クオート付き glob の dead rule**: `path:` パーサが YAML ダブルクオートを除去せず、iOS テンプレートの `- path: "*.xcodeproj/**"` がリテラルクオート込みで格納され fnmatch に永久に一致しなかった（xcodeproj 変更が常にフルスイートへサイレント・フォールバック）。`bats:` ブランチと同様にクオート除去を追加し、回帰テスト（`test_impact_map_platform.bats`）を新設。
+  - **addon.yml deploy `src` の規約不一致**: `addons/{web,ios}/addon.yml` の deploy `src` は addon ディレクトリ相対（discord 先行例・session-start E2 Auto-Sync 準拠）だが、#323 追加の `impact_map.sh`/`impact_rules.yml` entry が plugin-root 相対で書かれ E2 Auto-Sync で解決不能だった。共有 top-level スクリプトは `../../scripts/impact_map.sh`、テンプレートは `config/impact_rules.yml` へ修正。AT-323-003b/c と `test_ios_impact_rules.bats` の assertion も正値へ更新。
 
 ## [3.33.0] - 2026-06-20
 

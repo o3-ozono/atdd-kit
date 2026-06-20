@@ -200,6 +200,27 @@ _commit_changed_file() {
   echo "$output" | grep -q "AppUITests"
 }
 
+@test "ios: quoted path glob (\"*.xcodeproj/**\") matches and is not a dead rule" {
+  # Regression: the shipped iOS template quotes globs that start with '*' (valid
+  # YAML). The parser must strip the quotes, otherwise the rule never matches and
+  # xcodeproj changes silently fall back to the full suite.
+  cat > "$CONFIG" <<'EOF'
+rules:
+  - path: "*.xcodeproj/**"
+    skill-e2e: AppTests AppUITests
+  - path: Sources/**
+    skill-e2e: CoreTests
+EOF
+  git -C "$WORK" add "$CONFIG"
+  git -C "$WORK" commit -m "add ios config with quoted glob" -q
+  _commit_changed_file "MyApp.xcodeproj/project.pbxproj"
+  run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --platform ios --base HEAD~1 --layer skill-e2e
+  [ "$status" -eq 0 ]
+  # Must resolve the rule's targets, NOT fall back to the full suite.
+  echo "$output" | grep -q "AppUITests"
+  ! echo "$stderr" | grep -q "FALLBACK"
+}
+
 # ---------------------------------------------------------------------------
 # Unmatched path: full-scan fallback for all platforms
 # ---------------------------------------------------------------------------

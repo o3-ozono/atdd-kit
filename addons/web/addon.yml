@@ -2,9 +2,12 @@ name: web
 display_name: Web
 
 deploy:
-  - src: scripts/impact_map.sh
+  # src is resolved relative to this addon dir (addons/web/), matching the
+  # discord precedent and session-start E2 Auto-Sync. impact_map.sh is the
+  # shared top-level script, hence ../../scripts/...
+  - src: ../../scripts/impact_map.sh
     dest: scripts/impact_map.sh
-  - src: addons/web/config/impact_rules.yml
+  - src: config/impact_rules.yml
     dest: config/impact_rules.yml
 
 detect:

@@ -158,9 +158,11 @@ _commit_changed_file() {
   # stray mention in guidance cannot satisfy it — a deleted deploy entry fails.
   deploy_block=$(awk '/^deploy:/{f=1;next} /^[a-zA-Z]/{f=0} f' "$WEB_ADDON")
   [ -n "$deploy_block" ]
-  echo "$deploy_block" | grep -qE "src:[[:space:]]*scripts/impact_map\.sh"
+  # src is addon-relative (resolved against addons/web/); impact_map.sh is the
+  # shared top-level script (../../scripts/), impact_rules.yml is config/.
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*\.\./\.\./scripts/impact_map\.sh"
   echo "$deploy_block" | grep -qE "dest:[[:space:]]*scripts/impact_map\.sh"
-  echo "$deploy_block" | grep -qE "src:[[:space:]]*addons/web/config/impact_rules\.yml"
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*config/impact_rules\.yml"
   echo "$deploy_block" | grep -qE "dest:[[:space:]]*config/impact_rules\.yml"
 }
 
@@ -168,9 +170,11 @@ _commit_changed_file() {
   IOS_ADDON="$REPO_ROOT/addons/ios/addon.yml"
   deploy_block=$(awk '/^deploy:/{f=1;next} /^[a-zA-Z]/{f=0} f' "$IOS_ADDON")
   [ -n "$deploy_block" ]
-  echo "$deploy_block" | grep -qE "src:[[:space:]]*scripts/impact_map\.sh"
+  # src is addon-relative (resolved against addons/ios/); impact_map.sh is the
+  # shared top-level script (../../scripts/), impact_rules.yml is config/.
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*\.\./\.\./scripts/impact_map\.sh"
   echo "$deploy_block" | grep -qE "dest:[[:space:]]*scripts/impact_map\.sh"
-  echo "$deploy_block" | grep -qE "src:[[:space:]]*addons/ios/config/impact_rules\.yml"
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*config/impact_rules\.yml"
   echo "$deploy_block" | grep -qE "dest:[[:space:]]*config/impact_rules\.yml"
 }
 
