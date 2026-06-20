@@ -3,7 +3,7 @@
 # AT-343: session-start の「別セッション作業中」検出を branch-lease store ベースにする
 # Issue #343
 #
-# lifecycle: [draft]
+# lifecycle: [green]
 
 # ── ヘルパー ──────────────────────────────────────────────────────────────────
 
@@ -195,18 +195,20 @@ teardown() {
 
 # ── AT-010: AT-343 スイートが exit-code ベースで全 green ────────────────────
 
-@test "AT-343-10: AT-343.bats file exists and has no syntax errors" {
+@test "AT-343-10: AT-343.bats lists all 11 tests without error" {
   # Given: tests/acceptance/AT-343.bats
   [[ -f "${REPO}/tests/acceptance/AT-343.bats" ]] || {
     echo "FAIL: tests/acceptance/AT-343.bats does not exist"
     return 1
   }
-  # When: 構文チェックを実行する
-  bash -n "${REPO}/tests/acceptance/AT-343.bats" || {
-    echo "FAIL: AT-343.bats has syntax errors"
+  # When: bats -c でテスト数を取得する（構文エラーがないことを確認）
+  local count
+  count=$(bats -c "${REPO}/tests/acceptance/AT-343.bats" 2>/dev/null | tr -d ' ')
+  # Then: 11 件のテストが存在する（exit-code ベース検証スイートの健全性確認）
+  [ "$count" -eq 11 ] || {
+    echo "FAIL: expected 11 tests in AT-343.bats, got $count"
     return 1
   }
-  # Then: exit 0（スイート健全性確認）
 }
 
 # ── AT-011: plugin.json version が CHANGELOG 最上位 release 見出しと一致する ─
