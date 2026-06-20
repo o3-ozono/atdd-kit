@@ -124,8 +124,7 @@ const MAX_ITERATIONS = A.maxIterations || {
 }
 // The step that produces an executable AT suite. For it (and only it) the deterministic AT gate (AL-3) and the AC→AT coverage gate (AL-2) run.
 const AT_STEP = A.atStep || 'running-atdd-cycle'
-// AT_COMMAND is caller-provided; prefer an impact-scope command (e.g. `scripts/run-tests.sh --impact --base <base-ref>`) for inner-loop speed. Merge-gate enforces --all regardless.
-const AT_COMMAND = A.atCommand || "the project's Acceptance Test command (e.g. `scripts/run-tests.sh --impact --base <base-ref>`)"
+const AT_COMMAND = A.atCommand || "the project's Acceptance Test command (e.g. `scripts/run-tests.sh --impact --base <base-ref>`)" // impact-scope for inner-loop speed; merge-gate enforces --all regardless
 // Fail-closed preconditions. impl: the AT step must be looped, or the AT + coverage gates silently vanish (oracle degrades to LLM opinion). design: the AT step must NOT be looped — ATDD runs only after the design-approval gate (AL-1).
 if (PHASE === 'impl' && !STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT_STEP}" not in STEPS — AT/coverage gates would be skipped`)
 if (PHASE === 'design' && STEPS.includes(AT_STEP)) throw new Error(`design phase must not loop ${AT_STEP} — ATDD runs only after the design-approval gate`)
