@@ -94,7 +94,7 @@ jobs:
           fi
           sudo ./install.sh /usr/local
       - name: Run BATS tests
-        run: bats tests/ addons/ios/tests/ addons/discord/tests/
+        run: bats tests/ addons/ios/tests/ addons/web/tests/ addons/discord/tests/
 
   headless-replay:
     needs: changes

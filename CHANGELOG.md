@@ -16,12 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - **`impact_rules.yml` テンプレート配布**: `addons/web/config/impact_rules.yml`（web 標準構造 `src/**` / `components/**` / `pages/**` / `tests/**` 等）と `addons/ios/config/impact_rules.yml`（iOS ターゲット構造 `Sources/**` / `Tests/**` / `UITests/**` 等）を新規作成。両テンプレートとも `impact_map.sh --all` でエラーなく読める。
   - **addon 配布**: `addons/web/` を新設し `addon.yml` を作成（`name` / `display_name` / `deploy`（impact_map.sh ＋ impact_rules.yml テンプレート）/ `detect`（`package.json` 等）/ `guidance`）。`addons/ios/addon.yml` の `deploy:` に iOS 向け影響度ランナー（`scripts/impact_map.sh`）＋ `addons/ios/config/impact_rules.yml` テンプレートを追加。
   - **フロースキル配線**: `commands/setup-web.md` のプレースホルダを実装に置き換え（addon.yml 読込 → ランナー＋ルールテンプレート deploy → サマリ表示）。`commands/setup-ios.md` の Deploy Scripts 表に影響度ランナー＋ルールテンプレートの行を追加。
-  - **テスト**: `tests/test_impact_map_platform.bats`（16 tests: プラットフォームオプション検証 / other 非破壊 / web / ios / unmatched フォールバック）、`addons/web/tests/test_web_addon.bats`（14 tests: addon.yml スキーマ / impact_rules テンプレート構造）、`addons/ios/tests/test_ios_impact_rules.bats`（10 tests: deploy エントリ / impact_rules テンプレート構造）、`tests/acceptance/AT-323.bats`（24 tests: AT-001〜AT-009）を新設。
+  - **テスト**: `tests/test_impact_map_platform.bats`（16 tests: プラットフォームオプション検証 / other 非破壊 / web / ios / unmatched フォールバック）、`addons/web/tests/test_web_addon.bats`（14 tests: addon.yml スキーマ / impact_rules テンプレート構造）、`addons/ios/tests/test_ios_impact_rules.bats`（10 tests: deploy エントリ / impact_rules テンプレート構造）、`tests/acceptance/AT-323.bats`（25 tests: AT-001〜AT-009）を新設。
 
 ### Changed
 
 - **`docs/methodology/test-execution-policy.md`**: 「Scope Boundary with #323」の保留節を「Platform-Agnostic Application」セクションに置き換え（#323 一般化完了を反映）。web / iOS / other 全プラットフォームに適用されるプラットフォーム非依存の「実行は絞る／ゲートはフル」原則とコマンド対応表を明記。
 - **`skills/merging-and-deploying/SKILL.md`**: Test Execution Policy 節を更新。pre-merge ゲート = `--all`（フルスイート強制）、post-deploy 回帰 = `--impact --base <merge-sha>`（影響スコープ）の非対称を明示（#323）。
+
+### Fixed
+
+- **レビュー指摘の修正（#323）**:
+  - **CI 配線**: `.github/workflows/pr.yml` の BATS 実行と `tests/test_check_bats_covers.bats` 統合ゲートに `addons/web/tests/` を追加。#323 が新設した `test_web_addon.bats`（14 tests）が CI と `@covers` ゲートを素通りしていた問題を解消。
+  - **`scripts/impact_map.sh`**: unmatched fallback の診断メッセージに config パスと `--platform` を明記し、意図的な未マップと `impact_rules.yml` の glob 設定ミスを区別可能にした（silent full-suite fallback の見落とし防止）。
+  - **テスト堅牢化**: `test_impact_map_platform.bats` / `AT-323.bats` の web/ios fallback テストに `--all` 出力との等価＋非空アサーションを追加。`AT-323-003b/c` を `deploy:` ブロック限定の `src:`/`dest:` 構造検証に強化（guidance の文字列一致では通らない）。
+  - **`addons/ios/config/impact_rules.yml` / `addons/ios/addon.yml`**: path glob を必須編集プレースホルダとして明示し、guidance に影響度ランナーの利用手順を追加。
+  - **ドキュメント整合**: `tests/README.md` の run-all コマンドに `addons/web/tests/` を追加・AT-323 テスト数 24→25、`acceptance-tests.md` lifecycle 凡例 `[green]→[planned]` の重複修正、`docs/methodology/skill-loader-split.md` Skill Inventory 表の行数を実測値へ更新。
+  - **`tests/acceptance/AT-314.bats`**: AT-314-CS2（`git diff main...HEAD -- skills/` 空を要求）を #314 ブランチ専用ガードへ再スコープ。skills/ を変更する他 Issue ブランチで構造的に false-fail する全ブランチ汚染を解消。
 
 ## [3.33.0] - 2026-06-20
 

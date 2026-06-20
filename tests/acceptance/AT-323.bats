@@ -152,16 +152,26 @@ _commit_changed_file() {
   grep -q "^detect:" "$WEB_ADDON"
 }
 
-@test "AT-323-003b: addons/web/addon.yml deploy includes impact_map.sh and impact_rules.yml" {
+@test "AT-323-003b: addons/web/addon.yml deploy block declares impact runner + rules with src/dest" {
   WEB_ADDON="$REPO_ROOT/addons/web/addon.yml"
-  grep -q "impact_map" "$WEB_ADDON"
-  grep -q "impact_rules" "$WEB_ADDON"
+  # Scope the assertion to the deploy: block (up to the next top-level key) so a
+  # stray mention in guidance cannot satisfy it — a deleted deploy entry fails.
+  deploy_block=$(awk '/^deploy:/{f=1;next} /^[a-zA-Z]/{f=0} f' "$WEB_ADDON")
+  [ -n "$deploy_block" ]
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*scripts/impact_map\.sh"
+  echo "$deploy_block" | grep -qE "dest:[[:space:]]*scripts/impact_map\.sh"
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*addons/web/config/impact_rules\.yml"
+  echo "$deploy_block" | grep -qE "dest:[[:space:]]*config/impact_rules\.yml"
 }
 
-@test "AT-323-003c: addons/ios/addon.yml deploy includes impact_map.sh and impact_rules.yml" {
+@test "AT-323-003c: addons/ios/addon.yml deploy block declares impact runner + rules with src/dest" {
   IOS_ADDON="$REPO_ROOT/addons/ios/addon.yml"
-  grep -q "impact_map" "$IOS_ADDON"
-  grep -q "impact_rules" "$IOS_ADDON"
+  deploy_block=$(awk '/^deploy:/{f=1;next} /^[a-zA-Z]/{f=0} f' "$IOS_ADDON")
+  [ -n "$deploy_block" ]
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*scripts/impact_map\.sh"
+  echo "$deploy_block" | grep -qE "dest:[[:space:]]*scripts/impact_map\.sh"
+  echo "$deploy_block" | grep -qE "src:[[:space:]]*addons/ios/config/impact_rules\.yml"
+  echo "$deploy_block" | grep -qE "dest:[[:space:]]*config/impact_rules\.yml"
 }
 
 @test "AT-323-003d: commands/setup-web.md no longer contains placeholder text" {
@@ -275,6 +285,10 @@ _commit_changed_file() {
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG_WEB" --platform web --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
+  # Conservative fallback contract: full test set output (not zero output).
+  expected=$(bash "$SCRIPT" --config "$CONFIG_WEB" --all --layer skill-e2e)
+  [ -n "$output" ]
+  [ "$output" = "$expected" ]
 }
 
 @test "AT-323-008b: --platform ios with unmatched path triggers fallback (exit 0)" {
@@ -283,6 +297,9 @@ _commit_changed_file() {
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG_IOS" --platform ios --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
+  expected=$(bash "$SCRIPT" --config "$CONFIG_IOS" --all --layer skill-e2e)
+  [ -n "$output" ]
+  [ "$output" = "$expected" ]
 }
 
 @test "AT-323-008c: --platform other with unmatched path triggers fallback (exit 0)" {
@@ -291,6 +308,9 @@ _commit_changed_file() {
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG_OTHER" --platform other --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
+  expected=$(bash "$SCRIPT" --config "$CONFIG_OTHER" --all --layer skill-e2e)
+  [ -n "$output" ]
+  [ "$output" = "$expected" ]
 }
 
 # ---------------------------------------------------------------------------

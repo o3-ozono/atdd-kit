@@ -372,7 +372,11 @@ done
 
 # Fallback: any unmatched file triggers full scan
 if [[ ${#unmatched[@]} -gt 0 ]]; then
-  printf 'FALLBACK: unmatched files:\n' >&2
+  # Name the config + platform so a consumer can tell an intentionally unmapped
+  # path apart from a misconfigured impact_rules.yml whose globs no longer match
+  # the project layout (silent full-suite fallback would otherwise hide it).
+  printf 'FALLBACK: %d file(s) matched no rule in %s (--platform %s) — running the full suite:\n' \
+    "${#unmatched[@]}" "$OPT_CONFIG" "$OPT_PLATFORM" >&2
   for f in "${unmatched[@]}"; do
     printf '  %s\n' "$f" >&2
   done

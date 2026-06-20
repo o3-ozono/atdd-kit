@@ -210,7 +210,13 @@ _commit_changed_file() {
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --platform other --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
+  # FALLBACK diagnostic names the config and platform so a consumer can tell
+  # an intentional unmapped path apart from a misconfigured impact_rules.yml.
+  echo "$stderr" | grep -q "impact_rules.yml"
+  echo "$stderr" | grep -q "other"
+  # Conservative fallback contract: output equals the FULL suite (not zero output).
   expected=$(bash "$SCRIPT" --config "$CONFIG" --all --layer skill-e2e)
+  [ -n "$output" ]
   [ "$output" = "$expected" ]
 }
 
@@ -220,6 +226,12 @@ _commit_changed_file() {
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --platform web --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
+  echo "$stderr" | grep -q "impact_rules.yml"
+  echo "$stderr" | grep -q "web"
+  # Conservative fallback contract: output equals the FULL suite (not zero output).
+  expected=$(bash "$SCRIPT" --config "$CONFIG" --platform web --all --layer skill-e2e)
+  [ -n "$output" ]
+  [ "$output" = "$expected" ]
 }
 
 @test "unmatched/ios: unrecognized path triggers FALLBACK and full scan (exit 0)" {
@@ -228,4 +240,10 @@ _commit_changed_file() {
   run --separate-stderr bash "$SCRIPT" --config "$CONFIG" --platform ios --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
   echo "$stderr" | grep -q "FALLBACK"
+  echo "$stderr" | grep -q "impact_rules.yml"
+  echo "$stderr" | grep -q "ios"
+  # Conservative fallback contract: output equals the FULL suite (not zero output).
+  expected=$(bash "$SCRIPT" --config "$CONFIG" --platform ios --all --layer skill-e2e)
+  [ -n "$output" ]
+  [ "$output" = "$expected" ]
 }
