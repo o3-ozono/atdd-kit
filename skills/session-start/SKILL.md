@@ -224,8 +224,7 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
    # After resolving conflicts
    git push --force-with-lease
    ```
-   Draft PRs are never included here — display them as `🔒 別セッション作業中` (read-only) in Previous Work only. Do not propose `git checkout`, `git rebase`, or `git push --force-with-lease` for Draft PR branches.
-   Any PR branch appearing in `session-lease-scan` output (lease 未保持でない = 別セッションが fresh lease を保持中) は CONFLICTING であっても rebase 推奨から除外し、`🔒 別セッション作業中` として read-only 表示する。
+   Any PR branch appearing in `session-lease-scan` output（= 別セッションが fresh lease を保持中）は CONFLICTING であっても rebase 推奨から除外し、`🔒 別セッション作業中` として read-only 表示する（Draft / 非 Draft・CI 状態・mergeable を問わない）。
 2. Remove EXCLUDE_SET from open Issues
 3. Rank remaining: bugs > features > refactoring > research
 
