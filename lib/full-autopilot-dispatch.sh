@@ -56,16 +56,16 @@ is_issue_busy() {
   # Check for open PR on any branch whose head starts with "<issue>-"
   # Note: gh CLI does not accept --arg for --jq; use shell variable expansion directly.
   local open_prs
-  open_prs=$(gh pr list --state open --json number,headRefName \
+  open_prs=$( ( cd "${FA_REPO:-.}" && gh pr list --state open --json number,headRefName \
     --jq "[.[] | select(.headRefName | startswith(\"${issue}-\"))] | length" \
-    2>/dev/null || echo "0")
+    2>/dev/null ) || echo "0")
   [ "${open_prs:-0}" -gt 0 ] && return 0
 
   # Check for in-progress label
   local has_label
-  has_label=$(gh issue view "$issue" --json labels \
+  has_label=$( ( cd "${FA_REPO:-.}" && gh issue view "$issue" --json labels \
     --jq '[.labels[].name] | map(select(. == "in-progress")) | length' \
-    2>/dev/null || echo "0")
+    2>/dev/null ) || echo "0")
   [ "${has_label:-0}" -gt 0 ] && return 0
 
   return 1
