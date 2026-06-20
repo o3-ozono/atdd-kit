@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.34.1] - 2026-06-21
+
+### Fixed
+
+- **full-autopilot を consumer プロジェクトで完走させる修正**（consumer プロジェクト stockbot-jp #5 の実走で発見）。
+  - **bg-wait 上限解除**: `lib/full-autopilot-run.sh` の worker 起動（`__default_launch`）に `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` を追加。headless `claude -p` の bg-wait 既定上限 600s で worker の design Workflow が完了前に terminate され worker-failed になっていた（Workflow が道連れ）。0=無制限で完走させる。
+  - **worker wall-clock 上限の既定引き上げ**: `FA_WORKER_TIMEOUT` 既定を 3600s → 14400s（4h）。size:L Issue の design+impl+merge を1ジョブで見込む。
+  - **consumer repo での gh コンテキスト修正**: `__default_result`（merge-ready ラベル照合）と `lib/full-autopilot-dispatch.sh` の `is_issue_busy`（open PR / in-progress 照合）の `gh` 呼び出しを `(cd "${FA_REPO:-.}" && gh …)` でラップ。`FA_REPO` が cwd と異なる（consumer を別 cwd から回す）場合に cwd repo で Issue を誤照合し worker-failed 誤判定 → merge coordinator 不起動になっていた問題を解消。
+  - 修正後、worker が #5 を design→impl 完走 → Draft PR + merge-ready まで到達し merge されることを実走で確認（約12分）。
+
 ## [3.34.0] - 2026-06-20
 
 ### Added

@@ -88,7 +88,10 @@ __default_launch() {
   # メインチェックアウトで worker を走らせると別ブランチを汚染するため fail-closed（exit 1 →
   # out.json 不在 → __default_result が "failed" を返す）。
   ( if [ -n "$wt" ]; then cd "$wt" || { echo "launch: cd to worktree failed: $wt" >&2; exit 1; }; fi
-    FA_HANDOFF=1 claude -p "/atdd-kit:autopilot $i --hand-off" \
+    # CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0: worker は autopilot の design/impl phase を Workflow
+    # （background）で回す。headless `claude -p` の bg-wait 既定上限（600s）では重い issue の design
+    # ループが完了前に terminate され worker-failed になる（Workflow が道連れ）。0=無制限で完走させる。
+    FA_HANDOFF=1 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p "/atdd-kit:autopilot $i --hand-off" \
       --output-format json --permission-mode acceptEdits \
       --allowed-tools "Bash Read Edit Write Glob Grep Workflow ToolSearch TaskCreate TaskUpdate TaskList" \
       > "$RUNDIR/$i.out.json" 2>"$RUNDIR/$i.err" < /dev/null )
@@ -107,7 +110,7 @@ __default_result() {
   # US-3 / 真因3: is_error:false 自己申告 ＋ GitHub merge-ready ラベル二重確認
   if [ -f "$f" ] && grep -q '"is_error":false' "$f" 2>/dev/null; then
     # merge-ready ラベルが Issue に存在することを gh で照合（produce→consume の往復検証）
-    if gh issue view "$i" --json labels --jq '.labels[].name' 2>/dev/null | grep -q '^merge-ready$'; then
+    if ( cd "${FA_REPO:-.}" && gh issue view "$i" --json labels --jq '.labels[].name' 2>/dev/null ) | grep -q '^merge-ready$'; then
       echo "merge-ready"
     else
       echo "failed"
@@ -160,7 +163,7 @@ RESULT_CMD="${FA_RESULT_CMD:-__default_result}"
 MERGE_CMD="${FA_MERGE_CMD:-__default_merge}"
 NOTIFY_CMD="${FA_NOTIFY_CMD:-}"
 NOTIFY_LEVEL="${FA_NOTIFY_LEVEL:-normal}"   # quiet | normal | verbose（サービス非依存の粒度）
-TIMEOUT="${FA_WORKER_TIMEOUT:-3600}"        # worker の wall-clock 上限秒（0=無効）
+TIMEOUT="${FA_WORKER_TIMEOUT:-14400}"       # worker の wall-clock 上限秒（0=無効）。size:L の design+impl+merge を見込み既定 4h（3600s では impl 中に kill された）
 
 # イベントを粒度クラスに分類: alert（要注意・常に通知）/ milestone（節目）/ detail（詳細）。
 __event_class() {
