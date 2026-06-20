@@ -74,6 +74,13 @@
   - When: `helpers/changelog.bash` の `changelog_latest_release` でバージョン整合を検査する
   - Then: version が CHANGELOG 最上位 release 見出しと一致する（`== "3.x.x"` の固定値ピンを使わない不変条件アサーション）
 
+## AT-343: timestamp フィールド無し lease の ts=0 fail-safe（Story 8）
+
+- [ ] [regression] AT-012: timestamp フィールド無し（または null）の lease は stale 扱いで検出しない
+  - Given: branch `feat/notimestamp` の lease を `timestamp` フィールド無しで用意する（`jq .timestamp // 0` は 0 を返す）
+  - When: `scripts/session-lease-scan.sh` を実行する
+  - Then: exit 0・stdout に `feat/notimestamp` を含まない（ts=0 → age ≈ now >> TTL → stale → スキップ — 偽陰性・安全方向の fail-safe）
+
 ## ライフサイクル例
 
 | 状態 | 意味 |

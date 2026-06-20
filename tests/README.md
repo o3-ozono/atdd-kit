@@ -248,7 +248,7 @@ Per-Issue executable Acceptance Tests produced by the ATDD cycle (Step 4), named
 | AT-334-D.bats | 効率は test-first 逸脱の理由にしない（C2）— autopilot-iron-law.md に「効率（session limit / トークン / 速さ）は test-first 逸脱（red 先行スキップを含む）の理由にしない」が正典として明記・rules/atdd-kit.md が参照しつつ 60 行以下バジェットを維持（Issue #334、4 tests） |
 | AT-334-E.bats | リリース整合 invariant — plugin.json version が CHANGELOG 最上位リリース見出しと一致する（特定バージョン値を固定しない invariant、Issue #334、1 test） |
 | AT-312.bats | AT 計画前 feasibility 実地探索の正典フロー確立 — doctrine ファイル存在・Loaded-by メタ・普遍ルール（GUI/非 GUI 二分岐）・フロー統合点（[planned] 確定前プローブ・writing-plan-and-tests）・ユーザーゲート・ツール抽象（プローブ抽象・addon 非密結合）・autopilot 整合（design phase / Gate ②）・相互参照健全性・README 登録・外部調査根拠節（3 件以上 URL）・4 doc 逆参照（双方向相互参照）（Issue #312、25 tests） |
-| AT-343.bats | session-start の「別セッション作業中」検出を branch-lease store ベースにする — `session-lease-scan.sh` fresh lease 検出（AT-01〜03）・SKILL.md session-lease-scan 参照・別セッション作業中マーカー（AT-04）・CONFLICTING rebase 推奨への lease 未保持前提条件（AT-05）・stale lease 非検出（AT-06）・TTL/encode 二重定義禁止（AT-07）・read-only 担保（AT-08）・store 未生成 fail-safe（AT-09）・スイート健全性（AT-10）・version 不変条件（AT-11）（Issue #343、11 tests） |
+| AT-343.bats | session-start の「別セッション作業中」検出を branch-lease store ベースにする — `session-lease-scan.sh` fresh lease 検出（AT-01〜03）・SKILL.md session-lease-scan 参照・別セッション作業中マーカー（AT-04）・CONFLICTING rebase 推奨への lease 未保持前提条件（AT-05）・stale lease 非検出（AT-06）・TTL/encode 二重定義禁止（AT-07）・read-only 担保（AT-08）・store 未生成 fail-safe（AT-09）・スイート健全性（AT-10）・version 不変条件（AT-11）・timestamp フィールド無し lease ts=0 fail-safe（AT-12）（Issue #343、12 tests） |
 
 ## iOS Addon Tests (addons/ios/tests/)
 
