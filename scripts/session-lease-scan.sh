@@ -46,6 +46,13 @@ decode_branch() {
 
 # lease ファイルから timestamp を取得する。
 # jq があれば使用、なければ grep フォールバック。
+#
+# fail-safe 設計: jq/grep 失敗時・timestamp フィールド欠落・null 値の場合は ts=0 を返す。
+# ts=0 の場合、age = now - 0 ≈ 1.75×10⁹ >> TTL(7200) となり stale 扱いでスキップされる（偽陰性）。
+# これは「別セッションを誤検出しない」安全方向の fail-safe であり、セッション開始を壊さない
+# CS-1 原則に従う（PRD Non-Goal: 完全検出保証は対象外）。
+# jq 非インストール環境で lease ファイルが破損している場合に別セッションを見逃す可能性があるが、
+# その場合もセッション開始処理は正常完了する（AT-343-12 でこの挙動を回帰テスト済み）。
 get_timestamp() {
   local file="$1"
   local ts=0

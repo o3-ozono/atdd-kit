@@ -93,6 +93,7 @@ The thresholds use 30 lines as the HIGH boundary because a typical feature PR ad
 ### Inventory table
 
 Current line counts were measured with `wc -l` on 2026-06-21.
+<!-- session-start は #343（branch-lease store 別セッション検出）の SKILL.md 改訂により 231 → 235 に増加した（+4 行）。 -->
 
 | Skill | Current lines | Pin limit | Headroom | Rank | Notes |
 |-------|--------------|-----------|----------|------|-------|

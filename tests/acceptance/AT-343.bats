@@ -195,7 +195,7 @@ teardown() {
 
 # ── AT-010: AT-343 スイートが exit-code ベースで全 green ────────────────────
 
-@test "AT-343-10: AT-343.bats lists all 11 tests without error" {
+@test "AT-343-10: AT-343.bats lists all 12 tests without error" {
   # Given: tests/acceptance/AT-343.bats
   [[ -f "${REPO}/tests/acceptance/AT-343.bats" ]] || {
     echo "FAIL: tests/acceptance/AT-343.bats does not exist"
@@ -204,9 +204,9 @@ teardown() {
   # When: bats -c でテスト数を取得する（構文エラーがないことを確認）
   local count
   count=$(bats -c "${REPO}/tests/acceptance/AT-343.bats" 2>/dev/null | tr -d ' ')
-  # Then: 11 件のテストが存在する（exit-code ベース検証スイートの健全性確認）
-  [ "$count" -eq 11 ] || {
-    echo "FAIL: expected 11 tests in AT-343.bats, got $count"
+  # Then: 12 件のテストが存在する（AT-343-12 追加後の健全性確認）
+  [ "$count" -eq 12 ] || {
+    echo "FAIL: expected 12 tests in AT-343.bats, got $count"
     return 1
   }
 }
