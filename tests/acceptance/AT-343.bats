@@ -213,6 +213,22 @@ teardown() {
 
 # ── AT-011: plugin.json version が CHANGELOG 最上位 release 見出しと一致する ─
 
+@test "AT-343-12: lease with missing/null timestamp is treated as stale and not detected (ts=0 fail-safe)" {
+  # Given: branch feat/notimestamp の lease を timestamp フィールド無しで用意する（jq は .timestamp // 0 で 0 を返す）
+  # This documents the intentional fail-safe: ts=0 → age ≈ now >> TTL → stale → skipped（偽陰性・安全方向）
+  printf '{"session_id":"session-notime"}\n' > "${TMP_LEASE_DIR}/feat%2Fnotimestamp.json"
+  # When: ヘルパを実行する
+  run bash "$HELPER" "$TMP_LEASE_DIR"
+  # Then: exit 0・stdout に feat/notimestamp を含まない（ts=0 fail-safe: jq/grep 失敗時は stale 扱いでスキップ）
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"feat/notimestamp"* ]] || {
+    echo "FAIL: lease with missing timestamp was incorrectly detected (ts=0 fail-safe not working)"
+    return 1
+  }
+}
+
+# ── AT-011: plugin.json version が CHANGELOG 最上位 release 見出しと一致する ─
+
 @test "AT-343-11: plugin.json version matches topmost CHANGELOG release heading (no literal pin)" {
   # Given: .claude-plugin/plugin.json と CHANGELOG.md
   [[ -f "${REPO}/tests/acceptance/helpers/changelog.bash" ]] || {
