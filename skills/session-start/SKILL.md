@@ -37,6 +37,9 @@ Run independent information-gathering steps **in parallel**. Phase 0 must comple
 ### B. Open PRs and CI
 1. `gh pr list --author @me --state open`
 2. For open PRs → `gh pr view <number> --json title,state,reviewDecision,statusCheckRollup,mergeable`
+3. **別セッション検出（lease スキャン）:** `scripts/session-lease-scan.sh` を実行し、stdout に出力された branch 名を「別セッション作業中 branch セット」として記録する。
+   このヘルパは `BRANCH_LEASE_DIR`（既定 `/tmp/claude-branch-leases`）を走査し、`BRANCH_LEASE_TTL_LOCAL`（既定 7200s）以内の fresh lease を持つ branch を列挙する。
+   Draft 状態・CI 状態・mergeable を問わず、ヘルパ出力に headRefName が含まれる open PR はすべて `🔒 別セッション作業中` として扱う（read-only 表示のみ）。
 
 ### C. GitHub Issues
 - `gh issue list --state open --limit 20`
@@ -182,8 +185,8 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 **Branch:** `<branch>` (<clean / uncommitted changes>)
 
 ### Previous Work  <-- only if ongoing work exists
-- PR #XX: <title> -- <CI status> / <review status> / ⚠ CONFLICTING  <-- if ready (non-Draft) @me PR and mergeable == CONFLICTING
-- 🔒 別セッション作業中: PR #YY: <title>  <-- if open Draft PR; read-only display only
+- PR #XX: <title> -- <CI status> / <review status> / ⚠ CONFLICTING  <-- if ready (non-Draft) @me PR and mergeable == CONFLICTING, and branch NOT in session-lease-scan output
+- 🔒 別セッション作業中: PR #YY: <title>  <-- if open PR and branch is in session-lease-scan output (fresh lease held by another session); read-only display only; Draft/green/mergeable 問わず適用
 
 ### Recent Activity (24h)  <-- only if recent activity exists
 | Type | # | Title | When |
@@ -210,9 +213,10 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
 **Step 1: Build exclusion list**
 1. Issues with `in-progress` label → EXCLUDE_SET
 2. Issues with open PRs (Phase 1-B) → add to EXCLUDE_SET
+3. **Lease-based exclusion:** Issues whose PR branch appears in `session-lease-scan` output (fresh lease 保持 → 別セッション作業中) → add to EXCLUDE_SET（Draft/非 Draft・CI 状態・mergeable を問わず除外）
 
 **Step 2: Filter and rank**
-1. **Highest priority:** ready (non-Draft) `@me` PRs with `mergeable == CONFLICTING` — recommend rebase:
+1. **Highest priority:** ready (non-Draft) `@me` PRs with `mergeable == CONFLICTING` **and** whose branch is NOT in `session-lease-scan` output（別セッションの fresh lease を保持していないこと）— recommend rebase:
    ```bash
    git fetch origin main
    git checkout <branch>
@@ -220,7 +224,7 @@ Ensure `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.local.json`
    # After resolving conflicts
    git push --force-with-lease
    ```
-   Draft PRs are never included here — display them as `🔒 別セッション作業中` (read-only) in Previous Work only. Do not propose `git checkout`, `git rebase`, or `git push --force-with-lease` for Draft PR branches.
+   Any PR branch appearing in `session-lease-scan` output（= 別セッションが fresh lease を保持中）は CONFLICTING であっても rebase 推奨から除外し、`🔒 別セッション作業中` として read-only 表示する（Draft / 非 Draft・CI 状態・mergeable を問わない）。
 2. Remove EXCLUDE_SET from open Issues
 3. Rank remaining: bugs > features > refactoring > research
 

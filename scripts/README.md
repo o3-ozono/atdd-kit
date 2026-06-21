@@ -18,6 +18,7 @@ Utility scripts used by commands, skills, and CI. All scripts are pure bash (or 
 | [ci/skill-e2e-guard.sh](ci/skill-e2e-guard.sh) | Subscription-only Skill E2E CI guards (billing-redirect env blocklist + main-ref trust boundary); single-source, behaviorally tested. | `ci/skill-e2e-guard.sh {billing-env\|main-ref <ref>}` |
 | [run-tests.sh](run-tests.sh) | Zero-dependency parallel BATS runner with weighted file sharding. Delegates target-file selection to `impact_map.sh`. | `run-tests.sh --all [--jobs <n>]` / `run-tests.sh --impact --base <ref> [--jobs <n>]` |
 | [retrospective.sh](retrospective.sh) | Auto-generates a flow retrospective report after Issue completion: dialogue volume (turns), token cost, normalized ratio, friction points, and skill-fix candidates. Zero LLM invocations; zero blocking prompts; CS-1 lightweight. Called by `merging-and-deploying` skill as the sole retrospective entry point; express Issues skip structurally. | `retrospective.sh --issue <N> [--pr <PR>] [--dry-run] [--json-output]` |
+| [session-lease-scan.sh](session-lease-scan.sh) | Scans `BRANCH_LEASE_DIR` (default `/tmp/claude-branch-leases`) for branches with fresh leases (within `BRANCH_LEASE_TTL_LOCAL`, default 7200s). Outputs one branch name per line. Used by `session-start` skill to detect branches held by another session (Draft-independent, read-only). | Called by `session-start` skill Phase 1-B |
 
 iOS-specific scripts are in `addons/ios/scripts/`. See [addons/ios/README.md](../addons/ios/README.md).
 

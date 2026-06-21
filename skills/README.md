@@ -50,7 +50,7 @@ Resume mid-flow by invoking the skill for the next incomplete step. `skill-gate`
 | Skill | Trigger | Workflow Position |
 |-------|---------|-------------------|
 | [skill-gate](skill-gate/) | Auto-triggers on every user message | Skill enforcement gate + Issue routing; **route-eligibility mandatory check (#329 / US-4):** before routing any Issue, loads `docs/methodology/route-eligibility.md` and evaluates express / full-flow / bugfix signals — non-eligible route invocations (e.g. express for a behavior-change Issue) surface a mismatch warning; user may override explicitly |
-| [session-start](session-start/) | Auto-invoked at session start | Session initialization |
+| [session-start](session-start/) | Auto-invoked at session start | Session initialization; branch-lease store スキャンによる別セッション作業中検出（`session-lease-scan.sh` 経由） |
 | [bug](bug/) | Auto-triggers on bug/error keywords | Bug intake → ATDD flow |
 | [debugging](debugging/) | Auto-triggers on bug reports, errors, crashes | Pre-fix root cause investigation |
 | [skill-fix](skill-fix/) | Auto-triggers on skill name + intent verb; explicit via `/atdd-kit:skill-fix` | Background skill defect reporting |
