@@ -2,19 +2,19 @@
 description: "Explicitly invoke the bugfix lightweight route for a defect Issue — chains bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying, skipping the PRD/US/plan/AT spec. Middle gate is cause-agreement; merge stays a User gate."
 ---
 
-# /atdd-kit:autofix — bugfix Lightweight Route
+# /atdd-kit:bugfix — bugfix Lightweight Route
 
 ## Usage
 
 ```
-/atdd-kit:autofix <issue-number>
+/atdd-kit:bugfix <issue-number>
 ```
 
 Starts the `fixing-bugs` route for the given Issue.
 
 ## When to Use
 
-Use autofix when the Issue is a **defect fix** rather than new behavior:
+Use bugfix when the Issue is a **defect fix** rather than new behavior:
 
 - A bug / regression / crash in previously-working behavior
 - Issue carries the `type:bug` label

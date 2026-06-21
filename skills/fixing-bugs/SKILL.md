@@ -1,6 +1,6 @@
 ---
 name: fixing-bugs
-description: "Use when a bug/defect/error needs a minimal targeted fix on its own lightweight route, separate from the full 6-step feature flow. Explicit via /atdd-kit:autofix <issue>."
+description: "Use when a bug/defect/error needs a minimal targeted fix on its own lightweight route, separate from the full 6-step feature flow. Explicit via /atdd-kit:bugfix <issue>."
 ---
 
 ## Session Start Check (required)
@@ -82,6 +82,6 @@ This skill **only binds** the existing skills; it does **not** redefine the repr
 
 ## Integration
 
-- **Upstream:** a bug report (auto via `bug`) or explicit `/atdd-kit:autofix <issue>`.
+- **Upstream:** a bug report (auto via `bug`) or explicit `/atdd-kit:bugfix <issue>`.
 - **Route determination:** `docs/methodology/route-eligibility.md` (SoT) decides bugfix vs full route; recommendation only, no auto-routing.
 - **Downstream:** `merging-and-deploying` (the User merge gate, on a near-green fix).

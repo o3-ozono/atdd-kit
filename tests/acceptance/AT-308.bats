@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# @covers: skills/fixing-bugs/SKILL.md skills/autopilot/SKILL.md docs/methodology/route-eligibility.md docs/methodology/autopilot-iron-law.md docs/methodology/autopilot-design-gate.md commands/autofix.md
+# @covers: skills/fixing-bugs/SKILL.md skills/autopilot/SKILL.md docs/methodology/route-eligibility.md docs/methodology/autopilot-iron-law.md docs/methodology/autopilot-design-gate.md commands/bugfix.md
 # Acceptance Tests for Issue #308 — bugfix 専用の軽量ルート（フル機能ルートと分離）
 # Corresponds to docs/issues/308-category-specific-routes/acceptance-tests.md
 #
@@ -20,7 +20,7 @@ AUTO="skills/autopilot/SKILL.md"
 ROUTE="docs/methodology/route-eligibility.md"
 IRON="docs/methodology/autopilot-iron-law.md"
 DGATE="docs/methodology/autopilot-design-gate.md"
-AUTOFIX="commands/autofix.md"
+BUGFIX="commands/bugfix.md"
 PLUGIN_JSON=".claude-plugin/plugin.json"
 CHANGELOG="CHANGELOG.md"
 PLAN="docs/issues/308-category-specific-routes/plan.md"
@@ -51,11 +51,11 @@ PLAN="docs/issues/308-category-specific-routes/plan.md"
   grep -qiE 'bugfix' "$AUTO"
 }
 
-# AT-308-6: explicit command /atdd-kit:autofix wires to the fixing-bugs route.
-@test "AT-308-6: commands/autofix.md invokes the fixing-bugs route with an issue argument" {
-  grep -q 'fixing-bugs' "$AUTOFIX"
-  grep -qE '<issue|<issue-number>|issue-number' "$AUTOFIX"
-  grep -qE '/atdd-kit:autofix' "$AUTOFIX"
+# AT-308-6: explicit command /atdd-kit:bugfix wires to the fixing-bugs route.
+@test "AT-308-6: commands/bugfix.md invokes the fixing-bugs route with an issue argument" {
+  grep -q 'fixing-bugs' "$BUGFIX"
+  grep -qE '<issue|<issue-number>|issue-number' "$BUGFIX"
+  grep -qE '/atdd-kit:bugfix' "$BUGFIX"
 }
 
 # AT-308-7: bugfix convergence oracle + AL-3 coverage specialization.
