@@ -43,7 +43,9 @@ setup() {
   grep -Eq 'マーカーが無い起動では.*--hand-off.*無視|無視され、厳密3ゲート|honor する.*前に必ず' "$AP"
   grep -q 'FA_HANDOFF=1' "$FA"
   # launcher は inline（process-scoped）で設定し永続 export しない（stray export 事故防止）
+  # FA_HANDOFF=1 は claude 起動行の inline env prefix。間に他の env 代入（例 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0, #346）が
+  # 挟まっても、同一行で claude を起動していれば honor 契約は満たす（#357: 固定文字列 grep から env 挿入許容の正規表現へ）。
   RUN="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)/lib/full-autopilot-run.sh"
-  grep -q 'FA_HANDOFF=1 claude' "$RUN"
+  grep -qE 'FA_HANDOFF=1( +[A-Za-z_][A-Za-z0-9_]*=[^ ]+)* +claude' "$RUN"
   ! grep -qE '^[[:space:]]*export[[:space:]]+FA_HANDOFF' "$RUN"
 }
