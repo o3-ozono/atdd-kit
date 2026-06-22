@@ -1075,7 +1075,7 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   [ "$status" -eq 0 ]
   # Pin 3: 記録値ベースの check_red_evidence は lib unit（test_autopilot_convergence.bats）が保証
   # AT-355-F8-2 pin: check_red_evidence exits 0 for recorded test_sha
-  run grep -qE 'check_red_evidence' "/Users/hiroaki.ozono/github.com/o3-ozono/atdd-kit/tests/test_autopilot_convergence.bats"
+  run grep -qE 'check_red_evidence' "tests/test_autopilot_convergence.bats"
   [ "$status" -eq 0 ]
 }
 
