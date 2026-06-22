@@ -56,3 +56,13 @@ setup() {
 @test "AT-341-A1: SKILL.md states this skill does not rewrite full-autopilot or flow skills" {
   grep -qiE 'does not rewrite|non-rewrite|batch-discovery.*preparation' "$SKILL"
 }
+
+# ---------------------------------------------------------------------------
+# AT-341-A1-nit: SKILL.md の worker 起動擬似コードに CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 が含まれる
+# レビュー指摘 priority=3: SKILL.md を参照してゼロから実装する人が env var を見落とすリスク
+# 根拠: lib/README.md 行18、lib/full-autopilot-run.sh 行94、CHANGELOG 4.0.0
+# ---------------------------------------------------------------------------
+
+@test "AT-341-A1-nit: SKILL.md worker launch pseudocode includes CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0" {
+  grep -q 'CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0' "$SKILL"
+}
