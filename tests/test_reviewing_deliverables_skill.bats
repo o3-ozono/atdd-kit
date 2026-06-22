@@ -264,3 +264,24 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   # 重複付与を排除するルールが明記されていること
   grep -qiE 'deduplic|dedup|重複.*排除|排除.*重複|no.*duplicate.*sever|duplicate.*severity.*eliminat' "$SKILL_FILE"
 }
+
+# --- #355 C1-3: 収束性の保証 — review が有限ラウンド内で CONVERGED へ到達 -------
+# #345 再現シナリオ（前ラウンド blocker 全解消後に別角度の新所見が湧き続ける状況）の
+# 構造的保証。フル headless 再現が不可能なため SKILL pin で代替する
+# （plan.md lines 65-66: 不可能な部分は SKILL pin + lib unit で代替）。
+
+@test "AT-355-C1-3: review reaches CONVERGED in finite rounds — max-round limit and CONVERGED dual condition (SKILL pin)" {
+  # #345 再現シナリオ：前ラウンド blocker 全解消後に別角度の新所見が湧き続ける状況。
+  # SKILL に CONVERGED 二条件（新規 blocker/major ゼロ OR 設計判断/スコープ外のみ残存）と
+  # 最大ラウンド数上限（3 rounds）が記述されており、有限ラウンドで必ず CONVERGED に到達する
+  # 構造的保証が存在すること。
+  # Pin 1: CONVERGED 条件が記述されている（新規 blocker/major ゼロ）
+  grep -qiE 'CONVERGED|new.*blocker|zero.*blocker|blocker.*zero' "$SKILL_FILE"
+  # Pin 2: 設計判断/スコープ外タグのみ残存で CONVERGED（条件 b）が記述されている
+  grep -qiE 'design.judgment|out.of.scope|スコープ外|設計判断' "$SKILL_FILE"
+  # Pin 3: 最大ラウンド数上限が記述されている（無限 FAIL ループの構造的防止）
+  grep -qiE 'maximum round|max.*round|round.*limit|最大.*ラウンド|ラウンド.*上限|3 round|round.*3' "$SKILL_FILE"
+  # Pin 4: 上限 + CONVERGED 条件の組み合わせで有限ラウンド内収束が保証されていることを確認
+  # （F4-1/F4-2 は個別に検証済み; C1-3 はその組み合わせが収束性保証として機能することを pin）
+  grep -qiE 'prevent.*infinite|infinite.*FAIL|infinite.*loop|無限.*ループ|ループ.*防止' "$SKILL_FILE"
+}

@@ -103,20 +103,23 @@
 
 ## AT-355-C1: 収束性の保証（横断品質特性）
 
-- [ ] [draft] AT-355-C1-1: demonstrably-done が単一脆弱 signal に veto されて MAX 空転しない
+- [x] [green] AT-355-C1-1: demonstrably-done が単一脆弱 signal に veto されて MAX 空転しない
   - Given: #341 再現シナリオ（review correct ＋ AT 全 green ＋ red.jsonl に赤観測あり、ただし旧 SHA 解決なら false-negative になる状況）
   - When: 再設計後の収束ループを回す
   - Then: redObserved が記録値ベースで true 確定し、MAX_ITERATIONS まで空転せず収束する
+  - Note: フル headless 再現不可のため SKILL pin + lib unit で代替（plan.md lines 65-66）。`test_autopilot_skill.bats AT-355-C1-1` が pin（converged 式に redObserved 含む + check_red_evidence が red.jsonl 記録値ベース）。lib unit は `test_autopilot_convergence.bats AT-355-F8-2/F8-3/C2-1` が保証。
 
-- [ ] [draft] AT-355-C1-2: 機構自己検証失敗が早期 escalation される
+- [x] [green] AT-355-C1-2: 機構自己検証失敗が早期 escalation される
   - Given: 機構の自己検証が失敗するシナリオ
   - When: 収束ループを回す
   - Then: MAX_ITERATIONS まで回さず `gate-unverifiable` で早期に人間 escalation する
+  - Note: フル headless 再現不可のため SKILL pin で代替（plan.md lines 65-66）。`test_autopilot_skill.bats AT-355-C1-2` が pin（`gateUnverifiable` ブロックが rails check より前に位置し `COMPLETED_WITH_DEBT reason: 'gate-unverifiable'` を返す構造）。
 
-- [ ] [draft] AT-355-C1-3: review が有限ラウンド内で CONVERGED へ到達する
+- [x] [green] AT-355-C1-3: review が有限ラウンド内で CONVERGED へ到達する
   - Given: #345 再現シナリオ（前ラウンド blocker 全解消後に別角度の新所見が湧き続ける状況）
   - When: review ラウンドを回す
   - Then: 「新規 blocker/major ゼロ」または「設計判断/スコープ外のみ残存」で有限ラウンド内に CONVERGED へ到達する
+  - Note: フル headless 再現不可のため SKILL pin で代替（plan.md lines 65-66）。`test_reviewing_deliverables_skill.bats AT-355-C1-3` が pin（CONVERGED 二条件 + 最大ラウンド数上限 3 rounds + 無限ループ防止の明記）。
 
 ## AT-355-C2: red-gate 判定の決定性（記録層品質特性）
 

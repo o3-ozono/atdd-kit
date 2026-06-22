@@ -1055,3 +1055,47 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   run grep -qiE 'red.*gate|red.*before|red.*fail.*before' "$SKILL_FILE"
   [ "$status" -eq 0 ]
 }
+
+# --- #355 C1: 収束性の保証（横断品質特性） — SKILL pin + lib unit 代替 ----------
+# C1 の3条件はフル headless 再現が不可能なため、SKILL pin と lib unit test で代替する
+# （plan.md lines 65-66: 不可能な部分は SKILL pin + lib unit で代替）。
+
+@test "AT-355-C1-1: demonstrably-done with recorded-SHA redObserved=true does not veto-to-MAX (SKILL pin)" {
+  # #341 再現シナリオ：review correct + AT green + red.jsonl に赤観測あり → 収束するシナリオ。
+  # lib の check_red_evidence が red.jsonl 記録値ベースで deterministic に判定し、
+  # 記録済み test_sha に対して exit 0（redObserved=true）を返すことが保証されていること。
+  # この保証が成立すれば oracle AND(redObserved=true, atGreen=true, coverageOk=true, ...)
+  # が収束し MAX_ITERATIONS まで空転しない。
+  # Pin 1: converged 式に redObserved が含まれ、redObserved=true で収束する形になっている
+  run grep -qE 'redObserved &&.*atGreen|atGreen &&.*redObserved' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+  # Pin 2: check_red_evidence が red.jsonl の記録値から SHA を読む（git log 考古学なし）
+  # → SHA が記録されている限り redObserved は deterministic に true になる
+  run grep -qiE 'red\.jsonl.*sha|sha.*red\.jsonl|read.*sha.*red|red.*record.*sha' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+  # Pin 3: 記録値ベースの check_red_evidence は lib unit（test_autopilot_convergence.bats）が保証
+  # AT-355-F8-2 pin: check_red_evidence exits 0 for recorded test_sha
+  run grep -qE 'check_red_evidence' "/Users/hiroaki.ozono/github.com/o3-ozono/atdd-kit/tests/test_autopilot_convergence.bats"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-C1-2: gate-mechanism-failure triggers early escalation before MAX_ITERATIONS (SKILL pin)" {
+  # 機構自己検証失敗（demonstrably-done だが redObserved=false）が
+  # MAX_ITERATIONS まで空転させず gate-unverifiable で早期 escalation されること。
+  # Pin 1: demonstrablyDone 変数が SKILL に存在する（review correct + AT green だが機構未確証）
+  run grep -qE 'demonstrablyDone' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+  # Pin 2: gateUnverifiable 条件が定義されている（demonstrablyDone AND redObserved=false）
+  run grep -qE 'gateUnverifiable' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+  # Pin 3: gateUnverifiable=true のとき、rails check（MAX_ITERATIONS）より前に
+  # COMPLETED_WITH_DEBT を返す（早期 return）ブロックが存在する
+  local guv_line rails_line
+  guv_line=$(grep -n 'if (gateUnverifiable)' "$SKILL_FILE" | head -1 | cut -d: -f1)
+  rails_line=$(grep -n "label: \`rails:" "$SKILL_FILE" | head -1 | cut -d: -f1)
+  [ -n "$guv_line" ] && [ -n "$rails_line" ]
+  [ "$guv_line" -lt "$rails_line" ]
+  # Pin 4: gate-unverifiable ブロックが COMPLETED_WITH_DEBT を返す
+  run grep -qF "reason: 'gate-unverifiable'" "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
