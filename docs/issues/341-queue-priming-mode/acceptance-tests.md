@@ -13,6 +13,11 @@
   - When: SKILL.md の frontmatter と本文を読む
   - Then: `name: batch-discovery` を持ち、明示 trigger `/atdd-kit:batch-discovery` と Input（対象 Issue 群 / 並列度 K）が記述され、Responsibility Boundary 表に「full-autopilot 本体を書き換えない（疎結合）」旨が含まれる（特定の行数・文言全文には依存しない）
 
+- [x] [regression] AT-341-A-1-nit: SKILL.md worker 起動擬似コードに CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 が含まれる（レビュー指摘 priority=3）
+  - Given: `skills/batch-discovery/SKILL.md` が存在する
+  - When: Phase 3 の worker 起動擬似コードを読む
+  - Then: `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` が記載されており、headless worker の bg-wait 600s 上限を解除する必要性が読める（lib/full-autopilot-run.sh の __default_launch・CHANGELOG 4.0.0 と整合）
+
 ## AT-341-B: 横断バッチ壁打ちは人間判断点だけを 1 バッチで提示する（FS-2 / FS-3 / CS-1）
 
 - [x] [green] AT-341-B-1: 導出可能な要件は自律ドラフトし、人間判断点だけを全 Issue 横断 1 バッチで提示する
