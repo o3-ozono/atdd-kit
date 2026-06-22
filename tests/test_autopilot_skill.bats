@@ -1118,7 +1118,7 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
 
 @test "AT-355-F8-no-fallback: red-gate prompt has no fallback to git rev-parse HEAD" {
   # Fallback 句 "Fallback: if no impl_sha field in the record, use git rev-parse HEAD" が
-  # SKILL.md から排除されていること
-  run grep -qiE 'Fallback.*impl_sha|Fallback.*git rev-parse HEAD|no impl_sha.*git rev-parse' "$SKILL_FILE"
+  # SKILL.md から排除されていること。新しい fail-closed 指示（substitute のみを禁止）は許可。
+  run grep -qF 'Fallback: if no impl_sha field in the record, use `git rev-parse HEAD`' "$SKILL_FILE"
   [ "$status" -ne 0 ]
 }

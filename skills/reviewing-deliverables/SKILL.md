@@ -77,7 +77,7 @@ const SCOUT_SCHEMA = {
   },
 }
 const scout = await agent(
-  `Analyze the deliverables for Issue #${NNN}. Read docs/issues/${NNN}/prd.md, user-stories.md, plan.md, acceptance-tests.md (skip any that are missing), the production diff (git diff ${BASE}...HEAD), and tests/acceptance/. Report which deliverables exist, the languages, the change size, and EVERY risk surface the change touches (auth, input/IO, network, concurrency, data/migration, UI/UX, performance-sensitive paths, error handling). Be specific and conservative — only list a surface the change actually touches.`,
+  `Analyze the deliverables for Issue #${NNN}. Read docs/issues/${NNN}/prd.md, user-stories.md, plan.md, acceptance-tests.md (skip any that are missing), the production diff (git diff ${BASE}...HEAD), and tests/acceptance/. Report which deliverables exist, the languages, the change size, and EVERY risk surface the change touches (auth, input/IO, network, concurrency, data/migration, UI/UX, performance-sensitive paths, error handling). Be specific and conservative — only list a surface the change actually touches. Also extract the Issue scope boundary from prd.md and user-stories.md — note any files or concerns that are explicitly out-of-scope; reviewers will tag findings against those as \`out-of-scope\` (not a FAIL factor).`,
   { phase: 'Scout', model: 'sonnet', schema: SCOUT_SCHEMA }
 )
 
@@ -124,6 +124,7 @@ const FINDINGS_SCHEMA = {
           severity: { type: 'string' }, // blocker | major | minor | nit
           location: { type: 'string' },
           detail: { type: 'string' },
+          tags: { type: 'array', items: { type: 'string' } }, // e.g. ['out-of-scope'] or ['design-judgment']
         },
       },
     },
@@ -193,7 +194,7 @@ const AGG_SCHEMA = {
 }
 // #259: Aggregate inherits the session model — final PASS/FAIL judgment stays on the strongest model
 return await agent(
-  `Aggregate these verified findings into one verdict for Issue #${NNN}. Rule: FAIL if any surviving finding is severity "blocker" or "major"; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nAlso emit a machine-readable verdict for autopilot loop control (backward-compatible): set overall_correctness to "correct" when verdict is PASS, else "incorrect"; and normalize EVERY surviving finding into findings[] with priority (0=blocker,1=major,2=minor,3=nit), confidence (0-1), file, line_range, detail, and a REQUIRED evidence_ref (a failing Acceptance Test name / log path, OR a quoted line from the immutable AC/PRD, OR a human-comment URL). If a confirmed finding has no objective backing, set evidence_ref to "unverified" and KEEP it — never drop a confirmed P0/P1, and never report overall_correctness "correct" while one survives (AL-4 is fail-safe, not fail-open).\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
+  `Aggregate these verified findings into one verdict for Issue #${NNN}. Majority rule (#355 F3): a blocker/major finding is adopted only when 2/3 or more of relevant lenses confirm it; a solo single-lens finding has its severity downgraded one level. Severity dedup (#355 F7): first merge identical findings cross-lens into one entry, then assign severity once — no duplicate severity assignment. Round memory (#355 F6): findings where the implementer declared a deliberate trade-off via docstring or ADR are not re-raised across rounds unless majority votes them unjustified. CONVERGED (#355 F4): reach CONVERGED (conditional PASS) when (a) zero new blocker/major findings remain, or (b) all remaining findings are tagged design-judgment or out-of-scope — maximum 3 rounds per phase to prevent infinite FAIL loops; out-of-scope tagged findings are not FAIL factors. Base FAIL rule: FAIL if any surviving confirmed blocker/major finding (after majority rule and dedup) is unresolved; otherwise PASS. Write the summary and per-lens notes in JAPANESE; keep PASS/FAIL and severity ids verbatim.\nAlso emit a machine-readable verdict for autopilot loop control (backward-compatible): set overall_correctness to "correct" when verdict is PASS, else "incorrect"; and normalize EVERY surviving finding into findings[] with priority (0=blocker,1=major,2=minor,3=nit), confidence (0-1), file, line_range, detail, and a REQUIRED evidence_ref (a failing Acceptance Test name / log path, OR a quoted line from the immutable AC/PRD, OR a human-comment URL). If a confirmed finding has no objective backing, set evidence_ref to "unverified" and KEEP it — never drop a confirmed P0/P1, and never report overall_correctness "correct" while one survives (AL-4 is fail-safe, not fail-open).\nSurviving findings: ${JSON.stringify(surviving)}\nReviewers run: ${JSON.stringify(lenses.map((l) => l.key))}`,
   { phase: 'Aggregate', schema: AGG_SCHEMA }
 )
 ```
