@@ -149,3 +149,12 @@ SKILL_FILE="skills/running-atdd-cycle/SKILL.md"
   run grep -qiE 'call.{0,2}record_red_evidence|run.{0,2}record_red_evidence|invoke.{0,2}record_red_evidence|record_red_evidence.*を?呼び?出|record_red_evidence.*を?実行' "$SKILL_FILE"
   [ "$status" -eq 0 ]
 }
+
+# --- #355 F8: record_red_evidence impl SHA 記録の契約（C2 Confirm RED 節） ---
+
+@test "#355-F8: C2 Confirm RED contract includes impl_sha (impl baseline SHA) as 4th argument to record_red_evidence" {
+  # record_red_evidence 呼び出し契約に impl baseline SHA（第4引数）が含まれていること (#355 F8)
+  # red 観測時点で test SHA と impl baseline SHA の両方を red.jsonl へ書く契約が記述されている必要がある
+  run grep -qE 'record_red_evidence.*impl.sha|record_red_evidence.*<impl.*sha|impl_sha' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}

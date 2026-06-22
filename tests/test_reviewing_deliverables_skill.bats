@@ -204,3 +204,63 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   grep -qE 'Model assignment' "$SKILL_FILE"
   grep -qiE 'session model' "$SKILL_FILE"
 }
+
+# --- #355 F3: 多視点合議制（N=3 panel + 2/3 majority）---------------------
+
+@test "AT-355-F3-1: Aggregate rules specify N=3 panel (functional-correctness/safety/design-validity) and 2/3 majority adoption" {
+  # N=3（機能正当性 / 安全性 / 設計妥当性）パネル構成が明記されていること
+  grep -qiE 'functional.correctness|機能正当性' "$SKILL_FILE"
+  # 2/3 majority ルールが Aggregate 規則に記述されていること
+  grep -qiE '2/3|majority|過半数' "$SKILL_FILE"
+  # blocker/major の majority 採用ルールが明記されていること
+  grep -qiE 'majority.*blocker|majority.*major|blocker.*majority|major.*majority' "$SKILL_FILE"
+}
+
+@test "AT-355-F3-2: single-lens solo findings get severity downgraded one level" {
+  # 単一レンズの単独所見は severity を一段下げる旨が明記されていること
+  grep -qiE 'single.*lens.*sever|sever.*single.*lens|単一レンズ.*下げ|下げ.*単一レンズ|solo.*sever|sever.*downgrad' "$SKILL_FILE"
+}
+
+# --- #355 F4: ラウンド横断の収束／停止条件 -----------------------------------
+
+@test "AT-355-F4-1: CONVERGED conditions are defined (zero new blocker/major OR only design/scope-out remaining)" {
+  # CONVERGED の二条件が記述されていること
+  grep -qiE 'CONVERGED' "$SKILL_FILE"
+  # 条件 a: 新規 blocker/major ゼロ
+  grep -qiE 'zero.*blocker|no.*blocker.*major|blocker.*ゼロ|新規.*blocker' "$SKILL_FILE"
+  # 条件 b: 設計判断・スコープ外タグのみ残存で CONVERGED
+  grep -qiE 'design.*judgment|out.of.scope|scope.out|設計判断|スコープ外' "$SKILL_FILE"
+}
+
+@test "AT-355-F4-2: maximum round limit is defined to prevent infinite FAIL loops" {
+  # 最大ラウンド数上限が定義されていること
+  grep -qiE 'max.*round|round.*max|最大ラウンド|ラウンド.*上限' "$SKILL_FILE"
+}
+
+# --- #355 F5: スコープガード（out-of-scope 分離）-----------------------------
+
+@test "AT-355-F5-1: Scout has scope guard extracting boundary from PRD/US and tagging out-of-scope findings" {
+  # Scout が PRD/US から境界を抽出し out-of-scope タグで分離することが記述されていること
+  grep -qiE 'out.of.scope|スコープ外' "$SKILL_FILE"
+  # out-of-scope は FAIL 要因にならず follow-up 候補へ回すことが記述されていること
+  grep -qiE 'out.of.scope.*not.*fail|out.of.scope.*follow.up|not.*fail.*out.of.scope|スコープ外.*FAIL.*しない' "$SKILL_FILE"
+}
+
+# --- #355 F6: 設計判断のラウンド間記憶 ---------------------------------------
+
+@test "AT-355-F6-1: deliberate trade-offs declared via docstring/ADR are not re-raised across rounds" {
+  # 意図的トレードオフがラウンド間で再提出されないことが記述されていること
+  grep -qiE 'deliberate.*trade.?off|trade.?off.*deliberate|意図的.*トレードオフ|トレードオフ.*意図的' "$SKILL_FILE"
+  # docstring または ADR で宣言したものは合議で不当判定されない限り再提出しないルールが明記されていること
+  grep -qiE 'docstring|ADR' "$SKILL_FILE"
+  grep -qiE 'round.*memory|memory.*round|ラウンド.*記憶|記憶.*ラウンド|not.*re.submit|re.raised' "$SKILL_FILE"
+}
+
+# --- #355 F7: severity 較正の単一化 ------------------------------------------
+
+@test "AT-355-F7-1: severity is assigned once after cross-lens merge (no duplicate assignment)" {
+  # レンズ横断マージ後に 1 回だけ severity を付与する旨が記述されていること
+  grep -qiE 'merge.*sever|sever.*merge|cross.lens.*merge|重複.*sever|severity.*once|once.*severity' "$SKILL_FILE"
+  # 重複付与を排除するルールが明記されていること
+  grep -qiE 'deduplic|dedup|重複.*排除|排除.*重複|no.*duplicate.*sever|duplicate.*severity.*eliminat' "$SKILL_FILE"
+}

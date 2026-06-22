@@ -711,8 +711,9 @@ print("ok")
   [ ! -s "$JSONL" ]
 }
 
-@test "AT-299-5c: record_halt accepts all five valid convergence-failure reasons" {
-  for reason in MAX_ITERATIONS sameness-detector stuck ac-drift log-integrity; do
+@test "AT-299-5c: record_halt accepts all valid convergence-failure reasons (incl. #355 gate-unverifiable)" {
+  # #355 (F2): gate-unverifiable は 6 番目の有効 reason として追加された
+  for reason in MAX_ITERATIONS sameness-detector stuck ac-drift log-integrity gate-unverifiable; do
     local tmp; tmp="$(mktemp)"
     run record_halt "$tmp" "US" "$reason" "[]"
     [ "$status" -eq 0 ]
@@ -844,4 +845,94 @@ print("ok")
   record_red_evidence "$RED_JSONL" "test123" "tests/acceptance/AT-334-A.bats"
   run check_red_evidence "test123" "impl/sha;bad" "$RED_JSONL"
   [ "$status" -eq 2 ]  # charset 拒否は return 2（file-not-found の return 1 と区別）
+}
+
+# --- #355 (AT-355-F8): record_red_evidence impl_sha 拡張 ----------------------
+# F8: record_red_evidence が test SHA と impl baseline SHA の両方を red.jsonl へ記録する。
+# check_red_evidence が git log 考古学ではなく red.jsonl の記録済み impl_sha を引数で受ける。
+
+@test "AT-355-F8-1: record_red_evidence appends both commit (test sha) and impl_sha to red.jsonl" {
+  # Given: 一時 red.jsonl
+  RED_JSONL="$TMP/red-f8.jsonl"
+  # When: record_red_evidence を test SHA, impl baseline SHA, AT ファイル名で呼ぶ
+  record_red_evidence "$RED_JSONL" "testsha123" "tests/acceptance/AT-355-F8.bats" "implsha456"
+  # Then: commit（test SHA）と impl_sha の両フィールドが JSONL 行に存在し、JSON として整合している
+  [ -f "$RED_JSONL" ]
+  run grep -q '"commit":"testsha123"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+  run grep -q '"impl_sha":"implsha456"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+  # JSON として整形されていること（python3 で parse 可能）
+  run python3 -c 'import json,sys; json.loads(open(sys.argv[1]).readline()); print("ok")' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
+}
+
+@test "AT-355-F8-1b: record_red_evidence without impl_sha arg remains backward-compatible" {
+  # impl_sha は省略可能（既存コードとの後方互換）
+  RED_JSONL="$TMP/red-f8b.jsonl"
+  record_red_evidence "$RED_JSONL" "testsha123" "tests/acceptance/AT-355-F8.bats"
+  [ -f "$RED_JSONL" ]
+  run grep -q '"commit":"testsha123"' "$RED_JSONL"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-F8-2: check_red_evidence accepts test_sha and impl_sha from arguments (not git log)" {
+  # Given: red.jsonl に test SHA + impl_sha の記録がある一時 git リポジトリ
+  RED_JSONL="$TMP/red-f8-2.jsonl"
+  local git_repo; git_repo="$(mktemp -d)"
+  git -C "$git_repo" init -q
+  git -C "$git_repo" config user.email "t@t.com"
+  git -C "$git_repo" config user.name "T"
+  echo "t" > "$git_repo/t.bats"; git -C "$git_repo" add t.bats
+  git -C "$git_repo" commit -q -m "test"
+  local test_sha; test_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  echo "i" > "$git_repo/i.sh"; git -C "$git_repo" add i.sh
+  git -C "$git_repo" commit -q -m "impl"
+  local impl_sha; impl_sha="$(git -C "$git_repo" rev-parse HEAD)"
+  # record_red_evidence に impl_sha も渡す
+  record_red_evidence "$RED_JSONL" "$test_sha" "tests/acceptance/AT-355-F8.bats" "$impl_sha"
+  # When: check_red_evidence を引数で直接渡す（git log 考古学に依存しない）
+  run check_red_evidence "$test_sha" "$impl_sha" "$RED_JSONL" "$git_repo"
+  rm -rf "$git_repo"
+  # Then: exit 0（redObserved=true）
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-F8-3: check_red_evidence returns non-zero when no evidence for test sha (fail-closed)" {
+  # Given: red.jsonl に該当 test SHA の記録がない
+  RED_JSONL="$TMP/red-f8-3.jsonl"
+  # Then: 非 0（fail-closed）
+  run check_red_evidence "norecord999" "implxyz" "$RED_JSONL"
+  [ "$status" -ne 0 ]
+}
+
+# --- #355 (AT-355-F2): record_halt gate-unverifiable 追加 ----------------------
+# F2: record_halt が gate-unverifiable reason を受理する。
+
+@test "AT-355-F2-1: record_halt accepts gate-unverifiable reason" {
+  # Given: 一時 JSONL ログ
+  # When: record_halt を reason gate-unverifiable で呼ぶ
+  run record_halt "$JSONL" "running-atdd-cycle" "gate-unverifiable" "[]"
+  # Then: HALT 行が追記され exit 0
+  [ "$status" -eq 0 ]
+  run grep -q '"outcome":"HALT"' "$JSONL"
+  [ "$status" -eq 0 ]
+  run grep -q '"reason":"gate-unverifiable"' "$JSONL"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-F2-2: record_halt still rejects unknown reasons (enum guard maintained)" {
+  # Given: enum 外の reason
+  run record_halt "$JSONL" "US" "unknown-reason-xyz" "[]"
+  # Then: 非 0（enum 検証の fail-safe を維持）
+  [ "$status" -ne 0 ]
+  [ ! -s "$JSONL" ]
+}
+
+@test "AT-355-F2-1b: record_halt gate-unverifiable HALT line is valid JSON" {
+  record_halt "$JSONL" "running-atdd-cycle" "gate-unverifiable" "[]"
+  run python3 -c 'import json,sys; d=json.loads(open(sys.argv[1]).readline()); assert d["outcome"]=="HALT"; assert d["reason"]=="gate-unverifiable"; print("ok")' "$JSONL"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ok" ]
 }

@@ -102,10 +102,13 @@ record_halt() {
   [ -n "$jsonl" ] || { echo "autopilot_convergence: record_halt: jsonl path required" >&2; return 2; }
   # reason is restricted to the convergence-failure enum; out-of-range values are refused
   # so an incorrect HALT record is never written (invariant enforcement).
+  # #355 (F2): gate-unverifiable added for early escalation when the gate mechanism itself
+  # cannot self-verify (demonstrably-done but mechanism unconfirmable), distinct from
+  # MAX_ITERATIONS (exhausted budget) or stuck (no progress).
   case "$reason" in
-    MAX_ITERATIONS|sameness-detector|stuck|ac-drift|log-integrity) ;;
+    MAX_ITERATIONS|sameness-detector|stuck|ac-drift|log-integrity|gate-unverifiable) ;;
     *)
-      echo "autopilot_convergence: record_halt: invalid reason '$reason' (must be one of MAX_ITERATIONS / sameness-detector / stuck / ac-drift / log-integrity)" >&2
+      echo "autopilot_convergence: record_halt: invalid reason '$reason' (must be one of MAX_ITERATIONS / sameness-detector / stuck / ac-drift / log-integrity / gate-unverifiable)" >&2
       return 2
       ;;
   esac
@@ -278,14 +281,18 @@ pin_anchor() {
 # implementation. This is the symmetric counterpart to AL-3's green gate: the green gate
 # verifies the AT passes after implementation; the red gate verifies the AT failed before it.
 #
-# record_red_evidence <red-jsonl> <test-commit-sha> <at-file>
+# record_red_evidence <red-jsonl> <test-commit-sha> <at-file> [impl-baseline-sha]
 #   Append one JSONL line recording that <at-file> was observed RED at <test-commit-sha>.
+#   #355 (F8): the optional 4th argument <impl-baseline-sha> records the impl baseline SHA
+#   (the HEAD at red-observation time, before any impl commits) directly in the JSONL line,
+#   so check_red_evidence can read it from the record instead of reconstructing via git log.
 #   Validates inputs with the same fail-closed rules as record_iteration:
 #   - commit sha must be non-empty and JSON-safe (no quotes / backslashes / newlines)
+#   - impl_sha (when supplied) undergoes the same charset validation
 #   - at-file is _json_escape'd to allow path separators and dots
 #   Returns non-zero on any invalid input and writes nothing.
 record_red_evidence() {
-  local red_jsonl="$1" commit_sha="$2" at_file="$3"
+  local red_jsonl="$1" commit_sha="$2" at_file="$3" impl_sha="${4:-}"
   [ -n "$red_jsonl" ] || { echo "autopilot_convergence: record_red_evidence: jsonl path required" >&2; return 2; }
   # commit sha must be non-empty and safe (git SHAs are hex, but allow the same charset as fingerprint)
   case "$commit_sha" in
@@ -295,9 +302,23 @@ record_red_evidence() {
       ;;
   esac
   [ -n "$at_file" ] || { echo "autopilot_convergence: record_red_evidence: at-file required" >&2; return 2; }
+  # validate impl_sha when supplied (same charset as commit_sha)
+  if [ -n "$impl_sha" ]; then
+    case "$impl_sha" in
+      *[!A-Za-z0-9._:-]*)
+        echo "autopilot_convergence: record_red_evidence: invalid impl sha: '$impl_sha'" >&2
+        return 2
+        ;;
+    esac
+  fi
   local ts; ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  printf '{"step":"red","commit":"%s","at_file":"%s","timestamp":"%s"}\n' \
-    "$(_json_escape "$commit_sha")" "$(_json_escape "$at_file")" "$ts" >> "$red_jsonl"
+  if [ -n "$impl_sha" ]; then
+    printf '{"step":"red","commit":"%s","impl_sha":"%s","at_file":"%s","timestamp":"%s"}\n' \
+      "$(_json_escape "$commit_sha")" "$(_json_escape "$impl_sha")" "$(_json_escape "$at_file")" "$ts" >> "$red_jsonl"
+  else
+    printf '{"step":"red","commit":"%s","at_file":"%s","timestamp":"%s"}\n' \
+      "$(_json_escape "$commit_sha")" "$(_json_escape "$at_file")" "$ts" >> "$red_jsonl"
+  fi
 }
 
 # #334 red evidence check — verify that red evidence exists for the given test commit.

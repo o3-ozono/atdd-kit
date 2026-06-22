@@ -92,9 +92,7 @@ if (!Number.isInteger(NNN)) throw new Error('args.issue missing or non-integer �
 if (A.phase !== 'design' && A.phase !== 'impl') throw new Error('args.phase missing or invalid — refusing to default to design')
 const PHASE = A.phase
 const MODEL = PHASE === 'impl' ? 'sonnet' : undefined
-// #261: a gate rejection re-runs the phase as a NEW Workflow call where prevFindings
-// re-initializes to null — human rejection comments must ride in via args or they
-// are silently dropped before iteration 1. Fail-closed, validated before the freeze.
+// #261: gate rejection = NEW Workflow call; rejectionFindings carry human comments into iteration 1. Fail-closed.
 if (A.rejectionFindings !== undefined) {
   if (!Array.isArray(A.rejectionFindings)) throw new Error('args.rejectionFindings must be an array')
   if (A.rejectionFindings.length === 0) throw new Error('args.rejectionFindings must not be empty — [] is truthy and .some() is vacuously false, so it would slip every guard and reach generate as a zero-finding re-presentation')
@@ -102,9 +100,7 @@ if (A.rejectionFindings !== undefined) {
   if (PHASE !== 'design') throw new Error('rejectionFindings is design-gate plumbing — refusing it outside the design phase')
 }
 const REJECTION_FINDINGS = A.rejectionFindings || null
-// #288: impl-phase re-entry after a halt starts a NEW Workflow call (prevFindings=null), so the
-// unresolved halt findings (review / coverage) never reach iteration 1's gen — the impl analogue
-// of #261's rejectionFindings. Same fail-closed validation, impl-phase-only.
+// #288: impl-phase re-entry analogue of #261 rejectionFindings; seeds iteration 1 with unresolved halt findings.
 if (A.implSeedFindings !== undefined) {
   if (!Array.isArray(A.implSeedFindings)) throw new Error('args.implSeedFindings must be an array')
   if (A.implSeedFindings.length === 0) throw new Error('args.implSeedFindings must not be empty — [] is truthy and .some() is vacuously false, so it would slip every guard and reach generate as a zero-finding re-presentation')
@@ -112,8 +108,7 @@ if (A.implSeedFindings !== undefined) {
   if (PHASE !== 'impl') throw new Error('implSeedFindings is impl-phase re-entry plumbing — refusing it outside the impl phase')
 }
 const IMPL_SEED_FINDINGS = A.implSeedFindings || null
-// Exactly one seed is non-null (the guards make them phase-exclusive); both feed iteration 1 via prevFindings.
-const SEED_FINDINGS = PHASE === 'design' ? REJECTION_FINDINGS : IMPL_SEED_FINDINGS
+const SEED_FINDINGS = PHASE === 'design' ? REJECTION_FINDINGS : IMPL_SEED_FINDINGS // phase-exclusive seeds → iteration 1
 // #288: the audit log + pins are orchestrator-owned; the gen agent must never touch them in either direction (discarding uncommitted rows OR appending fake PASS rows both broke the log-integrity rail).
 const GEN_GUARD = ' The audit log (autopilot-log.jsonl) and the *.pin anchors are orchestrator-owned: never read, append to, edit, delete, commit, or roll back them — and never git restore / checkout -- / stash uncommitted work you did not create. Do not change, commit, or add exclude/skip config for foreign files (files outside this Issue\'s scope that you did not create); if a gate fails due to such foreign files, do not fix them — escalate as COMPLETED_WITH_DEBT to a human.'
 const STEPS = A.steps || (PHASE === 'design'
@@ -130,8 +125,8 @@ if (PHASE === 'impl' && !STEPS.includes(AT_STEP)) throw new Error(`AT_STEP "${AT
 if (PHASE === 'design' && STEPS.includes(AT_STEP)) throw new Error(`design phase must not loop ${AT_STEP} — ATDD runs only after the design-approval gate`)
 // The issue dir is slug-suffixed (docs/issues/<NNN>-<slug>/); the audit step resolves it by glob at write time — a bare-number dir would break AL-4.
 const LOG_GLOB = `docs/issues/${NNN}-*/autopilot-log.jsonl`
-// AL-2 anchor, per phase. The pin covers ONLY artifacts a human approved BEFORE this phase — never an artifact this phase's loop may edit (#249: pinning looped user-stories.md guaranteed a false ac-drift halt). design: approved PRD.
-// impl: design-gate-approved prd.md + user-stories.md. The loop-mutable acceptance-tests.md is NOT pinned; the AC→AT coverage gate guards it.
+// AL-2 anchor: never an artifact this phase's loop may edit. design: approved PRD. impl: prd.md + user-stories.md.
+// acceptance-tests.md is NOT pinned (lifecycle markers move); the AC→AT coverage gate guards it.
 const PIN_NAME = PHASE === 'design' ? 'autopilot-prd.pin' : 'autopilot-design.pin'
 const ANCHOR_CAT = PHASE === 'design' ? 'cat <dir>/prd.md' : 'cat <dir>/prd.md <dir>/user-stories.md'
 
@@ -218,13 +213,19 @@ for (const step of STEPS) {
     }
     const blocking = (verdict != null ? verdict.findings || [] : []).filter((f) => priorityOf(f) <= 1)
     // #334 red gate (impl only) — symmetric to AL-3 green gate: AT failing BEFORE impl (exit code, red.jsonl). Default false.
+    // #355 (F8): read SHA values from the red.jsonl record (recorded at C2 Confirm RED) — no git log archaeology.
     let redObserved = !atRequired
     if (atRequired) {
-      const red = await agent(`Via lib/autopilot_convergence.sh, check red evidence for Issue #${NNN}. Steps: (1) resolve the issue directory glob docs/issues/${NNN}-*; (2) resolve the red evidence file glob docs/issues/${NNN}-*/red.jsonl; (3) find the test-commit SHA — the most recent commit that added the AT file(s) for Issue #${NNN} (search git log for commits touching tests/acceptance/AT-${NNN}.*); (4) find the impl-commit SHA — the most recent commit on this branch that is NOT the test commit (i.e. the head impl commit, obtained via \`git rev-parse HEAD\` if HEAD is not the test commit, otherwise \`git log --oneline | awk 'NR==2{print $1}'\`); (5) run: \`source lib/autopilot_convergence.sh; test_sha=<resolved-test-sha>; impl_sha=<resolved-impl-sha>; red_jsonl=<resolved-red-jsonl>; check_red_evidence "$test_sha" "$impl_sha" "$red_jsonl"; echo exit:$?\`; (6) report exitCode (integer from step 5) and redObserved=(exitCode===0).`, { label: `red-gate:${step}`, phase: 'AT-gate', schema: { type: 'object', required: ['exitCode', 'redObserved'], properties: { exitCode: { type: 'integer' }, redObserved: { type: 'boolean' } } }, model: MODEL })
+      const red = await agent(`Via lib/autopilot_convergence.sh, check red evidence for Issue #${NNN}. Steps: (1) resolve docs/issues/${NNN}-*/red.jsonl — read SHAs from the JSONL record (do NOT reconstruct via git log); (2) extract test_sha from the "commit" field and impl_sha from the "impl_sha" field of the most recent record; (3) \`source lib/autopilot_convergence.sh; check_red_evidence "$test_sha" "$impl_sha" "<red-jsonl>"; echo exit:$?\`; (4) report exitCode and redObserved=(exitCode===0). Fallback: if no impl_sha field in the record, use \`git rev-parse HEAD\`.`, { label: `red-gate:${step}`, phase: 'AT-gate', schema: { type: 'object', required: ['exitCode', 'redObserved'], properties: { exitCode: { type: 'integer' }, redObserved: { type: 'boolean' } } }, model: MODEL })
       redObserved = red != null && red.exitCode === 0 && red.redObserved === true
     }
     // 5. satisfaction oracle (#334) — AND(redObserved, atGreen [AL-3], coverageOk [AL-2], overall_correctness, P0/P1==0). Fail-safe.
     const converged = redObserved && atGreen && coverageOk && verdict != null && verdict.overall_correctness === 'correct' && blocking.length === 0
+    // #355 (F1/F2): binary halt classification. "demonstrably-done" = review correct + tests green + zero blocking
+    // findings but gate mechanism cannot self-verify (redObserved=false). Early escalation as gate-unverifiable —
+    // do NOT exhaust MAX_ITERATIONS on a mechanism failure vs an incomplete-deliverable failure.
+    const demonstrablyDone = verdict != null && verdict.overall_correctness === 'correct' && blocking.length === 0 && atGreen && coverageOk
+    const gateUnverifiable = !converged && demonstrablyDone && !redObserved && atRequired
     // 6. AUDIT FIRST (AL-4) — record EVERY iteration before deciding (JSONL = external truth).
     //    record_iteration full sig: <jsonl> <it> <step> <verdict> <fp>. non-zero = halt (#252 verbatim payload, #272 oracle state in fp).
     const rec = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and append one audit line to its autopilot-log.jsonl (${LOG_GLOB}) via lib/autopilot_convergence.sh. The blocking-findings payload to fingerprint is the exact text between the two marker lines below (hash the payload only, never the markers):
@@ -235,22 +236,21 @@ Steps: (1) write the payload byte-for-byte to a temp file using a quoted heredoc
     if (rec == null || rec.recordOk !== true) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'record-error', verdict }
     recorded++ // #262: a successful record_iteration = exactly one more log line, mirrored in memory
     if (converged) { log(`${step}: converged at iteration ${it}`); break }
-    // 7. safety rails (AL-5) — run each check and return its raw EXIT CODE; the
-    //    HALT is computed in JS (not summarized by the LLM) so a mis-reported
-    //    exit cannot fake 'none'. 0 = continue, non-zero = halt.
+    // #355 (F1/F2): gate-unverifiable early escalation — mechanism failure, not deliverable failure.
+    if (gateUnverifiable) {
+      const guvFindings = (verdict?.findings || []).filter((f) => priorityOf(f) <= 1).map((f) => ({ priority: f.priority, evidence_ref: f.evidence_ref }))
+      await agent(`Resolve docs/issues/${NNN}-* and its audit log (${LOG_GLOB}). Via lib/autopilot_convergence.sh: \`record_halt "<log>" ${step} gate-unverifiable '${JSON.stringify(guvFindings)}'\`. Commit ONLY the log. Report haltRecorded.${GEN_GUARD}`, { label: `audit-halt:${step}`, phase: 'Rails', schema: { type: 'object', required: ['haltRecorded'], properties: { haltRecorded: { type: 'boolean' } } }, model: MODEL })
+      return { status: 'COMPLETED_WITH_DEBT', step, reason: 'gate-unverifiable', verdict }
+    }
+    // 7. safety rails (AL-5) — each check returns its raw EXIT CODE; HALT is JS-computed (not LLM-summarized).
     const r = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* (it exists) and its real audit log (${LOG_GLOB}); run every check against those ACTUAL resolved paths (substitute them for "<dir>" / "<log>" below). #287: NEVER fabricate synthetic fixtures, sample FAIL rows, or /tmp copies of the log / anchor — a check run against invented data reports a false halt; operate only on the real audit log and the pinned anchor. Via lib/autopilot_convergence.sh, run all five and report each one's integer exit code: (a) anchor drift — \`cur="$(${ANCHOR_CAT} | fingerprint)"; check_pin "<dir>/${PIN_NAME}" "$cur"\` (AL-2: the approved anchor must not have changed since the freeze); (b) check_max_iterations ${it} ${max}; (c) check_sameness "<log>" "${step}" (#272: step スコープ化で偽 halt を防ぐ; #277: FAIL 行のみ比較 — PASS 行は比較母集団から除外される); (d) check_stuck "<log>" 3 "${step}" (#272: 同上; #277: FAIL 行のみ比較); (e) check_log_integrity "<log>" ${recorded} (#262: the log must hold EXACTLY the lines the orchestrator recorded — a deleted / rolled-back log silently resets sameness & stuck).`, { label: `rails:${step}`, phase: 'Rails', schema: { type: 'object', required: ['acDriftExit', 'maxIterExit', 'samenessExit', 'stuckExit', 'logIntegrityExit'], properties: { acDriftExit: { type: 'integer' }, maxIterExit: { type: 'integer' }, samenessExit: { type: 'integer' }, stuckExit: { type: 'integer' }, logIntegrityExit: { type: 'integer' } } }, model: MODEL })
     if (r == null) return { status: 'COMPLETED_WITH_DEBT', step, reason: 'rails-error', verdict }
-    // log-integrity outranks sameness / stuck: both read history FROM the log,
-    // so their exit codes are meaningless when the log itself is compromised.
+    // log-integrity outranks sameness/stuck (both read FROM the log). `recorded` is NOT incremented for the HALT line.
     const halt = r.acDriftExit !== 0 ? 'ac-drift' : r.logIntegrityExit !== 0 ? 'log-integrity' : r.maxIterExit !== 0 ? 'MAX_ITERATIONS' : r.samenessExit !== 0 ? 'sameness-detector' : r.stuckExit !== 0 ? 'stuck' : 'none'
-    // COMPLETED_WITH_DEBT: hand unresolved findings to the human (AL-5). #299: convergence-failure
-    // halts append a terminating HALT record AFTER all rails checks and BEFORE return.
-    // `recorded` is NOT incremented for the HALT line; check_log_integrity is NOT re-run after the append.
     if (halt !== 'none') {
       const haltFindings = [...(verdict?.findings || []).filter((f) => priorityOf(f) <= 1), ...uncovered.map((ac) => ({ priority: 0, evidence_ref: ac }))].map((f) => ({ priority: f.priority, evidence_ref: f.evidence_ref }))
       const haltResult = await agent(`Resolve the issue directory matching docs/issues/${NNN}-* and its audit log (${LOG_GLOB}). Via lib/autopilot_convergence.sh, append one terminating HALT record: \`record_halt "<resolved-log-path>" ${step} ${halt} '${JSON.stringify(haltFindings)}'\`. Then commit ONLY the log: \`git add "<resolved-log-path>" && git commit -m "chore(autopilot): halt record ${step} ${halt} (#${NNN})"\`. Report haltRecorded = (record_halt exit code === 0).${GEN_GUARD}`, { label: `audit-halt:${step}`, phase: 'Rails', schema: { type: 'object', required: ['haltRecorded'], properties: { haltRecorded: { type: 'boolean' } } }, model: MODEL })
-      const haltRecorded = haltResult?.haltRecorded ?? false
-      // haltRecorded=false: record_halt failed (best-effort) — HALT row may be absent from JSONL; human escalation via COMPLETED_WITH_DEBT proceeds regardless (#299 design gap: Non-Goal only covers record-error/rails-error/freeze-error).
+      const haltRecorded = haltResult?.haltRecorded ?? false // best-effort; COMPLETED_WITH_DEBT proceeds regardless
       return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }
     }
     prevFindings = verdict?.findings?.length ? verdict.findings : null

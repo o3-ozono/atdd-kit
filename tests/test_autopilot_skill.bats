@@ -789,11 +789,11 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   [ "$model_line" -eq $(( phase_line + 1 )) ]
 }
 
-@test "#311 AT-002: all 8 impl agent labels carry model: MODEL; total count is exactly 8 (#334 red-gate added)" {
-  # AT-002: gen / review / red-gate (#334) / at-gate / coverage / audit / rails / audit-halt (#299) のすべてに model: MODEL が付与されている
+@test "#311 AT-002: all impl agent labels carry model: MODEL; total count is exactly 9 (#355 gate-unverifiable audit-halt added)" {
+  # AT-002: gen / review / red-gate (#334) / at-gate / coverage / audit / rails / audit-halt (#299) / gate-unverifiable audit-halt (#355) のすべてに model: MODEL が付与されている
   local count
   count=$(grep -cF 'model: MODEL' "$SKILL_FILE")
-  [ "$count" -eq 8 ]
+  [ "$count" -eq 9 ]
   # each label's line must contain model: MODEL
   grep -qF 'model: MODEL' <(grep 'label: `gen:' "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`review:" "$SKILL_FILE")
@@ -802,6 +802,7 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   grep -qF 'model: MODEL' <(grep "label: \`coverage:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`audit:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`rails:" "$SKILL_FILE")
+  # audit-halt appears twice (gate-unverifiable early + convergence-failure after rails)
   grep -qF 'model: MODEL' <(grep "label: \`audit-halt:" "$SKILL_FILE")
 }
 
@@ -920,18 +921,21 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   [ "$halt_line" -lt "$ret_line" ]
 }
 
-@test "AT-299-8 (#299): HALT append is after rails checks, recorded not incremented, no integrity re-run" {
+@test "AT-299-8 (#299): convergence-failure HALT append is after rails checks, recorded not incremented, no integrity re-run" {
   # recorded++ must appear only once (the existing post-audit-success increment)
   # HALT append must NOT add another recorded++
   local count
   count=$(grep -c 'recorded++' "$SKILL_FILE")
   [ "$count" -eq 1 ]
-  # the convergence-failure halt block must come AFTER the rails check in line order
-  local rails_line halt_block_line
+  # The LAST record_halt call is the convergence-failure halt block (after rails check).
+  # #355 (F1/F2): gate-unverifiable adds an EARLY halt block BEFORE rails; that block is NOT
+  # a convergence-failure halt — it is a mechanism-failure early escalation. The LAST
+  # record_halt call is the convergence-failure one that must follow the rails check.
+  local rails_line last_halt_line
   rails_line=$(grep -n "label: \`rails:" "$SKILL_FILE" | head -1 | cut -d: -f1)
-  halt_block_line=$(grep -n 'record_halt "<resolved-log-path>"' "$SKILL_FILE" | head -1 | cut -d: -f1)
-  [ -n "$rails_line" ] && [ -n "$halt_block_line" ]
-  [ "$rails_line" -lt "$halt_block_line" ]
+  last_halt_line=$(grep -n 'record_halt "<resolved-log-path>"' "$SKILL_FILE" | tail -1 | cut -d: -f1)
+  [ -n "$rails_line" ] && [ -n "$last_halt_line" ]
+  [ "$rails_line" -lt "$last_halt_line" ]
   # also confirm the invariant comment is present (#299 OQ3 resolution)
   grep -qiE 'recorded.*NOT.*increment|NOT.*increment.*recorded' "$SKILL_FILE"
 }
@@ -1000,5 +1004,54 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
 @test "AT-334-gate: red gate default false (fail-closed) when evidence unavailable" {
   # fail-closed: 証跡なし = false
   run grep -iE 'default false|fail-closed' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+# --- #355 F8: red-gate SHA 推測（git log 考古学）排除 --------------------------
+# red-gate の手順から「search git log for commits touching tests/acceptance」
+# 「git rev-parse HEAD / awk NR==2」相当の SHA 推測記述が消えていること
+
+@test "AT-355-F8-5: red-gate prompt no longer contains git-log archaeology for SHA resolution" {
+  # git log 考古学の手順が red-gate から排除されていること
+  run grep -qF 'search git log for commits touching tests/acceptance' "$SKILL_FILE"
+  # NOT found = pass (archaeology is gone)
+  [ "$status" -ne 0 ]
+}
+
+@test "AT-355-F8-5b: red-gate prompt no longer resolves impl-commit SHA via awk NR==2 heuristic" {
+  # awk NR==2 による SHA 推測が排除されていること
+  run grep -qF "awk 'NR==2{print" "$SKILL_FILE"
+  [ "$status" -ne 0 ]
+}
+
+@test "AT-355-F8-5c: red-gate prompt reads SHAs from red.jsonl record (not git log reconstruction)" {
+  # red-gate が red.jsonl の記録値から SHA を読む手順になっていること
+  run grep -qiE 'red\.jsonl.*sha|sha.*red\.jsonl|read.*sha.*red|red.*record.*sha' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+# --- #355 F1/F2: 停止理由の二分類 + gate-unverifiable 早期 escalation ----------
+
+@test "AT-355-F1-1: oracle/halt section distinguishes incomplete-deliverables from gate-mechanism-failure" {
+  # 停止理由の二分類（成果物未完成 vs 機構自己検証失敗）が SKILL に記述されていること
+  run grep -qiE 'gate.unverifiable|gate.*unverif' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-F1-2: gate-unverifiable triggers early escalation (not max-iterations exhaustion)" {
+  # gate-unverifiable が MAX_ITERATIONS まで空転させず早期 escalation することが記述されていること
+  run grep -qiE 'gate.unverifiable.*early|early.*escal.*gate|gate.unverif.*escal' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-C3-1: three User gates (AL-1) are unchanged after #355 changes" {
+  # User gate 3ゲート構造（requirements / design / merge）は不変であること（C3）
+  run grep -qiE 'exactly three' "$SKILL_FILE"
+  [ "$status" -eq 0 ]
+}
+
+@test "AT-355-C3-2: red-first is unchanged — AT must fail before impl (C3)" {
+  # red-first 方針は不変であること
+  run grep -qiE 'red.*gate|red.*before|red.*fail.*before' "$SKILL_FILE"
   [ "$status" -eq 0 ]
 }

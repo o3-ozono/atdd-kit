@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-06-22
+
+### Added
+
+- **autopilot 収束ループ＋review ラウンドの根本再設計 — done を堅牢に認識して止まる（#355）**。
+  - **記録層（F8）**: `record_red_evidence` に `impl_sha`（impl baseline SHA）フィールドを追加し red.jsonl に直接記録。`skills/autopilot/SKILL.md` の red-gate 手順を git log 考古学排除・red.jsonl 記録値読み取りベースに書き換え。`skills/running-atdd-cycle/SKILL.md` C2 節の `record_red_evidence` 呼び出し契約に `<impl-baseline-sha>` 第4引数を追加。
+  - **ループ層（F1/F2）**: `record_halt` の reason enum に `gate-unverifiable` を追加。autopilot SKILL に成果物未完成 vs 機構自己検証失敗の二分類と gate-unverifiable 早期 escalation ロジックを追加（demonstrably-done 判定 + `gateUnverifiable` フラグ）。
+  - **レビュー層（F3–F7）**: `reviewing-deliverables/SKILL.md` に N=3 パネル構成・2/3 majority 採用ルール（F3）、CONVERGED 停止条件＋最大ラウンド数上限（F4）、Scout スコープガード out-of-scope 分離（F5）、設計判断のラウンド間記憶（F6）、severity 較正の単一化（F7）を追加。
+
+### Changed
+
+- `lib/autopilot_convergence.sh`: `record_red_evidence` のシグネチャを `<red-jsonl> <test-sha> <at-file> [impl-sha]` に拡張（後方互換）。`record_halt` enum に `gate-unverifiable` を追加。
+- `skills/autopilot/SKILL.md`: red-gate プロンプトを記録値ベース SHA 解決に更新。gate-unverifiable 早期 escalation ブロック追加。280 行以内維持。
+- `skills/reviewing-deliverables/SKILL.md`: Verify フェーズに round memory・severity dedup を追加。Aggregate に N=3・majority・CONVERGED 条件・最大ラウンド数を追加。Scout にスコープガードを追加。
+- `skills/running-atdd-cycle/SKILL.md`: C2 Confirm RED の `record_red_evidence` 呼び出し契約を `impl_sha` 記録含む形に更新。
+- `tests/test_autopilot_convergence.bats`: AT-355-F8-1〜3・AT-355-F2-1〜2 の lib ユニットアサーション追加。AT-299-5c の enum テストを 6 reason 対応に更新。
+- `tests/test_reviewing_deliverables_skill.bats`: AT-355-F3-1〜2・F4-1〜2・F5-1・F6-1・F7-1 の SKILL 構造 pin 追加。
+- `tests/test_running_atdd_cycle_skill.bats`: AT-355-F8 impl SHA 記録契約の pin 追加。
+- `tests/test_autopilot_skill.bats`: AT-355-F8-5〜5c・F1-1〜2・C3-1〜2 の pin 追加。AT-299-8 の `head -1` → `tail -1` 更新。モデル数カウントを 9 に更新。
+
 ## [4.1.0] - 2026-06-22
 
 ### Added
