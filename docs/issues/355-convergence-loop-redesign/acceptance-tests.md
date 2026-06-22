@@ -107,7 +107,7 @@
   - Given: #341 再現シナリオ（review correct ＋ AT 全 green ＋ red.jsonl に赤観測あり、ただし旧 SHA 解決なら false-negative になる状況）
   - When: 再設計後の収束ループを回す
   - Then: redObserved が記録値ベースで true 確定し、MAX_ITERATIONS まで空転せず収束する
-  - Note: フル headless 再現不可のため SKILL pin + lib unit で代替（plan.md lines 65-66）。`test_autopilot_skill.bats AT-355-C1-1` が pin（converged 式に redObserved 含む + check_red_evidence が red.jsonl 記録値ベース）。lib unit は `test_autopilot_convergence.bats AT-355-F8-2/F8-3/C2-1` が保証。
+  - Note: フル headless 再現不可のため SKILL pin + lib unit で代替（plan.md lines 65-66）。`test_autopilot_skill.bats AT-355-C1-1` が pin（converged 式に redObserved 含む + check_red_evidence が red.jsonl 記録値ベース）。lib unit は `test_autopilot_convergence.bats AT-355-F8-2`（記録値ベースで exit 0）と `AT-355-F8-3`（記録なし→fail-closed）が、「同一 red.jsonl 記録に対しイテレーション数・履歴形状によらず deterministic な結果を返す」という C2-1 の本質的振る舞いを保証する（`AT-355-C2-1` という名の独立テストは存在しないが機能的欠落はない）。
 
 - [x] [green] AT-355-C1-2: 機構自己検証失敗が早期 escalation される
   - Given: 機構の自己検証が失敗するシナリオ
