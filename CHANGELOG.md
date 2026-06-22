@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-06-22
+
+### Added
+
+- **新スキル `batch-discovery` — 壁打ちを最前倒し一括化し ready-to-go 準備を並列バックグラウンド自走させる（#341）**。
+  - `skills/batch-discovery/SKILL.md` を新規作成。明示トリガ `/atdd-kit:batch-discovery <issues> [--parallel K]`。
+  - N 件の Issue を横断バッチ壁打ち（Gate ①: 1 人間セッション）→ 並列 headless worker（PRD→US→plan+AT→reviewing-deliverables PASS→Draft PR→`ready-to-go`）→ 選別最終承認（Gate ②相当: 覆りうる点ゼロならスキップ、最大 1 セッション）の 3 フェーズで処理。
+  - 既存 `lib/full-autopilot-dispatch.sh` / `lib/lease-store.sh` / `lib/full-autopilot-run.sh` を転用（改変なし・疎結合 C3）。
+  - worker lease を 3 経路（正常完了 / 失敗-timeout / TTL 自動回収）すべてで解放。
+  - 軽量 manifest ベースの実装順序記録（keystone→後続）。フル barrier / 動的依存解決は Non-Goal。
+  - Gate ③ merge は `full-autopilot` merge coordinator に委任し AL-1 三ゲート不変条件を保持。
+  - `tests/acceptance/AT-341-skill-contract.bats` / `AT-341-dispatch-reuse.bats` / `AT-341-ready-to-go-gate.bats` / `AT-341-gate-invariant.bats` を新規作成（[regression]）。
+  - `skills/README.md` に batch-discovery を追加。
+
 ## [4.0.0] - 2026-06-21
 
 ### Changed
