@@ -285,3 +285,50 @@ SKILL_FILE="skills/reviewing-deliverables/SKILL.md"
   # （F4-1/F4-2 は個別に検証済み; C1-3 はその組み合わせが収束性保証として機能することを pin）
   grep -qiE 'prevent.*infinite|infinite.*FAIL|infinite.*loop|無限.*ループ|ループ.*防止' "$SKILL_FILE"
 }
+
+# --- #355 F3-F7 in agent prompts (Finding 1 re-fix) -------------------------
+# Review findings confirm that F3-F7 rules must appear in the Workflow agent prompt
+# strings (not only in prose), so subagents actually receive the instructions at runtime.
+
+@test "AT-355-F3-agent: majority adoption rule is in the Aggregate agent prompt string" {
+  # Aggregate プロンプト文字列（Aggregate these verified findings を含む行）に
+  # majority ルールが記述されていること — 散文にのみ存在しても subagent は受け取れない
+  grep -qiE 'majority' <(grep 'Aggregate these verified findings' "$SKILL_FILE")
+}
+
+@test "AT-355-F3-agent-downgrade: solo single-lens severity downgrade is in the Aggregate agent prompt" {
+  # Aggregate プロンプト文字列に solo/single-lens の severity 一段下げルールが記述されていること
+  grep -qiE 'solo.*sever.*downgrad|sever.*solo.*lens|single.lens.*downgrad|downgrad.*single.lens' \
+    <(grep 'Aggregate these verified findings' "$SKILL_FILE")
+}
+
+@test "AT-355-F4-agent: CONVERGED stop condition is in the Aggregate agent prompt string" {
+  # Aggregate プロンプト文字列に CONVERGED 二条件（blocker/major ゼロ OR 設計判断/スコープ外のみ）が記述されていること
+  grep -qiE 'CONVERGED' <(grep 'Aggregate these verified findings' "$SKILL_FILE")
+}
+
+@test "AT-355-F5-scout-agent: out-of-scope scope guard instruction is in the Scout agent prompt string" {
+  # Scout プロンプト文字列（Analyze the deliverables を含む行）に
+  # out-of-scope タグ指示が記述されていること
+  grep -qiE 'out.of.scope|out_of_scope' <(grep 'Analyze the deliverables' "$SKILL_FILE")
+}
+
+@test "AT-355-F5-schema: FINDINGS_SCHEMA has an optional tags field for out-of-scope marking" {
+  # FINDINGS_SCHEMA に out-of-scope タグを格納できる tags フィールドが定義されていること
+  # Review agent が schema 準拠の出力に out-of-scope を含められるよう必須
+  # FINDINGS_SCHEMA セクション内に tags フィールドが存在することを確認
+  # (FINDINGS_SCHEMA の直後 20 行以内に tags が登場すること)
+  grep -A20 'FINDINGS_SCHEMA' "$SKILL_FILE" | grep -qiE "tags"
+}
+
+@test "AT-355-F6-agent: round memory deliberate trade-off rule is in the Aggregate agent prompt" {
+  # Aggregate プロンプト文字列に deliberate trade-off のラウンド間記憶ルールが記述されていること
+  grep -qiE 'deliberate.*trade.?off|trade.?off.*deliberate|round.*memory|re.raised|not.*re.submit' \
+    <(grep 'Aggregate these verified findings' "$SKILL_FILE")
+}
+
+@test "AT-355-F7-agent: severity dedup once rule is in the Aggregate agent prompt" {
+  # Aggregate プロンプト文字列に severity をレンズ横断マージ後に 1 回だけ付与するルールが記述されていること
+  grep -qiE 'deduplic|dedup|severity.*once|once.*severity|sever.*once|merge.*sever.*once|sever.*merge' \
+    <(grep 'Aggregate these verified findings' "$SKILL_FILE")
+}

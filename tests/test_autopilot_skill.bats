@@ -1099,3 +1099,26 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   run grep -qF "reason: 'gate-unverifiable'" "$SKILL_FILE"
   [ "$status" -eq 0 ]
 }
+
+# --- #355 F2 re-fix: gate-unverifiable halt には明示的 git コマンドが必要 -----
+# Finding 2 (priority 2): gate-unverifiable halt が "Commit ONLY the log" という
+# 自然言語のみで明示的 git add && git commit コマンドが存在しない。
+# convergence-failure halt との非対称性を解消する。
+
+@test "AT-355-F2-git: gate-unverifiable halt includes explicit git add && git commit command" {
+  # gate-unverifiable audit-halt プロンプトに明示的な git add + git commit コマンドが含まれること
+  # convergence-failure halt（AT-299-6）が持つ同等パターンと対称になること
+  grep -qE 'gate-unverifiable.*git add|git add.*gate-unverifiable' "$SKILL_FILE"
+}
+
+# --- #355 F8 re-fix: red-gate の Fallback 句を排除 ---------------------------
+# Finding 4 (priority 3): red-gate プロンプトに残存する "Fallback: if no impl_sha field
+# in the record, use git rev-parse HEAD" は F8 主目標（git log 考古学排除）の部分的
+# 回避経路。新規記録は必ず impl_sha を含むため、Fallback は不要かつ混乱を招く。
+
+@test "AT-355-F8-no-fallback: red-gate prompt has no fallback to git rev-parse HEAD" {
+  # Fallback 句 "Fallback: if no impl_sha field in the record, use git rev-parse HEAD" が
+  # SKILL.md から排除されていること
+  run grep -qiE 'Fallback.*impl_sha|Fallback.*git rev-parse HEAD|no impl_sha.*git rev-parse' "$SKILL_FILE"
+  [ "$status" -ne 0 ]
+}
