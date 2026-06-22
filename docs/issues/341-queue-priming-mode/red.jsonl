@@ -1,0 +1,3 @@
+{"step":"red","commit":"08dfefb925ac52ece973545c27608164751ab643","at_file":"tests/acceptance/AT-341-skill-contract.bats","timestamp":"2026-06-22T04:55:44Z"}
+{"step":"red","commit":"04bae920a9e1e2b3c4d5e6f7a8b9c0d1e2f3a4b5","at_file":"tests/acceptance/AT-341-ready-to-go-gate.bats","timestamp":"2026-06-22T05:21:03Z"}
+{"step":"red","commit":"04bae9226ab9c9b698be3b1cc302fc5148a0983a","at_file":"tests/acceptance/AT-341-ready-to-go-gate.bats","timestamp":"2026-06-22T05:21:11Z"}
