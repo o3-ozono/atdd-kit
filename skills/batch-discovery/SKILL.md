@@ -73,7 +73,12 @@ Gate ③ is not owned by batch-discovery. full-autopilot's three-gate invariant 
    # Seed (lib/full-autopilot-run.sh __seed_worktree_settings equivalent)
    # Copies .claude/settings.local.json (enabledPlugins + extraKnownMarketplaces) into worktree.
    # WITHOUT seeding, 'Unknown command: /atdd-kit:autopilot' kills the worker immediately.
-   FA_HANDOFF=1 claude -p "/atdd-kit:autopilot <issue> --hand-off" \
+   #
+   # CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0: headless claude -p のバックグラウンド待機上限
+   # （既定 600s）を解除する。design/impl phase は Workflow（background）で動くため、重い Issue
+   # では完了前に 600s 上限に達して worker が強制終了される。0=無制限で完走させること。
+   # lib/full-autopilot-run.sh の __default_launch に含まれる（CHANGELOG 4.0.0 既知修正済み）。
+   FA_HANDOFF=1 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p "/atdd-kit:autopilot <issue> --hand-off" \
      --session-id <uuid> --output-format json \
      --permission-mode acceptEdits \
      > <worker-out>.json 2>&1 < /dev/null
