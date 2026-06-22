@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [3.36.0] - 2026-06-21
+## [4.0.0] - 2026-06-21
 
 ### Changed
 
-- **コマンド `/atdd-kit:autofix` → `/atdd-kit:bugfix` へハード rename（#351）**。
+- BREAKING CHANGE: **コマンド `/atdd-kit:autofix` → `/atdd-kit:bugfix` へハード rename（#351）**。
   - `commands/autofix.md` を `commands/bugfix.md` へ git mv（alias stub・deprecation 警告なし）。
   - `commands/bugfix.md` の見出し・Usage コードブロック・"When to Use" 表記を `bugfix` へ更新。
   - live documentation（`commands/README.md` / `skills/README.md` / `skills/skill-gate/SKILL.md` / `skills/fixing-bugs/SKILL.md` / `docs/methodology/route-eligibility.md` / `tests/README.md`）の `autofix` 参照を `bugfix` へ更新。
