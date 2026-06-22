@@ -35,6 +35,18 @@ setup() {
 }
 
 # ---------------------------------------------------------------------------
+# AT-341-D1-nit: manifest 名前衝突（複数バッチ run 並存時）への対処が明示されている
+# レビュー指摘 priority=3（evidence_ref: skills/batch-discovery/SKILL.md line 98）
+# タイムスタンプの一意性保証 OR caller-specified path によるオーバーライドが明記されている必要がある
+# ---------------------------------------------------------------------------
+
+@test "AT-341-D1-nit: SKILL.md manifest path uses timestamp ensuring uniqueness across concurrent runs" {
+  # タイムスタンプが一意性を保証することが明示されているか、
+  # または concurrent/simultaneous run での衝突防止について言及があること
+  grep -qiE 'timestamp.*unique|unique.*timestamp|concurrent.*run|concurrent.*batch|simultaneous.*run|collision|name.*unique|unique.*name' "$SKILL"
+}
+
+# ---------------------------------------------------------------------------
 # AT-341-E: 選別ピックアップ式の最終承認ゲートと AL-1 整合（FS-7 / CS-2）
 # ---------------------------------------------------------------------------
 
