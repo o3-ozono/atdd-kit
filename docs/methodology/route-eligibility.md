@@ -30,7 +30,7 @@ Use autopilot when **any of the following** apply:
 
 ## bugfix Route Signals
 
-An Issue routes to the **bugfix** lightweight route (`fixing-bugs` / `/atdd-kit:autofix`) — a code change that skips the full PRD/US/plan/AT spec and chains `bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` — when it is a **defect fix** rather than new behavior:
+An Issue routes to the **bugfix** lightweight route (`fixing-bugs` / `/atdd-kit:bugfix`) — a code change that skips the full PRD/US/plan/AT spec and chains `bug → debugging → running-atdd-cycle → reviewing-deliverables → merging-and-deploying` — when it is a **defect fix** rather than new behavior:
 
 - Issue carries the `type:bug` label (decisive signal).
 - Keywords in title / body: bug / defect / 不具合 / 壊れた / broken / crash / regression / 直す / fix（既存挙動の修正）.

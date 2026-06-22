@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-06-21
+
+### Changed
+
+- BREAKING CHANGE: **コマンド `/atdd-kit:autofix` → `/atdd-kit:bugfix` へハード rename（#351）**。
+  - `commands/autofix.md` を `commands/bugfix.md` へ git mv（alias stub・deprecation 警告なし）。
+  - `commands/bugfix.md` の見出し・Usage コードブロック・"When to Use" 表記を `bugfix` へ更新。
+  - live documentation（`commands/README.md` / `skills/README.md` / `skills/skill-gate/SKILL.md` / `skills/fixing-bugs/SKILL.md` / `docs/methodology/route-eligibility.md` / `tests/README.md`）の `autofix` 参照を `bugfix` へ更新。
+  - `tests/acceptance/AT-308.bats` のパス pin（`AUTOFIX` 変数 → `BUGFIX`）と配線 grep を新コマンド名へ更新し green を維持。
+  - `tests/acceptance/AT-351.bats` 新規作成（AT-351-1〜5）。
+  - スキル id `fixing-bugs`・ルートのフロー・ゲート・オラクルは変更なし。
+
 ## [3.35.0] - 2026-06-21
 
 ### Added

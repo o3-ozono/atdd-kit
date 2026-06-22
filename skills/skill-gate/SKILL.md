@@ -30,7 +30,7 @@ Before routing any Issue to a skill, **evaluate `docs/methodology/route-eligibil
 
 1. Load `docs/methodology/route-eligibility.md` and evaluate Express-Eligible Signals, Full-Flow Signals, and bugfix Route Signals against the Issue title and body.
 2. **If express-eligible** (doc-grade, no behavior change): recommend `/atdd-kit:express <N>` and confirm with the user before proceeding. Do NOT auto-route.
-3. **If full-flow / bugfix signals present** (behavior change, code change, CI, etc.): route to the appropriate flow (6-step flow or `/atdd-kit:autofix`). A message that invokes a non-eligible route (e.g., express for a behavior-change Issue) is **non-compliant** — surface the mismatch and ask the user to confirm or override.
+3. **If full-flow / bugfix signals present** (behavior change, code change, CI, etc.): route to the appropriate flow (6-step flow or `/atdd-kit:bugfix`). A message that invokes a non-eligible route (e.g., express for a behavior-change Issue) is **non-compliant** — surface the mismatch and ask the user to confirm or override.
 4. **Override:** The user may always override the route recommendation explicitly (e.g., "use express anyway"). Announce the override and proceed.
 
 **Non-compliant example (suppress):** `/atdd-kit:express` on an Issue with `type:development` label or code-change keywords — surface the mismatch ("この Issue は挙動変更を含むため express は不適切です。フル6ステップフローで進めますか？") before proceeding.
