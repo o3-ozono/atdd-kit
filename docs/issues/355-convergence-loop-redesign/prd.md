@@ -47,8 +47,8 @@
 - **coverage-gate / atGreen の判定ロジック本体** — オラクルの構成要素としては残すが、これらの内部判定アルゴリズムは本 Issue の再設計対象外。
 - **3ゲート（AL-1）の構造変更** — User gate の数・位置は変えない。停止理由の分類と escalation の早期化のみ。
 
-## Open Questions
+## Open Questions（Gate ① で解決済み）
 
-1. **スコープ分割**: 3 サブ変更（ループ層オラクル再設計／レビュー層合議制／red-gate 堅牢化）を 1 Issue・1 PR でまとめるか、triggering instance である red-gate 堅牢化（確実・低リスク）を先行分離するか。Issue 本文は全て in scope と明記しているが、本変更は **autopilot 自身を autopilot で改変する**自己改変であり、3層同時はレビュー・検証の難度とリスクが高い。
-2. **合議パネル構成**: パネル数 N=3（機能正当性 / 安全性 / 設計妥当性）・採用閾値 2/3（majority）で確定してよいか。
-3. **`gate-unverifiable` の名称と手放し挙動**: 機構自己検証失敗時（review correct ＋ tests green、残るは機構問題のみ）は auto-converge せず人間 escalation で確定してよいか（Issue は escalation 指定）。停止理由の正式名称は `gate-unverifiable` でよいか。
+1. **スコープ分割** → **解決: 3層を 1 PR でまとめる**（Issue 指定どおり）。ループ層オラクル再設計／レビュー層合議制／red-gate 堅牢化を単一 Issue・PR で実施する。自己改変リスクは impl phase のレビュー・AT で吸収する。
+2. **合議パネル構成** → **解決: N=3（機能正当性 / 安全性 / 設計妥当性）・採用閾値 2/3（majority）**。
+3. **`gate-unverifiable` の名称と手放し挙動** → **解決: auto-converge せず人間 escalation。停止理由名は `gate-unverifiable`**（review correct ＋ tests green ＋ 残り機構問題のみの状態で機構自己検証が失敗した場合）。
