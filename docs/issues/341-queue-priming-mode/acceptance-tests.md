@@ -54,6 +54,11 @@
   - When: SKILL.md の順序制御フローを読む
   - Then: 実装順序を共有真実源（manifest）に記録し dispatcher がそれを読んでその順で進める軽量方式が記述され、Non-Goals に「フル barrier / 動的依存解決は採らない」が明記されている
 
+- [x] [green] AT-341-D-1-nit: 複数バッチ run 並存時の manifest 名前衝突への対処が明示されている（レビュー指摘 priority=3）
+  - Given: `skills/batch-discovery/SKILL.md` が存在する
+  - When: Phase 4 の manifest パス定義を読む
+  - Then: タイムスタンプが並行 batch run 間の一意性を保証することが明記されており、同秒衝突への対処（ランダムサフィックス等）またはコーラー指定パスによるオーバーライドについて言及がある（`docs/issues/batch-<timestamp>/manifest.json` パスに関する名前衝突防止策が読める）
+
 ## AT-341-E: 選別ピックアップ式の最終承認ゲートと AL-1 整合（FS-7 / CS-2）
 
 - [x] [green] AT-341-E-1: 覆りうる点だけを選別提示し、ゼロなら最終承認をスキップする

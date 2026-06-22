@@ -94,7 +94,7 @@ Gate ③ is not owned by batch-discovery. full-autopilot's three-gate invariant 
 ### Phase 4: Implementation ordering (manifest-based lightweight sequencing)
 
 12. When Issues have a keystone→downstream dependency, record the implementation order in a **dedicated manifest file** for this batch run (ordered list of Issue numbers). The dispatcher reads this manifest to set the `select` input order, ensuring keystone Issues are dispatched before their dependents.
-    - Manifest path: `docs/issues/batch-<timestamp>/manifest.json` (or caller-specified path).
+    - Manifest path: `docs/issues/batch-<timestamp>/manifest.json` (or caller-specified path). The epoch-second timestamp in the directory name ensures **unique names across concurrent batch runs** — two runs starting in the same second are disambiguated by a random suffix (e.g., `batch-1719045600-a3f2`). If a caller-specified path is provided, the caller is responsible for uniqueness.
     - Format: `{"order": [<issue1>, <issue2>, ...], "rationale": "<brief explanation>"}`.
     - If no manifest exists or an Issue in the manifest is no longer open/in-scope, dispatcher falls back to default (oldest-first) order with a warning.
     - **Non-Goal: full barrier / dynamic dependency resolution** — only the lightweight recorded-order approach is adopted (see `design-doc.md` D3 / Non-Goals).
