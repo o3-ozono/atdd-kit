@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-06-23
+
+### Changed
+
+- **autopilot 収束ループの根本再設計 — 収束信号を客観ゲートに一本化し、LLM レビューをループから外す（#355）**。エビデンスに基づく再設計（`docs/issues/355-convergence-loop-redesign/research.md`: deep-research 20 confirmed / 5 killed — 外部信号なしの自己判定は収束しない[Huang 2310.01798 / Feedback Friction 2506.11930]／nitpick 膨張は構造的[CriticGPT 2407.00215]／実運用はレビューを advisory に保つ[OpenAI・Anthropic・langchain open-swe]）。
+  - `skills/autopilot/SKILL.md`: impl-phase 満足オラクルを **客観ゲートのみ** `AND(redObserved, atGreen, coverageOk)` に変更（`overall_correctness` / blocking-findings のレビュー項を削除）。収束ループから `reviewing-deliverables` 呼び出し・review verdict schema・review-scope を除去。design-phase は LLM レビューループを持たず生成 → 人間 Gate② で収束。re-loop の fix seed は客観ゲート失敗（failing AT / uncovered AC / missing red evidence）に。`gate-unverifiable` を「客観ゲートが確立不能（AT green + AC covered だが redObserved=false）」の早期 escalation に再定義。冒頭の「reviewing-deliverables as the in-loop reviewer」記述を撤廃。
+  - `skills/reviewing-deliverables/SKILL.md`: #345 で追加した多視点合議・dedup・round memory・scope guard・CONVERGED 停止条件を **revert**。autopilot ループ外の standalone / 人間補助レビュースキル（Step 5）として存続。
+  - `skills/running-atdd-cycle/SKILL.md`: red-first / `record_red_evidence`（test SHA + impl baseline SHA）を **全 modality に一般化**（F4）— 実行可能 AT（`tests/acceptance/`）と skill/doc 変更の BATS pin（`tests/*.bats`）の双方で red→green。`tests/acceptance/AT-<NNN>.*` 固有のファイル名前提を撤廃。
+  - `lib/autopilot_convergence.sh`: `record_red_evidence` の `impl_sha`（4th 引数）記録と `record_halt` の `gate-unverifiable` enum を維持（F5/F6、red-gate を deterministic にする部分）。
+  - `docs/methodology/autopilot-iron-law.md` / `autopilot-overview.md`: AL-3（客観 AND オラクル・レビュー項削除）/ AL-4（客観エビデンス）/ AL-5（gate-unverifiable 再定義）と full-autopilot hand-off の Gate② を「設計成果物の自動受理＋人間 override」に追従。
+
+### Removed
+
+- autopilot 収束ループ内の LLM レビュー（reviewing-deliverables）。レビュー判断は人間の merge gate（Gate③）に集約。
+
+### Tests
+
+- `tests/test_autopilot_skill.bats`: 客観オラクル（review 項なし）・ループ内レビュー呼び出し無し・design no-loop・in-loop reviewer 撤廃・gate-unverifiable 再定義・model 数 8 の pin に更新。
+- `tests/test_running_atdd_cycle_skill.bats`: F4 modality 一般化（BATS pin / 全 modality red-first）の pin 追加。
+- `tests/test_reviewing_deliverables_skill.bats`: main へ revert（#345/#355 合議制 pin を除去）。
+- `tests/test_autopilot_convergence.bats`: F5（impl_sha 記録・記録値判定）・F6（gate-unverifiable enum）の lib pin を維持。
+
 ## [4.1.0] - 2026-06-22
 
 ### Added
