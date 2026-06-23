@@ -7,8 +7,9 @@
 # Scope (#246, gates re-placed in #249): autopilot is the autopilot MODE — a thin
 # orchestrator that runs the EXISTING flow skills, narrows the User gates to three
 # (requirements approval at the start, design approval before ATDD, merge at the
-# end), and loops generate→review→fix until a satisfaction oracle (AND of green AT,
-# reviewer verdict, zero P0/P1) holds, with safety rails.
+# end), and loops generate→objective-gate→fix until an OBJECTIVE satisfaction oracle
+# (AND of red-first observed, green AT, AC→AT coverage — no LLM-reviewer term, #355) holds,
+# with safety rails.
 # It does NOT permanently change the flow skills; their role changes only under autopilot.
 
 SKILL_FILE="skills/autopilot/SKILL.md"
@@ -66,19 +67,23 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   grep -qiE 'only under autopilot|autopilot を使った場合のみ|恒久(的に)?変更しない|does not permanently change' "$SKILL_FILE"
 }
 
-# --- Satisfaction oracle (F2) ---------------------------------------------
+# --- Objective satisfaction oracle (F1/#355: no LLM-reviewer term) ---------
 
-@test "oracle: satisfaction oracle is AND of green AT, verdict, zero P0/P1 (F2)" {
-  grep -qiE 'satisfaction oracle|満足オラクル' "$SKILL_FILE"
-  grep -qE 'AND' "$SKILL_FILE"
-  grep -qiE 'overall_correctness|verdict' "$SKILL_FILE"
-  grep -qiE 'P0/P1|P0|P1' "$SKILL_FILE"
+@test "oracle: objective oracle is AND of redObserved, atGreen, coverageOk — no reviewer term (#355 F1)" {
+  grep -qiE 'objective (satisfaction )?oracle|客観.*オラクル|オラクル' "$SKILL_FILE"
+  # the converged expression is objective-only: redObserved && atGreen && coverageOk
+  grep -qF 'const converged = redObserved && atGreen && coverageOk' "$SKILL_FILE"
+  # the removed LLM-review terms must be gone from the converged expression
+  ! grep -qE "converged = .*overall_correctness" "$SKILL_FILE"
+  ! grep -qE "converged = .*blocking" "$SKILL_FILE"
 }
 
-@test "oracle: loops generate -> review -> fix (F2)" {
+@test "oracle: loops generate -> objective-gate -> fix, no in-loop LLM review (#355 F2)" {
   grep -qiE 'generate' "$SKILL_FILE"
-  grep -qiE 'review' "$SKILL_FILE"
+  grep -qiE 'objective.?gate' "$SKILL_FILE"
   grep -qiE 'fix' "$SKILL_FILE"
+  # no reviewing-deliverables review agent call inside the loop (F2)
+  ! grep -qE "Run reviewing-deliverables for Issue" "$SKILL_FILE"
 }
 
 # --- Safety rails (F3) ----------------------------------------------------
@@ -163,8 +168,10 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qE 'f\.evidence_ref && f\.priority' "$SKILL_FILE"
 }
 
-@test "oracle: consumer schema requires priority + evidence_ref in findings items" {
-  grep -qE "required: \['priority', 'evidence_ref'\]" "$SKILL_FILE"
+@test "oracle (#355): seed findings (rejection/impl-seed) require evidence_ref (AL-4)" {
+  # #355: the in-loop review VERDICT_SCHEMA was removed, but carried seed findings
+  # (rejectionFindings / implSeedFindings) still require a non-empty evidence_ref.
+  grep -qE "evidence_ref !== 'string' \|\| f\.evidence_ref === ''" "$SKILL_FILE"
 }
 
 @test "rails: a non-zero record_iteration (corrupt/empty fingerprint) is itself a halt" {
@@ -232,32 +239,22 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 @test "audit (#252 #334): findings payload is embedded between markers and hashed via quoted heredoc (AC1)" {
   grep -q 'BEGIN-PAYLOAD' "$SKILL_FILE"
   grep -q 'END-PAYLOAD' "$SKILL_FILE"
-  # #272 #334: payload が oracle 状態込みの新形式であること（redObserved を先頭に追加）
-  grep -qE 'JSON\.stringify\(\{ redObserved, atGreen, coverageOk, uncovered, blocking \}\)' "$SKILL_FILE"
-  # 旧 JSON.stringify(blocking) 単独 payload が残っていないこと
-  ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
+  # #272 #334 #355: payload が客観 oracle 状態（redObserved 先頭、blocking 除去）であること
+  grep -qE 'JSON\.stringify\(\{ redObserved, atGreen, coverageOk, uncovered \}\)' "$SKILL_FILE"
+  # #355: レビュー由来 blocking 項が payload に残っていないこと
+  ! grep -qF 'coverageOk, uncovered, blocking' "$SKILL_FILE"
   grep -qi 'quoted heredoc' "$SKILL_FILE"
 }
 
-@test "review (#252): scope is phase x step aware — design phase never demands production code (AC2)" {
-  grep -qE 'reviewScope' "$SKILL_FILE"
-  # design phase: absence of production code / executable AT is NOT a finding
-  grep -qE 'their absence is NOT a finding' "$SKILL_FILE"
-  # the review prompt concatenates the scope helper
-  grep -qE '\$\{reviewScope\(step\)\}' "$SKILL_FILE"
-}
+# (#355) review-scope tests removed — there is no in-loop LLM review to scope.
 
-@test "review (#252): US step scope excludes plan.md / acceptance-tests.md (AC3)" {
-  grep -qE 'do NOT return findings on plan\.md / acceptance-tests\.md' "$SKILL_FILE"
-}
-
-@test "gen (#252): iteration 2+ embeds the previous findings text verbatim (AC4)" {
-  # the gen call branches on prevFindings: iteration 1 keeps the legacy wording,
+@test "gen (#252/#355): iteration 2+ embeds the previous findings text verbatim (AC4)" {
+  # the gen call branches on prevFindings: iteration 1 keeps the seed-less wording,
   # later iterations embed the findings JSON — never a body-less "fix them verbatim"
   grep -qE 'await agent\(prevFindings' "$SKILL_FILE"
   grep -qE 'JSON\.stringify\(prevFindings\)' "$SKILL_FILE"
-  # #292: optional chain added (verdict?.findings?.length) to prevent TypeError when verdict=null
-  grep -qE 'prevFindings = verdict\??\.findings' "$SKILL_FILE"
+  # #355: re-loop fix seed is the OBJECTIVE-GATE failures (gateFindings), not LLM review findings
+  grep -qE 'prevFindings = gateFindings\.length \? gateFindings : null' "$SKILL_FILE"
 }
 
 @test "args (#252, refs #256): defensive parse + fail-closed integer guard are pinned" {
@@ -552,15 +549,14 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qE '\(d\) check_stuck "<log>" 3;' "$SKILL_FILE"
 }
 
-@test "AT-006 (#272 #334): audit payload includes oracle state (redObserved, atGreen, coverageOk, uncovered, blocking)" {
+@test "AT-006 (#272 #334 #355): audit payload is objective oracle state (redObserved, atGreen, coverageOk, uncovered)" {
   # Given: SKILL.md の audit ステップ（label: audit:step）
   # When: 構造 pin（grep）を実行する
-  # Then: payload が JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking }) であり、
-  #       旧 JSON.stringify(blocking) 単独 payload が残っていない
-  # (#334 review Finding 2: redObserved を #272 oracle-state fingerprinting に追加)
-  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
-  # 旧 JSON.stringify(blocking) 単独（中括弧なし）が BEGIN-PAYLOAD 直後に残っていないこと
-  ! grep -qF '${JSON.stringify(blocking)}' "$SKILL_FILE"
+  # Then: payload が JSON.stringify({ redObserved, atGreen, coverageOk, uncovered }) であり、
+  #       #355 でレビュー由来の blocking 項が payload から除去されている
+  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered })' "$SKILL_FILE"
+  # #355: blocking はオラクルから除去 — payload に残っていないこと
+  ! grep -qF 'coverageOk, uncovered, blocking' "$SKILL_FILE"
   # uncovered が payload より前にループスコープで宣言・代入されていること
   local uline pline
   uline=$(grep -n 'let uncovered' "$SKILL_FILE" | head -1 | cut -d: -f1)
@@ -568,12 +564,8 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   [ -n "$uline" ] && [ -n "$pline" ] && [ "$uline" -lt "$pline" ]
 }
 
-@test "AT-006b (#334 review): audit payload includes redObserved for oracle-state fingerprinting consistency" {
-  # Given: SKILL.md の audit ステップ（label: audit:step）
-  # When: fingerprint payload を読む
-  # Then: JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking }) であり、
-  #       redObserved が先頭に含まれる（#272 方針との一貫性 / #334 review Finding 2）
-  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered, blocking })' "$SKILL_FILE"
+@test "AT-006b (#334 #355): audit payload includes redObserved first for oracle-state fingerprinting consistency" {
+  grep -qF 'JSON.stringify({ redObserved, atGreen, coverageOk, uncovered })' "$SKILL_FILE"
 }
 
 @test "AT-007 (#287): rails prompt resolves real paths and bans synthetic fixtures" {
@@ -667,17 +659,11 @@ SKILL_FILE="skills/autopilot/SKILL.md"
   ! grep -qE '^\s*coverageOk = cov\.allCovered === true' "$SKILL_FILE"
 }
 
-@test "AT-003 (#292): verdict null does not reach converged=true and does not crash prevFindings (fail-safe form, FS-3)" {
-  # Given: SKILL.md no review kekka (verdict) wo sanshoo suru oracle sanshutu
-  # When: grep structure pin wo jikko suru
-  # Then: overall_correctness hikaku ga null guard tsuki keishiki ni natte ori, null verdict ga PASS ni taorenai
-  grep -qE 'verdict != null && verdict\.overall_correctness === .correct.|verdict\?\.overall_correctness === .correct.' "$SKILL_FILE"
-  # converged sanshutsu gyou ni null guard nashi no tandoku verdict.overall_correctness sosaen ga nokotte inai koto
-  # (old form: converged = ... && verdict.overall_correctness === 'correct' without preceding verdict != null)
-  ! grep -qE "converged = [^;]*[^&!] verdict\.overall_correctness === 'correct'" "$SKILL_FILE"
-  # prevFindings dainyuu de null verdict ga crash shinai koto (AC3/FS-3: verdict?.findings?.length — optional chain hitsuyou)
-  # verdict.findings?.length (optional chain nashi) no mama dewa verdict=null de TypeError crash suru
-  grep -qF 'verdict?.findings?.length' "$SKILL_FILE"
+@test "AT-003 (#292/#355): the converged expression has no LLM-review term to null-crash on" {
+  # #355: the review verdict was removed from the loop, so the FS-3 null-guard concern
+  # (verdict=null reaching converged / prevFindings) no longer applies. Pin its absence.
+  ! grep -qE "converged = .*verdict" "$SKILL_FILE"
+  ! grep -qF 'verdict?.findings?.length' "$SKILL_FILE"
 }
 
 @test "AT-004 (#292): freeze frozen null guard precedes anchor-pin-failed path (FS-4)" {
@@ -720,8 +706,9 @@ SKILL_FILE="skills/autopilot/SKILL.md"
 @test "AT-007 (#292): fail-open prohibition comment exists in SKILL.md (CS-1)" {
   # Given: SKILL.md no null failsafe houshin comment
   # When: grep structure pin wo jikko suru
-  # Then: never fail-open matawa dougi no hyougen wo fukumu comment ga sonzai suru
-  grep -qiE 'never fail-open|fail-open.*forbidden' "$SKILL_FILE"
+  # Then: fail-closed / never fail-open matawa dougi no hyougen wo fukumu comment ga sonzai suru
+  #       (#355: the gates default false when AT is required — fail-closed)
+  grep -qiE 'never fail-open|fail-open.*forbidden|fail-closed' "$SKILL_FILE"
 }
 
 # --- #305: design-approval gate selection-UI presentation (one-tap approval) ---
@@ -789,14 +776,14 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   [ "$model_line" -eq $(( phase_line + 1 )) ]
 }
 
-@test "#311 AT-002: all impl agent labels carry model: MODEL; total count is exactly 9 (#355 gate-unverifiable audit-halt added)" {
-  # AT-002: gen / review / red-gate (#334) / at-gate / coverage / audit / rails / audit-halt (#299) / gate-unverifiable audit-halt (#355) のすべてに model: MODEL が付与されている
+@test "#311 AT-002 (#355): all impl agent labels carry model: MODEL; total count is exactly 8 (review label removed)" {
+  # AT-002: gen / red-gate (#334) / at-gate / coverage / audit / rails / audit-halt×2 (#299/#355) のすべてに model: MODEL が付与されている。
+  # #355: the review:${step} label was removed (no in-loop LLM review), so the count drops 9 → 8.
   local count
   count=$(grep -cF 'model: MODEL' "$SKILL_FILE")
-  [ "$count" -eq 9 ]
+  [ "$count" -eq 8 ]
   # each label's line must contain model: MODEL
   grep -qF 'model: MODEL' <(grep 'label: `gen:' "$SKILL_FILE")
-  grep -qF 'model: MODEL' <(grep "label: \`review:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`red-gate:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`at-gate:" "$SKILL_FILE")
   grep -qF 'model: MODEL' <(grep "label: \`coverage:" "$SKILL_FILE")
@@ -804,6 +791,8 @@ DESIGN_GATE_DOC="docs/methodology/autopilot-design-gate.md"
   grep -qF 'model: MODEL' <(grep "label: \`rails:" "$SKILL_FILE")
   # audit-halt appears twice (gate-unverifiable early + convergence-failure after rails)
   grep -qF 'model: MODEL' <(grep "label: \`audit-halt:" "$SKILL_FILE")
+  # #355: there is no review:${step} label any more
+  ! grep -qF 'label: `review:' "$SKILL_FILE"
 }
 
 @test "#311 AT-003: freeze:anchor line does NOT carry model:" {
@@ -911,8 +900,8 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
 }
 
 @test "AT-299-7 (#299): return COMPLETED_WITH_DEBT is still present after halt record insertion" {
-  # the HALT record is additional — the return value must not be removed
-  grep -qF "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }" "$SKILL_FILE"
+  # the HALT record is additional — the return value must not be removed (#355: verdict dropped)
+  grep -qF "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt }" "$SKILL_FILE"
   # the return must appear AFTER the record_halt call (within the if-halt block)
   local halt_line ret_line
   halt_line=$(grep -n 'record_halt "<resolved-log-path>"' "$SKILL_FILE" | head -1 | cut -d: -f1)
@@ -952,11 +941,11 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   # Then: agent() 戻り値を変数に受け取り optional chain で haltRecorded を取り出す安全な形式であること
   #       (#292 FS-5 パターン: rec == null || ... と同型の null ガード)。
   #       直接分割代入 `const { haltRecorded } = await agent(...)` は TypeError になるため禁止。
-  # 安全な形式: haltResult を受け取り、haltResult?.haltRecorded で取り出す
-  grep -qF 'const haltResult = await agent(' "$SKILL_FILE"
-  grep -qF 'haltResult?.haltRecorded' "$SKILL_FILE"
-  # 直接分割代入 (null guard なし) が残っていないこと
+  # #355: the audit-halt result is fire-and-forget (best-effort) — not captured, so there is
+  # no destructuring TypeError risk. The banned form is a direct null-unsafe destructure.
   ! grep -qE 'const \{ haltRecorded \} = await agent\(' "$SKILL_FILE"
+  # both audit-halt calls (gate-unverifiable early + convergence-failure) are bare await agent(...)
+  grep -qE 'await agent\(`Resolve docs/issues/\$\{NNN\}-\* and its audit log' "$SKILL_FILE"
 }
 
 # --- #308: bugfix route wiring (loader stubs only; logic lives in referenced docs) ---
@@ -982,12 +971,10 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
 
 # --- #334: deterministic red gate oracle + structure assertions ---------------
 
-@test "AT-334-oracle: satisfaction oracle is 5-term AND with redObserved (#334)" {
-  # oracle が AND(redObserved, atGreen, coverageOk, overall_correctness, P0/P1==0) の 5 項になっている
+@test "AT-334-oracle (#355): objective oracle is 3-term AND with redObserved (no reviewer term)" {
+  # oracle が AND(redObserved, atGreen, coverageOk) の 3 項になっている（#355: review 項を除去）
   grep -q 'redObserved' "$SKILL_FILE"
-  # converged 式に全5項が含まれる
-  run grep -E 'redObserved &&.*atGreen|atGreen &&.*redObserved' "$SKILL_FILE"
-  [ "$status" -eq 0 ]
+  grep -qF 'const converged = redObserved && atGreen && coverageOk' "$SKILL_FILE"
 }
 
 @test "AT-334-gate: red gate is described as symmetric counterpart to AL-3 green gate" {
@@ -1056,6 +1043,36 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
   [ "$status" -eq 0 ]
 }
 
+# --- #355 F2/F3/F7: LLM レビューを収束ループから完全除去 ----------------------
+
+@test "AT-355-F2-1: impl loop has no reviewing-deliverables review agent call" {
+  # 収束ループに reviewing-deliverables を回す review エージェント呼び出しが存在しないこと
+  ! grep -qE 'Run reviewing-deliverables for Issue' "$SKILL_FILE"
+  # review 用 VERDICT_SCHEMA / reviewScope ヘルパも除去されていること
+  ! grep -qE 'reviewScope' "$SKILL_FILE"
+  ! grep -qE 'label: `review:' "$SKILL_FILE"
+}
+
+@test "AT-355-F3-1: design phase converges via the human design gate, not an LLM review loop" {
+  # design phase はレビューループを持たず、生成 → Gate②（人間）で収束する旨が記述されていること
+  grep -qiE 'design phase has no objective gate and no LLM review loop|no objective gate and no LLM review|human IS the design reviewer|生成 1 回' "$SKILL_FILE"
+  # rejectionFindings による差し戻し再生成経路は維持
+  grep -qF 'rejectionFindings' "$SKILL_FILE"
+}
+
+@test "AT-355-F3-2: the 'in-loop reviewer' framing is removed; reviewing-deliverables is standalone" {
+  # 「reviewing-deliverables as the in-loop reviewer」相当の記述が無いこと
+  ! grep -qiE 'in-loop reviewer' "$SKILL_FILE"
+  # reviewing-deliverables は standalone（ループ外）と位置づけられていること
+  grep -qiE 'standalone' "$SKILL_FILE"
+}
+
+@test "AT-355-F7-1: reviewing-deliverables SKILL is reverted (no #355 panel/consensus additions)" {
+  # reviewing-deliverables が #345/#355 の合議制追加を含まず main の形であること
+  [ "$(grep -c '#355' skills/reviewing-deliverables/SKILL.md)" -eq 0 ]
+  ! grep -qiE '多視点合議|2/3 majority|round memory|severity dedup' skills/reviewing-deliverables/SKILL.md
+}
+
 # --- #355 C1: 収束性の保証（横断品質特性） — SKILL pin + lib unit 代替 ----------
 # C1 の3条件はフル headless 再現が不可能なため、SKILL pin と lib unit test で代替する
 # （plan.md lines 65-66: 不可能な部分は SKILL pin + lib unit で代替）。
@@ -1080,14 +1097,12 @@ ROUTE_ELIGIBILITY_DOC="docs/methodology/route-eligibility.md"
 }
 
 @test "AT-355-C1-2: gate-mechanism-failure triggers early escalation before MAX_ITERATIONS (SKILL pin)" {
-  # 機構自己検証失敗（demonstrably-done だが redObserved=false）が
+  # 機構自己検証失敗（AT green + AC covered だが redObserved=false）が
   # MAX_ITERATIONS まで空転させず gate-unverifiable で早期 escalation されること。
-  # Pin 1: demonstrablyDone 変数が SKILL に存在する（review correct + AT green だが機構未確証）
-  run grep -qE 'demonstrablyDone' "$SKILL_FILE"
-  [ "$status" -eq 0 ]
-  # Pin 2: gateUnverifiable 条件が定義されている（demonstrablyDone AND redObserved=false）
-  run grep -qE 'gateUnverifiable' "$SKILL_FILE"
-  [ "$status" -eq 0 ]
+  # Pin 1 (#355 F6): gateUnverifiable 条件が客観シグナルのみで定義されている（atGreen && coverageOk && !redObserved）
+  grep -qF 'const gateUnverifiable = atRequired && atGreen && coverageOk && !redObserved' "$SKILL_FILE"
+  # Pin 2: review 由来の demonstrablyDone 変数は除去されている（客観ゲートのみ）
+  ! grep -qE 'demonstrablyDone' "$SKILL_FILE"
   # Pin 3: gateUnverifiable=true のとき、rails check（MAX_ITERATIONS）より前に
   # COMPLETED_WITH_DEBT を返す（早期 return）ブロックが存在する
   local guv_line rails_line

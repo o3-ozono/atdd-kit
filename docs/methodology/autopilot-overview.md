@@ -8,13 +8,13 @@ Each concern in the autopilot convergence loop has a single owner:
 
 | Concern | Owner |
 |---------|-------|
-| Looping the flow skills to the satisfaction oracle | **autopilot** (this skill) |
+| Looping the flow skills to the **objective** satisfaction oracle (red→green AT + AC→AT coverage) | **autopilot** (this skill) |
 | Each artifact's generation | the flow skills (unchanged) |
-| The review verdict | reviewing-deliverables (single-pass primitive) |
+| Review judgment (PASS/FAIL over deliverables) | the human at the merge gate; `reviewing-deliverables` as an optional standalone Step 5 — **not** in the autopilot loop (#355) |
 | Requirements approval / design approval / merge (the three User gates) | the human |
 | Parallel-session conflict, `in-progress` label | skill-gate |
 
-autopilot **does not** permanently change the flow skills, **does not** approve its own requirements or design, and **does not** merge — merging is the User gate (AL-1).
+autopilot **does not** permanently change the flow skills, **does not** approve its own requirements or design, **does not** run an LLM reviewer in its convergence loop (#355 — convergence is objective-gate-only; self-judgment does not converge), and **does not** merge — merging is the User gate (AL-1).
 
 For the full Iron Law (AL-1…AL-6) that constrains the above, see `docs/methodology/autopilot-iron-law.md`.
 

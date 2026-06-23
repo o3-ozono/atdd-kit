@@ -7,25 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [4.2.0] - 2026-06-22
-
-### Added
-
-- **autopilot 収束ループ＋review ラウンドの根本再設計 — done を堅牢に認識して止まる（#355）**。
-  - **記録層（F8）**: `record_red_evidence` に `impl_sha`（impl baseline SHA）フィールドを追加し red.jsonl に直接記録。`skills/autopilot/SKILL.md` の red-gate 手順を git log 考古学排除・red.jsonl 記録値読み取りベースに書き換え。`skills/running-atdd-cycle/SKILL.md` C2 節の `record_red_evidence` 呼び出し契約に `<impl-baseline-sha>` 第4引数を追加。
-  - **ループ層（F1/F2）**: `record_halt` の reason enum に `gate-unverifiable` を追加。autopilot SKILL に成果物未完成 vs 機構自己検証失敗の二分類と gate-unverifiable 早期 escalation ロジックを追加（demonstrably-done 判定 + `gateUnverifiable` フラグ）。
-  - **レビュー層（F3–F7）**: `reviewing-deliverables/SKILL.md` に N=3 パネル構成・2/3 majority 採用ルール（F3）、CONVERGED 停止条件＋最大ラウンド数上限（F4）、Scout スコープガード out-of-scope 分離（F5）、設計判断のラウンド間記憶（F6）、severity 較正の単一化（F7）を追加。
+## [4.2.0] - 2026-06-23
 
 ### Changed
 
-- `lib/autopilot_convergence.sh`: `record_red_evidence` のシグネチャを `<red-jsonl> <test-sha> <at-file> [impl-sha]` に拡張（後方互換）。`record_halt` enum に `gate-unverifiable` を追加。
-- `skills/autopilot/SKILL.md`: red-gate プロンプトを記録値ベース SHA 解決に更新。gate-unverifiable 早期 escalation ブロック追加。280 行以内維持。
-- `skills/reviewing-deliverables/SKILL.md`: Verify フェーズに round memory・severity dedup を追加。Aggregate に N=3・majority・CONVERGED 条件・最大ラウンド数を追加。Scout にスコープガードを追加。
-- `skills/running-atdd-cycle/SKILL.md`: C2 Confirm RED の `record_red_evidence` 呼び出し契約を `impl_sha` 記録含む形に更新。
-- `tests/test_autopilot_convergence.bats`: AT-355-F8-1〜3・AT-355-F2-1〜2 の lib ユニットアサーション追加。AT-299-5c の enum テストを 6 reason 対応に更新。
-- `tests/test_reviewing_deliverables_skill.bats`: AT-355-F3-1〜2・F4-1〜2・F5-1・F6-1・F7-1 の SKILL 構造 pin 追加。
-- `tests/test_running_atdd_cycle_skill.bats`: AT-355-F8 impl SHA 記録契約の pin 追加。
-- `tests/test_autopilot_skill.bats`: AT-355-F8-5〜5c・F1-1〜2・C3-1〜2 の pin 追加。AT-299-8 の `head -1` → `tail -1` 更新。モデル数カウントを 9 に更新。
+- **autopilot 収束ループの根本再設計 — 収束信号を客観ゲートに一本化し、LLM レビューをループから外す（#355）**。エビデンスに基づく再設計（`docs/issues/355-convergence-loop-redesign/research.md`: deep-research 20 confirmed / 5 killed — 外部信号なしの自己判定は収束しない[Huang 2310.01798 / Feedback Friction 2506.11930]／nitpick 膨張は構造的[CriticGPT 2407.00215]／実運用はレビューを advisory に保つ[OpenAI・Anthropic・langchain open-swe]）。
+  - `skills/autopilot/SKILL.md`: impl-phase 満足オラクルを **客観ゲートのみ** `AND(redObserved, atGreen, coverageOk)` に変更（`overall_correctness` / blocking-findings のレビュー項を削除）。収束ループから `reviewing-deliverables` 呼び出し・review verdict schema・review-scope を除去。design-phase は LLM レビューループを持たず生成 → 人間 Gate② で収束。re-loop の fix seed は客観ゲート失敗（failing AT / uncovered AC / missing red evidence）に。`gate-unverifiable` を「客観ゲートが確立不能（AT green + AC covered だが redObserved=false）」の早期 escalation に再定義。冒頭の「reviewing-deliverables as the in-loop reviewer」記述を撤廃。
+  - `skills/reviewing-deliverables/SKILL.md`: #345 で追加した多視点合議・dedup・round memory・scope guard・CONVERGED 停止条件を **revert**。autopilot ループ外の standalone / 人間補助レビュースキル（Step 5）として存続。
+  - `skills/running-atdd-cycle/SKILL.md`: red-first / `record_red_evidence`（test SHA + impl baseline SHA）を **全 modality に一般化**（F4）— 実行可能 AT（`tests/acceptance/`）と skill/doc 変更の BATS pin（`tests/*.bats`）の双方で red→green。`tests/acceptance/AT-<NNN>.*` 固有のファイル名前提を撤廃。
+  - `lib/autopilot_convergence.sh`: `record_red_evidence` の `impl_sha`（4th 引数）記録と `record_halt` の `gate-unverifiable` enum を維持（F5/F6、red-gate を deterministic にする部分）。
+  - `docs/methodology/autopilot-iron-law.md` / `autopilot-overview.md`: AL-3（客観 AND オラクル・レビュー項削除）/ AL-4（客観エビデンス）/ AL-5（gate-unverifiable 再定義）と full-autopilot hand-off の Gate② を「設計成果物の自動受理＋人間 override」に追従。
+
+### Removed
+
+- autopilot 収束ループ内の LLM レビュー（reviewing-deliverables）。レビュー判断は人間の merge gate（Gate③）に集約。
+
+### Tests
+
+- `tests/test_autopilot_skill.bats`: 客観オラクル（review 項なし）・ループ内レビュー呼び出し無し・design no-loop・in-loop reviewer 撤廃・gate-unverifiable 再定義・model 数 8 の pin に更新。
+- `tests/test_running_atdd_cycle_skill.bats`: F4 modality 一般化（BATS pin / 全 modality red-first）の pin 追加。
+- `tests/test_reviewing_deliverables_skill.bats`: main へ revert（#345/#355 合議制 pin を除去）。
+- `tests/test_autopilot_convergence.bats`: F5（impl_sha 記録・記録値判定）・F6（gate-unverifiable enum）の lib pin を維持。
 
 ## [4.1.0] - 2026-06-22
 

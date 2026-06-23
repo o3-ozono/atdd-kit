@@ -158,3 +158,17 @@ SKILL_FILE="skills/running-atdd-cycle/SKILL.md"
   run grep -qE 'record_red_evidence.*impl.sha|record_red_evidence.*<impl.*sha|impl_sha' "$SKILL_FILE"
   [ "$status" -eq 0 ]
 }
+
+# --- #355 F4: AT modality 一般化（実行可能 AT / skill·doc の BATS pin 双方） ---
+
+@test "#355-F4-1: AT modality is generalized — behavior uses tests/acceptance/, skill/doc uses BATS pins" {
+  # C1/Flow が実行可能 AT（tests/acceptance/）と skill/doc 変更の BATS pin（tests/*.bats）の
+  # 双方を first-class AT として扱い、tests/acceptance/AT-<NNN>.* 固有のファイル名のみを前提としていないこと
+  grep -qE 'BATS pin' "$SKILL_FILE"
+  grep -qE 'tests/\*\.bats' "$SKILL_FILE"
+}
+
+@test "#355-F4-2: Confirm RED applies to BOTH modalities (a BATS pin must go red before the SKILL/doc edit)" {
+  # red-first が modality 非依存であること — BATS pin も変更前に赤→変更後に緑
+  grep -qiE 'BATS pin.*fail BEFORE|fail BEFORE.*edit|both modalities' "$SKILL_FILE"
+}
