@@ -162,8 +162,11 @@ repo_root() {
 
 @test "AT-211: weighted sharding distributes BATS files across cpu-count shards and runs green" {
   # Given: 検出コア数 N の scripts/run-tests.sh
-  # When: scripts/run-tests.sh --all を実行しシャード構成と終了コードを確認する
+  # When: scripts/run-tests.sh --all を green な fixture リポジトリに対して実行する
   # Then: 全シャード pass で exit 0
+  # 注（#356）: --all は tests/ を再帰収集し acceptance/ を含むため、実リポジトリに
+  #   対する --all をメタテスト内で実行すると無限再帰する（本ファイル自身を再実行）。
+  #   よって green な fixture リポジトリ（--repo <tmp>）に対して検証する（AT-212 と同様）。
   local root
   root="$(repo_root)"
 
@@ -178,10 +181,31 @@ repo_root() {
     return 1
   }
 
-  # run-tests.sh --all が exit 0 で終了すること
-  run bash "${root}/scripts/run-tests.sh" --all --repo "${root}"
+  # green な fixture リポジトリ: tests/ 直下と acceptance/ に通過する .bats を配置
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf '${tmpdir}'" RETURN
+  mkdir -p "${tmpdir}/tests/acceptance"
+  cat > "${tmpdir}/tests/pass_top.bats" << 'BATS_EOF'
+#!/usr/bin/env bats
+@test "top-level pass" { true; }
+BATS_EOF
+  cat > "${tmpdir}/tests/acceptance/AT-pass.bats" << 'BATS_EOF'
+#!/usr/bin/env bats
+@test "acceptance pass" { true; }
+BATS_EOF
+
+  # 全 green fixture に対して --all は exit 0 で終了すること
+  run bash "${root}/scripts/run-tests.sh" --all --repo "${tmpdir}"
   [[ "$status" -eq 0 ]] || {
-    echo "FAIL: scripts/run-tests.sh --all が exit 非0 で終了した（status=${status}）"
+    echo "FAIL: 全green fixture に対する run-tests.sh --all が exit 非0 で終了した（status=${status}）"
+    echo "$output"
+    return 1
+  }
+  # acceptance/ も再帰収集されること（#356 の新契約）
+  [[ "$output" == *"acceptance pass"* ]] || {
+    echo "FAIL: --all が fixture の tests/acceptance/ を実行していない（#356 再帰収集の回帰）"
     echo "$output"
     return 1
   }

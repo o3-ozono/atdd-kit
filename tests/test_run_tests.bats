@@ -290,27 +290,19 @@ EOF
   }
 }
 
-# fixture 生成ヘルパ: 失敗する acceptance テストのみを持つ tmp リポジトリを作る
-_make_failing_acceptance_repo() {
-  local repo="$1"
-  mkdir -p "${repo}/tests/acceptance"
-  cat > "${repo}/tests/acceptance/AT-fixture.bats" << 'EOF'
-#!/usr/bin/env bats
-@test "AT-fixture: 決定的に失敗する acceptance テスト" {
-  false
-}
-EOF
-}
+# 注: fixture 生成は各テスト内にインライン化する。`trap ... RETURN` はヘルパ関数の
+# return でも発火し生成直後の fixture を削除してしまうため、ヘルパ関数化しない（#356）。
 
 @test "AT-356-1b: --all returns non-zero on a failing acceptance test (false-green oracle)" {
   local tmpdir
   tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' RETURN
-  _make_failing_acceptance_repo "$tmpdir"
+  mkdir -p "${tmpdir}/tests/acceptance"
+  printf '#!/usr/bin/env bats\n@test "AT-fixture: deterministic fail" { false; }\n' \
+    > "${tmpdir}/tests/acceptance/AT-fixture.bats"
 
   local exit_code=0
   bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || exit_code=$?
-
   [[ "$exit_code" -ne 0 ]] || {
     echo "FAIL: acceptance/ に決定的失敗 AT があるのに --all が exit 0（false-green）を返した"
     return 1
@@ -321,7 +313,9 @@ EOF
   local tmpdir
   tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' RETURN
-  _make_failing_acceptance_repo "$tmpdir"
+  mkdir -p "${tmpdir}/tests/acceptance"
+  printf '#!/usr/bin/env bats\n@test "AT-fixture: deterministic fail" { false; }\n' \
+    > "${tmpdir}/tests/acceptance/AT-fixture.bats"
 
   # FALLBACK を強制するモック impact_map（stderr に FALLBACK: を出力）
   local mock="${tmpdir}/mock_impact_map.sh"
@@ -339,6 +333,40 @@ EOF
 
   [[ "$all_exit" -ne 0 && "$impact_exit" -ne 0 ]] || {
     echo "FAIL: --all($all_exit) と --impact FALLBACK($impact_exit) の判定が一致しない（両者非0であるべき）"
+    return 1
+  }
+}
+
+@test "AT-356-7a: --all against the same live repo while _RUN_TESTS_ALL_ACTIVE is set fails loud (recursion guard)" {
+  local tmpdir resolved
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+  mkdir -p "${tmpdir}/tests/acceptance"
+  printf '#!/usr/bin/env bats\n@test "p" { true; }\n' > "${tmpdir}/tests/pass.bats"
+  resolved="$(cd "$tmpdir" && pwd)"
+
+  local exit_code=0
+  _RUN_TESTS_ALL_ACTIVE="$resolved" \
+    bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || exit_code=$?
+  [[ "$exit_code" -ne 0 ]] || {
+    echo "FAIL: 同一 live repo への nested --all が拒否されず exit 0 を返した（再帰ガード不在）"
+    return 1
+  }
+}
+
+@test "AT-356-7b: --all against a different repo while _RUN_TESTS_ALL_ACTIVE is set is allowed (fixture nested --all)" {
+  local active fixture
+  active=$(mktemp -d); fixture=$(mktemp -d)
+  trap 'rm -rf "$active" "$fixture"' RETURN
+  mkdir -p "${fixture}/tests"
+  printf '#!/usr/bin/env bats\n@test "p" { true; }\n' > "${fixture}/tests/pass.bats"
+
+  # _RUN_TESTS_ALL_ACTIVE は別 repo（active）。fixture への --all は再帰でないため許容され green。
+  local exit_code=0
+  _RUN_TESTS_ALL_ACTIVE="$(cd "$active" && pwd)" \
+    bash "$RUN_TESTS_SH" --all --repo "$fixture" --jobs 1 >/dev/null 2>&1 || exit_code=$?
+  [[ "$exit_code" -eq 0 ]] || {
+    echo "FAIL: 別 repo(fixture) への nested --all が誤って拒否された（exit=$exit_code）"
     return 1
   }
 }

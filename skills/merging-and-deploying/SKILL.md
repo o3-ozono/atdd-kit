@@ -57,11 +57,14 @@ This skill **does not** add or remove the `in-progress` label — that is skill-
 
 ## Test Execution Policy (#324 / #323)
 
-**Pre-merge gate: full suite** — run all tests before merging to guarantee full regression coverage:
+**Pre-merge gate: full BATS suite + impact-selected skill-e2e** — run all BATS tests (incl. `tests/acceptance/`, #356) plus the e2e for the skills this branch touched, before merging:
 
 ```
-scripts/run-tests.sh --all      # pre-merge gate (full suite — mandatory)
+scripts/run-tests.sh --all      # pre-merge gate: full BATS suite incl. acceptance/ (mandatory, fail-safe)
+scripts/run-skill-e2e.sh --changed-files "$(git diff --name-only origin/main...HEAD | paste -sd, -)"   # impact-selected skill-e2e
 ```
+
+The BATS gate (`--all`) is **mandatory** and must exit 0. The skill-e2e step runs `tests/e2e/*.bats` (real `claude -p`) only for skills affected by this branch's diff, via `run-skill-e2e.sh`'s built-in path-based impact mapping — never the full e2e set. **When `claude` auth is absent locally** (e2e cannot run), skip the skill-e2e step with an explicit logged note and proceed on the BATS gate alone; the mandatory BATS gate is never skipped.
 
 **Post-deploy regression: impact scope** — after deploy, re-run the Acceptance Tests using impact scope against the deployed commit:
 
@@ -69,7 +72,7 @@ scripts/run-tests.sh --all      # pre-merge gate (full suite — mandatory)
 scripts/run-tests.sh --impact --base <merge-sha>   # post-deploy regression (impact scope)
 ```
 
-The asymmetry is by design: merge gate uses `--all` (fail-safe guarantee); post-deploy regression uses `--impact --base <ref>` (targeted verification of what was deployed). claude-based e2e tests (`tests/e2e/*.bats`) are included in the full suite at merge gate; at post-deploy they follow the impact criterion.
+The asymmetry is by design: the merge gate runs the full BATS suite (`--all`, incl. `tests/acceptance/` — the fail-safe guarantee, #356) plus **impact-selected** skill-e2e (`run-skill-e2e.sh --changed-files`, not the full e2e set); post-deploy regression uses `--impact --base <ref>` (targeted verification of what was deployed). e2e never runs blindly at full scale — both at merge gate and post-deploy it follows the impact criterion.
 
 For the full policy doctrine, see [`docs/methodology/test-execution-policy.md`](../../docs/methodology/test-execution-policy.md).
 

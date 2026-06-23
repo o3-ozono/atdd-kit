@@ -113,22 +113,22 @@ compute_shards() {
 }
 
 # ---------------------------------------------------------------------------
-# 全 BATS ファイル収集（bats_runner.sh の collect_all_bats と同等）
+# 全 BATS ファイル収集（pre-merge フェイルセーフゲートの対象集合）
 #
-# スコープ設計トレードオフ（レビュー指摘 #324 より明文化）:
-#   - find -maxdepth 1 により tests/ 直下の *.bats のみを収集する。
-#     tests/acceptance/*.bats および tests/e2e/*.bats はこの関数の対象外。
-#   - これは bats_runner.sh の collect_all_bats と意図的に同一の実装であり、
-#     本スクリプトが bats_runner.sh の上に乗る並列化レイヤーとして
-#     「同一スコープを踏襲する」設計決定による（plan.md 設計概要 2 を参照）。
-#   - CI は `bats tests/ addons/ios/tests/` で再帰実行し acceptance/ / e2e/ を含む
-#     全ファイルをカバーするため、フルスイートの担保は CI に委譲している。
-#   - ローカルの --all と CI のフルスイートは意図的に同一スコープではない。
-#     この差異を解消する（再帰化・サブディレクトリ統合）は別 Issue のスコープとする。
+# スコープ（#356 で再定義 — 旧 #324 の maxdepth 1 除外を撤回）:
+#   - find で tests/ を再帰し、tests/acceptance/*.bats を含むサブディレクトリの
+#     *.bats も収集対象に含める。これにより --all は決定的に落ちる acceptance AT を
+#     確実に集約し、必須 pre-merge ゲートが false-green を返さない（#356）。
+#   - tests/e2e/*.bats は対象外（別レイヤー）。e2e は real `claude -p` を起動し
+#     トークン消費・要認証のため run-skill-e2e.sh が path-based impact mapping で
+#     影響選択して実行する。merge gate での e2e 配線は merging-and-deploying が担う。
+#   - 旧 #324 は「acceptance/ 除外・フルカバレッジは CI に委譲」を意図的設計として
+#     AT-210f で承認していたが、その契約は必須ゲートが赤を見落とす false-green を
+#     生んだため #356 で撤回し、--all = acceptance 含む full BATS に再定義した。
 # ---------------------------------------------------------------------------
 collect_all_bats() {
   local repo="$1"
-  find "${repo}/tests" -maxdepth 1 -name "*.bats" 2>/dev/null | sort
+  find "${repo}/tests" -name "*.bats" -not -path "*/e2e/*" 2>/dev/null | sort
   find "${repo}/addons" -path "*/tests/*.bats" 2>/dev/null | sort
 }
 
@@ -223,6 +223,30 @@ fi
 if [[ "$OPT_IMPACT" -eq 1 && -z "$OPT_BASE" ]]; then
   echo "ERROR: --impact requires --base <ref>" >&2
   exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# 再帰ガード（#356）
+#   --all は tests/ を再帰収集し acceptance/ を含む（false-green 防止）。その結果、
+#   acceptance/ 内のメタテストが「同一リポジトリに対して」run-tests.sh --all を
+#   呼ぶと無限再帰する。これを fail-loud で塞ぐ:
+#     - --all 実行時、対象 repo の解決済み絶対パスを _RUN_TESTS_ALL_ACTIVE に
+#       export し、起動する bats（とその子プロセス）へ伝播する。
+#     - 子の run-tests.sh が「同一 repo」に対して --all を呼ぶと（= 真の再帰）拒否。
+#     - 別 repo（fixture; --repo <tmp>）への nested --all は再帰でないため許容する
+#       （メタテストは fixture に対して --all を検証してよい）。
+# ---------------------------------------------------------------------------
+if [[ "$OPT_ALL" -eq 1 ]]; then
+  REPO_RESOLVED="$(cd "$OPT_REPO" 2>/dev/null && pwd)" || {
+    echo "ERROR: --repo path does not exist: '$OPT_REPO'" >&2
+    exit 1
+  }
+  if [[ -n "${_RUN_TESTS_ALL_ACTIVE:-}" && "${_RUN_TESTS_ALL_ACTIVE}" == "${REPO_RESOLVED}" ]]; then
+    echo "ERROR: nested 'run-tests.sh --all' against the live repo ('${REPO_RESOLVED}') is not supported (#356 recursion guard)." >&2
+    echo "       A meta-test must run --all against a fixture repo instead: run-tests.sh --all --repo <fixture>" >&2
+    exit 1
+  fi
+  export _RUN_TESTS_ALL_ACTIVE="${REPO_RESOLVED}"
 fi
 
 # コア数決定（--jobs 明示時はそれを優先）

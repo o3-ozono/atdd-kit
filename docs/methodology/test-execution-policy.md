@@ -14,8 +14,10 @@ The physical location of a test file (local-only, CI-only) is not the deciding f
 | Phase | Scope | Rationale |
 |-------|-------|-----------|
 | Each ATDD iteration | **Affected files only** (`scripts/run-tests.sh --impact --base <ref>`) | Keeps the feedback loop short. Tests unrelated to the change are not run on every iteration. |
-| Before final user review | **All tests** (`scripts/run-tests.sh --all`) | Ensures full regression coverage before review judgment. |
-| Merge gate | **All tests** (`scripts/run-tests.sh --all` + CI full suite) | Guarantees full-suite green before merging. |
+| Before final user review | **All BATS tests** (`scripts/run-tests.sh --all`, incl. `tests/acceptance/`) | Ensures full regression coverage before review judgment. |
+| Merge gate | **Full BATS suite** (`scripts/run-tests.sh --all`, incl. `tests/acceptance/` — #356) **+ impact-selected skill-e2e** (`scripts/run-skill-e2e.sh --changed-files`) + CI full suite | BATS gate is the mandatory fail-safe (incl. acceptance/); skill-e2e is impact-selected (影響選択) — only the e2e for skills the branch touched, never the full e2e set. e2e auth absent → skip with explicit log, BATS gate still mandatory. |
+
+> **#356 — `--all` は acceptance/ を含む.** 旧 #324 は `collect_all_bats` の `maxdepth 1` で `tests/acceptance/` を merge gate の `--all` から除外し、フルカバレッジを CI に委譲していた。これは `--all` が決定的に落ちる acceptance AT を実行せず false-green を返す防壁欠陥を生んだため撤回。`--all` は `tests/` を再帰収集し acceptance/ を含む（`e2e/` のみ別レイヤー）。e2e は merge gate でも `run-skill-e2e.sh --changed-files` による影響選択（impact-selected）で実行し、全件は走らせない。
 
 ## Handling claude-based e2e Tests
 
