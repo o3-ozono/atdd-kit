@@ -274,3 +274,71 @@ EOF
     return 1
   }
 }
+
+# ---------------------------------------------------------------------------
+# AT-356: pre-merge フェイルセーフゲートの契約再定義（--all を acceptance/ 再帰化）
+# ---------------------------------------------------------------------------
+
+@test "AT-356-1a: collect_all_bats includes tests/acceptance bats files" {
+  # 実リポジトリに対して collect_all_bats を呼び、acceptance/ が再帰収集されることを確認
+  local out
+  out=$(bash -c "source '${RUN_TESTS_SH}' --_source-only; collect_all_bats '${SCRIPT_DIR}'")
+  echo "$out" | grep -q 'tests/acceptance/AT-' || {
+    echo "FAIL: collect_all_bats の出力に tests/acceptance/ が含まれない（false-green の原因）"
+    echo "out(head):"; echo "$out" | head -5
+    return 1
+  }
+}
+
+# fixture 生成ヘルパ: 失敗する acceptance テストのみを持つ tmp リポジトリを作る
+_make_failing_acceptance_repo() {
+  local repo="$1"
+  mkdir -p "${repo}/tests/acceptance"
+  cat > "${repo}/tests/acceptance/AT-fixture.bats" << 'EOF'
+#!/usr/bin/env bats
+@test "AT-fixture: 決定的に失敗する acceptance テスト" {
+  false
+}
+EOF
+}
+
+@test "AT-356-1b: --all returns non-zero on a failing acceptance test (false-green oracle)" {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+  _make_failing_acceptance_repo "$tmpdir"
+
+  local exit_code=0
+  bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || exit_code=$?
+
+  [[ "$exit_code" -ne 0 ]] || {
+    echo "FAIL: acceptance/ に決定的失敗 AT があるのに --all が exit 0（false-green）を返した"
+    return 1
+  }
+}
+
+@test "AT-356-2: --all and --impact FALLBACK both return non-zero on same fixture" {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+  _make_failing_acceptance_repo "$tmpdir"
+
+  # FALLBACK を強制するモック impact_map（stderr に FALLBACK: を出力）
+  local mock="${tmpdir}/mock_impact_map.sh"
+  cat > "$mock" << 'EOF'
+#!/usr/bin/env bash
+echo "FALLBACK: forced for test" >&2
+exit 0
+EOF
+  chmod +x "$mock"
+
+  local all_exit=0 impact_exit=0
+  bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || all_exit=$?
+  _RUN_TESTS_IMPACT_MAP_OVERRIDE="$mock" \
+    bash "$RUN_TESTS_SH" --impact --base main --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || impact_exit=$?
+
+  [[ "$all_exit" -ne 0 && "$impact_exit" -ne 0 ]] || {
+    echo "FAIL: --all($all_exit) と --impact FALLBACK($impact_exit) の判定が一致しない（両者非0であるべき）"
+    return 1
+  }
+}
