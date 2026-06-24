@@ -128,7 +128,8 @@ print("ok")
 
 # AT-299-7: return value COMPLETED_WITH_DEBT coexists with the HALT record
 @test "AT-299-7: return COMPLETED_WITH_DEBT is still present after halt record insertion" {
-  grep -qF "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt, verdict }" "$SKILL_FILE"
+  # #355/#359 で LLM レビュー削除に伴い verdict フィールドが除去された（旧: ..., reason: halt, verdict }）
+  grep -qF "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt }" "$SKILL_FILE"
   local halt_line ret_line
   halt_line=$(grep -n 'record_halt "<resolved-log-path>"' "$SKILL_FILE" | head -1 | cut -d: -f1)
   ret_line=$(grep -n "return { status: 'COMPLETED_WITH_DEBT', step, reason: halt" "$SKILL_FILE" | head -1 | cut -d: -f1)

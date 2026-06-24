@@ -92,12 +92,19 @@ setup() {
 }
 
 # AT-202: autopilot BATS structure pins remain intact after loader split
-@test "AT-202: autopilot SKILL.md retains canonical structure-pin targets (VERDICT_SCHEMA / User gates / Dialog economy)" {
+@test "AT-202: autopilot SKILL.md retains canonical structure-pin targets (objective oracle / User gates / Dialog economy)" {
   # Given: SKILL.md has many strings directly grep-pinned by BATS
   # When: key structure tokens are checked in skills/autopilot/SKILL.md
-  # Then: VERDICT_SCHEMA, User gates, Dialog economy remain in the file body
-  grep -q 'VERDICT_SCHEMA' "$SKILL_AUTO" || {
-    echo "FAIL: VERDICT_SCHEMA not found in skills/autopilot/SKILL.md"
+  # Then: the objective-gate machinery, User gates, Dialog economy remain in the file body
+  # NOTE (#355): the LLM-reviewer convergence term was removed and VERDICT_SCHEMA was
+  #   intentionally deleted. Its structure-pin slot is replaced by the objective oracle
+  #   tokens (redObserved / atGreen / coverageOk via `objective oracle`) that drive convergence.
+  grep -q 'objective oracle' "$SKILL_AUTO" || {
+    echo "FAIL: 'objective oracle' not found in skills/autopilot/SKILL.md"
+    return 1
+  }
+  grep -qE 'redObserved.*atGreen.*coverageOk|AND\(redObserved, atGreen, coverageOk\)' "$SKILL_AUTO" || {
+    echo "FAIL: objective-gate oracle terms (redObserved/atGreen/coverageOk) not found in skills/autopilot/SKILL.md"
     return 1
   }
   grep -q '## User gates' "$SKILL_AUTO" || {

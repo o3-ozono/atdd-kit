@@ -55,66 +55,77 @@
   }
 }
 
-# --- AT-003: reviewScope impl 分岐にスコープ外パス P0 検出指示が存在する（US-3） ---
+# --- AT-003: in-loop reviewScope は #355 で除去され収束は客観ゲートのみ（US-3 / #355 が #297 を supersede） ---
+# 注: #355 は in-loop LLM レビューをループから完全除去した。これに伴い #297 が導入した
+#     in-loop reviewScope（ステップ毎にレビューアをスコープする関数）は概念ごと superseded された。
+#     本テストは現行契約（客観オラクルのみ・reviewScope 不在・reviewing-deliverables は standalone）を検証する。
 
-@test "AT-003 US-3: reviewScope impl branch contains out-of-scope path P0 finding instruction" {
-  # Given: 本 Issue の変更を適用した作業ツリー
-  # When: skills/autopilot/SKILL.md の reviewScope(step) の PHASE === 'impl' 分岐文字列を検査する
-  # Then: impl scope 文に「当該 Issue スコープ外パスへの変更（特に pyproject.toml / CI 設定 / 他 Issue のソース）
-  #       を検出したら P0 finding として返す」旨が grep ヒットする
+@test "AT-003 US-3: in-loop reviewScope removed by #355 (objective-only convergence)" {
+  # Given: 本 Issue の変更を適用した作業ツリー（#355 redesign 適用済み）
+  # When: skills/autopilot/SKILL.md の収束機構を検査する
+  # Then: in-loop reviewScope は存在せず、収束は客観ゲート AND(redObserved, atGreen, coverageOk) のみで
+  #       駆動され、reviewing-deliverables は standalone（ループ外）と明記されている
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  # reviewScope が存在することを確認する
-  grep -qF 'reviewScope' "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: reviewScope が skills/autopilot/SKILL.md に存在しない"
+  # in-loop reviewScope（#297 が導入し #355 が除去）が存在しないことを確認する
+  ! grep -qF 'reviewScope' "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: in-loop reviewScope が残存している（#355 で除去されているべき）"
     return 1
   }
 
-  # impl scope 文に P0 finding 相当語が含まれることを確認する（Scope: the impl… 行に P0 が含まれる）
-  grep -qE "Scope:.*impl.*P0|Scope.*impl.*[Pp]0 finding" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: reviewScope の impl scope 文に P0 finding 相当語が存在しない"
+  # 収束は客観オラクル AND(redObserved, atGreen, coverageOk) で駆動されることを確認する
+  grep -qE "redObserved && atGreen && coverageOk" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: 客観オラクル redObserved && atGreen && coverageOk の収束判定式が存在しない"
     return 1
   }
 
-  # impl scope 文に pyproject.toml / CI / スコープ外パス相当語が含まれることを確認する
-  grep -qE "pyproject\.toml|out-of-scope path|foreign path|スコープ外" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: reviewScope impl scope 文に pyproject.toml / CI / スコープ外パス相当語が存在しない"
+  # 収束ループに LLM レビュー項がないことが明記されていることを確認する
+  grep -qE "No LLM-review term" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: 客観オラクルに 'No LLM-review term' の明記が存在しない"
     return 1
   }
 
-  # design 分岐（US/plan scope 文）にスコープ外 P0 文言が混入していないことを確認する
-  # design 分岐文字列は "judge ONLY prd.md" または "judge the planning set" を含む行に限定して確認する
-  if grep -E "judge ONLY prd\.md|judge the planning set" "${repo_root}/skills/autopilot/SKILL.md" \
-      | grep -qE "pyproject\.toml|P0.*foreign|foreign.*P0"; then
-    echo "FAIL: design 分岐に impl scope 文の pyproject.toml / P0 foreign 文言が混入している"
+  # reviewing-deliverables が standalone（ループ外）と明記されていることを確認する
+  grep -qE "reviewing-deliverables.*(not.*in the loop|standalone|not.*part of.*loop)" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: reviewing-deliverables が standalone（ループ外）と明記されていない"
     return 1
-  fi
+  }
   return 0
 }
 
-# --- AT-004: oracle が P0/P1 ブロッキング判定式を維持する（US-3 / 非退行不変条件） ---
+# --- AT-004: 客観オラクルに LLM レビュー（P0/P1）ブロッキング項が無い（US-3 / #355 が #297 を supersede） ---
+# 注: #297 はオラクルの LLM レビュー（overall_correctness / blocking.length / P0/P1 gate）ブロッキング
+#     判定を扱っていたが、#355 は in-loop LLM レビューを除去しオラクルを客観項のみに一本化した。
+#     本テストは「オラクルに LLM レビュー / ブロッキング項が無い」という現行契約を検証する。
 
-@test "AT-004 US-3: satisfaction oracle blocking check is unchanged (P0/P1 gate)" {
-  # Given: 本 Issue の変更を適用した作業ツリー
-  # When: skills/autopilot/SKILL.md の satisfaction oracle 収束判定式を検査する
-  # Then: overall_correctness === 'correct' かつ blocking.length === 0 の判定式が存在し、
-  #       混入 P0 finding が green 判定を阻止する経路が維持されている
+@test "AT-004 US-3: objective oracle has no LLM-review blocking term (P0/P1 removed by #355)" {
+  # Given: 本 Issue の変更を適用した作業ツリー（#355 redesign 適用済み）
+  # When: skills/autopilot/SKILL.md の収束判定式を検査する
+  # Then: 客観項のみ（redObserved / atGreen / coverageOk）で構成され、
+  #       LLM レビュー由来のブロッキング判定（overall_correctness / blocking.length / priorityOf<=1）は存在しない
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  grep -qE "overall_correctness === 'correct'" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: overall_correctness === 'correct' の判定式が存在しない"
+  # 客観オラクルの 3 項が全て存在することを確認する
+  grep -qE "redObserved && atGreen && coverageOk" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: 客観オラクル redObserved && atGreen && coverageOk が存在しない"
     return 1
   }
 
-  grep -qE "blocking\.length === 0" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: blocking.length === 0 の判定式が存在しない"
+  # LLM レビュー由来のブロッキング判定式が除去されていることを確認する（#355）
+  ! grep -qE "overall_correctness === 'correct'" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: overall_correctness === 'correct' が残存している（#355 で除去されているべき）"
     return 1
   }
 
-  grep -qE "priorityOf\(f\) <= 1" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: priorityOf(f) <= 1 のフィルタ式が存在しない"
+  ! grep -qE "blocking\.length === 0" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: blocking.length === 0 が残存している（#355 で除去されているべき）"
+    return 1
+  }
+
+  ! grep -qE "priorityOf\(f\) <= 1" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: priorityOf(f) <= 1 のフィルタ式が残存している（#355 で除去されているべき）"
     return 1
   }
 }
@@ -155,22 +166,31 @@
   }
 }
 
-@test "AT-006 CS-1: reviewScope has both impl and design branches" {
-  # Given: 本 Issue の変更を適用した作業ツリー
-  # When: skills/autopilot/SKILL.md の reviewScope 関数を検査する
-  # Then: impl 分岐と design 分岐の両方が存在し、分岐構造が維持されている
+# 注: #355 は in-loop reviewScope（impl/design 分岐でレビューアをスコープする関数）を概念ごと除去した。
+#     本テストは「reviewScope は不在で、収束ループには LLM レビューステップが無く、客観ゲートのみ」という
+#     現行構造不変条件を検証する（#355 が #297 の in-loop reviewScope を supersede）。
+@test "AT-006 CS-1: no in-loop reviewScope; loop is objective-gate-only" {
+  # Given: 本 Issue の変更を適用した作業ツリー（#355 redesign 適用済み）
+  # When: skills/autopilot/SKILL.md の収束ループ構造を検査する
+  # Then: reviewScope は存在せず、ループは generate → objective-gate → fix の客観ゲートのみで構成される
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  # impl 分岐（PHASE === 'impl'）の存在確認
-  grep -qE "PHASE === 'impl'" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: reviewScope の impl 分岐（PHASE === 'impl'）が存在しない"
+  # in-loop reviewScope が除去されていることを確認する
+  ! grep -qF 'reviewScope' "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: in-loop reviewScope が残存している（#355 で除去されているべき）"
     return 1
   }
 
-  # design 分岐の存在確認（design phase の説明文 = US/plan scope 文）
-  grep -qE "Scope \(design phase\)" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: reviewScope の design 分岐（Scope (design phase)）が存在しない"
+  # 収束ループが客観ゲート（generate → objective-gate → fix）構造であることを確認する
+  grep -qE "generate → objective-gate → fix" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: 収束ループの generate → objective-gate → fix 構造が存在しない"
+    return 1
+  }
+
+  # 客観オラクルが loop の収束判定であることを確認する
+  grep -qE "objective oracle" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: objective oracle の記述が存在しない"
     return 1
   }
 }
