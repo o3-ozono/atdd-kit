@@ -337,6 +337,10 @@ EOF
   }
 }
 
+# 注: 7a/7b は再帰ガードの「拒否したか否か」を、ガードが出す固有メッセージで判定する。
+# fixture の完全 bats 実行の exit コードには依存しない（環境差で揺れるため・#356）。
+GUARD_MSG="recursion guard"
+
 @test "AT-356-7a: --all against the same live repo while _RUN_TESTS_ALL_ACTIVE is set fails loud (recursion guard)" {
   local tmpdir resolved
   tmpdir=$(mktemp -d)
@@ -345,11 +349,13 @@ EOF
   printf '#!/usr/bin/env bats\n@test "p" { true; }\n' > "${tmpdir}/tests/pass.bats"
   resolved="$(cd "$tmpdir" && pwd)"
 
-  local exit_code=0
-  _RUN_TESTS_ALL_ACTIVE="$resolved" \
-    bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || exit_code=$?
-  [[ "$exit_code" -ne 0 ]] || {
-    echo "FAIL: 同一 live repo への nested --all が拒否されず exit 0 を返した（再帰ガード不在）"
+  local out exit_code=0
+  out=$(_RUN_TESTS_ALL_ACTIVE="$resolved" \
+    bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 2>&1) || exit_code=$?
+  # 同一 live repo への nested --all は fail-loud（非0）かつ固有メッセージで拒否される
+  [[ "$exit_code" -ne 0 ]] && echo "$out" | grep -qF "$GUARD_MSG" || {
+    echo "FAIL: 同一 live repo への nested --all が再帰ガードで拒否されなかった（exit=$exit_code）"
+    echo "$out"
     return 1
   }
 }
@@ -361,12 +367,14 @@ EOF
   mkdir -p "${fixture}/tests"
   printf '#!/usr/bin/env bats\n@test "p" { true; }\n' > "${fixture}/tests/pass.bats"
 
-  # _RUN_TESTS_ALL_ACTIVE は別 repo（active）。fixture への --all は再帰でないため許容され green。
-  local exit_code=0
-  _RUN_TESTS_ALL_ACTIVE="$(cd "$active" && pwd)" \
-    bash "$RUN_TESTS_SH" --all --repo "$fixture" --jobs 1 >/dev/null 2>&1 || exit_code=$?
-  [[ "$exit_code" -eq 0 ]] || {
-    echo "FAIL: 別 repo(fixture) への nested --all が誤って拒否された（exit=$exit_code）"
+  # _RUN_TESTS_ALL_ACTIVE は別 repo（active）。fixture への --all は再帰でないため
+  # ガードは拒否しない（= 固有メッセージを出さない）。fixture の bats 実行結果には依存しない。
+  local out
+  out=$(_RUN_TESTS_ALL_ACTIVE="$(cd "$active" && pwd)" \
+    bash "$RUN_TESTS_SH" --all --repo "$fixture" --jobs 1 2>&1) || true
+  ! echo "$out" | grep -qF "$GUARD_MSG" || {
+    echo "FAIL: 別 repo(fixture) への nested --all が誤って再帰ガードで拒否された"
+    echo "$out"
     return 1
   }
 }
