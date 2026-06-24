@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-06-24
+
+### Fixed
+
+- **pre-merge フェイルセーフゲートの false-green を修正（#356）**。`scripts/run-tests.sh --all` が `collect_all_bats` の `find -maxdepth 1` で `tests/acceptance/` を構造的に除外しており、決定的に落ちる acceptance AT を実行せず green を誤報していた（必須マージ防壁が機能せず、#355/#359/#350 の赤を見逃していた）。`collect_all_bats` を `tests/` 再帰収集に変更（`acceptance/` を含む。`e2e/` は別レイヤーとして除外）。旧 #324 の意図的除外契約（AT-210f）を撤回。
+  - **再帰ガード（fail-loud）**: acceptance/ 内のメタテストが同一 live repo に対し `--all` を呼ぶ無限再帰を、`_RUN_TESTS_ALL_ACTIVE` マーカーで検出して拒否（fixture `--repo <tmp>` への nested `--all` は許容）。`tests/acceptance/AT-324.bats:AT-211` を green fixture 検証に書き換え。
+- **#355/#359 の客観ゲート再設計に未追従だった autopilot acceptance AT 9件を整合（#361）**。`VERDICT_SCHEMA` / `overall_correctness` / `reviewScope` / `reviewer-oracle` / `verdict` を assert していた stale AT（AT-318-A1 / AT-296 / AT-297 / AT-299-7 / AT-302 / AT-304）を、新オラクル `AND(redObserved, atGreen, coverageOk)` 等の現行トークンへ更新（false-green で隠れていた赤）。
+- **skill-loader-split.md の行数 inventory ドリフトを解消（#350）**。AT-314-2a が突き合わせる行数を実測へ更新（autopilot 280→255 per #355/#359、merging-and-deploying 79→82 per #356）。
+
+### Changed
+
+- **merge gate の契約を再定義（#356）**。`merging-and-deploying` の pre-merge gate を「full BATS suite（`--all`・acceptance/ 含む）＋ 影響選択 skill-e2e（`run-skill-e2e.sh --changed-files`）」に。e2e は全件でなく変更が触れた skill のみ（既存 impact mapping を再利用）。claude 認証不在時は skill-e2e を skip 明示し full BATS suite は必須。`docs/methodology/test-execution-policy.md` を同契約に整合。
+
 ## [4.2.0] - 2026-06-23
 
 ### Changed
