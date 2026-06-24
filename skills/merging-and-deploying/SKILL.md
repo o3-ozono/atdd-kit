@@ -64,7 +64,7 @@ scripts/run-tests.sh --all      # pre-merge gate: full BATS suite incl. acceptan
 scripts/run-skill-e2e.sh --changed-files "$(git diff --name-only origin/main...HEAD | paste -sd, -)"   # impact-selected skill-e2e
 ```
 
-The BATS gate (`--all`) is **mandatory** and must exit 0. The skill-e2e step runs `tests/e2e/*.bats` (real `claude -p`) only for skills affected by this branch's diff, via `run-skill-e2e.sh`'s built-in path-based impact mapping — never the full e2e set. **When `claude` auth is absent locally** (e2e cannot run), skip the skill-e2e step with an explicit logged note and proceed on the BATS gate alone; the mandatory BATS gate is never skipped.
+The full BATS suite (`--all`) is **mandatory** and must exit 0. The skill-e2e step runs `tests/e2e/*.bats` (real `claude -p`) only for skills affected by this branch's diff, via `run-skill-e2e.sh`'s built-in path-based impact mapping — never the full e2e set. **When `claude` auth is absent locally** (e2e cannot run), skip the skill-e2e step with an explicit logged note and proceed on the BATS suite alone; the mandatory `--all` run is never skipped.
 
 **Post-deploy regression: impact scope** — after deploy, re-run the Acceptance Tests using impact scope against the deployed commit:
 
