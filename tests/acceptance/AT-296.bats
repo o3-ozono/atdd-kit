@@ -3,45 +3,58 @@
 # AT-296: VERDICT_SCHEMA enum 制約化 + regression ピン禁止ガイダンス補完・changelog ヘルパー集約
 # Issue #296 / #300
 
-# --- AT-001: VERDICT_SCHEMA.overall_correctness が enum 制約を持つ（AC-296-1） ---
+# --- AT-001: 収束オラクルが客観ゲートのみで構成される（AC-296-1, #355 supersedes original #296） ---
+#
+# #355/#359 redesign: autopilot の収束ループは客観ゲートのみに一本化され、LLM-reviewer は
+# ループから完全除去された。原 #296 の VERDICT_SCHEMA / overall_correctness の enum 制約は
+# 設計上削除済み。本 AT は #355 が #296 の LLM-correctness チェックを置き換えたことを反映し、
+# 現行の客観オラクル（objective gate）が SKILL.md に定義されていることを検証する。
 
-@test "AT-001 AC-296-1: overall_correctness has enum constraint in autopilot SKILL.md" {
-  # Given: 本 Issue の変更を適用した作業ツリー
-  # When: skills/autopilot/SKILL.md の VERDICT_SCHEMA 内 overall_correctness プロパティ定義を検査する
-  # Then: overall_correctness の定義に enum: ['correct', 'incorrect'] が含まれる（grep ヒット）
+@test "AT-001 AC-296-1: convergence oracle is the objective gate (no overall_correctness)" {
+  # Given: #355/#359 で客観ゲート一本化された autopilot SKILL.md
+  # When: 収束オラクルの定義（objective oracle）を検査する
+  # Then: AND(redObserved, atGreen, coverageOk) の客観オラクルが存在し、overall_correctness の
+  #       enum 制約は設計上もはや存在しない
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  grep -qE "enum: \['correct', 'incorrect'\]" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: overall_correctness に enum: ['correct', 'incorrect'] が存在しない"
+  # 客観オラクル定義（#355 F1）が存在すること
+  grep -qE "objective oracle.*AND\(redObserved, atGreen, coverageOk\)" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: objective oracle AND(redObserved, atGreen, coverageOk) の定義が存在しない"
     return 1
   }
-  # 該当行が overall_correctness の定義行であることも確認する
-  grep -qE "overall_correctness.*enum: \['correct', 'incorrect'\]" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: enum 制約が overall_correctness プロパティの定義行にない"
+  # 原 #296 の overall_correctness の enum 制約は #355 で削除済みであること（再混入防止）
+  if grep -qE "overall_correctness.*enum: \['correct', 'incorrect'\]" "${repo_root}/skills/autopilot/SKILL.md"; then
+    echo "FAIL: overall_correctness の enum 制約が再混入している（#355 で削除済みのはず）"
     return 1
-  }
+  fi
 }
 
-# --- AT-002: oracle の厳密一致判定が enum 制約と整合し破綻しない（AC-296-2） ---
+# --- AT-002: 収束判定式が客観ゲートの AND であり LLM-review 項を含まない（AC-296-2, #355 supersedes original #296） ---
 
-@test "AT-002 AC-296-2: strict equality check for overall_correctness is unchanged" {
-  # Given: enum 制約を追加した autopilot SKILL.md
-  # When: satisfaction oracle の収束判定式（overall_correctness === 'correct'）を検査する
-  # Then: overall_correctness === 'correct' の厳密一致式が少なくとも 2 箇所存在し、判定が破綻しない
+@test "AT-002 AC-296-2: converged is AND of objective gates with no LLM-review term" {
+  # Given: 客観ゲート一本化された autopilot SKILL.md
+  # When: 収束判定式（const converged = ...）を検査する
+  # Then: converged = redObserved && atGreen && coverageOk の厳密一致式が存在し、
+  #       overall_correctness などの LLM-review 項は判定式に含まれない（#355 AT-355-F1 と同主旨）
   local repo_root
   repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-  # 収束判定式（line 224 相当）が存在すること
-  grep -qE "overall_correctness === 'correct'" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: overall_correctness === 'correct' の厳密一致式が存在しない"
+  # 収束判定式が客観ゲートの AND であること
+  grep -qE "const converged = redObserved && atGreen && coverageOk" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: converged = redObserved && atGreen && coverageOk の収束判定式が存在しない"
     return 1
   }
-  # ドキュメント行（line 78 相当）での参照も存在すること
-  grep -qE "overall_correctness.*(==|===).*correct" "${repo_root}/skills/autopilot/SKILL.md" || {
-    echo "FAIL: overall_correctness の判定参照（== または ===）がドキュメント内に存在しない"
+  # 客観オラクルに LLM-review 項がない旨が明記されていること（#355 F1）
+  grep -qE "No LLM-review term" "${repo_root}/skills/autopilot/SKILL.md" || {
+    echo "FAIL: 'No LLM-review term'（LLM-review 項なし）の明記が存在しない"
     return 1
   }
+  # 原 #296 の overall_correctness === 'correct' 厳密一致式は判定式から削除済みであること
+  if grep -qE "overall_correctness === 'correct'" "${repo_root}/skills/autopilot/SKILL.md"; then
+    echo "FAIL: overall_correctness === 'correct' が収束判定に残存している（#355 で削除済みのはず）"
+    return 1
+  fi
 }
 
 # --- AT-003: running-atdd-cycle に時点依存ピン禁止ガイダンスが存在する（AC-300-1） ---

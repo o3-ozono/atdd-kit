@@ -105,16 +105,31 @@ CHANGELOG="CHANGELOG.md"
 # AT-006: AC6 -- Skills Changes Require Test Evidence + autopilot SKILL.md unchanged
 # ---------------------------------------------------------------------------
 
-@test "AT-006 AC6: skills/autopilot/SKILL.md exists and has VERDICT_SCHEMA" {
+@test "AT-006 AC6: skills/autopilot/SKILL.md exists and documents the objective-gate oracle" {
   # #302 の descope 遵守チェック（git diff ベース）は点時間依存であり regression に不適切。
-  # #296 で autopilot SKILL.md 自体の修正（enum 制約化）が承認されたため、不変条件チェックへ置換する。
-  # 不変条件: autopilot SKILL.md が存在し VERDICT_SCHEMA という構造を持つ
+  # #296 で autopilot SKILL.md 自体の修正（enum 制約化）が承認されたため、不変条件チェックへ置換していた。
+  # #355/#359: 収束ループから LLM レビューを除去し、客観ゲート（redObserved/atGreen/coverageOk）の
+  #   objective oracle に一本化。これに伴い VERDICT_SCHEMA は設計的に削除された。
+  #   AC6 の趣旨「autopilot SKILL.md が存在し収束機構を文書化している」を維持するため、
+  #   旧 VERDICT_SCHEMA の assert を現行の客観ゲート機構の assert に振り替える。
   [[ -f "skills/autopilot/SKILL.md" ]] || {
     echo "FAIL: skills/autopilot/SKILL.md が存在しない"
     return 1
   }
-  grep -q "VERDICT_SCHEMA" "skills/autopilot/SKILL.md" || {
-    echo "FAIL: skills/autopilot/SKILL.md に VERDICT_SCHEMA が存在しない"
+  grep -q "objective oracle" "skills/autopilot/SKILL.md" || {
+    echo "FAIL: skills/autopilot/SKILL.md に objective oracle が存在しない"
+    return 1
+  }
+  grep -q "redObserved" "skills/autopilot/SKILL.md" || {
+    echo "FAIL: skills/autopilot/SKILL.md に redObserved が存在しない"
+    return 1
+  }
+  grep -q "atGreen" "skills/autopilot/SKILL.md" || {
+    echo "FAIL: skills/autopilot/SKILL.md に atGreen が存在しない"
+    return 1
+  }
+  grep -q "coverageOk" "skills/autopilot/SKILL.md" || {
+    echo "FAIL: skills/autopilot/SKILL.md に coverageOk が存在しない"
     return 1
   }
 }

@@ -16,7 +16,8 @@ setup() {
 # AT-318-A1: hand-off モードが定義され、②自動承認・merge-ready 手放しが記述される
 @test "AT-318-A1: hand-off mode is documented (flag, gate2 auto-approve, merge-ready handoff)" {
   grep -q -- '--hand-off' "$AP"
-  grep -q 'reviewer-oracle' "$AP"
+  # gate② は #355/#359 再設計で reviewer-oracle → objective-gate oracle 自動承認に変更
+  grep -q 'objective-gate oracle' "$AP"
   grep -q 'merge-ready' "$AP"
   # full-autopilot skill が存在し3 lib を束ねる
   [ -f "$FA" ]
