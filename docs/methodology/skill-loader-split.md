@@ -92,11 +92,11 @@ The thresholds use 30 lines as the HIGH boundary because a typical feature PR ad
 
 ### Inventory table
 
-Current line counts were measured with `wc -l` on 2026-06-19.
+Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autopilot 280→255 per #355/#359, merging-and-deploying 79→82 per #356).
 
 | Skill | Current lines | Pin limit | Headroom | Rank | Notes |
 |-------|--------------|-----------|----------|------|-------|
-| autopilot | 280 | 280 | 0 | **CRITICAL** | Split already in progress (#283/#304); stub at the pin ceiling (#323) |
+| autopilot | 255 | 280 | 25 | **HIGH** | Split in progress (#283/#304); LLM-review removed from convergence loop (#355/#359) reduced 280→255 |
 | reviewing-deliverables | 228 | 240 | 12 | **HIGH** | Pin raised twice (first raise #302, second for embedded script) |
 | session-start | 235 | none | — | **MEDIUM** | No budget pin — unguarded; 235 lines is high-risk without a ceiling (231→235 per #343) |
 | skill-fix | 157 | none | — | **LOW** | No pin; moderate size |
@@ -113,7 +113,7 @@ Current line counts were measured with `wc -l` on 2026-06-19.
 | writing-plan-and-tests | 62 | 200 | 138 | **LOW** | Pin at 200; ample headroom |
 | fixing-bugs | 87 | none | — | **LOW** | No pin; small |
 | bug | 92 | none | — | **LOW** | No pin; small |
-| merging-and-deploying | 79 | 200 | 121 | **LOW** | Pin at 200; ample headroom |
+| merging-and-deploying | 82 | 200 | 118 | **LOW** | Pin at 200; ample headroom (impact-selected e2e wiring #356) |
 | writing-design-doc | 71 | 200 | 129 | **LOW** | Pin at 200; ample headroom |
 | launching-preview | 60 | 200 | 140 | **LOW** | Pin at 200; ample headroom |
 | sim-pool | 65 | none | — | **LOW** | No pin; small |

@@ -274,3 +274,107 @@ EOF
     return 1
   }
 }
+
+# ---------------------------------------------------------------------------
+# AT-356: pre-merge フェイルセーフゲートの契約再定義（--all を acceptance/ 再帰化）
+# ---------------------------------------------------------------------------
+
+@test "AT-356-1a: collect_all_bats includes tests/acceptance bats files" {
+  # 実リポジトリに対して collect_all_bats を呼び、acceptance/ が再帰収集されることを確認
+  local out
+  out=$(bash -c "source '${RUN_TESTS_SH}' --_source-only; collect_all_bats '${SCRIPT_DIR}'")
+  echo "$out" | grep -q 'tests/acceptance/AT-' || {
+    echo "FAIL: collect_all_bats の出力に tests/acceptance/ が含まれない（false-green の原因）"
+    echo "out(head):"; echo "$out" | head -5
+    return 1
+  }
+}
+
+# 注: fixture 生成は各テスト内にインライン化する。`trap ... RETURN` はヘルパ関数の
+# return でも発火し生成直後の fixture を削除してしまうため、ヘルパ関数化しない（#356）。
+
+@test "AT-356-1b: --all returns non-zero on a failing acceptance test (false-green oracle)" {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+  mkdir -p "${tmpdir}/tests/acceptance"
+  printf '#!/usr/bin/env bats\n@test "AT-fixture: deterministic fail" { false; }\n' \
+    > "${tmpdir}/tests/acceptance/AT-fixture.bats"
+
+  local exit_code=0
+  bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || exit_code=$?
+  [[ "$exit_code" -ne 0 ]] || {
+    echo "FAIL: acceptance/ に決定的失敗 AT があるのに --all が exit 0（false-green）を返した"
+    return 1
+  }
+}
+
+@test "AT-356-2: --all and --impact FALLBACK both return non-zero on same fixture" {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+  mkdir -p "${tmpdir}/tests/acceptance"
+  printf '#!/usr/bin/env bats\n@test "AT-fixture: deterministic fail" { false; }\n' \
+    > "${tmpdir}/tests/acceptance/AT-fixture.bats"
+
+  # FALLBACK を強制するモック impact_map（stderr に FALLBACK: を出力）
+  local mock="${tmpdir}/mock_impact_map.sh"
+  cat > "$mock" << 'EOF'
+#!/usr/bin/env bash
+echo "FALLBACK: forced for test" >&2
+exit 0
+EOF
+  chmod +x "$mock"
+
+  local all_exit=0 impact_exit=0
+  bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || all_exit=$?
+  _RUN_TESTS_IMPACT_MAP_OVERRIDE="$mock" \
+    bash "$RUN_TESTS_SH" --impact --base main --repo "$tmpdir" --jobs 1 >/dev/null 2>&1 || impact_exit=$?
+
+  [[ "$all_exit" -ne 0 && "$impact_exit" -ne 0 ]] || {
+    echo "FAIL: --all($all_exit) と --impact FALLBACK($impact_exit) の判定が一致しない（両者非0であるべき）"
+    return 1
+  }
+}
+
+# 注: 7a/7b は再帰ガードの「拒否したか否か」を、ガードが出す固有メッセージで判定する。
+# fixture の完全 bats 実行の exit コードには依存しない（環境差で揺れるため・#356）。
+GUARD_MSG="recursion guard"
+
+@test "AT-356-7a: --all against the same live repo while _RUN_TESTS_ALL_ACTIVE is set fails loud (recursion guard)" {
+  local tmpdir resolved
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
+  mkdir -p "${tmpdir}/tests/acceptance"
+  printf '#!/usr/bin/env bats\n@test "p" { true; }\n' > "${tmpdir}/tests/pass.bats"
+  resolved="$(cd "$tmpdir" && pwd)"
+
+  local out exit_code=0
+  out=$(_RUN_TESTS_ALL_ACTIVE="$resolved" \
+    bash "$RUN_TESTS_SH" --all --repo "$tmpdir" --jobs 1 2>&1) || exit_code=$?
+  # 同一 live repo への nested --all は fail-loud（非0）かつ固有メッセージで拒否される
+  [[ "$exit_code" -ne 0 ]] && echo "$out" | grep -qF "$GUARD_MSG" || {
+    echo "FAIL: 同一 live repo への nested --all が再帰ガードで拒否されなかった（exit=$exit_code）"
+    echo "$out"
+    return 1
+  }
+}
+
+@test "AT-356-7b: --all against a different repo while _RUN_TESTS_ALL_ACTIVE is set is allowed (fixture nested --all)" {
+  local active fixture
+  active=$(mktemp -d); fixture=$(mktemp -d)
+  trap 'rm -rf "$active" "$fixture"' RETURN
+  mkdir -p "${fixture}/tests"
+  printf '#!/usr/bin/env bats\n@test "p" { true; }\n' > "${fixture}/tests/pass.bats"
+
+  # _RUN_TESTS_ALL_ACTIVE は別 repo（active）。fixture への --all は再帰でないため
+  # ガードは拒否しない（= 固有メッセージを出さない）。fixture の bats 実行結果には依存しない。
+  local out
+  out=$(_RUN_TESTS_ALL_ACTIVE="$(cd "$active" && pwd)" \
+    bash "$RUN_TESTS_SH" --all --repo "$fixture" --jobs 1 2>&1) || true
+  ! echo "$out" | grep -qF "$GUARD_MSG" || {
+    echo "FAIL: 別 repo(fixture) への nested --all が誤って再帰ガードで拒否された"
+    echo "$out"
+    return 1
+  }
+}

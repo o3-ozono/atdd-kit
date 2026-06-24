@@ -14,8 +14,10 @@ The physical location of a test file (local-only, CI-only) is not the deciding f
 | Phase | Scope | Rationale |
 |-------|-------|-----------|
 | Each ATDD iteration | **Affected files only** (`scripts/run-tests.sh --impact --base <ref>`) | Keeps the feedback loop short. Tests unrelated to the change are not run on every iteration. |
-| Before final user review | **All tests** (`scripts/run-tests.sh --all`) | Ensures full regression coverage before review judgment. |
-| Merge gate | **All tests** (`scripts/run-tests.sh --all` + CI full suite) | Guarantees full-suite green before merging. |
+| Before final user review | **All BATS tests** (`scripts/run-tests.sh --all`, incl. `tests/acceptance/`) | Ensures full regression coverage before review judgment. |
+| Merge gate | **Full BATS suite** (`scripts/run-tests.sh --all`, incl. `tests/acceptance/` — #356) **+ impact-selected skill-e2e** (`scripts/run-skill-e2e.sh --changed-files`) + CI full suite | The full BATS suite is the mandatory fail-safe (incl. acceptance/); skill-e2e is impact-selected — only the e2e for skills the branch touched, never the full e2e set. When e2e auth is absent, skip with an explicit log; the `--all` run stays mandatory. |
+
+> **#356 — `--all` includes `tests/acceptance/`.** The former #324 contract excluded `tests/acceptance/` from the merge gate's `--all` via `collect_all_bats`'s `maxdepth 1`, delegating full coverage to CI. That produced a fail-safe defect: `--all` skipped deterministically-failing acceptance ATs and returned false-green, so it was retired. `--all` now collects `tests/` recursively and includes `acceptance/` (only `e2e/` stays a separate layer). e2e is impact-selected even at the merge gate via `run-skill-e2e.sh --changed-files` — the full e2e set is never run blindly.
 
 ## Handling claude-based e2e Tests
 

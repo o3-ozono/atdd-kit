@@ -63,6 +63,7 @@
   - Given: レビュー指摘（#324 iteration 2）— `collect_all_bats` が `maxdepth 1` を使用し `tests/acceptance/*.bats` / `tests/e2e/*.bats` が除外される。CI は再帰実行で全件カバー。意図的な設計トレードオフ（bats_runner.sh との一貫性）だがコメントに未記載
   - When: `scripts/run-tests.sh` の `collect_all_bats` 関数定義前後のコメントを検査する
   - Then: `acceptance/` / `e2e/` 除外、CI との差異、意図的な設計決定（bats_runner.sh との整合）がコード内コメントとして明記されている
+  - **改訂（#356）**: この `maxdepth 1` による `acceptance/` 除外契約は撤回された。`--all` が決定的に落ちる acceptance AT を実行せず false-green を返し、必須 pre-merge ゲートが防壁として機能しなかったため。**新契約: `collect_all_bats` は `tests/` を再帰収集し `acceptance/` を含む（`e2e/` のみ別レイヤーとして除外）。** スコープ説明コメントも acceptance/ 包含の新契約に改訂済み。詳細は `docs/issues/356/` と `docs/methodology/test-execution-policy.md` を参照。
 
 ## AT-300: フェーズ別実行ポリシーの配線（フロースキル）
 
