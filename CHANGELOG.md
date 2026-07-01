@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.4.0] - 2026-07-01
+
+### Fixed
+
+- **retrospective.sh の Dialogue Volume が恒久ゼロ化する不具合を修正（#348）**。`aggregate_turns` の munged-path 生成が Claude Code の実 transcript ディレクトリ命名規則と2点で不一致だった（① 先頭ダッシュを `s\|^-\|\|` で削除していたが実際は保持、② ドットを変換せず `github.com` のままだったが実際は `-` へ変換）。存在しないディレクトリで `[[ -d ]]` ガードが silent 短絡し `turns: user=0 assistant=0 total=0` を返していた。`sed 's\|[/.]\|-\|g'`（`/`・`.` 両方を `-` へ・先頭ダッシュ保持）に修正。`tests/acceptance/AT-348.bats:AT-348-1`（実命名規則を fixture 化・ドット含むパスで両不具合を exercise）を新規追加。`AT-309-3-behavioral` の fixture も同じ壊れた sed を使い自己整合し欠陥を捕捉できなかった（Type B テストギャップ）ため実命名規則へ更新。
+- **friction 分類が実 autopilot step 名を merge バケットに誤分類する不具合を修正（#348）**。`extract_friction` の case パターンが実 step 名と不整合で、`extracting-user-stories`（design フェーズ）と `running-atdd-cycle`（impl フェーズ）が default catch-all `*)` で merge バケットに混入していた。design-phase step（`extracting-user-stories` / `writing-plan-and-tests`）→ **design**、impl-phase step（`running-atdd-cycle`）→ **新設 `impl` バケット**、merge-family（`merging-and-deploying` / `reviewing-deliverables`）→ **merge** に整合。非ゲート step を merge に汚染していた blind catch-all を撤廃。`AT-348-2`（US→design）/ `AT-348-3`（running-atdd-cycle→impl）/ `AT-348-4`（merge 非回帰）を追加。
+
+### Changed
+
+- **retrospective.sh の turns 集計を単一 grep パスに最適化**。従来はファイル毎に grep を2回 spawn しており（実 repo で数百 session ログ = 1600+ プロセス）、munged-path 修正で実ディレクトリが解決するようになると CS-1 の5秒予算（軽量性制約）を超過（実測 10s）。パターン毎に全 transcript を1パスで grep する方式に変更（実測 3s）。`-o` によるオカレンス計数で従来の per-line 集計と等価。friction 出力に `impl=` フィールドを追加。
+
 ## [4.3.0] - 2026-06-24
 
 ### Fixed
