@@ -49,35 +49,35 @@
 
 ## AT-370-7: ラベル不足検出スクリプトが不足を通知する（W-3a / Functional Story ラベル不足検出）
 
-- [ ] [draft] AT-370-7: `scripts/check-required-labels.sh` が必須ラベルの不足を検出して列挙する
+- [ ] [green] AT-370-7: `scripts/check-required-labels.sh` が必須ラベルの不足を検出して列挙する
   - Given: `commands/setup-github.md` の 16 ラベルが正準ソースとして参照される
   - When: 必須ラベルの一部が存在しない状態で `bash scripts/check-required-labels.sh` を実行する
   - Then: 不足しているラベル名が列挙され、スクリプトはエラー終了せず（非破壊で通知のみ）完了する
 
 ## AT-370-8: ラベル未取得環境でもクラッシュせずスキップする（W-3a / Open Question 2）
 
-- [ ] [draft] AT-370-8: gh 不在 / 未認証など label 一覧を取得できない環境で pre-flight check がスキップ扱いになる
+- [ ] [green] AT-370-8: gh 不在 / 未認証など label 一覧を取得できない環境で pre-flight check がスキップ扱いになる
   - Given: `gh label list` が結果を返せない環境（gh 不在または未認証）
   - When: `bash scripts/check-required-labels.sh` を実行する
   - Then: クラッシュせず「スキップした」旨のメッセージを出して正常終了し、ワークフローを阻害しない
 
 ## AT-370-9: ラベル作成が冪等である（W-3a / Constraint Story 冪等性）
 
-- [ ] [draft] AT-370-9: pre-flight check のラベル作成経路を 2 回連続実行しても副作用が重複しない
+- [ ] [green] AT-370-9: pre-flight check のラベル作成経路を 2 回連続実行しても副作用が重複しない
   - Given: 一部ラベルが既に存在する状態
   - When: ラベル作成経路（`gh label create --force`）を 2 回連続で実行する
   - Then: 2 回目でエラー・重複作成が起きず、既存ラベルは変更されない（`--force` により冪等）
 
 ## AT-370-10: ワークフロー skill に起動時ガードが配線されている（W-3a / Functional Story）
 
-- [ ] [draft] AT-370-10: autopilot / full-autopilot の起動節にラベル不足検出の呼び出しが記述されている
+- [ ] [green] AT-370-10: autopilot / full-autopilot の起動節にラベル不足検出の呼び出しが記述されている
   - Given: W-3a のスクリプトが存在する
   - When: `skills/autopilot/SKILL.md` または `skills/full-autopilot/SKILL.md` を読む
   - Then: check-required-labels の呼び出しと「不足は通知のみ・エラー終了しない・skip 可」旨が記述されている
 
 ## AT-370-11: hook が plugin-global に配線されている（W-3b / Constraint Story 鮮度 / regression 不変条件）
 
-- [ ] [draft] AT-370-11: `hooks/hooks.json` の全 hook が `${CLAUDE_PLUGIN_ROOT}` 参照で、プロジェクトローカルパスへ退行していない
+- [ ] [green] AT-370-11: `hooks/hooks.json` の全 hook が `${CLAUDE_PLUGIN_ROOT}` 参照で、プロジェクトローカルパスへ退行していない
   - Given: hook は setup-* を実行していない環境でも機能する必要がある（Constraint Story 鮮度 / Problem 2）
   - When: `hooks/hooks.json` の全 `command` フィールドを検査する
   - Then: すべての `command` が `${CLAUDE_PLUGIN_ROOT}` を含み、`.claude/hooks/` 等のプロジェクトローカルパスへの配線が存在しない
