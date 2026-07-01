@@ -50,6 +50,8 @@ Protected elements: YAML frontmatter fields, code block contents, XML guard tag 
 
 atdd-kit has **zero external dependencies** by design. No npm packages, no external services. Pure markdown + bash scripts only. This ensures the plugin is self-contained, shareable via source control, and works without dependency installation on any platform.
 
+**Carve-out:** an addon's `mcp_servers` field in `addon.yml` (e.g. `addons/ios/addon.yml`'s XcodeBuildMCP / ios-simulator / apple-docs / xcode entries) is a **user-project declaration**, not a dependency of atdd-kit itself — it tells `setup-ios` what to register in the *consumer project's* `.mcp.json`. atdd-kit does not install, bundle, or depend on those servers to function; only projects that opt into the addon and choose to use its declared MCP servers do. This is outside the Zero Dependencies rule above.
+
 ### Always-Loaded Rules Budget
 
 `rules/atdd-kit.md` loads on **every turn**. Keep it under **60 lines**. Move anything else to `docs/`.

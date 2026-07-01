@@ -66,6 +66,17 @@ if [[ $OPT_ALL -eq 0 && -z "$OPT_BASE" ]]; then
   exit 1
 fi
 
+# Fail-closed: a --base value starting with '-' is rejected outright (#347 CS-1).
+# Without this, an adversarial/mistaken value like '-Spattern' or
+# '--output=/path/to/overwrite' is later interpolated into `git diff
+# "${base}..HEAD"` and can be parsed by git as a short option (e.g. pickaxe
+# -S) or, depending on the git subcommand, redirect output — potentially
+# truncating an arbitrary file. Reject before it ever reaches git.
+if [[ -n "$OPT_BASE" && "$OPT_BASE" == -* ]]; then
+  echo "ERROR: invalid --base '$OPT_BASE' — refs may not start with '-' (would be parsed as an option)" >&2
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # YAML parser for impact_rules.yml
 # ---------------------------------------------------------------------------
@@ -93,7 +104,14 @@ parse_impact_rules() {
     [[ "$line" =~ ^[[:space:]]*#.*$ ]] && continue
     [[ -z "${line// }" ]] && continue
 
-    if [[ "$line" == "rules:" ]]; then
+    # trim leading/trailing whitespace for the section-key comparison so a
+    # trailing-space 'rules: ' line (easy to introduce via editor auto-format)
+    # is still recognized as the section start (#347 US-1).
+    local trimmed_line="$line"
+    trimmed_line="${trimmed_line#"${trimmed_line%%[![:space:]]*}"}"
+    trimmed_line="${trimmed_line%"${trimmed_line##*[![:space:]]}"}"
+
+    if [[ "$trimmed_line" == "rules:" ]]; then
       has_rules_section=1
       in_rules=1
       continue
@@ -109,6 +127,9 @@ parse_impact_rules() {
         if [[ "$raw_path" =~ ^'"'(.*)'"'$ ]]; then
           raw_path="${BASH_REMATCH[1]}"
         fi
+        # trim trailing whitespace (an editor-added trailing space would
+        # otherwise become part of the fnmatch glob and never match — #347 US-1)
+        raw_path="${raw_path%"${raw_path##*[![:space:]]}"}"
         path_globs+=("$raw_path")
         skill_e2e_targets+=("")
         bats_tags+=("")
@@ -120,7 +141,9 @@ parse_impact_rules() {
           echo "ERROR: malformed YAML '$yml' — 'skill-e2e:' without preceding 'path:' at line $line_num" >&2
           exit 2
         fi
-        skill_e2e_targets[$idx]="${BASH_REMATCH[1]}"
+        local raw_skill_e2e="${BASH_REMATCH[1]}"
+        raw_skill_e2e="${raw_skill_e2e%"${raw_skill_e2e##*[![:space:]]}"}"
+        skill_e2e_targets[$idx]="$raw_skill_e2e"
         continue
       fi
       if [[ "$line" =~ ^"    bats: "(.*)$ ]]; then
@@ -134,8 +157,19 @@ parse_impact_rules() {
         if [[ "$raw_bats" =~ ^'"'(.*)'"'$ ]]; then
           raw_bats="${BASH_REMATCH[1]}"
         fi
+        raw_bats="${raw_bats%"${raw_bats##*[![:space:]]}"}"
         bats_tags[$idx]="$raw_bats"
         continue
+      fi
+      # a '- path:' entry indented with 4 spaces or a tab (not the 2-space
+      # convention) is silently invisible to the ^"  - path: " match above and
+      # was previously indistinguishable from a truly-empty rules block (#347
+      # US-1 category 1). Detect it here and fail with a diagnostic that names
+      # the indentation convention, instead of falling through to the generic
+      # "no rules entries found" error below.
+      if [[ "$line" =~ ^[[:space:]]+-[[:space:]]*path:[[:space:]] && ! "$line" =~ ^"  - path: " ]]; then
+        echo "ERROR: malformed YAML '$yml' — '- path:' at line $line_num is not indented with the required 2-space convention (found: $(printf '%q' "${line%%[^[:space:]]*}"))" >&2
+        exit 2
       fi
       # top-level key (non-rules) resets in_rules
       if [[ "$line" =~ ^[a-zA-Z] ]]; then
@@ -286,21 +320,12 @@ select_other() {
   return $((matched == 0 ? 1 : 0))
 }
 
-# select_web: src/** glob → skill-e2e test identifiers from impact_rules.yml
-select_web() {
-  local diff_file="$1"
-  local layer="$2"
-  local rule_results
-  rule_results=$(resolve_path_rules "$diff_file" "$layer")
-  if [[ -n "$rule_results" ]]; then
-    printf '%s\n' "$rule_results"
-    return 0
-  fi
-  return 1
-}
-
-# select_ios: *.swift glob → XCTest target identifiers from impact_rules.yml
-select_ios() {
+# select_path_rules_only: path-rule-only adapter for platforms whose
+# impact_rules.yml is the sole source of truth (no bats/@covers fallback).
+# web (src/** glob → skill-e2e test identifiers) and ios (*.swift glob →
+# XCTest target identifiers) were byte-identical wrappers around
+# resolve_path_rules; consolidated into one function (#347 US-5).
+select_path_rules_only() {
   local diff_file="$1"
   local layer="$2"
   local rule_results
@@ -355,13 +380,8 @@ for f in "${diff_files[@]}"; do
         local_matched=1
       fi
       ;;
-    web)
-      if adapter_results=$(select_web "$f" "$OPT_LAYER"); then
-        local_matched=1
-      fi
-      ;;
-    ios)
-      if adapter_results=$(select_ios "$f" "$OPT_LAYER"); then
+    web|ios)
+      if adapter_results=$(select_path_rules_only "$f" "$OPT_LAYER"); then
         local_matched=1
       fi
       ;;
