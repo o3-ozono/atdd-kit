@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-02
+
+### Changed
+
+- **retrospective の actionable findings を Issue 化する手順を正典化（#349）**。`merging-and-deploying` の Flow Step 5（Report + Retrospective）に、`scripts/retrospective.sh` 出力の所見トリアージ手順を追記：**壊れた/異常なメトリクス**（例: Dialogue Volume=0、friction 分類の異常値）→ `type:bug` 起票、**friction point / improvement candidate**（特定 skill の操作上の摩擦）→ `atdd-kit:skill-fix` ルート起票、**非アクション**（正常メトリクス・参考情報のみ、明示的な異常値/閾値超え/エラーメッセージを含まない）→ スキップ（起票不要、曖昧な場合は人間が最終確認）。起票した Issue 番号は retrospective サマリに追記し、terminal と Issue/PR コメントの両方へ同一内容を出力（全チャネル同期）。auto-routing は行わず actionable 判定は常に人間が最終確認する（誤検出抑制）。`templates/docs/issues/retrospective.md` の "Improvement Candidates" 節も、消極的な `No Auto-Routing` 注記から 3 分類要点＋番号追記＋SKILL.md 参照の積極的な文言へ更新。`scripts/retrospective.sh` 本体・出力フォーマットには一切触れず（#348 と責務分離）、`tests/acceptance/AT-349.bats` で content-invariant として検証。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed
