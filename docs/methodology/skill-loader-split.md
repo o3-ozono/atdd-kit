@@ -117,8 +117,9 @@ Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autop
 | writing-design-doc | 71 | 200 | 129 | **LOW** | Pin at 200; ample headroom |
 | launching-preview | 60 | 200 | 140 | **LOW** | Pin at 200; ample headroom |
 | sim-pool | 65 | none | — | **LOW** | No pin; small |
+| designing-ui | 79 | none | — | **LOW** | No pin; small (#368) |
 
-**Total: 21 SKILL.md files.**
+**Total: 22 SKILL.md files.**
 
 ### session-start finding (FS-2)
 
