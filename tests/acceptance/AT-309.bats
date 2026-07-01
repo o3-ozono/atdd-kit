@@ -576,7 +576,10 @@ _behavioral_stub_gh() {
 @test "AT-309-3-behavioral: transcript jsonl user/assistant records counted as turns (FS-2)" {
   local t gh munged; t=$(_behavioral_temp_repo); gh=$(_behavioral_stub_gh)
   trap "rm -rf '${t}' '${gh}'" RETURN
-  munged=$(echo "${t}" | sed 's|/|-|g; s|^-||')
+  # Real Claude Code convention (#348): leading dash kept, both `/` and `.` -> `-`.
+  # (The prior transform stripped the leading dash and left dots intact, matching
+  # the old buggy script — so this fixture was self-consistent and masked the bug.)
+  munged=$(echo "${t}" | sed 's|[/.]|-|g')
   mkdir -p "${t}/.claude/projects/${munged}"
   printf '{"type":"user"}\n{"type":"assistant"}\n{"type":"assistant"}\n' > "${t}/.claude/projects/${munged}/sess.jsonl"
   local out

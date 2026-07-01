@@ -98,17 +98,26 @@ aggregate_turns() {
   local total_user=0 total_assistant=0
   local munged transcript_dir
 
-  munged="$(echo "${REPO_ROOT}" | sed 's|/|-|g; s|^-||')"
+  # Claude Code names the transcript dir by munging the cwd: leading dash KEPT,
+  # and BOTH `/` and `.` converted to `-` (e.g. /Users/o3/github.com/x ->
+  # -Users-o3-github-com-x). The prior transform stripped the leading dash and
+  # left dots intact, so dotted paths (github.com) never resolved and turns=0 (#348).
+  munged="$(echo "${REPO_ROOT}" | sed 's|[/.]|-|g')"
   transcript_dir="${HOME}/.claude/projects/${munged}"
 
   if [[ -d "$transcript_dir" ]]; then
-    while IFS= read -r -d '' f; do
-      local u a
-      u=$(grep -c '"type":"user"' "$f" 2>/dev/null || true)
-      a=$(grep -c '"type":"assistant"' "$f" 2>/dev/null || true)
-      total_user=$(( total_user + $(safe_int "$u") ))
-      total_assistant=$(( total_assistant + $(safe_int "$a") ))
-    done < <(find "$transcript_dir" -maxdepth 2 -name "*.jsonl" -print0 2>/dev/null)
+    # One grep pass per record type across ALL transcripts (was 2 grep spawns
+    # per file). On a real repo with hundreds of session logs the per-file loop
+    # blew the CS-1 5s budget once the munged path started resolving (#348);
+    # a single piped pass keeps it well under the limit. -o counts occurrences,
+    # matching the prior per-line summation for one-record-per-line jsonl.
+    local u a
+    u=$(find "$transcript_dir" -maxdepth 2 -name "*.jsonl" -print0 2>/dev/null \
+      | xargs -0 grep -hoE '"type":"user"' 2>/dev/null | wc -l | tr -d '[:space:]')
+    a=$(find "$transcript_dir" -maxdepth 2 -name "*.jsonl" -print0 2>/dev/null \
+      | xargs -0 grep -hoE '"type":"assistant"' 2>/dev/null | wc -l | tr -d '[:space:]')
+    total_user=$(safe_int "$u")
+    total_assistant=$(safe_int "$a")
   fi
 
   echo "turns: user=${total_user} assistant=${total_assistant} total=$(( total_user + total_assistant ))"
@@ -203,7 +212,7 @@ get_pr_diff_lines() {
 #   (b) gh issue view / gh pr view comments -- persistent signals from all channels
 # Note: transient in-memory variables are not accessible post-Workflow completion.
 extract_friction() {
-  local req_friction="" design_friction="" merge_friction=""
+  local req_friction="" design_friction="" impl_friction="" merge_friction=""
 
   # (a) autopilot-log.jsonl verdict:"FAIL"
   for f in "${REPO_ROOT}/docs/issues/${ISSUE_NUM}-"*/autopilot-log.jsonl; do
@@ -214,11 +223,18 @@ extract_friction() {
         step=$(echo "$line" | grep -oE '"step":"[^"]*"' | grep -oE '"[^"]*"$' | tr -d '"')
         # bash 3.2 (macOS default) has no ${var,,}; lowercase via tr for portability.
         step_lc=$(printf '%s' "$step" | tr '[:upper:]' '[:lower:]')
+        # Map each flow-skill step to its phase/gate bucket (#348). The design
+        # steps (extracting-user-stories / writing-plan-and-tests) converge before
+        # the design gate; running-atdd-cycle is impl-phase (a non-gate inner loop);
+        # merge-family steps map to the merge gate. The prior default catch-all
+        # dumped every unmatched step (incl. extracting-user-stories & running-atdd-cycle)
+        # into merge, polluting the merge bucket. Non-gate steps now go to `impl`.
         case "$step_lc" in
           *req*|*defin*|*require*) req_friction="${req_friction:+$req_friction,}${step}" ;;
-          *design*|*plan*|*writing*) design_friction="${design_friction:+$design_friction,}${step}" ;;
+          *design*|*plan*|*writing*|*user-stor*) design_friction="${design_friction:+$design_friction,}${step}" ;;
+          *atdd*|*cycle*) impl_friction="${impl_friction:+$impl_friction,}${step}" ;;
           *merge*|*deploy*|*review*) merge_friction="${merge_friction:+$merge_friction,}${step}" ;;
-          *) merge_friction="${merge_friction:+$merge_friction,}${step}" ;;
+          *) impl_friction="${impl_friction:+$impl_friction,}${step}" ;;
         esac
       fi
     done < "$f"
@@ -240,7 +256,7 @@ extract_friction() {
   local gate_note=""
   [[ "$total_comment_count" -gt 0 ]] && gate_note="(${total_comment_count} rejection-related comments found)"
 
-  echo "friction: requirements=${req_friction:-none} design=${design_friction:-none} merge=${merge_friction:-none} ${gate_note}"
+  echo "friction: requirements=${req_friction:-none} design=${design_friction:-none} impl=${impl_friction:-none} merge=${merge_friction:-none} ${gate_note}"
 }
 
 # ---------------------------------------------------------------------------
