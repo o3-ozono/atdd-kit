@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-02
+
+### Added
+
+- **setup-* eager-copy 見直し — 参照優先 + オンデマンド不足検出モデルの設計と第一実装（#370）**。`docs/design/setup-eager-copy-inventory.md`（5 setup-* コマンドの全成果物を「参照で足りる」/「プロジェクトローカルに要る」に判定根拠つきで二分類）と `docs/design/setup-on-demand-policy.md`（移管対象ごとのトリガー/検出ロジック/プロンプト方法、pre-flight check の標準ガードパターン、冪等性チェックリスト）を新規追加。`scripts/check-required-labels.sh` を新規実装し、`commands/setup-github.md` の16ラベル定義を正準ソースとして不足ラベルを検出・通知（非破壊・非ゼロ終了しない・gh 不在/未認証は graceful skip）、`--create` で `gh label create --force` による冪等な自動修復に対応。`skills/autopilot/SKILL.md` / `skills/full-autopilot/SKILL.md` の起動節にこの pre-flight check の呼び出しを配線。`hooks/hooks.json` の全 hook が `${CLAUDE_PLUGIN_ROOT}` 参照（plugin-global 常時有効）であることを回帰 AT で pin。`tests/acceptance/AT-370.bats`（35 tests、AT-370-1〜11 green）を追加。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed
