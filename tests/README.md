@@ -184,6 +184,7 @@ Tests for the multi-Issue parallel hands-off orchestrator and its lease / coordi
 | test_template_sync.bats | templates/ and .github/ copy sync verification |
 | test_changelog_format.bats | CHANGELOG.md format compliance |
 | test_docs_restructure.bats | docs/ directory restructure (Issue #64) — Draft-PR-based deliverable rule in workflow-detail.md (#267) — review description aligned to dynamic parallel Workflow panel (#269: AT-001/002/003) |
+| test_elicitation_techniques_docs.bats | docs/methodology/elicitation-techniques/ catalog structure — 4 technique docs (Pre-mortem/Job Story/One question at a time/Out-of-scope question) with primary sources, unified 5-field headings, common-principles.md `[独自整理]` markers, README index, and `defining-requirements`/`batch-discovery` SKILL.md mapping-only links (#369) |
 | test_doc_agent_teams_sync.bats | Documentation / Agent Teams doc sync (Issue #146) |
 | test_gh_field_audit.bats | docs gh --json usage audit (Issue #85) |
 | test_workflow_config_fields.bats | workflow-config.yml platform-only validation |

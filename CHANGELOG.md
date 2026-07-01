@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `docs/methodology/designing-ui-doc2.md`: ビジュアル方針・実装連携の規律（ゲシュタルト原則/Typography/Color/Spacing/Component 選択、プラットフォーム別作法の選択意思決定、Design system 再利用、アクセシビリティ実装連携）。
   - 構造検証 BATS `tests/test_designing_ui_skill.bats`（AT-368-1〜16, 20 tests）を新規追加。
 
+## [4.4.1] - 2026-07-01
+
+### Added
+
+- **要件抽出の技法カタログを新設（#369）**。`docs/methodology/elicitation-techniques/` に Pre-mortem（Klein, HBR 2007）/ Job Story（Klement, JTBD blog 2013）/ One question at a time（Krug, *Rocket Surgery Made Easy* 2010）/ Out-of-scope question（Patton, *User Story Mapping* 2014）の 4 技法を、統一 5 フィールド（目的 / 問いの型 / 適用先マッピング / 一次情報 / 例）付きで一次情報とともに整理。横断する運用原則は `common-principles.md` に独立させ `[独自整理]` マーカーで原典との境界を明示。`defining-requirements/SKILL.md` と `batch-discovery/SKILL.md` は各節から本カタログへのマッピング参照のみを持ち、詳細手順・一次情報・例は doc 側に委ねる（SKILL.md 肥大化防止）。構造（ファイル存在・統一フィールド・SKILL.md からのリンク）を検証する `tests/test_elicitation_techniques_docs.bats` を追加。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed
