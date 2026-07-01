@@ -1,30 +1,26 @@
 #!/usr/bin/env bats
 # @covers: templates/docs/issues/**
 
-# AC1: prd.md — 6 見出し + <!-- コメント
+# AC1: prd.md — 4 要素構造の見出し + <!-- コメント（#366 で 6 節から再編）
 
 @test "AC1: prd.md exists" {
   [ -f "templates/docs/issues/prd.md" ]
 }
 
-@test "AC1: prd.md has ## Problem heading" {
-  grep -q "^## Problem" templates/docs/issues/prd.md
+@test "AC1: prd.md has the element-1 (basics) heading" {
+  grep -qE "^## 1\. 基礎項目" templates/docs/issues/prd.md
 }
 
-@test "AC1: prd.md has ## Why now heading" {
-  grep -q "^## Why now" templates/docs/issues/prd.md
+@test "AC1: prd.md has the element-2 (problem definition) heading" {
+  grep -qE "^## 2\. 問題定義と背景" templates/docs/issues/prd.md
 }
 
-@test "AC1: prd.md has ## Outcome heading" {
-  grep -q "^## Outcome" templates/docs/issues/prd.md
+@test "AC1: prd.md has the element-3 (goals) heading" {
+  grep -qE "^## 3\. ゴールと成功指標" templates/docs/issues/prd.md
 }
 
-@test "AC1: prd.md has ## What heading" {
-  grep -q "^## What" templates/docs/issues/prd.md
-}
-
-@test "AC1: prd.md has ## Non-Goals heading" {
-  grep -q "^## Non-Goals" templates/docs/issues/prd.md
+@test "AC1: prd.md has the element-4 (functional requirements) heading" {
+  grep -qE "^## 4\. 機能要件" templates/docs/issues/prd.md
 }
 
 @test "AC1: prd.md has ## Open Questions heading" {

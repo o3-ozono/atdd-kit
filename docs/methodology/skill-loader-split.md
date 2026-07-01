@@ -101,14 +101,14 @@ Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autop
 | session-start | 235 | none | — | **MEDIUM** | No budget pin — unguarded; 235 lines is high-risk without a ceiling (231→235 per #343) |
 | skill-fix | 157 | none | — | **LOW** | No pin; moderate size |
 | express | 128 | 200 | 72 | **LOW** | Pin at 200; comfortable headroom |
-| batch-discovery | 124 | none | — | **LOW** | No pin; complements full-autopilot (queue priming, #341) |
+| batch-discovery | 126 | none | — | **LOW** | No pin; complements full-autopilot (queue priming, #341); +2 lines for elicitation-techniques catalog mapping ref (#369) |
 | fixing-flaky-tests | 121 | none | — | **LOW** | No pin; moderate size |
 | full-autopilot | 97 | none | — | **LOW** | No pin; manageable |
 | running-atdd-cycle | 95 | 200 | 105 | **LOW** | Pin at 200; ample headroom |
 | skill-gate | 88 | none | — | **LOW** | No pin; small |
 | debugging | 105 | none | — | **LOW** | No pin; moderate |
 | ui-test-debugging | 113 | none | — | **LOW** | No pin; moderate |
-| defining-requirements | 81 | 200 | 119 | **LOW** | Pin at 200; ample headroom (Iron Law: 対話ディシプリン block added #365) |
+| defining-requirements | 96 | 200 | 104 | **LOW** | Pin at 200; ample headroom (Iron Law: 対話ディシプリン block added #365; +elicitation-techniques catalog mapping ref #369) |
 | extracting-user-stories | 63 | 200 | 137 | **LOW** | Pin at 200; ample headroom |
 | writing-plan-and-tests | 62 | 200 | 138 | **LOW** | Pin at 200; ample headroom |
 | fixing-bugs | 87 | none | — | **LOW** | No pin; small |
@@ -117,8 +117,9 @@ Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autop
 | writing-design-doc | 71 | 200 | 129 | **LOW** | Pin at 200; ample headroom |
 | launching-preview | 60 | 200 | 140 | **LOW** | Pin at 200; ample headroom |
 | sim-pool | 65 | none | — | **LOW** | No pin; small |
+| designing-ui | 79 | none | — | **LOW** | No pin; small (#368) |
 
-**Total: 21 SKILL.md files.**
+**Total: 22 SKILL.md files.**
 
 ### session-start finding (FS-2)
 
