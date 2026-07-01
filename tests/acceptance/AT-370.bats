@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
-# @covers: docs/design/**
+# @covers: docs/design/** scripts/check-required-labels.sh skills/autopilot/** skills/full-autopilot/** hooks/hooks.json
 # Issue #370: setup-* の eager-copy を「参照優先 + 使う時に不足検出してプロンプト」モデルへ見直す
 #
 # AT lifecycle: draft -> green -> regression
-# Current state: [draft]
+# Current state: [regression]
 
 INVENTORY="docs/design/setup-eager-copy-inventory.md"
 POLICY="docs/design/setup-on-demand-policy.md"
