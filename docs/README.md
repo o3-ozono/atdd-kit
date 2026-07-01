@@ -62,6 +62,15 @@ User Story + Acceptance Criteria spec files. Spec files persist ACs beyond Issue
 | [TEMPLATE.md](specs/TEMPLATE.md) | Blank template for new spec files |
 | [us-ac-format.md](specs/us-ac-format.md) | Sample spec: US/AC format convention introduced in #66 |
 
+## design/
+
+Design analysis and policy documents produced ahead of implementation Issues.
+
+| Document | Description |
+|----------|-------------|
+| [setup-eager-copy-inventory.md](design/setup-eager-copy-inventory.md) | setup-* eager-copy 仕分け一覧 — 参照で足りる / プロジェクトローカルに要る の二分類（#370） |
+| [setup-on-demand-policy.md](design/setup-on-demand-policy.md) | setup-* オンデマンド移管の設計方針 — トリガー/検出/プロンプト方法・標準ガードパターン・冪等性チェックリスト（#370） |
+
 ## References
 
 - [DEVELOPMENT.md](../DEVELOPMENT.md) -- Always-loaded rules budget, language policy

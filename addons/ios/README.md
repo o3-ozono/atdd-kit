@@ -12,6 +12,13 @@ Platform addon for iOS development with Claude Code.
 | **lint-xcstrings.sh** | Japanese translation coverage linter for .xcstrings files |
 | **CI job fragment** | xcodebuild build + test job for GitHub Actions |
 
+## UI/E2E Testing
+
+XCUITest tests in this addon follow the platform-independent principles in
+[`docs/methodology/testing/ui-e2e-foundations.md`](../../docs/methodology/testing/ui-e2e-foundations.md)
+(waiting, locators, structure, granularity). XCUITest-specific detail (e.g. `accessibilityIdentifier`
+querying, `XCTestExpectation` waits) stays in this addon's own docs.
+
 ## Auto-Detection
 
 This addon activates when the project contains any of:

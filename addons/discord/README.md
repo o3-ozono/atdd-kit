@@ -52,6 +52,13 @@ Filtering is service-agnostic (applied in the core runtime), so it works for any
 - **Robust HTTP**: `curl --fail` (4xx/5xx → non-zero), `--connect-timeout`/`--max-time` (webhook hang can't stall the dispatcher), HTTP exit code checked and failures recorded to `FA_NOTIFY_ERRLOG` (notifications are never silently lost). `json_str` falls back python3 → jq → pure bash (works without python3).
 - HTTP is injectable via `FA_HTTP_POST` (used by the tests to mock the webhook).
 
+## UI/E2E Testing
+
+This addon has no UI/E2E surface of its own (notification delivery only, unit-tested via `FA_HTTP_POST`
+injection). If a UI/E2E test is ever added for a Discord-facing flow, it must follow the
+platform-independent principles in
+[`docs/methodology/testing/ui-e2e-foundations.md`](../../docs/methodology/testing/ui-e2e-foundations.md).
+
 ## Files
 
 | File | Purpose |

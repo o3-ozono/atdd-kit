@@ -34,6 +34,16 @@ Copy addon scripts to the project:
 | `scripts/impact_map.sh` | `scripts/impact_map.sh` |
 | `addons/ios/config/impact_rules.yml` | `config/impact_rules.yml` |
 
+**Re-run protection (existing customized config):** Before copying `config/impact_rules.yml`,
+check whether the destination file **already exists**. If it does, this is a re-run of
+`setup-ios` on a project that has already customized its rules — **do not silently
+overwrite** it. Print an overwrite warning and **skip** (preserve) the existing file. This
+matters more for iOS than Web: the shipped `impact_rules.yml` template's `path:` globs and
+`skill-e2e:` XCTest/XCUITest target names are placeholders that are **required** to be
+edited to match the project's actual Xcode layout — an unconditional overwrite on re-run
+would silently discard that required, hand-tuned customization and put the project back to
+the (non-functional, full-suite-fallback) template defaults.
+
 ### Step 4: Configure Hooks
 
 Add PreToolUse hooks to `.claude/settings.json`:
