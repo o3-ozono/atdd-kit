@@ -28,21 +28,21 @@
 
 ## AT-370-4: オンデマンド移管の設計方針 doc が 3 要素を定義する（W-2 / Outcome 2）
 
-- [ ] [draft] AT-370-4: `docs/design/setup-on-demand-policy.md` が移管対象ごとに「トリガー / 検出ロジック / プロンプト方法」を定義する
+- [ ] [green] AT-370-4: `docs/design/setup-on-demand-policy.md` が移管対象ごとに「トリガー / 検出ロジック / プロンプト方法」を定義する
   - Given: PRD W-2 が承認済み
   - When: `docs/design/setup-on-demand-policy.md` を読む
   - Then: 少なくとも W-3a（ラベル不足検出）を含む移管対象が、トリガー・検出ロジック・プロンプト方法の 3 要素すべてを埋めた行として存在する
 
 ## AT-370-5: pre-flight check の標準ガードパターンが明文化されている（W-2 / Open Question 2）
 
-- [ ] [draft] AT-370-5: 設計方針 doc に「検出失敗はエラー終了せず通知 → confirm 後続行 / スキップ可能」の標準ガードパターン節がある
+- [ ] [green] AT-370-5: 設計方針 doc に「検出失敗はエラー終了せず通知 → confirm 後続行 / スキップ可能」の標準ガードパターン節がある
   - Given: 設計方針 doc が存在する
   - When: doc の標準ガードパターン節を検査する
   - Then: 「エラー終了しない」かつ「スキップ可能」を要件とする pre-flight check の標準パターンが記述されている
 
 ## AT-370-6: 冪等性チェックリストが存在する（W-2 / Outcome 3 / Constraint Story 冪等性）
 
-- [ ] [draft] AT-370-6: 設計方針 doc にラベルと hook の両経路の冪等化方法を含む冪等性チェックリストがある
+- [ ] [green] AT-370-6: 設計方針 doc にラベルと hook の両経路の冪等化方法を含む冪等性チェックリストがある
   - Given: 設計方針 doc が存在する
   - When: doc の冪等性チェックリストを検査する
   - Then: 箇条書きの冪等性チェックリストが存在し、ラベル作成（既存を無視）と hook 配線（plugin-global 常時有効で重複回避）の冪等化方法が各 1 項目以上含まれる
