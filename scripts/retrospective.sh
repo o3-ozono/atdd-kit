@@ -231,7 +231,7 @@ extract_friction() {
         # into merge, polluting the merge bucket. Non-gate steps now go to `impl`.
         case "$step_lc" in
           *req*|*defin*|*require*) req_friction="${req_friction:+$req_friction,}${step}" ;;
-          *design*|*plan*|*writing*|*user-stor*|*extract*) design_friction="${design_friction:+$design_friction,}${step}" ;;
+          *design*|*plan*|*writing*|*user-stor*) design_friction="${design_friction:+$design_friction,}${step}" ;;
           *atdd*|*cycle*) impl_friction="${impl_friction:+$impl_friction,}${step}" ;;
           *merge*|*deploy*|*review*) merge_friction="${merge_friction:+$merge_friction,}${step}" ;;
           *) impl_friction="${impl_friction:+$impl_friction,}${step}" ;;
