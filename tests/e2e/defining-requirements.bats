@@ -45,20 +45,19 @@ _run_claude() {
   fi
 }
 
-@test "I want to read the SKILL.md and recover the 6 PRD sections, so that section coverage is verified" {
+@test "I want to read the SKILL.md and recover the 4-element PRD structure, so that section coverage is verified" {
   prompt="The following is the atdd-kit defining-requirements skill definition. \
-List the six PRD sections defined in the Flow, in order. Respond in English.
+List the PRD sections defined in the Flow, in order. Respond in English.
 
 --- SKILL.md START ---
 ${SKILL_CONTENT}
 --- SKILL.md END ---"
   out=$(_run_claude "$prompt")
   [ -n "$out" ]
-  echo "$out" | grep -qi "Problem"
-  echo "$out" | grep -qi "Why now"
-  echo "$out" | grep -qi "Outcome"
-  echo "$out" | grep -qiE "(^|[^a-zA-Z])What([^a-zA-Z]|$)"
-  echo "$out" | grep -qi "Non-Goals"
+  echo "$out" | grep -qi "基礎項目\|Basics\|Baseline"
+  echo "$out" | grep -qi "問題定義\|Problem"
+  echo "$out" | grep -qi "ゴール\|Goal"
+  echo "$out" | grep -qi "機能要件\|Functional Requirements"
   echo "$out" | grep -qi "Open Questions"
 }
 
