@@ -26,18 +26,17 @@ setup() {
   : "${CLAUDE_BIN:?CLAUDE_BIN must be set or claude in PATH}"
 }
 
-@test "I want to read the SKILL.md and recover the 6 PRD sections, so that section coverage is verified" {
+@test "I want to read the SKILL.md and recover the 4-element PRD structure, so that section coverage is verified" {
   out=$(claude -p --max-turns 1 --permission-mode bypassPermissions <<EOF
-List the six PRD sections defined in this skill, in order.
+List the PRD sections defined in this skill, in order.
 
 $(cat skills/defining-requirements/SKILL.md)
 EOF
   )
-  [[ "$out" =~ Problem ]]
-  [[ "$out" =~ "Why now" ]]
-  [[ "$out" =~ Outcome ]]
-  [[ "$out" =~ What ]]
-  [[ "$out" =~ "Non-Goals" ]]
+  [[ "$out" =~ 基礎項目 ]] || [[ "$out" =~ Basics ]]
+  [[ "$out" =~ 問題定義 ]] || [[ "$out" =~ Problem ]]
+  [[ "$out" =~ ゴール ]] || [[ "$out" =~ Goal ]]
+  [[ "$out" =~ 機能要件 ]] || [[ "$out" =~ "Functional Requirements" ]]
   [[ "$out" =~ "Open Questions" ]]
 }
 
