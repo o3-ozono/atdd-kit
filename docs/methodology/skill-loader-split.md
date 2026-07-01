@@ -92,7 +92,7 @@ The thresholds use 30 lines as the HIGH boundary because a typical feature PR ad
 
 ### Inventory table
 
-Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autopilot 280→255 per #355/#359, merging-and-deploying 79→82 per #356).
+Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autopilot 280→255 per #355/#359, merging-and-deploying 79→82 per #356); defining-requirements re-measured 2026-07-02 (68→81 per #365 Iron Law block).
 
 | Skill | Current lines | Pin limit | Headroom | Rank | Notes |
 |-------|--------------|-----------|----------|------|-------|
@@ -108,7 +108,7 @@ Current line counts were measured with `wc -l` on 2026-06-24 (#356 / #350: autop
 | skill-gate | 88 | none | — | **LOW** | No pin; small |
 | debugging | 105 | none | — | **LOW** | No pin; moderate |
 | ui-test-debugging | 113 | none | — | **LOW** | No pin; moderate |
-| defining-requirements | 79 | 200 | 121 | **LOW** | Pin at 200; ample headroom; +11 lines for elicitation-techniques catalog mapping ref (#369) |
+| defining-requirements | 96 | 200 | 104 | **LOW** | Pin at 200; ample headroom (Iron Law: 対話ディシプリン block added #365; +elicitation-techniques catalog mapping ref #369) |
 | extracting-user-stories | 63 | 200 | 137 | **LOW** | Pin at 200; ample headroom |
 | writing-plan-and-tests | 62 | 200 | 138 | **LOW** | Pin at 200; ample headroom |
 | fixing-bugs | 87 | none | — | **LOW** | No pin; small |

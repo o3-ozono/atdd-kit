@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.11.0] - 2026-07-02
+
+### Added
+
+- **`defining-requirements` に Iron Law: 対話ディシプリンを追加（#365）**。`skills/defining-requirements/SKILL.md` の Flow セクション内に独立した `## Iron Law: 対話ディシプリン` ブロックを新設し、6 つのディシプリン（1 ターン 1 問 / 引き出し型 HARD-GATE — 提案完成型禁止 / 対話の語彙制約 / 経緯記録の自動駆動 / Wall 検知と差し戻し / ターゲット層化追問）を一括で明記した。各 Section Step の問い文自体は現行維持。Wall 検知差し戻しの共通文言テンプレートを内蔵し、6 ディシプリンの識別キーフレーズを grep で検証する pin テスト `tests/acceptance/AT-365.bats` を追加。
+
 ## [4.10.0] - 2026-07-02
 
 ### Added

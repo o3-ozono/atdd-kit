@@ -53,6 +53,19 @@ Each Section step maps to one of the 4 quality-discipline principles carried in 
 
 Each section step is one question at a time. Do not bundle multiple sections into a single prompt.
 
+## Iron Law: 対話ディシプリン
+
+Section の問い文（上記 Flow）は現行維持のまま、以下 6 ディシプリンを対話全体に一括で適用する。
+
+1. **1 ターン 1 問。** 1 ターンに複数の問いを並べない。一次情報: Steve Krug, *Rocket Surgery Made Easy* (2010)。
+2. **引き出し型 HARD-GATE — 提案完成型禁止。** 課題・ゴール・機能の本質（何を解くか / 何を達成するか / 何を作るか）について、AI が候補を完成形で列挙して作者に選ばせる出力は禁止（HARD-GATE）。例外として手法領域（どう計測するか / どう実装するか）に限り AI が選択肢を提示してよい。本質は引き出す、手法は AI 提示可、という境界線を厳守する。
+3. **対話の語彙制約。** 内部 ID・フレームワーク用語・出典名（本ドキュメントの識別子や理論名）を対話に使わない。作者自身の過去回答はその語をそのまま引用する。原則を説明するときは平易な言葉に言い換える。産婆術（Socratic elicitation）の系譜に連なる態度。
+4. **経緯記録の自動駆動。** 対話中に機能の増減・優先度変更・分類変更を検知したら、変更内容・理由・日付を git commit message ではなく PRD 本体に追記する。commit message には経緯を委ねない。
+5. **Wall 検知と差し戻し。** 次の 3 シグナルのいずれかを検知したら Wall とみなす（[独自] 整理）: (a) 層化要素の欠如、(b) 情報量の極端な低下（具体が 1 件未満）、(c) 症状の別語再陳述。1 回深掘りしてなお情報量が上がらなければ、上流の壁打ちへ戻す提案を発動する。共通の差し戻し文言テンプレート:
+   > 「ここで一度立ち止めて、課題をもう少し具体化するところから始めてみましょうか？」
+   このテンプレートを使うときは、どのシグナルが発動したかを本文中で補足する。
+6. **ターゲット層化追問。** 「全員」型の層化されない回答には「強いて言うと誰？」を 1 回だけ追問して層化を試みる。
+
 ## Elicitation Technique Mapping
 
 Per-section technique reference — details, primary sources, and examples live in [`docs/methodology/elicitation-techniques/`](../../docs/methodology/elicitation-techniques/README.md):
