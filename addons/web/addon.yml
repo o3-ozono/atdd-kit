@@ -29,3 +29,9 @@ guidance: |
        scripts/impact_map.sh --platform web --config config/impact_rules.yml --base <ref> --layer skill-e2e
   4. At merge gate, always run the full suite:
        scripts/run-tests.sh --all
+
+  UI/E2E test authoring (Playwright): follow the platform-independent principles in
+  docs/methodology/testing/ui-e2e-foundations.md (waiting, locators, structure, granularity).
+  This addon uses Playwright's built-in auto-waiting and web-first assertions; declare your
+  locator school (Testing Library role-first, or data-cy) once and keep it consistent across
+  this addon's suite.

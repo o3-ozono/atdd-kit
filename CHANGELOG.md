@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-01
+
+### Added
+
+- **UI/E2E テスト基盤原則 doc を新設（#371）**。`docs/methodology/testing/ui-e2e-foundations.md` に 4 原則（待機・要素の掴み方・構造化・粒度）と一次情報 9 出典の脚注、独自整理を示す `[独自]` マーカー、execution-ready な `[hard rule]` 付き LLM 向け do/don't ルール集を集約。要素の掴み方は Testing Library 流派（role 最優先）と Cypress 流派（`data-cy` 最優先）の両根拠と trade-off を明記し、上段 doc は特定流派を推奨せず「一 addon 内での混在禁止」を hard rule とした。`addons/web/addon.yml`・`addons/ios/README.md`・`addons/discord/README.md` から本 doc を参照する継承構造に整備し、原則本文の addon 側再掲を排除。`tests/test_ui_e2e_foundations.bats`（AT-371-1..11）で構造・参照・重複排除を機械検証。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed
