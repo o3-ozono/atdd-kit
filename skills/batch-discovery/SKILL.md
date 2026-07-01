@@ -62,6 +62,8 @@ Gate ③ is not owned by batch-discovery. full-autopilot's three-gate invariant 
 5. Present the batched questions in a **single human session** listing all N Issues. Wait for the human's answers before proceeding.
 6. Apply the human's answers to update each Issue's autonomous draft.
 
+**Elicitation technique mapping** — details, primary sources, and examples live in [`docs/methodology/elicitation-techniques/`](../../docs/methodology/elicitation-techniques/README.md): scope boundary confirmation (step 3's scope exclusions) uses [out-of-scope-question.md](../../docs/methodology/elicitation-techniques/out-of-scope-question.md); all dialogue steps follow [one-question-at-a-time.md](../../docs/methodology/elicitation-techniques/one-question-at-a-time.md).
+
 ### Phase 3: Parallel worker dispatch
 
 7. For each Issue with resolved questions, acquire an issue-lease via `lib/full-autopilot-dispatch.sh select <K-active> <issue...>`:
