@@ -6,7 +6,7 @@
 # AT modality: skill/doc BATS pin (#355 F4) — テンプレ再編・SKILL.md 更新は
 # behavior change ではなく doc/skill content change のため。
 #
-# lifecycle: [draft]
+# lifecycle: [green]
 
 repo_root() {
   cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-01
+
+### Changed
+
+- **PRD テンプレを 6 節構成から 4 要素構造へ再編し問題定義品質規律を導入（#366）**。`templates/docs/issues/prd.md` を `## 1. 基礎項目` / `## 2. 問題定義と背景` / `## 3. ゴールと成功指標` / `## 4. 機能要件` の 4 要素構造へ再編（`## Open Questions` は存続）。問題定義節に「事実」欄と「課題」欄を分離し、品質規律 4 原則（事実と課題の分離・1 PRD=1 本質課題 [独自]・観察可能なゴール・下流からの還流 [独自]、Marty Cagan *Inspired* 由来を基礎とし独自項目を明示）と anti-pattern 4 種をテンプレ内コメントに明記。旧 6 節（Problem / Why now / Outcome / What / Non-Goals / Open Questions）↔ 新 4 要素の対応表をテンプレ内コメントに追加し、既存 `docs/issues/*/prd.md`（旧形式）は書き換えずそのまま有効。`skills/defining-requirements/SKILL.md` の Flow を新構造の対話順へ更新（1 質問ずつ・AskUserQuestion 規律は維持）。`tests/acceptance/AT-366.bats` を新規追加（BATS pin モダリティ、#355 F4）し、影響を受ける既存テスト（`tests/test_docs_issues_templates.bats` の AC1、`tests/e2e/defining-requirements.bats`、`docs/testing-skills.md` の埋め込み例）を新構造に整合させた。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed
