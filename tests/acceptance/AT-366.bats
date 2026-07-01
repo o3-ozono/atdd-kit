@@ -16,6 +16,7 @@ setup() {
   REPO="$(repo_root)"
   PRD_TMPL="${REPO}/templates/docs/issues/prd.md"
   SKILL_FILE="${REPO}/skills/defining-requirements/SKILL.md"
+  ISSUES_README="${REPO}/templates/docs/issues/README.md"
 }
 
 # ---------------------------------------------------------------------------
@@ -177,4 +178,21 @@ setup() {
   [ -n "$plugin_version" ]
   [ -n "$changelog_version" ]
   [ "$plugin_version" = "$changelog_version" ]
+}
+
+# ---------------------------------------------------------------------------
+# AT-366-12: ドキュメント整合性 — templates/docs/issues/README.md が旧 6 節構造を
+# 前提にした記述を残していない（plan.md Finishing 項目の証跡, US-1/US-3）
+# ---------------------------------------------------------------------------
+
+@test "AT-366-12: templates/docs/issues/README.md does not describe prd.md as the old 6-section structure" {
+  ! grep -qE "Problem.*Why now.*Outcome.*What.*Non-Goals" "$ISSUES_README"
+  ! grep -qE "6.*(セクション|節)" "$ISSUES_README"
+}
+
+@test "AT-366-12: templates/docs/issues/README.md describes prd.md with the new 4-element headings" {
+  grep -qE "基礎項目" "$ISSUES_README"
+  grep -qE "問題定義と背景" "$ISSUES_README"
+  grep -qE "ゴールと成功指標" "$ISSUES_README"
+  grep -qE "機能要件" "$ISSUES_README"
 }
