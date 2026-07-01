@@ -21,6 +21,7 @@ Methodology deep-dives: detailed guidance on ATDD, User Story quality, Scrumban 
 | [test-execution-policy.md](test-execution-policy.md) | Phase-based test execution doctrine — impact-only during ATDD iterations, full suite before review/merge |
 | [skill-loader-split.md](skill-loader-split.md) | SKILL.md loader stub split methodology — split pattern, full skill inventory with urgency ranks, impact analysis, pin operation rules, and rollout plan (#314) |
 | [acceptance-test-feasibility.md](acceptance-test-feasibility.md) | Pre-planning feasibility probe doctrine — GUI vs non-GUI bifurcation, flow integration point (Step 3), user escalation gate, tool abstraction, and autopilot alignment (#312) |
+| [elicitation-techniques/](elicitation-techniques/README.md) | Reusable requirements-elicitation technique catalog with primary sources — Pre-mortem, Job Story, One question at a time, Out-of-scope question, plus shared common principles (#369) |
 
 ## Conventions
 
