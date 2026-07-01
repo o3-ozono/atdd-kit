@@ -40,6 +40,7 @@
 
 ## Improvement Candidates (skill-fix Candidates)
 
-<!-- No Auto-Routing: 候補を列挙するのみ。自動起票は行わない -->
+<!-- 3分類で triage する: bug（壊れた/異常なメトリクス）/ skill-fix（friction point / improvement candidate）/ skip（非アクション）。
+     起票した Issue 番号は本サマリに追記する。詳細な判定基準・手順は skills/merging-and-deploying/SKILL.md Step 5 を権威とする。 -->
 
 - (none identified)
