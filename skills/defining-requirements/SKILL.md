@@ -53,6 +53,17 @@ Each Section step maps to one of the 4 quality-discipline principles carried in 
 
 Each section step is one question at a time. Do not bundle multiple sections into a single prompt.
 
+## Elicitation Technique Mapping
+
+Per-section technique reference — details, primary sources, and examples live in [`docs/methodology/elicitation-techniques/`](../../docs/methodology/elicitation-techniques/README.md):
+
+| Section | Technique |
+|---------|-----------|
+| Problem / Outcome | [job-story.md](../../docs/methodology/elicitation-techniques/job-story.md) |
+| Constraints / Open Questions | [pre-mortem.md](../../docs/methodology/elicitation-techniques/pre-mortem.md) |
+| Non-Goals | [out-of-scope-question.md](../../docs/methodology/elicitation-techniques/out-of-scope-question.md) |
+| All sections (dialogue rule) | [one-question-at-a-time.md](../../docs/methodology/elicitation-techniques/one-question-at-a-time.md) |
+
 ## Responsibility Boundary
 
 | Concern | Owner |
