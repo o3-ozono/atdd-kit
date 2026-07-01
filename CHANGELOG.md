@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.4.1] - 2026-07-01
+
+### Added
+
+- **`docs/methodology/prioritization.md` を新設（#367）**。MoSCoW（DSDM）を一次情報として扱い、atdd-kit の `[独自]` 拡張（5 段階: MUST/SHOULD/WANT/次回以降/破棄、効き×工数の 2 軸判定、anti-pattern、破棄要件の理由付き保存によるゾンビ復活防止）を明文化。`defining-requirements` スキルの Section 4 — What から本 doc を参照する接続を追加。`tests/test_prioritization_doc.bats` で必須セクションを構造検証。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed

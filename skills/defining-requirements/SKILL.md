@@ -35,7 +35,7 @@ No Issue comment, no `skill-status` fenced block. The PRD draft is committed and
 2. **Section 1 — Problem** (one question): "Describe the concrete pain. Separate the current state and the consequence."
 3. **Section 2 — Why now** (one question): "Why does this need to happen now? Deadlines, triggers, opportunity cost?"
 4. **Section 3 — Outcome** (one question): "What measurable state is reached when done?"
-5. **Section 4 — What** (one question): "List in-scope features or changes."
+5. **Section 4 — What** (one question): "List in-scope features or changes." Prioritize each in-scope feature using the 5-stage / 2-axis frame in [`docs/methodology/prioritization.md`](../../docs/methodology/prioritization.md) (MUST/SHOULD/WANT/次回以降/破棄, judged separately on impact vs. effort).
 6. **Section 5 — Non-Goals** (one question): "List intentionally excluded items with one-line rationale each."
 7. **Section 6 — Open Questions** (one question): "List unresolved decisions, or state 'none remain'."
 8. **Write draft.** `cp templates/docs/issues/prd.md docs/issues/<NNN>/prd.md`, then fill in each section in place.
