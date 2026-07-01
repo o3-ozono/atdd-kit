@@ -40,7 +40,7 @@ Each Section step maps to one of the 4 quality-discipline principles carried in 
    b. Issue: "What consequence or pain does that fact cause?" (kept separate from the fact — anti-pattern: mixing fact and issue)
    c. Why now (今やる背景): "Why does this need to happen now? Deadlines, triggers, opportunity cost?"
 4. **Section 3 — ゴールと成功指標** (one question): "What externally observable state is reached when done? Avoid internal completion conditions (e.g. 'implement X', 'rewrite file Y') — state the change from the user's vantage point instead."
-5. **Section 4 — 機能要件** (one question, then a follow-up): "List in-scope features or changes, with a priority per item (placeholder pending #367 methodology)." then "List intentionally out-of-scope items (スコープ外) with one-line rationale each."
+5. **Section 4 — 機能要件** (one question, then a follow-up): "List in-scope features or changes." Prioritize each in-scope feature using the 5-stage / 2-axis frame in [`docs/methodology/prioritization.md`](../../docs/methodology/prioritization.md) (MUST/SHOULD/WANT/次回以降/破棄, judged separately on impact vs. effort). Then "List intentionally out-of-scope items (スコープ外) with one-line rationale each."
 6. **Open Questions** (one question): "List unresolved decisions (Unresolved only), or state 'none remain'. Resolved items are answered and closed, not left listed."
 7. **Write draft.** `cp templates/docs/issues/prd.md docs/issues/<NNN>/prd.md`, then fill in each section in place.
 8. **Commit / push / Draft PR.** Commit the draft to the Issue's work branch (Conventional Commits), push, and if no Draft PR exists open one with `gh pr create --draft`.

@@ -38,6 +38,7 @@ Deep-dive methodology documents for ATDD, Scrumban, and related practices.
 | [bug-fix-process.md](methodology/bug-fix-process.md) | Bug fix workflow and triage process |
 | [definition-of-done.md](methodology/definition-of-done.md) | Definition of Done — AC gate, CI gate, PR gate, documentation gate |
 | [definition-of-ready.md](methodology/definition-of-ready.md) | Definition of Ready — criteria for Issue to reach ready-to-go state |
+| [prioritization.md](methodology/prioritization.md) | Feature prioritization methodology — MoSCoW-derived 5-stage labels, impact×effort 2-axis judgment, anti-patterns, discard handling |
 | [scrumban.md](methodology/scrumban.md) | Scrumban + ATDD integrated methodology — terminology, label table, solo adaptations |
 | [test-mapping.md](methodology/test-mapping.md) | AC-to-test-layer mapping and Testing Quadrants reference |
 | [us-ac-format.md](methodology/us-ac-format.md) | US/AC spec file format definition (frontmatter schema, status transitions, filename convention) |
