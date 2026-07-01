@@ -54,3 +54,16 @@
 }
 
 # AT-372-5: ドキュメント構造を自動検証できる（FS-5）— 本ファイル自体が構造検証テストである
+
+# AT-372-6: バージョニング規約の遵守（CS-2）
+# plugin.json の version が CHANGELOG.md の *最上部* リリース見出し
+# （`## [Unreleased]` を除く最初の `## [x.y.z]`）の version と一致する不変条件を検証する。
+# version 値そのものは pin しない（#289: 後続 bump で永久 red 化を防ぐ）。
+
+@test "AT-372-6: plugin.json version matches topmost CHANGELOG release heading" {
+  plugin_version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -1)
+  [ -n "$plugin_version" ]
+  topmost_version=$(grep -oE '## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | sed -E 's/## \[([0-9]+\.[0-9]+\.[0-9]+)\]/\1/')
+  [ -n "$topmost_version" ]
+  [ "$plugin_version" = "$topmost_version" ]
+}

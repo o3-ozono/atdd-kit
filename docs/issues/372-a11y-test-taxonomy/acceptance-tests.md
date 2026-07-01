@@ -41,7 +41,7 @@
 
 ## AT-372-6: バージョニング規約の遵守（CS-2）
 
-- [x] [regression] AT-372-6: plugin.json version が CHANGELOG 最上部見出しと一致する（既存 `tests/test_changelog_format.bats` の不変条件テストで検証）
+- [x] [regression] AT-372-6: plugin.json version が CHANGELOG 最上部見出しと一致する（`tests/test_a11y_taxonomy_structure.bats` の "AT-372-6: plugin.json version matches topmost CHANGELOG release heading" @test で検証。`## [Unreleased]` を除く最初の `## [x.y.z]` 見出しの version と一致する不変条件のみを検証し version 値は pin しない）
   - Given: 本 Issue のマージ後、`.claude-plugin/plugin.json` と `CHANGELOG.md` が更新されている
   - When: `plugin.json` の `version` と CHANGELOG 最上部のリリース見出しの version を比較する
   - Then: 両者が一致する（不変条件を検証。特定 version 値は pin しない — 後続 bump で post-merge regression が永久 red 化するのを防ぐ、#289）
