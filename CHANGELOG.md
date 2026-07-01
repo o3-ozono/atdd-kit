@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.9.0] - 2026-07-02
+
+### Added
+
+- **`docs/methodology/a11y-test-taxonomy.md` を新設（#372）**。a11y テストの手段を「自動・静的」「自動・操作」「手動」の3カテゴリに分割し、各カテゴリのカバー対象・粒度・実行タイミング（unit / CI ゲート / E2E / design review）を明文化。Playwright 公式ドキュメントおよび Deque の自動アクセシビリティテストカバレッジ分析（自動のみで約57%、半自動併用でも約80%）を一次情報として引用し、「自動 green ≠ a11y 達成」であることを明記、手動レビューを design review 必須ゲートとする根拠を提示。適用基準として WCAG 2.2 AA を第一候補とし、JIS X 8341-3:2016（WCAG 2.0 相当）との版差に留意する旨を記載。テスト手段の分け方（本ドキュメントの主題）と WCAG SC レベルトリアージが独立した設計判断軸であることも明示。`tests/test_a11y_taxonomy_structure.bats` で構造を検証。
+
 ## [4.8.0] - 2026-07-02
 
 ### Changed
