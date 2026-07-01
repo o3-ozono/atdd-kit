@@ -7,7 +7,7 @@
 # 本 Issue は docs / skill-content 変更のみ。scripts/retrospective.sh 本体には触れない
 # （#348 と責務分離）。AT-349-7 でその不変性を回帰確認する。
 #
-# lifecycle: [draft]
+# lifecycle: [green]
 
 repo_root() {
   cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd
