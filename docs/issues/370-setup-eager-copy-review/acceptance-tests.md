@@ -7,21 +7,21 @@
 
 ## AT-370-1: 仕分け一覧 doc が全 setup-* を網羅する（W-1 / Outcome 1）
 
-- [ ] [draft] AT-370-1: `docs/design/setup-eager-copy-inventory.md` が存在し、5 つの setup-* コマンド全ての成果物を実ファイル参照付きで列挙する
+- [ ] [green] AT-370-1: `docs/design/setup-eager-copy-inventory.md` が存在し、5 つの setup-* コマンド全ての成果物を実ファイル参照付きで列挙する
   - Given: PRD W-1 と Functional Story（仕分け一覧）が承認済み
   - When: `docs/design/setup-eager-copy-inventory.md` を読む
   - Then: setup-github / setup-ci / setup-discord / setup-ios / setup-web の 5 コマンドすべてが表に登場し、各成果物にソースパス（`templates/…` または `addons/…`）と配置先が記載されている
 
 ## AT-370-2: 全アイテムが Gate① 基準で二分類されている（W-1 / Outcome 1）
 
-- [ ] [draft] AT-370-2: 仕分け一覧の全アイテムが「参照で足りる」/「プロジェクトローカルに要る」のいずれかに、判定根拠つきで分類されている
+- [ ] [green] AT-370-2: 仕分け一覧の全アイテムが「参照で足りる」/「プロジェクトローカルに要る」のいずれかに、判定根拠つきで分類されている
   - Given: 仕分け一覧 doc が存在する
   - When: doc 内の分類表を検査する
   - Then: 全アイテムに二分類のいずれかと 1 行以上の判定根拠が付与されており、未分類（空欄）のアイテムが 0 件である
 
 ## AT-370-3: 高リスク項目が「プロジェクトローカルに要る」に固定されている（W-1 / Non-Goals）
 
-- [ ] [draft] AT-370-3: 秘匿値・書き込み対象は「プロジェクトローカルに要る」側に分類され、本 Issue のオンデマンド移管対象外と明記される
+- [ ] [green] AT-370-3: 秘匿値・書き込み対象は「プロジェクトローカルに要る」側に分類され、本 Issue のオンデマンド移管対象外と明記される
   - Given: 仕分け一覧 doc が存在する
   - When: discord webhook（秘匿値）と GitHub ラベル（書き込み対象）の分類行を検査する
   - Then: 両者が「プロジェクトローカルに要る」に分類され、かつ本 Issue のオンデマンド移管対象外である旨が doc に明記されている
