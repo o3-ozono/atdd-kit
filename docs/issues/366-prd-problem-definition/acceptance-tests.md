@@ -83,6 +83,13 @@
   - When: version と CHANGELOG の最上位リリース見出しを比較する
   - Then: 両者が一致する（時点固定値を pin せず invariant としてアサート — #289 教訓）
 
+## AT-366-12: ドキュメント整合性 — templates/docs/issues/README.md が旧 6 節構造を前提にした記述を残していない（US-1/US-3）
+
+- [x] [green] AT-366-12: `templates/docs/issues/README.md` が prd.md を新 4 要素構造で説明する
+  - Given: 再編後の `templates/docs/issues/prd.md`
+  - When: `templates/docs/issues/README.md` の prd.md 説明箇所を読む
+  - Then: `Problem / Why now / Outcome / What / Non-Goals` の旧 6 節構造を前提にした記述（「6 セクション」等）が残っておらず、基礎項目 / 問題定義と背景 / ゴールと成功指標 / 機能要件の新 4 要素構造で説明されている
+
 <!-- 実装開始後は [planned] → [draft] に変更する -->
 <!-- テストが通過したら [draft] → [green] に変更する -->
 <!-- リグレッション対象になったら [green] → [regression] に変更する -->
