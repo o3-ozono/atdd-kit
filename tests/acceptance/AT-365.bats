@@ -42,6 +42,12 @@ SKILL_FILE="skills/defining-requirements/SKILL.md"
   grep -q '手法' "$SKILL_FILE"
 }
 
+@test "AT-365-3: the boundary line itself is pinned -- essence (what to solve/achieve/build) is elicited, method (how to measure/implement) may be AI-proposed" {
+  grep -Eq '何を解くか.*何を達成するか.*何を作るか' "$SKILL_FILE"
+  grep -Eq 'どう計測するか.*どう実装するか' "$SKILL_FILE"
+  grep -q '本質は引き出す、手法は AI 提示可' "$SKILL_FILE"
+}
+
 # --- AT-365-4: Discipline 3 dialogue vocabulary constraint (C1) ------------
 
 @test "AT-365-4: vocabulary-constraint discipline, verbatim-quote, and plain-language phrasing are documented" {
@@ -50,12 +56,24 @@ SKILL_FILE="skills/defining-requirements/SKILL.md"
   grep -q '平易な言葉' "$SKILL_FILE"
 }
 
+@test "AT-365-4: the substantive no-internal-ID/no-framework-term/no-source-name clause is pinned" {
+  grep -q '内部 ID・フレームワーク用語・出典名' "$SKILL_FILE"
+}
+
 # --- AT-365-5: Discipline 4 automatic rationale recording (C2) -------------
 
 @test "AT-365-5: rationale-recording discipline, PRD-body persistence, and no-commit-message-dependency are documented" {
   grep -q '経緯記録' "$SKILL_FILE"
   grep -q 'PRD 本体' "$SKILL_FILE"
   grep -qi 'commit message' "$SKILL_FILE"
+}
+
+@test "AT-365-5: the detection triggers (feature increase/decrease, priority change, category change) are pinned" {
+  grep -q '機能の増減・優先度変更・分類変更' "$SKILL_FILE"
+}
+
+@test "AT-365-5: the recorded fields (change content, reason, date appended to PRD body) are pinned" {
+  grep -q '変更内容・理由・日付を.*PRD 本体に追記' "$SKILL_FILE"
 }
 
 # --- AT-365-6: Discipline 5 Wall detection + send-back template (F3) ------
