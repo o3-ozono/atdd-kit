@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-01
+
+### Added
+
+- **新スキル `designing-ui` + 方法論 doc 2 本を追加（#368）**。`defining-requirements` で承認済みの PRD を入力に、機能要件を画面へ落とし込む UI/UX 設計工程を引き出し型（pull）対話で駆動する。5 フェーズ（UI 要件確認 → 情報設計 → ワイヤーフレーム → ビジュアル方針 → 実装連携）を順に進め、`docs/issues/<NNN>/{ui-requirements,information-architecture,wireframes,visual-policy,implementation-handoff}.md` を生成する。中核思想は「何を出すか=プロダクト側（PRD）」「どう見せるか=対象プラットフォーム作法（HIG / Material Design / Baseline）」「独自判断は `[独自]` 明示」。アクセシビリティ（WAI-ARIA / WCAG 2.2 / JIS Z 8520）はワイヤーフェーズから組み込むフェーズ横断の哲学として扱う。技術アーキテクチャのトレードオフ記録を担う `writing-design-doc` とは責任境界を分離（`designing-ui` は画面設計の工程駆動のみ・コード実装/AT実装/Plan作成は担わない）。
+  - `docs/methodology/designing-ui-doc1.md`: UI 要件・情報設計・ワイヤーフレームの骨格規律（画面単位はワイヤー着手前に確定・装飾を含めない）。
+  - `docs/methodology/designing-ui-doc2.md`: ビジュアル方針・実装連携の規律（ゲシュタルト原則/Typography/Color/Spacing/Component 選択、プラットフォーム別作法の選択意思決定、Design system 再利用、アクセシビリティ実装連携）。
+  - 構造検証 BATS `tests/test_designing_ui_skill.bats`（AT-368-1〜16, 20 tests）を新規追加。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed
