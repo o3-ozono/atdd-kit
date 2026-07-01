@@ -398,6 +398,126 @@ CL
   [[ "${lines[0]}" != "STALE_SESSION" ]]
 }
 
+# ============================================================
+# Issue #353: user-scope fallback in read_installed_version
+# installed_plugins.json can carry a user-scope entry that has NO
+# projectPath field. When the current project has no matching
+# project-scope entry, the version must fall back to the user-scope
+# entry (Claude Code scope resolution: project > local > user).
+# ============================================================
+
+# Helper: user-scope-only installed_plugins.json (no projectPath field)
+make_installed_json_user() {
+  local json_path="$1" ver="$2"
+  cat > "$json_path" <<JSON
+{
+  "version": 1,
+  "plugins": {
+    "atdd-kit@atdd-kit": [
+      {
+        "scope": "user",
+        "installPath": "/Users/mock/.claude/plugins/atdd-kit/${ver}",
+        "version": "${ver}",
+        "installedAt": "2026-01-01T00:00:00Z"
+      }
+    ]
+  }
+}
+JSON
+}
+
+# Helper: BOTH a project-scope entry (for $proj) and a user-scope entry
+make_installed_json_both() {
+  local json_path="$1" proj="$2" proj_ver="$3" user_ver="$4"
+  cat > "$json_path" <<JSON
+{
+  "version": 1,
+  "plugins": {
+    "atdd-kit@atdd-kit": [
+      {
+        "scope": "project",
+        "projectPath": "${proj}",
+        "installPath": "/Users/mock/.claude/plugins/atdd-kit/${proj_ver}",
+        "version": "${proj_ver}",
+        "installedAt": "2026-01-01T00:00:00Z"
+      },
+      {
+        "scope": "user",
+        "installPath": "/Users/mock/.claude/plugins/atdd-kit/${user_ver}",
+        "version": "${user_ver}",
+        "installedAt": "2026-01-01T00:00:00Z"
+      }
+    ]
+  }
+}
+JSON
+}
+
+# AT-353-1 (user-scope-only): loaded < user-scope version → RESTART_REQUIRED
+@test "AT-353-1: RESTART_REQUIRED via user-scope fallback when no project-scope entry matches" {
+  mkdir -p "$CACHE_DIR"
+  echo "0.1.0" > "${CACHE_DIR}/atdd-kit.version"  # CACHED == CURRENT (would be NO_UPDATE)
+  local installed_json="${BATS_TEST_TMPDIR}/installed_user.json"
+  make_installed_json_user "$installed_json" "3.35.0"
+  run ./scripts/check-plugin-version.sh "$PLUGIN_ROOT" "$CACHE_DIR" "$installed_json" "$MOCK_PROJECT_PATH"
+  [[ "$status" -eq 0 ]]
+  [[ "${lines[0]}" == "RESTART_REQUIRED" ]]
+  [[ "${lines[1]}" == "0.1.0" ]]
+  [[ "${lines[2]}" == "3.35.0" ]]
+}
+
+# AT-353-1b (repro of stockbot-jp): project-scope entry exists but for a DIFFERENT
+# project + user-scope newer → must resolve to user-scope, not STALE_SESSION.
+@test "AT-353-1b: user-scope fallback wins over an unrelated project-scope entry" {
+  mkdir -p "$CACHE_DIR"
+  echo "3.34.1" > "${CACHE_DIR}/atdd-kit.version"  # marker newer than loaded (would misfire STALE_SESSION)
+  echo '{"name":"atdd-kit","version":"3.33.0"}' > "${PLUGIN_ROOT}/.claude-plugin/plugin.json"
+  local installed_json="${BATS_TEST_TMPDIR}/installed_both_unrelated.json"
+  make_installed_json_both "$installed_json" "/some/other/project" "3.34.1" "3.35.0"
+  run ./scripts/check-plugin-version.sh "$PLUGIN_ROOT" "$CACHE_DIR" "$installed_json" "$MOCK_PROJECT_PATH"
+  [[ "$status" -eq 0 ]]
+  [[ "${lines[0]}" == "RESTART_REQUIRED" ]]
+  [[ "${lines[1]}" == "3.33.0" ]]
+  [[ "${lines[2]}" == "3.35.0" ]]
+}
+
+# AT-353-2 (project-scope-only): existing behavior preserved — project-scope match still used
+@test "AT-353-2: project-scope entry for current project is still honored (no regression)" {
+  mkdir -p "$CACHE_DIR"
+  echo "0.1.0" > "${CACHE_DIR}/atdd-kit.version"
+  local installed_json="${BATS_TEST_TMPDIR}/installed_proj.json"
+  make_installed_json "$installed_json" "$MOCK_PROJECT_PATH" "3.12.0"
+  run ./scripts/check-plugin-version.sh "$PLUGIN_ROOT" "$CACHE_DIR" "$installed_json" "$MOCK_PROJECT_PATH"
+  [[ "$status" -eq 0 ]]
+  [[ "${lines[0]}" == "RESTART_REQUIRED" ]]
+  [[ "${lines[2]}" == "3.12.0" ]]
+}
+
+# AT-353-3 (both, priority pinned): project-scope for CURRENT project wins over user-scope
+@test "AT-353-3: project-scope for current project takes priority over user-scope" {
+  mkdir -p "$CACHE_DIR"
+  echo "0.1.0" > "${CACHE_DIR}/atdd-kit.version"
+  local installed_json="${BATS_TEST_TMPDIR}/installed_both_current.json"
+  # project-scope (current project) = 3.20.0, user-scope = 3.35.0 → project must win
+  make_installed_json_both "$installed_json" "$MOCK_PROJECT_PATH" "3.20.0" "3.35.0"
+  run ./scripts/check-plugin-version.sh "$PLUGIN_ROOT" "$CACHE_DIR" "$installed_json" "$MOCK_PROJECT_PATH"
+  [[ "$status" -eq 0 ]]
+  [[ "${lines[0]}" == "RESTART_REQUIRED" ]]
+  [[ "${lines[2]}" == "3.20.0" ]]
+}
+
+# AT-353-4 (neither): no matching entry at all → conventional tokens unaffected (NO_UPDATE)
+@test "AT-353-4: NO_UPDATE when neither project-scope nor user-scope entry exists" {
+  mkdir -p "$CACHE_DIR"
+  echo "0.1.0" > "${CACHE_DIR}/atdd-kit.version"
+  local installed_json="${BATS_TEST_TMPDIR}/installed_none.json"
+  # only an unrelated project-scope entry, no user-scope entry
+  make_installed_json "$installed_json" "/some/other/project" "3.12.0"
+  run ./scripts/check-plugin-version.sh "$PLUGIN_ROOT" "$CACHE_DIR" "$installed_json" "$MOCK_PROJECT_PATH"
+  [[ "$status" -eq 0 ]]
+  [[ "${lines[0]}" == "NO_UPDATE" ]]
+}
+
 # AT-009: network-independent, local-only
 # Static inspection: verify no external network calls (curl/wget/http/nc etc.) exist in the script.
 # This guard detects future regressions if the script is modified.
