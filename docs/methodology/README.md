@@ -21,6 +21,7 @@ Methodology deep-dives: detailed guidance on ATDD, User Story quality, Scrumban 
 | [test-execution-policy.md](test-execution-policy.md) | Phase-based test execution doctrine — impact-only during ATDD iterations, full suite before review/merge |
 | [skill-loader-split.md](skill-loader-split.md) | SKILL.md loader stub split methodology — split pattern, full skill inventory with urgency ranks, impact analysis, pin operation rules, and rollout plan (#314) |
 | [acceptance-test-feasibility.md](acceptance-test-feasibility.md) | Pre-planning feasibility probe doctrine — GUI vs non-GUI bifurcation, flow integration point (Step 3), user escalation gate, tool abstraction, and autopilot alignment (#312) |
+| [a11y-test-taxonomy.md](a11y-test-taxonomy.md) | a11y test method taxonomy — 3-way split (Automated/Static, Automated/Interactive, Manual), "automated green ≠ a11y achieved" with Playwright/Deque citations, WCAG 2.2 AA / JIS X 8341-3:2016 applicability criteria, and the separate-axis distinction from SC-level triage (#372) |
 
 ## Conventions
 
