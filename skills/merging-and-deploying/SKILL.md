@@ -44,6 +44,16 @@ If the review verdict is not PASS, instruct the user to return to `reviewing-del
 4. **Post-deploy regression.** Re-run the Acceptance Tests in `tests/acceptance/` against the deployed build as a **regression** check. These are the `[regression]`-marked ATs stabilized at Step 4. If any fails, report it immediately and treat the deploy as suspect.
 5. **Report + Retrospective.** Summarize merge SHA, deploy result, and the post-deploy regression outcome in one message. Output the same content to both the terminal and as an Issue/PR comment (all-channel sync: terminal + Issue/PR comment). Then run `scripts/retrospective.sh --issue <NNN> --pr <PR>` — this is the **sole entry point** for retrospective execution. The express skill does not call `merging-and-deploying`, so express Issues skip retrospective structurally — no `if non-express` branch is needed (express skip is structural, not a flag).
 
+   **Findings triage — 3 分類 (three classes) → Issue filing (#349).** After `retrospective.sh` produces its findings, triage each one into exactly one of three classes and act on it:
+
+   - **壊れた/異常なメトリクス (broken/anomalous metric) → `type:bug` filing.** A metric that is broken or anomalous (e.g. Dialogue Volume=0, an out-of-range friction classification) is filed as a `type:bug` Issue — the retrospective mechanism itself is defective, not the Issue's deliverable.
+   - **friction point / improvement candidate → skill-fix filing.** An operational friction point or improvement candidate against a specific skill (the skill worked but was awkward, ambiguous, or mis-triggered) is filed via the `atdd-kit:skill-fix` route, not as a generic bug.
+   - **非アクション (non-actionable, normal metrics / reference info only) → スキップ (skip, no filing needed).** A finding with no explicit anomalous value, no 閾値 (threshold) breach, and no エラーメッセージ (error message) is non-actionable — do not file an Issue for it. When the classification is ambiguous, the skill does not guess: **人間が最終確認 (a human makes the final confirmation)**.
+
+   起票した Issue 番号 (every filed Issue number) is appended to the retrospective サマリ (summary); output that updated summary identically to both the terminal and the Issue/PR comment — **全チャネル同期 (all-channel sync)**.
+
+   **No auto-routing (誤検出抑制, false-positive suppression).** This step never auto-files or auto-routes a finding without confirmation — the actionable/non-actionable judgment is always finalized by **人間が最終確認** before an Issue is created.
+
 ## Responsibility Boundary
 
 | Concern | Owner |

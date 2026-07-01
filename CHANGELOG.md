@@ -7,11 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [4.5.0] - 2026-07-02
+## [4.9.0] - 2026-07-02
 
 ### Added
 
 - **setup-* eager-copy 見直し — 参照優先 + オンデマンド不足検出モデルの設計と第一実装（#370）**。`docs/design/setup-eager-copy-inventory.md`（5 setup-* コマンドの全成果物を「参照で足りる」/「プロジェクトローカルに要る」に判定根拠つきで二分類）と `docs/design/setup-on-demand-policy.md`（移管対象ごとのトリガー/検出ロジック/プロンプト方法、pre-flight check の標準ガードパターン、冪等性チェックリスト）を新規追加。`scripts/check-required-labels.sh` を新規実装し、`commands/setup-github.md` の16ラベル定義を正準ソースとして不足ラベルを検出・通知（非破壊・非ゼロ終了しない・gh 不在/未認証は graceful skip）、`--create` で `gh label create --force` による冪等な自動修復に対応。`skills/autopilot/SKILL.md` / `skills/full-autopilot/SKILL.md` の起動節にこの pre-flight check の呼び出しを配線。`hooks/hooks.json` の全 hook が `${CLAUDE_PLUGIN_ROOT}` 参照（plugin-global 常時有効）であることを回帰 AT で pin。`tests/acceptance/AT-370.bats`（35 tests、AT-370-1〜11 green）を追加。
+## [4.8.0] - 2026-07-02
+
+### Changed
+
+- **retrospective の actionable findings を Issue 化する手順を正典化（#349）**。`merging-and-deploying` の Flow Step 5（Report + Retrospective）に、`scripts/retrospective.sh` 出力の所見トリアージ手順を追記：**壊れた/異常なメトリクス**（例: Dialogue Volume=0、friction 分類の異常値）→ `type:bug` 起票、**friction point / improvement candidate**（特定 skill の操作上の摩擦）→ `atdd-kit:skill-fix` ルート起票、**非アクション**（正常メトリクス・参考情報のみ、明示的な異常値/閾値超え/エラーメッセージを含まない）→ スキップ（起票不要、曖昧な場合は人間が最終確認）。起票した Issue 番号は retrospective サマリに追記し、terminal と Issue/PR コメントの両方へ同一内容を出力（全チャネル同期）。auto-routing は行わず actionable 判定は常に人間が最終確認する（誤検出抑制）。`templates/docs/issues/retrospective.md` の "Improvement Candidates" 節も、消極的な `No Auto-Routing` 注記から 3 分類要点＋番号追記＋SKILL.md 参照の積極的な文言へ更新。`scripts/retrospective.sh` 本体・出力フォーマットには一切触れず（#348 と責務分離）、`tests/acceptance/AT-349.bats` で content-invariant として検証。
+
+## [4.7.0] - 2026-07-01
+
+### Added
+
+- **UI/E2E テスト基盤原則 doc を新設（#371）**。`docs/methodology/testing/ui-e2e-foundations.md` に 4 原則（待機・要素の掴み方・構造化・粒度）と一次情報 9 出典の脚注、独自整理を示す `[独自]` マーカー、execution-ready な `[hard rule]` 付き LLM 向け do/don't ルール集を集約。要素の掴み方は Testing Library 流派（role 最優先）と Cypress 流派（`data-cy` 最優先）の両根拠と trade-off を明記し、上段 doc は特定流派を推奨せず「一 addon 内での混在禁止」を hard rule とした。`addons/web/addon.yml`・`addons/ios/README.md`・`addons/discord/README.md` から本 doc を参照する継承構造に整備し、原則本文の addon 側再掲を排除。`tests/test_ui_e2e_foundations.bats`（AT-371-1..11）で構造・参照・重複排除を機械検証。
+
+## [4.6.0] - 2026-07-02
+
+### Changed
+
+- **PRD テンプレを 6 節構成から 4 要素構造へ再編し問題定義品質規律を導入（#366）**。`templates/docs/issues/prd.md` を `## 1. 基礎項目` / `## 2. 問題定義と背景` / `## 3. ゴールと成功指標` / `## 4. 機能要件` の 4 要素構造へ再編（`## Open Questions` は存続）。問題定義節に「事実」欄と「課題」欄を分離し、品質規律 4 原則（事実と課題の分離・1 PRD=1 本質課題 [独自]・観察可能なゴール・下流からの還流 [独自]、Marty Cagan *Inspired* 由来を基礎とし独自項目を明示）と anti-pattern 4 種をテンプレ内コメントに明記。旧 6 節（Problem / Why now / Outcome / What / Non-Goals / Open Questions）↔ 新 4 要素の対応表をテンプレ内コメントに追加し、既存 `docs/issues/*/prd.md`（旧形式）は書き換えずそのまま有効。`skills/defining-requirements/SKILL.md` の Flow を新構造の対話順へ更新（1 質問ずつ・AskUserQuestion 規律は維持）。`templates/docs/issues/README.md` の `prd.md` 説明（テンプレート一覧の括弧書きと「### prd.md」節）を旧 6 節列挙から新 4 要素構造へ整合させ、ドキュメント間の記述不整合を解消（AT-366-12）。`tests/acceptance/AT-366.bats` を新規追加（BATS pin モダリティ、#355 F4）し、影響を受ける既存テスト（`tests/test_docs_issues_templates.bats` の AC1、`tests/e2e/defining-requirements.bats`、`docs/testing-skills.md` の埋め込み例）を新構造に整合させた。
+
+## [4.5.0] - 2026-07-01
+
+### Added
+
+- **新スキル `designing-ui` + 方法論 doc 2 本を追加（#368）**。`defining-requirements` で承認済みの PRD を入力に、機能要件を画面へ落とし込む UI/UX 設計工程を引き出し型（pull）対話で駆動する。5 フェーズ（UI 要件確認 → 情報設計 → ワイヤーフレーム → ビジュアル方針 → 実装連携）を順に進め、`docs/issues/<NNN>/{ui-requirements,information-architecture,wireframes,visual-policy,implementation-handoff}.md` を生成する。中核思想は「何を出すか=プロダクト側（PRD）」「どう見せるか=対象プラットフォーム作法（HIG / Material Design / Baseline）」「独自判断は `[独自]` 明示」。アクセシビリティ（WAI-ARIA / WCAG 2.2 / JIS Z 8520）はワイヤーフェーズから組み込むフェーズ横断の哲学として扱う。技術アーキテクチャのトレードオフ記録を担う `writing-design-doc` とは責任境界を分離（`designing-ui` は画面設計の工程駆動のみ・コード実装/AT実装/Plan作成は担わない）。
+  - `docs/methodology/designing-ui-doc1.md`: UI 要件・情報設計・ワイヤーフレームの骨格規律（画面単位はワイヤー着手前に確定・装飾を含めない）。
+  - `docs/methodology/designing-ui-doc2.md`: ビジュアル方針・実装連携の規律（ゲシュタルト原則/Typography/Color/Spacing/Component 選択、プラットフォーム別作法の選択意思決定、Design system 再利用、アクセシビリティ実装連携）。
+  - 構造検証 BATS `tests/test_designing_ui_skill.bats`（AT-368-1〜16, 20 tests）を新規追加。
+
+## [4.4.1] - 2026-07-01
+
+### Added
+
+- **要件抽出の技法カタログを新設（#369）**。`docs/methodology/elicitation-techniques/` に Pre-mortem（Klein, HBR 2007）/ Job Story（Klement, JTBD blog 2013）/ One question at a time（Krug, *Rocket Surgery Made Easy* 2010）/ Out-of-scope question（Patton, *User Story Mapping* 2014）の 4 技法を、統一 5 フィールド（目的 / 問いの型 / 適用先マッピング / 一次情報 / 例）付きで一次情報とともに整理。横断する運用原則は `common-principles.md` に独立させ `[独自整理]` マーカーで原典との境界を明示。`defining-requirements/SKILL.md` と `batch-discovery/SKILL.md` は各節から本カタログへのマッピング参照のみを持ち、詳細手順・一次情報・例は doc 側に委ねる（SKILL.md 肥大化防止）。構造（ファイル存在・統一フィールド・SKILL.md からのリンク）を検証する `tests/test_elicitation_techniques_docs.bats` を追加。
 
 ## [4.4.0] - 2026-07-01
 
