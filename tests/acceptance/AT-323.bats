@@ -87,7 +87,10 @@ _commit_changed_file() {
   _commit_changed_file "src/app/main.ts"
   run bash "$SCRIPT" --config "$CONFIG_WEB" --platform web --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
-  [ -n "$output" ]
+  # content assert (#347): not merely non-empty — must contain the expected
+  # identifiers declared by the web template's src/** rule.
+  echo "$output" | grep -q "unit"
+  echo "$output" | grep -q "integration"
 }
 
 @test "AT-323-001c: --platform ios with Sources/*.swift change returns iOS test target identifiers" {
@@ -95,7 +98,9 @@ _commit_changed_file() {
   _commit_changed_file "Sources/App/ViewController.swift"
   run bash "$SCRIPT" --config "$CONFIG_IOS" --platform ios --base HEAD~1 --layer skill-e2e
   [ "$status" -eq 0 ]
-  [ -n "$output" ]
+  # content assert (#347): not merely non-empty — must contain the expected
+  # identifier declared by the ios template's Sources/** rule.
+  echo "$output" | grep -q "AppTests"
 }
 
 @test "AT-323-001d: unknown --platform value exits non-zero with platform error on stderr" {
@@ -201,9 +206,9 @@ _commit_changed_file() {
   grep -qE "\-\-impact" "$SKILL"
 }
 
-@test "AT-323-004b: merging-and-deploying SKILL.md post-deploy section references impact scope or --impact" {
+@test "AT-323-004b: merging-and-deploying SKILL.md post-deploy section references --impact (#347: --base alone no longer satisfies this)" {
   SKILL="$REPO_ROOT/skills/merging-and-deploying/SKILL.md"
-  grep -qE "\-\-impact|\-\-base" "$SKILL"
+  grep -qE -- "--impact" "$SKILL"
 }
 
 @test "AT-323-004c: autopilot SKILL.md documents AT_COMMAND should use impact-scope command (--impact)" {

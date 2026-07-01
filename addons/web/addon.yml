@@ -9,6 +9,15 @@ deploy:
     dest: scripts/impact_map.sh
   - src: config/impact_rules.yml
     dest: config/impact_rules.yml
+    # if_not_exists / merge_strategy: RESERVED fields (not yet implemented —
+    # behavior deferred to a future Issue, #347). Intent: when set,
+    # if_not_exists: true would skip deploying dest if it already exists
+    # (protecting a user's customized config/impact_rules.yml on setup
+    # re-run), and merge_strategy would define how to reconcile an updated
+    # template with existing customization. No deploy-time behavior change
+    # yet — setup-web.md's manual overwrite-warning step covers this today.
+    if_not_exists: false
+    merge_strategy: overwrite
 
 detect:
   patterns:

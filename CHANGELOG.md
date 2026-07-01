@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-02
+
+### Fixed
+
+- **`impact_map.sh` の `parse_impact_rules` を診断可能に強化（#347）**。`path:` glob / `skill-e2e:` ターゲット / `bats:` タグの末尾空白を trim し、trim なしでは fnmatch が一致せずルールが死んで FALLBACK に落ちていた不具合を修正。`rules:` セクション検出を exact equality から trim 後比較に変更し、末尾空白付き `rules: ` 行が `missing 'rules:' section` を誤発生させないようにした。`rules:` 配下で 4-space / tab インデントされた `- path:` 行を検出したとき、2-space インデント規約への言及を含む診断メッセージを出し、真に空の rules ブロック（`no rules entries found`）と区別できるようにした。
+- **`impact_map.sh --base` を fail-closed 化（#347）**。`-` で始まる `--base` 値（`-Spattern` 等の短オプション相当や `--output=<path>` 相当の敵対的値）を引数パース直後に拒否し、`git diff` へ短オプションとして渡って pickaxe 相当の意図しない動作や任意ファイル truncate を招くのを防止。
+
+### Changed
+
+- **重複していた `select_web` / `select_ios` を `select_path_rules_only` に統合（#347）**。バイト同一だった2関数を1つにまとめ、`--platform web` / `--platform ios` の分類ロジックを一本化（挙動は不変・回帰 BATS で確認）。
+- **`AT-323-004b` / `AT-323-001b` / `AT-323-001c` を厳格化（#347）**。`AT-323-004b` を `--impact|--base` の緩い alternation から `--impact` 必須に変更。`AT-323-001b` / `AT-323-001c` を非空チェックから web/iOS 識別子の content assert に強化。
+- **`setup-web.md` / `setup-ios.md` に既存 `config/impact_rules.yml` の上書き保護手順と FALLBACK 検出手順を追記（#347）**。再実行時にカスタマイズ済み config を上書きしないことを明記し、`grep FALLBACK` によるフォールバック検知と CI fail ステップ推奨を追加。
+- **`addons/web/addon.yml` / `addons/ios/addon.yml` の `deploy` エントリに `if_not_exists` / `merge_strategy` を予約フィールドとして追加（#347）**。動作は将来 Issue に委譲し、`addons/README.md` のスキーマ表に Required / Optional 列とともに文書化。
+- **ドキュメント整備（#347）**: `addons/web/README.md` を新規作成（他 addon README との非対称を解消）。`scripts/README.md` に `bats_runner.sh` / `check_bats_covers.sh` / `run-skill-e2e.sh` / `test-skills-headless.sh` の説明と `--layer`/`--platform` の対応関係を追記。`DEVELOPMENT.md` の Zero Dependencies 節に addon.yml `mcp_servers` の user-project carve-out を追記。
+
 ## [4.4.0] - 2026-07-01
 
 ### Fixed

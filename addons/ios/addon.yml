@@ -40,6 +40,16 @@ deploy:
     dest: scripts/impact_map.sh
   - src: config/impact_rules.yml
     dest: config/impact_rules.yml
+    # if_not_exists / merge_strategy: RESERVED fields (not yet implemented —
+    # behavior deferred to a future Issue, #347). Intent: if_not_exists: true
+    # would skip deploying dest if it already exists (protecting the REQUIRED
+    # per-project customization of config/impact_rules.yml, see guidance
+    # below, on setup re-run), and merge_strategy would define how to
+    # reconcile an updated template with existing customization. No
+    # deploy-time behavior change yet — setup-ios.md's manual overwrite-
+    # warning step covers this today.
+    if_not_exists: false
+    merge_strategy: overwrite
 
 ci_job: ci/build-and-test.yml
 
